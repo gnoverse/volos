@@ -17,7 +17,6 @@ Gnolend is a lending protocol built on Gno.land that leverages Gnoswap's liquidi
 2. Add Gnolend realms to your gno repository:
 
    ```bash
-   # Copy Gnolend realms to examples/r/gnolend
    cp -r gnolend/* $WORKDIR/gno.land/examples/r/gnolend/
    ```
 
