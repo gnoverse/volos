@@ -2,20 +2,23 @@ import { GnoJSONRPCProvider } from '@gnolang/gno-js-client'
 
 export class GnoService {
   private provider: GnoJSONRPCProvider
-  private providers: GnoJSONRPCProvider[]
+  private providers: Record<string, GnoJSONRPCProvider>
   private static instance: GnoService | null = null
-  private static defaultRpcUrls = [
-    'http://localhost:26657/',
-    'https://rpc.gno.land:443/',
-    'https://rpc.test5.gno.land/'
-  ]
-
-  private constructor(rpcUrls: string[] = GnoService.defaultRpcUrls) {
-    this.providers = rpcUrls.map(url => new GnoJSONRPCProvider(url))
-    this.provider = this.providers[0]
+  private static defaultRpcUrls: Record<string, string> = {
+    'local': 'http://localhost:26657/',
+    'portal-loop': 'https://rpc.gno.land:443/',
+    'test5': 'https://rpc.test5.gno.land/'
   }
 
-  public static getInstance(rpcUrls?: string[]): GnoService {
+  private constructor(rpcUrls: Record<string, string> = GnoService.defaultRpcUrls) {
+    this.providers = {}
+    for (const [name, url] of Object.entries(rpcUrls)) {
+      this.providers[name] = new GnoJSONRPCProvider(url)
+    }
+    this.provider = this.providers['local'] || Object.values(this.providers)[0]
+  }
+
+  public static getInstance(rpcUrls?: Record<string, string>): GnoService {
     if (!GnoService.instance) {
       GnoService.instance = new GnoService(rpcUrls)
     }
@@ -23,22 +26,27 @@ export class GnoService {
   }
 
   changeProvider(providerName: string): boolean {
-    switch (providerName) {
-      case 'portal-loop':
-        this.provider = this.providers[1]
-        console.log(`Changed provider to portal-loop`)
-        return true
-      case 'local':
-        this.provider = this.providers[0]
-        console.log(`Changed provider to local`)
-        return true
-      case 'test5':
-        this.provider = this.providers[2]
-        console.log(`Changed provider to test5`)
-        return true
-      default:
-        console.error(`Error: No such provider '${providerName}'`)
+    if (this.providers[providerName]) {
+      this.provider = this.providers[providerName]
+      console.log(`Changed provider to ${providerName}`)
+      return true
+    } else {
+      console.error(`Error: No such provider '${providerName}'`)
+      return false
+    }
+  }
+
+  registerRpcUrl(name: string, url: string): boolean {
+    try {
+      if (this.providers[name]) {
+        console.error(`Error: Provider with name '${name}' already exists.`)
         return false
+      }
+      this.providers[name] = new GnoJSONRPCProvider(url)
+      return true
+    } catch (error) {
+      console.error('Error registering RPC URL:', error)
+      return false
     }
   }
 
@@ -47,7 +55,10 @@ export class GnoService {
   }
 
   getProviders() {
-    return this.providers.map(provider => provider.toString())
+    return Object.entries(this.providers).map(([name, provider]) => ({
+      name,
+      url: provider.toString()
+    }))
   }
 
   async getPackageData(packagePath: string, expression: string) {
