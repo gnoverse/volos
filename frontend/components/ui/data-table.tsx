@@ -59,7 +59,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className={`${className}`}>
       <div className={`rounded-md`}>
-        <Table>
+        <Table className="text-gray-400">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="bg-gray-800 rounded-md my-2">
@@ -114,7 +114,7 @@ export function DataTable<TData, TValue>({
       {pagination && (
         <div className="flex items-center justify-end space-x-2 py-4">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
@@ -126,10 +126,11 @@ export function DataTable<TData, TValue>({
             {table.getPageCount()}
           </span>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+
           >
             Next
           </Button>

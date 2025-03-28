@@ -12,7 +12,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm border-separate border-spacing-y-1 border-none", className)}
+        className={cn("w-full caption-bottom text-sm border-separate border-spacing-y-2 border-none", className)}
         {...props}
       />
     </div>

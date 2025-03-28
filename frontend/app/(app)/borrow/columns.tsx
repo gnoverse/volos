@@ -31,6 +31,7 @@ export const columns: ColumnDef<Asset>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className=""
         >
           Available
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -76,7 +77,7 @@ export const columns: ColumnDef<Asset>[] = [
     id: "actions",
     cell: () => {
       return (
-        <Button className="w-full" variant="outline">
+        <Button variant="ghost" className="w-full" size="sm">
           Borrow
         </Button>
       )
