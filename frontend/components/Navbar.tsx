@@ -67,14 +67,14 @@ export default function Navbar() {
   };
 
   return (
-    <div className="flex justify-between items-center mx-1 p-2 bg-gray-800 rounded-b-full shadow-lg">
+    <div className="flex justify-between items-center mx-1 p-2 bg-gray-800/60 border-none backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60 rounded-b-full shadow-lg">
       {/* Logo or left section (empty for now) */}
       <div className="w-1/4">Logo section</div>
       
       {/* Centered menu */}
       <div className="flex justify-center w-1/2">
         <NavigationMenu className="mx-auto">
-          <NavigationMenuList className="bg-gray-600/50 rounded-full">
+          <NavigationMenuList className="bg-gray-600/50  rounded-full">
             {menuItems.map((item, index) => {
               const isActive = pathname === item.href;
               return (
