@@ -5,6 +5,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
@@ -62,19 +63,19 @@ export function DataTable<TData, TValue>({
   })
 
   return (
-    <div className={`${className}`}>
-      <div className={`rounded-md`}>
-        <Table className="text-gray-400">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-gray-800 rounded-md my-2">
-                {headerGroup.headers.map((header, index) => (
-                  <TableCell 
+    <div className={className}>
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id} className="bg-gradient-to-b from-gray-800/80 to-gray-900/70 border-none rounded-lg">
+              {headerGroup.headers.map((header, index) => {
+                return (
+                  <TableHead 
                     key={header.id} 
                     className={cn(
-                      "text-center",
-                      index === 0 && "rounded-l-md",
-                      index === headerGroup.headers.length - 1 && "rounded-r-md"
+                      "text-gray-200 h-12",
+                      index === 0 && "rounded-l-lg",
+                      index === headerGroup.headers.length - 1 && "rounded-r-lg"
                     )}
                   >
                     {header.isPlaceholder
@@ -83,40 +84,44 @@ export function DataTable<TData, TValue>({
                           header.column.columnDef.header,
                           header.getContext()
                         )}
+                  </TableHead>
+                )
+              })}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && "selected"}
+                className="bg-gray-800/60 hover:bg-gray-800/80 my-1 border-none transition-colors rounded-lg"
+                onClick={() => onRowClick?.(row.id)}
+              >
+                {row.getVisibleCells().map((cell, index) => (
+                  <TableCell 
+                    key={cell.id} 
+                    className={cn(
+                      "text-gray-200",
+                      index === 0 && "rounded-l-lg",
+                      index === row.getVisibleCells().length - 1 && "rounded-r-lg"
+                    )}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="bg-gray-700 cursor-pointer hover:bg-gray-600 transition-colors"
-                  onClick={() => onRowClick?.(row.id)}
-                >
-                  {row.getVisibleCells().map((cell, index) => (
-                    <TableCell 
-                      key={cell.id} 
-                      className={`text-center ${index === 0 ? 'rounded-l-md' : ''} ${index === row.getVisibleCells().length - 1 ? 'rounded-r-md' : ''}`}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))
+          ) : (
+            <TableRow className="rounded-lg">
+              <TableCell colSpan={columns.length} className="h-24 text-center text-gray-400 rounded-lg">
+                No results.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
       {pagination && (
         <div className="flex items-center justify-end space-x-2 py-4">
           <Button
@@ -124,10 +129,11 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            className="text-gray-200 hover:text-gray-100 hover:bg-gray-800/60 rounded-lg"
           >
             Previous
           </Button>
-          <span className="mx-2">
+          <span className="mx-2 text-gray-200">
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </span>
@@ -136,6 +142,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            className="text-gray-200 hover:text-gray-100 hover:bg-gray-800/60 rounded-lg"
           >
             Next
           </Button>

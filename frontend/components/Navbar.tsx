@@ -67,7 +67,7 @@ export default function Navbar() {
   };
 
   return (
-    <div className="flex justify-between items-center mx-1 p-2 bg-gray-800/60 border-none backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60 rounded-b-full shadow-lg">
+    <div className="flex justify-between items-center mx-1 p-2 bg-[#121212] border-gray-700 border-1 bg-gradient-to-b from-gray-800/80 to-gray-900/70 rounded-b-full">
       {/* Logo or left section (empty for now) */}
       <div className="w-1/4">Logo section</div>
       

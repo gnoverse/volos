@@ -20,7 +20,7 @@ export function MarketChart({
   color = "rgb(99, 102, 241)"
 }: MarketChartProps) {
   return (
-    <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60 hover:shadow-[0_0_15px_rgba(0,0,0,0.4)] transition-shadow duration-300">
+    <Card className="bg-gray-800/80 border-1 border-gray-700 bg-gradient-to-b from-gray-800/80 to-gray-900/70 transition-shadow duration-300">
       <CardHeader className="pb-4">
         <CardTitle className="text-gray-200">{title}</CardTitle>
         <CardDescription className="text-gray-400">{description}</CardDescription>
