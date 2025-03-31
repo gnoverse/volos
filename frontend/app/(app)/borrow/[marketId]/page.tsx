@@ -1,6 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { InfoIcon } from "lucide-react"
 import { useParams } from "next/navigation"
 import { formatUnits } from "viem"
 import { MarketChart } from "../components/market-chart"
@@ -130,6 +131,115 @@ export default function MarketPage() {
           dataKey="apy"
           color="rgba(245, 158, 11, 0.8)"
         />
+      </div>
+
+      {/* Performance Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+          <CardHeader>
+            <CardTitle className="text-gray-200">7D APY</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-200">
+              {(market.apy * (1 + Math.random() * 0.1)).toFixed(2)}%
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+          <CardHeader>
+            <CardTitle className="text-gray-200">30D APY</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-200">
+              {market.apy.toFixed(2)}%
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+          <CardHeader>
+            <CardTitle className="text-gray-200">90D APY</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gray-200">
+              {(market.apy * (1 - Math.random() * 0.1)).toFixed(2)}%
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold text-gray-200">Risk</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+            <CardHeader>
+              <CardTitle className="text-gray-200 flex items-center gap-2">
+                Risk Rating by Credora ®
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-gray-400">Has not been rated yet</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+            <CardHeader>
+              <CardTitle className="text-gray-200">Curator TVL</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-gray-200 text-2xl font-bold">$578.40M</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+            <CardHeader>
+              <CardTitle className="text-gray-200">Vault Deployment Date</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-gray-200">15/03/2024</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+            <CardHeader>
+              <CardTitle className="text-gray-200">Owner</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-gray-200 font-mono">0x3300...f8c4</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+            <CardHeader>
+              <CardTitle className="text-gray-200">Curator Address</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-gray-200 font-mono">0x0000...0000</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+            <CardHeader>
+              <CardTitle className="text-gray-200">Timelock / Guardian</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-gray-200">1D / 0x0000...0000</div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Disclosures Section */}
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold text-gray-200 flex items-center gap-2">
+          Disclosures <InfoIcon className="h-4 w-4 text-gray-400" />
+        </h2>
+        <Card className="bg-gray-800/60 border-none shadow-lg backdrop-blur-sm bg-gradient-to-b from-gray-800/60 to-gray-900/60">
+          <CardContent className="pt-6">
+            <p className="text-gray-400">Curator has not submitted a Disclosure.</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
