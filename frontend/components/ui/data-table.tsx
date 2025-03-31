@@ -27,6 +27,8 @@ interface DataTableProps<TData, TValue> {
   pagination?: boolean
   sorting?: boolean
   className?: string
+  getRowId?: (row: TData) => string
+  onRowClick?: (id: string) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -35,6 +37,8 @@ export function DataTable<TData, TValue>({
   pagination = true,
   sorting = true,
   className,
+  getRowId,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [sortingState, setSortingState] = useState<SortingState>([])
   const [paginationState, setPaginationState] = useState<PaginationState>({
@@ -54,6 +58,7 @@ export function DataTable<TData, TValue>({
     },
     onSortingChange: setSortingState,
     onPaginationChange: setPaginationState,
+    getRowId: getRowId,
   })
 
   return (
@@ -89,7 +94,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="bg-gray-700"
+                  className="bg-gray-700 cursor-pointer hover:bg-gray-600 transition-colors"
+                  onClick={() => onRowClick?.(row.id)}
                 >
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell 
@@ -130,7 +136,6 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-
           >
             Next
           </Button>
