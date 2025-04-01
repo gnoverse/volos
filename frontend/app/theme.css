@@ -1,0 +1,31 @@
+
+body {
+    font-family: "Manrope Variable", sans-serif;
+}
+
+:root {
+    --mysticBlue-50:  #e1e9f7;
+    --mysticBlue-100: #c2d3f0;
+    --mysticBlue-200: #93ace0;
+    --mysticBlue-300: #6b89d1;
+    --mysticBlue-400: #4a67c2;
+    --mysticBlue-500: #2f4ead;
+    --mysticBlue-600: #263e8b;
+    --mysticBlue-700: #1e3069;
+    --mysticBlue-800: #172348;
+    --mysticBlue-900: #0f162d;
+    --mysticBlue-950: #090e1a;
+  
+    --gray-50:  #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+}
+
+
