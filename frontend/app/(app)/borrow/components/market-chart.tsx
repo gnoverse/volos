@@ -20,7 +20,7 @@ export function MarketChart({
   color = "rgb(99, 102, 241)"
 }: MarketChartProps) {
   return (
-    <Card className="bg-blue-950/80 bg-gradient-to-b from-blue-900/80 to-gray-900/20 border-none">
+    <Card className="bg-purple-950/80 bg-gradient-to-b from-purple-900/80 to-gray-900/20 border-none">
       <CardHeader className="pb-4">
         <CardTitle className="text-gray-200">{title}</CardTitle>
         <CardDescription className="text-gray-400">{description}</CardDescription>
