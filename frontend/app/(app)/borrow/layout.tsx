@@ -10,7 +10,7 @@ export default function BorrowLayout({
 }) {
   return (
     <div className="flex justify-center items-center h-[91vh] mx-6 my-2">
-      <Card className="w-full h-full bg-[#181c21] border-none overflow-y-auto hide-scrollbar px-48">
+      <Card className="w-full h-full bg-black/50 border-none overflow-y-auto hide-scrollbar px-48">
         <CardContent className="">
           {children}
         </CardContent>
