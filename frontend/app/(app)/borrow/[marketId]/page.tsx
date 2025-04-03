@@ -300,7 +300,7 @@ export default function MarketPage() {
               Disclosures <InfoIcon className="h-4 w-4 text-gray-400" />
             </h2>
             <Card className={CARD_STYLES}>
-              <CardContent className="pt-6">
+              <CardContent className="">
                 <p className="text-gray-400">Curator has not submitted a Disclosure.</p>
               </CardContent>
             </Card>
