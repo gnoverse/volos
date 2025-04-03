@@ -35,13 +35,14 @@ export default function MarketPage() {
   }
 
   return (
-    <div className="container items-center justify-center space-y-6">
-      <h1 className="text-[48px] font-bold mb-12 text-gray-200">
+    <div className="items-center justify-center space-y-6 -mt-6">
+      <h1 className="text-[36px] font-bold mb-6 text-gray-200">
         {market.loanSymbol} / {market.collateralSymbol} Market
       </h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
-      <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+      <Card className="bg-gray-700/60 border-none">
+
       <CardHeader>
             <CardTitle className="text-gray-200">Market Overview</CardTitle>
             <CardDescription className="text-gray-400">Basic information about the market</CardDescription>
@@ -64,7 +65,8 @@ export default function MarketPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+        <Card className="bg-gray-700/60 border-none">
+
         <CardHeader>
             <CardTitle className="text-gray-200">Market Size</CardTitle>
             <CardDescription className="text-gray-400">Supply and borrow information</CardDescription>
@@ -92,7 +94,8 @@ export default function MarketPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+        <Card className="bg-gray-700/60 border-none">
+
         <CardHeader>
             <CardTitle className="text-gray-200">Parameters</CardTitle>
             <CardDescription className="text-gray-400">Market parameters and rates</CardDescription>
@@ -151,7 +154,8 @@ export default function MarketPage() {
 
       {/* Performance Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+      <Card className="bg-gray-700/60 border-none">
+
       <CardHeader>
             <CardTitle className="text-gray-200">7D APY</CardTitle>
           </CardHeader>
@@ -162,7 +166,8 @@ export default function MarketPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+        <Card className="bg-gray-700/60 border-none">
+
         <CardHeader>
             <CardTitle className="text-gray-200">30D APY</CardTitle>
           </CardHeader>
@@ -173,7 +178,8 @@ export default function MarketPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+        <Card className="bg-gray-700/60 border-none">
+
         <CardHeader>
             <CardTitle className="text-gray-200">90D APY</CardTitle>
           </CardHeader>
@@ -188,7 +194,8 @@ export default function MarketPage() {
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-gray-200">Risk</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+        <Card className="bg-gray-700/60 border-none">
+
         <CardHeader>
               <CardTitle className="text-gray-200 flex items-center gap-2">
                 Risk Rating by Credora ®
@@ -199,7 +206,8 @@ export default function MarketPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+          <Card className="bg-gray-700/60 border-none">
+
           <CardHeader>
               <CardTitle className="text-gray-200">Curator TVL</CardTitle>
             </CardHeader>
@@ -208,7 +216,8 @@ export default function MarketPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+          <Card className="bg-gray-700/60 border-none">
+
           <CardHeader>
               <CardTitle className="text-gray-200">Vault Deployment Date</CardTitle>
             </CardHeader>
@@ -217,7 +226,8 @@ export default function MarketPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+          <Card className="bg-gray-700/60 border-none">
+
           <CardHeader>
               <CardTitle className="text-gray-200">Owner</CardTitle>
             </CardHeader>
@@ -226,7 +236,8 @@ export default function MarketPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+          <Card className="bg-gray-700/60 border-none">
+
           <CardHeader>
               <CardTitle className="text-gray-200">Curator Address</CardTitle>
             </CardHeader>
@@ -235,7 +246,8 @@ export default function MarketPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+          <Card className="bg-gray-700/60 border-none">
+
           <CardHeader>
               <CardTitle className="text-gray-200">Timelock / Guardian</CardTitle>
             </CardHeader>
@@ -251,7 +263,8 @@ export default function MarketPage() {
         <h2 className="text-xl font-bold text-gray-200 flex items-center gap-2">
           Disclosures <InfoIcon className="h-4 w-4 text-gray-400" />
         </h2>
-        <Card className="bg-gray-800/80 bg-gradient-to-b from-gray-800/80 to-gray-700/70 border-none">
+        <Card className="bg-gray-700/60 border-none">
+
         <CardContent className="pt-6">
             <p className="text-gray-400">Curator has not submitted a Disclosure.</p>
           </CardContent>

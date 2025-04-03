@@ -75,14 +75,14 @@ export default function Navbar() {
         
         {/* Navigation Menu */}
         <NavigationMenu>
-          <NavigationMenuList className="bg-customGray-800/50 rounded-full">
+          <NavigationMenuList className="bg-customGray-800/70 rounded-full">
             {menuItems.map((item, index) => {
               const isActive = pathname === item.href;
               return (
                 <NavigationMenuItem key={index} className="text-gray-400">
                   <NavigationMenuLink
                     href={item.href}
-                    className={`block rounded-full ${
+                    className={`block rounded-full text-gray-200 ${
                       isActive ? 'bg-customGray-700/60 text-gray-200 hover:bg-customGray-700/60 hover:text-gray-200' : 'hover:bg-customGray-700 hover:text-gray-200'
                     }`}
                   >
@@ -100,7 +100,7 @@ export default function Navbar() {
         <Button 
           variant="ghost" 
           className={cn(
-            "bg-customGray-800 text-gray-400 rounded-full",
+            "bg-customGray-800 text-gray-200 rounded-full",
             isConnected 
               ? "mr-2 hover:bg-customGray-700 hover:text-gray-200"
               : "mr-5 hover:bg-customGray-700 hover:text-gray-200"
@@ -115,7 +115,7 @@ export default function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="bg-transparent text-gray-400 rounded-full hover:bg-customGray-700 hover:text-red-600 mr-5"
+            className="bg-transparent text-gray-200 rounded-full hover:bg-customGray-700 hover:text-red-600 mr-5"
             onClick={handleWalletConnection}
             title="Disconnect wallet"
           >
