@@ -13,8 +13,8 @@ export default function BorrowPage() {
   }
 
   return (
-    <div className="container py-6">
-      <h1 className="text-2xl font-bold mb-6">Borrow Assets</h1>
+    <div className="py-6">
+      <h1 className="text-2xl font-bold mb-6 text-gray-200">Borrow Assets</h1>
       <DataTable 
         columns={columns} 
         data={assets} 

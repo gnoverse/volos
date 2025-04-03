@@ -102,7 +102,7 @@ export default function Navbar() {
           className={cn(
             "bg-customGray-800 text-gray-200 rounded-full",
             isConnected 
-              ? "mr-2 hover:bg-customGray-700 hover:text-gray-200"
+              ? "mr-2"
               : "mr-5 hover:bg-customGray-700 hover:text-gray-200"
           )}
           onClick={isConnected ? undefined : handleWalletConnection}
