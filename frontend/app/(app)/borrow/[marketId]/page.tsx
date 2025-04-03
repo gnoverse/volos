@@ -308,18 +308,18 @@ export default function MarketPage() {
         </div>
 
         {/* Right side - input cards */}
-        <div className="col-span-1 lg:sticky top-6 self-start max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="col-span-1 lg:sticky top-6 self-start max-h-[calc(100vh-4rem)] overflow-y-auto mx-4">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Supply Card */}
             <Card className={CARD_STYLES}>
-              <CardHeader className="pb-2">
+              <CardHeader className="">
                 <CardTitle className="text-gray-200 text-base font-medium">
                   Supply Collateral {market.collateralSymbol}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Input
-                  type="text"
+                  type="number"
                   {...register("supplyAmount", { 
                     pattern: /^[0-9]*\.?[0-9]*$/
                   })}
@@ -344,14 +344,14 @@ export default function MarketPage() {
 
             {/* Borrow Card */}
             <Card className={CARD_STYLES}>
-              <CardHeader className="pb-2">
+              <CardHeader className="">
                 <CardTitle className="text-gray-200 text-base font-medium">
                   Borrow {market.loanSymbol}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Input
-                  type="text"
+                  type="number"
                   {...register("borrowAmount", { 
                     pattern: /^[0-9]*\.?[0-9]*$/
                   })}
@@ -376,7 +376,7 @@ export default function MarketPage() {
 
             {/* Position Card */}
             <Card className={CARD_STYLES}>
-              <CardContent className="pt-4 space-y-4">
+              <CardContent className="space-y-4">
                 <div>
                   <div className="text-sm text-gray-400">My collateral position ({market.collateralSymbol})</div>
                   <div className="text-xl font-semibold text-gray-200">0.00</div>
@@ -406,7 +406,7 @@ export default function MarketPage() {
             {/* Submit Button */}
             <Button
               type="submit" 
-              className="w-full bg-gray-700/60 text-gray-300 rounded-2xl hover:bg-gray-600/60 transition-colors text-lg"
+              className="w-full shadow-lg text-gray-200 rounded-2xl bg-midnightPurple-900 hover:bg-gradient-to-tr hover:from-midnightPurple-900 hover:to-midnightPurple-800 transition-all duration-300 text-md relative overflow-hidden hover:before:absolute hover:before:inset-0 hover:before:bg-gradient-to-tr hover:before:from-transparent hover:before:to-white/5 hover:before:animate-shine"
               disabled={!supplyAmount && !borrowAmount}
             >
               {!supplyAmount && !borrowAmount ? "Enter an amount" : "Submit Transaction"}
