@@ -19,8 +19,8 @@ export default function BorrowPage() {
   }
 
   return (
-    <div className="py-6">
-      <Card className="mb-6 bg-customGray-800/60 backdrop-blur-sm">
+    <div className="">
+      <Card className="mb-6 bg-customGray-800/60 backdrop-blur-sm rounded-3xl">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">My Loan</CardTitle>
           <div className="text-4xl font-bold text-gray-200">$0.00</div>

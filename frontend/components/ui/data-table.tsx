@@ -67,15 +67,15 @@ export function DataTable<TData, TValue>({
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="bg-gradient-to-b from-customGray-900/80 to-gray-900/70 border-none rounded-lg">
+            <TableRow key={headerGroup.id} className="bg-gray-700/60 border-none rounded-3xl">
               {headerGroup.headers.map((header, index) => {
                 return (
                   <TableHead 
                     key={header.id} 
                     className={cn(
                       "text-gray-200 h-12",
-                      index === 0 && "rounded-l-lg",
-                      index === headerGroup.headers.length - 1 && "rounded-r-lg"
+                      index === 0 && "rounded-l-3xl",
+                      index === headerGroup.headers.length - 1 && "rounded-r-3xl"
                     )}
                   >
                     {header.isPlaceholder
@@ -96,7 +96,7 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="bg-customGray-950/60 hover:bg-customGray-900/60 my-1 border-none transition-colors rounded-lg"
+                className="bg-gray-700/40 hover:bg-gray-600/60 my-1 border-none transition-colors rounded-3xl cursor-pointer"
                 onClick={() => onRowClick?.(row.id)}
               >
                 {row.getVisibleCells().map((cell, index) => (
@@ -104,8 +104,8 @@ export function DataTable<TData, TValue>({
                     key={cell.id} 
                     className={cn(
                       "text-gray-200",
-                      index === 0 && "rounded-l-lg",
-                      index === row.getVisibleCells().length - 1 && "rounded-r-lg"
+                      index === 0 && "rounded-l-3xl",
+                      index === row.getVisibleCells().length - 1 && "rounded-r-3xl"
                     )}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -114,8 +114,8 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))
           ) : (
-            <TableRow className="rounded-lg">
-              <TableCell colSpan={columns.length} className="h-24 text-center text-gray-400 rounded-lg">
+            <TableRow className="rounded-3xl">
+              <TableCell colSpan={columns.length} className="h-24 text-center text-gray-400 rounded-3xl">
                 No results.
               </TableCell>
             </TableRow>
@@ -129,7 +129,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="text-gray-200 hover:text-gray-100 hover:bg-customGray-900/60 rounded-lg"
+            className="text-gray-200 hover:text-gray-100 hover:bg-gray-600/60 rounded-3xl"
           >
             Previous
           </Button>
@@ -142,7 +142,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="text-gray-200 hover:text-gray-100 hover:bg-customGray-900/60 rounded-lg"
+            className="text-gray-200 hover:text-gray-100 hover:bg-gray-600/60 rounded-3xl"
           >
             Next
           </Button>
