@@ -1,6 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { MarketHistory } from "../mock-history"
 
@@ -10,6 +11,7 @@ interface MarketChartProps {
   description: string
   dataKey: string
   color?: string
+  className?: string
 }
 
 export function MarketChart({
@@ -17,10 +19,11 @@ export function MarketChart({
   title,
   description,
   dataKey,
-  color = "rgb(99, 102, 241)"
+  color = "rgb(99, 102, 241)",
+  className
 }: MarketChartProps) {
   return (
-    <Card className="bg-gray-700/60 border-none">
+    <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
       <CardHeader className="pb-4">
         <CardTitle className="text-gray-200">{title}</CardTitle>
         <CardDescription className="text-gray-400">{description}</CardDescription>
