@@ -12,19 +12,20 @@ import { formatUnits } from "viem"
 import { MarketChart } from "../components/market-chart"
 import { assets } from "../mock"
 import { marketHistory } from "../mock-history"
+
+const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
+
 export default function MarketPage() {
   const params = useParams()
   const decodedMarketId = decodeURIComponent(params.marketId as string)
   const market = assets.find((asset) => asset.id === decodedMarketId)
   const history = marketHistory[decodedMarketId]
 
-  // Add state for APY variations
   const [apyVariations, setApyVariations] = useState({
     sevenDay: 0,
     ninetyDay: 0
   })
 
-  // Form handling with React Hook Form
   const { register, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
       supplyAmount: "",
@@ -35,31 +36,29 @@ export default function MarketPage() {
   const supplyAmount = watch("supplyAmount")
   const borrowAmount = watch("borrowAmount")
 
-  // Calculate supply value in USD
   const supplyValue = supplyAmount ? 
     parseFloat(supplyAmount) * Number(formatUnits(BigInt(market?.price || "0"), 18)) : 0
 
-  // Calculate borrow value in USD
   const borrowValue = borrowAmount ? 
     parseFloat(borrowAmount) : 0
 
   const onSubmit = (data: unknown) => {
     console.log("Form submitted:", data)
-    // This would handle the borrow/supply action
+    // todo: send tx to the contract
   }
 
   const handleMaxSupply = () => {
-    // For demonstration, set a mock max value
+    // todo: set true maximum value according to the user's balance (maybe use tokenhub)
     setValue("supplyAmount", "1000.00")
   }
 
   const handleMaxBorrow = () => {
-    // For demonstration, set a mock max value based on collateral
+    // todo: set true maximum value according to the user's balance
     setValue("borrowAmount", "500.00")
   }
 
-  // Calculate random variations once after mount
   useEffect(() => {
+    // todo: get real apy variations from the contract
     setApyVariations({
       sevenDay: 1 + Math.random() * 0.1,
       ninetyDay: 1 - Math.random() * 0.1
@@ -82,7 +81,7 @@ export default function MarketPage() {
           {/* Market info cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
             {/* Market Overview Card */}
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardHeader>
                 <CardTitle className="text-gray-200">Market Overview</CardTitle>
                 <CardDescription className="text-gray-400">Basic information about the market</CardDescription>
@@ -106,7 +105,7 @@ export default function MarketPage() {
             </Card>
 
             {/* Market Size Card */}
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardHeader>
                 <CardTitle className="text-gray-200">Market Size</CardTitle>
                 <CardDescription className="text-gray-400">Supply and borrow information</CardDescription>
@@ -135,7 +134,7 @@ export default function MarketPage() {
             </Card>
 
             {/* Parameters Card */}
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardHeader>
                 <CardTitle className="text-gray-200">Parameters</CardTitle>
                 <CardDescription className="text-gray-400">Market parameters and rates</CardDescription>
@@ -169,6 +168,7 @@ export default function MarketPage() {
               description="Total assets supplied to the market"
               dataKey="supply"
               color="rgba(34, 197, 94, 0.95)"
+              className={CARD_STYLES}
             />
             <MarketChart
               data={history}
@@ -176,6 +176,7 @@ export default function MarketPage() {
               description="Total assets borrowed from the market"
               dataKey="borrow"
               color="rgba(239, 68, 68, 0.95)"
+              className={CARD_STYLES}
             />
             <MarketChart
               data={history}
@@ -183,6 +184,7 @@ export default function MarketPage() {
               description="Percentage of supplied assets being borrowed"
               dataKey="utilization"
               color="rgba(99, 102, 241, 0.95)"
+              className={CARD_STYLES}
             />
             <MarketChart
               data={history}
@@ -190,12 +192,13 @@ export default function MarketPage() {
               description="Annual Percentage Yield"
               dataKey="apy"
               color="rgba(245, 158, 11, 0.95)"
+              className={CARD_STYLES}
             />
           </div>
 
           {/* Performance Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardHeader>
                 <CardTitle className="text-gray-200">7D APY</CardTitle>
               </CardHeader>
@@ -206,7 +209,7 @@ export default function MarketPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardHeader>
                 <CardTitle className="text-gray-200">30D APY</CardTitle>
               </CardHeader>
@@ -217,7 +220,7 @@ export default function MarketPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardHeader>
                 <CardTitle className="text-gray-200">90D APY</CardTitle>
               </CardHeader>
@@ -233,7 +236,7 @@ export default function MarketPage() {
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-200">Risk</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="bg-gray-700/60 border-none rounded-3xl">
+              <Card className={CARD_STYLES}>
                 <CardHeader>
                   <CardTitle className="text-gray-200 flex items-center gap-2">
                     Risk Rating by Credora ®
@@ -244,7 +247,7 @@ export default function MarketPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-700/60 border-none rounded-3xl">
+              <Card className={CARD_STYLES}>
                 <CardHeader>
                   <CardTitle className="text-gray-200">Curator TVL</CardTitle>
                 </CardHeader>
@@ -253,7 +256,7 @@ export default function MarketPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-700/60 border-none rounded-3xl">
+              <Card className={CARD_STYLES}>
                 <CardHeader>
                   <CardTitle className="text-gray-200">Vault Deployment Date</CardTitle>
                 </CardHeader>
@@ -262,7 +265,7 @@ export default function MarketPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-700/60 border-none rounded-3xl">
+              <Card className={CARD_STYLES}>
                 <CardHeader>
                   <CardTitle className="text-gray-200">Owner</CardTitle>
                 </CardHeader>
@@ -271,7 +274,7 @@ export default function MarketPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-700/60 border-none rounded-3xl">
+              <Card className={CARD_STYLES}>
                 <CardHeader>
                   <CardTitle className="text-gray-200">Curator Address</CardTitle>
                 </CardHeader>
@@ -280,7 +283,7 @@ export default function MarketPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gray-700/60 border-none rounded-3xl">
+              <Card className={CARD_STYLES}>
                 <CardHeader>
                   <CardTitle className="text-gray-200">Timelock / Guardian</CardTitle>
                 </CardHeader>
@@ -296,7 +299,7 @@ export default function MarketPage() {
             <h2 className="text-xl font-bold text-gray-200 flex items-center gap-2">
               Disclosures <InfoIcon className="h-4 w-4 text-gray-400" />
             </h2>
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardContent className="pt-6">
                 <p className="text-gray-400">Curator has not submitted a Disclosure.</p>
               </CardContent>
@@ -308,7 +311,7 @@ export default function MarketPage() {
         <div className="col-span-1 lg:sticky top-6 self-start max-h-[calc(100vh-4rem)] overflow-y-auto">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Supply Card */}
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-gray-200 text-base font-medium">
                   Supply Collateral {market.collateralSymbol}
@@ -340,7 +343,7 @@ export default function MarketPage() {
             </Card>
 
             {/* Borrow Card */}
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-gray-200 text-base font-medium">
                   Borrow {market.loanSymbol}
@@ -372,7 +375,7 @@ export default function MarketPage() {
             </Card>
 
             {/* Position Card */}
-            <Card className="bg-gray-700/60 border-none rounded-3xl">
+            <Card className={CARD_STYLES}>
               <CardContent className="pt-4 space-y-4">
                 <div>
                   <div className="text-sm text-gray-400">My collateral position ({market.collateralSymbol})</div>
