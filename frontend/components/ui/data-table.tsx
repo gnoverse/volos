@@ -67,7 +67,7 @@ export function DataTable<TData, TValue>({
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="bg-gradient-to-b from-purple-900/80 to-gray-900/70 border-none rounded-lg">
+            <TableRow key={headerGroup.id} className="bg-gradient-to-b from-customGray-900/80 to-gray-900/70 border-none rounded-lg">
               {headerGroup.headers.map((header, index) => {
                 return (
                   <TableHead 
@@ -96,7 +96,7 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="bg-purple-950/60 hover:bg-purple-900/60 my-1 border-none transition-colors rounded-lg"
+                className="bg-customGray-950/60 hover:bg-customGray-900/60 my-1 border-none transition-colors rounded-lg"
                 onClick={() => onRowClick?.(row.id)}
               >
                 {row.getVisibleCells().map((cell, index) => (
@@ -129,7 +129,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="text-gray-200 hover:text-gray-100 hover:bg-purple-900/60 rounded-lg"
+            className="text-gray-200 hover:text-gray-100 hover:bg-customGray-900/60 rounded-lg"
           >
             Previous
           </Button>
@@ -142,7 +142,7 @@ export function DataTable<TData, TValue>({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="text-gray-200 hover:text-gray-100 hover:bg-purple-900/60 rounded-lg"
+            className="text-gray-200 hover:text-gray-100 hover:bg-customGray-900/60 rounded-lg"
           >
             Next
           </Button>

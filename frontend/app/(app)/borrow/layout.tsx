@@ -9,10 +9,12 @@ export default function BorrowLayout({
   children: React.ReactNode
 }) {
   return (
-      <Card className="absolute w-full h-full bg-black/50 border-none overflow-y-auto hide-scrollbar m-2">
-        <CardContent className="">
+    <div className="h-full w-full px-6">
+      <Card className="w-full max-h-[91vh] bg-gray-700 border-1 border-gray-700 overflow-y-auto hide-scrollbar ">
+        <CardContent className="p-6">
           {children}
         </CardContent>
       </Card>
+    </div>
   )
 } 

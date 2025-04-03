@@ -67,14 +67,15 @@ export default function Navbar() {
   };
 
   return (
-    <div className="flex justify-between items-center mx-1 p-2 bg-gradient-to-b from-gray-800/80 to-purple-900/70 rounded-b-md">
-      {/* Logo or left section (empty for now) */}
-      <div className="w-1/4">Logo section</div>
-      
-      {/* Centered menu */}
-      <div className="flex justify-center w-1/2">
-        <NavigationMenu className="mx-auto">
-          <NavigationMenuList className="bg-gray-600/50  rounded-full">
+    <div className="flex justify-between items-center py-2 px-4">
+      {/* Left section with logo and menu */}
+      <div className="flex items-center">
+        {/* Logo */}
+        <div className="mr-6 text-gray-200">Logo</div>
+        
+        {/* Navigation Menu */}
+        <NavigationMenu>
+          <NavigationMenuList className="bg-customGray-800/50 rounded-full">
             {menuItems.map((item, index) => {
               const isActive = pathname === item.href;
               return (
@@ -82,7 +83,7 @@ export default function Navbar() {
                   <NavigationMenuLink
                     href={item.href}
                     className={`block rounded-full ${
-                      isActive ? 'bg-gray-800/60 text-gray-400 hover:bg-gray-800/60 hover:text-gray-400' : 'hover:bg-gray-600 hover:text-gray-200'
+                      isActive ? 'bg-customGray-700/60 text-gray-200 hover:bg-customGray-700/60 hover:text-gray-200' : 'hover:bg-customGray-700 hover:text-gray-200'
                     }`}
                   >
                     {item.name}
@@ -95,14 +96,14 @@ export default function Navbar() {
       </div>
       
       {/* Right-aligned wallet button */}
-      <div className="w-1/4 flex justify-end items-center">
+      <div className="flex justify-end items-center">
         <Button 
           variant="ghost" 
           className={cn(
-            "bg-gray-700 text-gray-400  rounded-full",
+            "bg-customGray-800 text-gray-400 rounded-full",
             isConnected 
-              ? "mr-2 hover:bg-gray-700 hover:text-gray-400"
-              : "mr-5 hover:bg-gray-600 hover:text-gray-200"
+              ? "mr-2 hover:bg-customGray-700 hover:text-gray-200"
+              : "mr-5 hover:bg-customGray-700 hover:text-gray-200"
           )}
           onClick={isConnected ? undefined : handleWalletConnection}
         >
@@ -114,7 +115,7 @@ export default function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="bg-transparent text-gray-400 rounded-full hover:bg-gray-700 hover:text-red-600 mr-5"
+            className="bg-transparent text-gray-400 rounded-full hover:bg-customGray-700 hover:text-red-600 mr-5"
             onClick={handleWalletConnection}
             title="Disconnect wallet"
           >

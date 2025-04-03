@@ -139,7 +139,7 @@ function SidebarProvider({
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper has-data-[variant=inset]:bg-purple-950/80 flex min-h-svh w-full",
+            "group/sidebar-wrapper has-data-[variant=inset]:bg-customGray-950/80 flex min-h-svh w-full",
             className
           )}
           {...props}
@@ -170,7 +170,7 @@ function Sidebar({
       <div
         data-slot="sidebar"
         className={cn(
-          "bg-purple-950/80 text-gray-200 flex h-full w-(--sidebar-width) flex-col border-none",
+          "bg-customGray-950/80 text-gray-200 flex h-full w-(--sidebar-width) flex-col border-none",
           className
         )}
         {...props}
@@ -187,7 +187,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-purple-950/80 text-gray-200 w-(--sidebar-width) p-0 [&>button]:hidden"
+          className="bg-customGray-950/80 text-gray-200 w-(--sidebar-width) p-0 [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -244,7 +244,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="bg-purple-950/80 bg-gradient-to-b from-purple-900/80 to-gray-900/50 group-data-[variant=floating]:border-gray-800 flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm"
+          className="bg-customGray-950/80 bg-gradient-to-b from-customGray-900/80 to-gray-900/50 group-data-[variant=floating]:border-gray-800 flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm"
         >
           {children}
         </div>
@@ -405,7 +405,7 @@ function SidebarGroupLabel({
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       className={cn(
-        "text-gray-400 ring-purple-700 flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        "text-gray-400 ring-customGray-700 flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}
@@ -474,13 +474,13 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-purple-700 transition-[width,height,padding] hover:bg-purple-800/50 hover:text-gray-200 focus-visible:ring-2 active:bg-purple-800/50 active:text-gray-200 disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-purple-800/60 data-[active=true]:font-medium data-[active=true]:text-gray-200 data-[state=open]:hover:bg-purple-800/50 data-[state=open]:hover:text-gray-200 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-customGray-700 transition-[width,height,padding] hover:bg-customGray-800/50 hover:text-gray-200 focus-visible:ring-2 active:bg-customGray-800/50 active:text-gray-200 disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-customGray-800/60 data-[active=true]:font-medium data-[active=true]:text-gray-200 data-[state=open]:hover:bg-customGray-800/50 data-[state=open]:hover:text-gray-200 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "hover:bg-purple-800/50 hover:text-gray-200",
+        default: "hover:bg-customGray-800/50 hover:text-gray-200",
         outline:
-          "bg-gray-900/40 shadow-[0_0_0_1px_hsl(var(--purple-700))] hover:bg-purple-800/50 hover:text-gray-200 hover:shadow-[0_0_0_1px_hsl(var(--purple-700))]",
+          "bg-gray-900/40 shadow-[0_0_0_1px_hsl(var(--customGray-700))] hover:bg-customGray-800/50 hover:text-gray-200 hover:shadow-[0_0_0_1px_hsl(var(--customGray-700))]",
       },
       size: {
         default: "h-8 text-sm",
@@ -561,7 +561,7 @@ function SidebarMenuAction({
       data-slot="sidebar-menu-action"
       data-sidebar="menu-action"
       className={cn(
-        "text-gray-200 ring-purple-700 hover:bg-purple-800/50 hover:text-gray-200 peer-hover/menu-button:text-gray-200 absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        "text-gray-200 ring-customGray-700 hover:bg-customGray-800/50 hover:text-gray-200 peer-hover/menu-button:text-gray-200 absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 md:after:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
@@ -686,8 +686,8 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        "text-gray-200 ring-purple-700 hover:bg-purple-800/50 hover:text-gray-200 active:bg-purple-800/50 active:text-gray-200 [&>svg]:text-gray-200 flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
-        "data-[active=true]:bg-purple-800/50 data-[active=true]:text-gray-200",
+        "text-gray-200 ring-customGray-700 hover:bg-customGray-800/50 hover:text-gray-200 active:bg-customGray-800/50 active:text-gray-200 [&>svg]:text-gray-200 flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+        "data-[active=true]:bg-customGray-800/50 data-[active=true]:text-gray-200",
         size === "sm" && "text-xs",
         size === "md" && "text-sm",
         "group-data-[collapsible=icon]:hidden",
