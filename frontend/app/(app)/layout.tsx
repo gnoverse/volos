@@ -1,12 +1,8 @@
-import Navbar from "@/components/Navbar"
-
 export default function Layout({ children }: { children: React.ReactNode }) {
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow ">
+      <main className="w-full h-full max-h-screen">
         {children}
       </main>
-    </div>
   )
 }

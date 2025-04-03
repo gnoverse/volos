@@ -1,3 +1,6 @@
+@import "./theme.css";
+
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -77,7 +80,6 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  
   --mysticBlue-50:  #e1e9f7;
   --mysticBlue-100: #c2d3f0;
   --mysticBlue-200: #93ace0;
