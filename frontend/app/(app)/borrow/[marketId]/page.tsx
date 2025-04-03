@@ -308,7 +308,7 @@ export default function MarketPage() {
         </div>
 
         {/* Right side - input cards */}
-        <div className="col-span-1 lg:sticky top-6 self-start max-h-[calc(100vh-4rem)] overflow-y-auto mx-4">
+        <div className="col-span-1 lg:sticky top-6 self-start max-h-[calc(100vh-4rem)] overflow-y-auto">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Supply Card */}
             <Card className={CARD_STYLES}>
