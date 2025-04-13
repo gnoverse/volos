@@ -14,7 +14,7 @@ enable-irm:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test market creation with GNS and WUGNOT
@@ -34,7 +34,7 @@ market-create-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test getting pool price for GNS-WUGNOT market
@@ -51,7 +51,7 @@ market-get-price-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test getting market info for GNS-WUGNOT pair
@@ -69,7 +69,7 @@ market-get-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 
 	# GET TOTAL SUPPLY SHARES
 	@echo "" | gnokey maketx call \
@@ -83,7 +83,7 @@ market-get-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 
 	# GET TOTAL BORROW ASSETS
 	@echo "" | gnokey maketx call \
@@ -97,7 +97,7 @@ market-get-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 
 	# GET TOTAL BORROW SHARES
 	@echo "" | gnokey maketx call \
@@ -111,7 +111,7 @@ market-get-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 
 	# GET LIQUIDATION LTV
 	@echo "" | gnokey maketx call \
@@ -125,7 +125,7 @@ market-get-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 
 	# GET MARKET FEE
 	@echo "" | gnokey maketx call \
@@ -139,7 +139,7 @@ market-get-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test supplying assets to GNS-WUGNOT market
@@ -158,7 +158,7 @@ supply-assets-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 	# THEN SUPPLY
@@ -175,7 +175,7 @@ supply-assets-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test withdrawing assets from GNS-WUGNOT market
@@ -194,7 +194,7 @@ withdraw-assets-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test supplying shares to GNS-WUGNOT market
@@ -213,7 +213,7 @@ supply-shares-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 	# THEN SUPPLY
@@ -230,7 +230,7 @@ supply-shares-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Check user position in GNS-WUGNOT market
@@ -249,7 +249,7 @@ check-position-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 	# Check borrow shares
@@ -265,7 +265,7 @@ check-position-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 	# Check collateral
@@ -281,7 +281,7 @@ check-position-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Check GNS balance
@@ -298,7 +298,7 @@ check-gns-balance:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Check Gnolend contract GNS balance
@@ -315,7 +315,7 @@ check-gnolend-gns-balance:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Check Gnolend contract WUGNOT balance
@@ -332,7 +332,7 @@ check-gnolend-wugnot-balance:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test accruing interest on GNS-WUGNOT market
@@ -349,7 +349,7 @@ accrue-interest-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Check WUGNOT balance
@@ -366,7 +366,7 @@ check-wugnot-balance:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Wrap UGNOT to WUGNOT
@@ -383,7 +383,7 @@ wrap-ugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test borrowing GNS tokens
@@ -402,7 +402,7 @@ borrow-gns:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test repaying GNS tokens
@@ -421,7 +421,7 @@ repay-gns:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 	# THEN REPAY
@@ -438,7 +438,7 @@ repay-gns:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test liquidating GNS position
@@ -457,7 +457,7 @@ liquidate-gns:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 	# THEN LIQUIDATE
@@ -475,7 +475,7 @@ liquidate-gns:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test supplying collateral to GNS-WUGNOT market
@@ -494,7 +494,7 @@ supply-collateral-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 	# THEN SUPPLY COLLATERAL
@@ -510,7 +510,7 @@ supply-collateral-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
 
 # Test withdrawing collateral from GNS-WUGNOT market
@@ -528,5 +528,5 @@ withdraw-collateral-gns-wugnot:
 		-gas-fee 100000000ugnot \
 		-gas-wanted 1000000000 \
 		-memo "" \
-		gnoswap_admin
+		test1
 	@echo
