@@ -74,8 +74,8 @@ export function DataTable<TData, TValue>({
                     key={header.id} 
                     className={cn(
                       "text-gray-200 h-12",
-                      index === 0 && "rounded-l-3xl",
-                      index === headerGroup.headers.length - 1 && "rounded-r-3xl"
+                      index === 0 && "rounded-l-xl",
+                      index === headerGroup.headers.length - 1 && "rounded-r-xl"
                     )}
                   >
                     {header.isPlaceholder
@@ -103,9 +103,9 @@ export function DataTable<TData, TValue>({
                   <TableCell 
                     key={cell.id} 
                     className={cn(
-                      "text-gray-200",
-                      index === 0 && "rounded-l-3xl",
-                      index === row.getVisibleCells().length - 1 && "rounded-r-3xl"
+                      "text-gray-200 h-18",
+                      index === 0 && "rounded-l-xl",
+                      index === row.getVisibleCells().length - 1 && "rounded-r-xl"
                     )}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

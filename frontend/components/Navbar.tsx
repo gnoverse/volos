@@ -67,7 +67,7 @@ export default function Navbar() {
   };
 
   return (
-    <div className="flex justify-between items-center py-2 px-4">
+    <div className="flex justify-between items-center py-2 pl-50 pr-43">
       {/* Left section with logo and menu */}
       <div className="flex items-center">
         {/* Logo */}
