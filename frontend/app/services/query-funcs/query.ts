@@ -1,9 +1,9 @@
 import { GnoService } from "../abci.service"
+import { parseJsonResult, parseNumberResult, parseStringResult } from "../util"
 
-const REALM_PATH = "gno.land/stefann/gnolend"
+const REALM_PATH = "gno.land/r/gnolend"
 const gnoService = GnoService.getInstance()
 
-// Position Getters
 export async function getPositionSupplyShares(marketId: string, userAddr: string): Promise<string> {
   try {
     const result = await gnoService.evaluateExpression(
@@ -43,7 +43,6 @@ export async function getPositionCollateral(marketId: string, userAddr: string):
   }
 }
 
-// Market Getters
 export async function getMarketTotalSupplyAssets(marketId: string): Promise<string> {
   try {
     const result = await gnoService.evaluateExpression(
@@ -102,11 +101,7 @@ export async function getMarketLastUpdate(marketId: string): Promise<number> {
       REALM_PATH,
       `GetMarketLastUpdate("${marketId}")`,
     )
-    const match = result.match(/\((\d+)\s+int64\)/)
-    if (!match) {
-      throw new Error('Invalid market last update format')
-    }
-    return parseInt(match[1], 10)
+    return parseNumberResult(result)
   } catch (error) {
     console.error('Error fetching market last update:', error)
     throw error
@@ -126,7 +121,6 @@ export async function getMarketFee(marketId: string): Promise<string> {
   }
 }
 
-// Market Params Getters
 export async function getMarketParamsLoanToken(marketId: string): Promise<string> {
   try {
     const result = await gnoService.evaluateExpression(
@@ -192,73 +186,6 @@ export async function getMarketParamsLLTV(marketId: string): Promise<string> {
   }
 }
 
-// List Getters
-export async function getMarketList(): Promise<string[]> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `GetMarketList()`,
-    )
-    return parseStringArrayResult(result)
-  } catch (error) {
-    console.error('Error fetching market list:', error)
-    throw error
-  }
-}
-
-export async function getPositionList(marketId: string): Promise<string[]> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `GetPositionList("${marketId}")`,
-    )
-    return parseStringArrayResult(result)
-  } catch (error) {
-    console.error('Error fetching position list:', error)
-    throw error
-  }
-}
-
-export async function getIRMList(): Promise<string[]> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `GetIRMList()`,
-    )
-    return parseStringArrayResult(result)
-  } catch (error) {
-    console.error('Error fetching IRM list:', error)
-    throw error
-  }
-}
-
-export async function getEnabledIRMList(): Promise<string[]> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `GetEnabledIRMList()`,
-    )
-    return parseStringArrayResult(result)
-  } catch (error) {
-    console.error('Error fetching enabled IRM list:', error)
-    throw error
-  }
-}
-
-export async function getEnabledLLTVList(): Promise<string[]> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `GetEnabledLLTVList()`,
-    )
-    return parseStringArrayResult(result)
-  } catch (error) {
-    console.error('Error fetching enabled LLTV list:', error)
-    throw error
-  }
-}
-
-// Price Getter
 export async function getMarketPrice(marketId: string): Promise<string> {
   try {
     const result = await gnoService.evaluateExpression(
@@ -272,7 +199,6 @@ export async function getMarketPrice(marketId: string): Promise<string> {
   }
 }
 
-// Convenience Getters
 export async function getSupplyShares(marketId: string, userAddr: string): Promise<string> {
   try {
     const result = await gnoService.evaluateExpression(
@@ -312,42 +238,64 @@ export async function getFeeRecipient(): Promise<string> {
   }
 }
 
-// TODO: test these
-
-// Helper functions to parse results
-function parseStringResult(result: string): string {
-  const match = result.match(/\("([^"]+)"\s+string\)/)
-  if (!match) {
-    throw new Error('Invalid string result format')
+export async function apiGetMarket(marketId: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiGetMarket("${marketId}")`,
+    )
+    return parseJsonResult(result)
+  } catch (error) {
+    console.error('Error fetching market API data:', error)
+    throw error
   }
-  return match[1]
 }
 
-function parseStringArrayResult(result: string): string[] {
-  // This handles parsing of a []string result from Gno
-  // Example format: ([]string) [elem1 elem2 elem3]
-  const match = result.match(/\(\[\]string\)\s+\[(.*)\]/)
-  if (!match) {
-    return []
+export async function apiGetMarketParams(marketId: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiGetMarketParams("${marketId}")`,
+    )
+    return parseJsonResult(result)
+  } catch (error) {
+    console.error('Error fetching market params API data:', error)
+    throw error
   }
-  
-  if (!match[1] || match[1].trim() === '') {
-    return []
+}
+
+export async function apiGetPosition(marketId: string, userAddr: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiGetPosition("${marketId}", "${userAddr}")`,
+    )
+    return parseJsonResult(result)
+  } catch (error) {
+    console.error('Error fetching position API data:', error)
+    throw error
   }
-  
-  // Split by spaces but respect quotes
-  const elements: string[] = []
-  const regex = /"([^"]*)"|\S+/g
-  let m
-  
-  while ((m = regex.exec(match[1])) !== null) {
-    // This is necessary to avoid infinite loops with zero-width matches
-    if (m.index === regex.lastIndex) {
-      regex.lastIndex++
-    }
-    
-    elements.push(m[1] || m[0])
+}
+
+export async function apiListMarkets(): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiListMarkets()`,
+    )
+    return parseJsonResult(result)
+  } catch (error) {
+    console.error('Error fetching markets list API data:', error)
+    throw error
   }
-  
-  return elements
+}
+
+export async function getRender(path: string = ""): Promise<string> {
+  try {
+    const rendered = await gnoService.getRender(REALM_PATH, path)
+    return rendered
+  } catch (error) {
+    console.error('Error getting render output:', error)
+    throw error
+  }
 } 
