@@ -56,6 +56,15 @@ export const MarketInfoSchema = z.object({
   supplyRate: Uint256Schema,
   utilization: Uint256Schema,
   
+  // Token information fields
+  loanTokenName: z.string(),
+  loanTokenSymbol: z.string(),
+  loanTokenDecimals: z.number().int(),
+  
+  collateralTokenName: z.string(),
+  collateralTokenSymbol: z.string(),
+  collateralTokenDecimals: z.number().int(),
+  
   marketId: z.string().optional(), //todo when implemented
 });
 

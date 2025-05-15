@@ -111,3 +111,5 @@ export async function getFeeRecipient(): Promise<string> {
   }
 }
 
+// GRC20REG QUERIES
+

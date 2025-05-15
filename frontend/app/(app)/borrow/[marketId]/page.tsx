@@ -85,7 +85,7 @@ function MarketPageContent() {
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6">
       <h1 className="text-[36px] font-bold mb-6 text-gray-200">
-        {market.loanToken} / {market.collateralToken} Market
+        {market.loanTokenSymbol} / {market.collateralTokenSymbol} Market
       </h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 relative">
@@ -95,24 +95,59 @@ function MarketPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
             {/* Market Overview Card */}
             <Card className={CARD_STYLES}>
-              <CardHeader>
-                <CardTitle className="text-gray-200">Market Overview</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-gray-200 flex items-center">
+                  <span>Market Overview</span>
+                  <div className="ml-auto px-3 py-1 bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-800/30 rounded-full text-xs font-medium flex items-center gap-1.5 text-gray-200">
+                    <span className={`w-2 h-2 rounded-full ${market.isToken0Loan ? 'bg-blue-400' : 'bg-purple-400'}`}></span>
+                    {market.isToken0Loan ? "Token0 Loan" : "Token1 Loan"}
+                  </div>
+                </CardTitle>
                 <CardDescription className="text-gray-400">Basic information about the market</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Loan Token</span>
-                  <span className="font-medium text-gray-200">{market.loanToken}</span>
+              <CardContent className="grid gap-3 pt-2">
+                {/* Loan Token */}
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-3">
+                    <span className="text-blue-400 font-bold">{market.loanTokenSymbol.charAt(0)}</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-400">Loan Token</div>
+                    <div className="font-medium text-gray-200 flex items-center">
+                      {market.loanTokenName} 
+                      <span className="ml-1 text-gray-400 text-xs">({market.loanTokenSymbol})</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Collateral Token</span>
-                  <span className="font-medium text-gray-200">{market.collateralToken}</span>
+                
+                {/* Collateral Token */}
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center mr-3">
+                    <span className="text-purple-400 font-bold">{market.collateralTokenSymbol.charAt(0)}</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-400">Collateral Token</div>
+                    <div className="font-medium text-gray-200 flex items-center">
+                      {market.collateralTokenName}
+                      <span className="ml-1 text-gray-400 text-xs">({market.collateralTokenSymbol})</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Price</span>
-                  <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.currentPrice), 18)).toFixed(2)}
-                  </span>
+                
+                {/* Price */}
+                <div className="mt-2 pt-2 border-t border-gray-700/50">
+                  <div className="text-sm text-gray-400 mb-1">Current Price</div>
+                  <div className="flex items-baseline flex-wrap">
+                    <span className="text-lg font-bold text-gray-200 break-all">
+                      {Number(formatUnits(BigInt(market.currentPrice), 18)).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 6
+                      })}
+                    </span>
+                    <span className="ml-2 text-sm text-gray-400">
+                      {market.loanTokenSymbol} per {market.collateralTokenSymbol}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -127,20 +162,19 @@ function MarketPageContent() {
                 <div className="flex justify-between">
                   <span className="text-gray-400">Total Supply</span>
                   <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.totalSupplyAssets), 18)).toFixed(2)}
+                    {Number(formatUnits(BigInt(market.totalSupplyAssets), market.loanTokenDecimals)).toFixed(2)} {market.loanTokenSymbol}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Total Borrow</span>
                   <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.totalBorrowAssets), 18)).toFixed(2)}
+                    {Number(formatUnits(BigInt(market.totalBorrowAssets), market.loanTokenDecimals)).toFixed(2)} {market.loanTokenSymbol}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Utilization</span>
                   <span className="font-medium text-gray-200">
-                    {(Number(formatUnits(BigInt(market.totalBorrowAssets), 18)) / 
-                      Number(formatUnits(BigInt(market.totalSupplyAssets), 18)) * 100).toFixed(2)}%
+                    {Number(formatUnits(BigInt(market.utilization), 18)).toFixed(2)}%
                   </span>
                 </div>
               </CardContent>
@@ -154,9 +188,15 @@ function MarketPageContent() {
               </CardHeader>
               <CardContent className="grid gap-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">APY</span>
+                  <span className="text-gray-400">Borrow APY</span>
                   <span className="font-medium text-gray-200">
-                    {(Number(formatUnits(BigInt(market.borrowRate), 18)) * 100).toFixed(2)}%
+                    {Number(formatUnits(BigInt(market.borrowRate), 18)).toFixed(2)}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Supply APY</span>
+                  <span className="font-medium text-gray-200">
+                    {Number(formatUnits(BigInt(market.supplyRate), 18)).toFixed(2)}%
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -329,7 +369,7 @@ function MarketPageContent() {
             <Card className={CARD_STYLES}>
               <CardHeader className="">
                 <CardTitle className="text-gray-200 text-base font-medium">
-                  Supply Collateral {market.collateralToken}
+                  Supply Collateral {market.collateralTokenSymbol}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -344,7 +384,7 @@ function MarketPageContent() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-400">${supplyValue.toFixed(2)}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">0.00 {market.collateralToken}</span>
+                    <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
                     <button 
                       type="button" 
                       className="text-xs text-blue-500 font-medium"
@@ -361,7 +401,7 @@ function MarketPageContent() {
             <Card className={CARD_STYLES}>
               <CardHeader className="">
                 <CardTitle className="text-gray-200 text-base font-medium">
-                  Borrow {market.loanToken}
+                  Borrow {market.loanTokenSymbol}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -376,7 +416,7 @@ function MarketPageContent() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-400">${borrowValue.toFixed(2)}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">0.00 {market.loanToken}</span>
+                    <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
                     <button 
                       type="button" 
                       className="text-xs text-blue-500 font-medium"
@@ -393,12 +433,12 @@ function MarketPageContent() {
             <Card className={CARD_STYLES}>
               <CardContent className="space-y-4">
                 <div>
-                  <div className="text-sm text-gray-400">My collateral position ({market.collateralToken})</div>
+                  <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
                   <div className="text-xl font-semibold text-gray-200">0.00</div>
                 </div>
                 
                 <div>
-                  <div className="text-sm text-gray-400">My loan position ({market.loanToken})</div>
+                  <div className="text-sm text-gray-400">My loan position ({market.loanTokenSymbol})</div>
                   <div className="text-xl font-semibold text-gray-200">0.00</div>
                 </div>
                 
