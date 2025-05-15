@@ -19,7 +19,7 @@ export type Asset = {
 // Sample data for the table
 export const assets: Asset[] = [
   {
-    id: "eth:usdc:3000",
+    id: "gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/gns:3000",
     loanToken: "r/tokens/eth",
     collateralToken: "r/tokens/usdc",
     loanSymbol: "ETH",
