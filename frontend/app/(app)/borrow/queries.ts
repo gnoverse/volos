@@ -8,18 +8,21 @@ export function useMarketsQuery() {
   return useQuery({
     queryKey: marketsQueryKey,
     queryFn: async (): Promise<MarketInfo[]> => {
-      const response = await apiListMarketsInfo();
+      const marketsArray = await apiListMarketsInfo();
       
-      // Transform the response to match our expected format
-      const marketsWithParams: MarketInfo[] = [];
+      const markets: MarketInfo[] = [];
       
-      for (const marketWrapper of response.markets) {
-        for (const marketInfo of Object.values(marketWrapper)) {
-          marketsWithParams.push(marketInfo);
+      for (const marketWrapper of marketsArray) {
+        for (const [marketId, marketInfo] of Object.entries(marketWrapper)) {
+          // Add marketId to the marketInfo object for reference
+          markets.push({
+            ...marketInfo,
+            marketId
+          });
         }
       }
       
-      return marketsWithParams;
+      return markets;
     },
   });
 } 

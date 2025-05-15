@@ -55,6 +55,8 @@ export const MarketInfoSchema = z.object({
   borrowRate: Uint256Schema,
   supplyRate: Uint256Schema,
   utilization: Uint256Schema,
+  
+  marketId: z.string().optional(), //todo when implemented
 });
 
 export type MarketInfo = z.infer<typeof MarketInfoSchema>;
@@ -91,11 +93,9 @@ export const ApiListMarketsResponseSchema = z.object({
 
 export type ApiListMarketsResponse = z.infer<typeof ApiListMarketsResponseSchema>;
 
-export const ApiListMarketsInfoResponseSchema = z.object({
-  markets: z.array(
-    z.record(z.string(), MarketInfoSchema)
-  ),
-});
+export const ApiListMarketsInfoResponseSchema = z.array(
+  z.record(z.string(), MarketInfoSchema)
+);
 
 export type ApiListMarketsInfoResponse = z.infer<typeof ApiListMarketsInfoResponseSchema>;
 
