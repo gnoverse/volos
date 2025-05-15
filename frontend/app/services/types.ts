@@ -24,14 +24,40 @@ export const MarketSchema = z.object({
 export type Market = z.infer<typeof MarketSchema>;
 
 export const MarketParamsSchema = z.object({
-  loanToken: z.string(),
-  collateralToken: z.string(),
   poolPath: z.string(),
   irm: z.string(),
   lltv: Uint256Schema,
+  isToken0Loan: z.boolean(),
 });
 
 export type MarketParams = z.infer<typeof MarketParamsSchema>;
+
+// Updated to match RpcMarketInfo structure from json.gno
+export const MarketInfoSchema = z.object({
+  // Market fields
+  totalSupplyAssets: Uint256Schema,
+  totalSupplyShares: Uint256Schema,
+  totalBorrowAssets: Uint256Schema,
+  totalBorrowShares: Uint256Schema,
+  lastUpdate: z.number().int(),
+  fee: Uint256Schema,
+  
+  // Params fields
+  poolPath: z.string(),
+  irm: z.string(),
+  lltv: Uint256Schema,
+  isToken0Loan: z.boolean(),
+  
+  // Additional fields
+  loanToken: z.string(),
+  collateralToken: z.string(),
+  currentPrice: z.string(),
+  borrowRate: Uint256Schema,
+  supplyRate: Uint256Schema,
+  utilization: Uint256Schema,
+});
+
+export type MarketInfo = z.infer<typeof MarketInfoSchema>;
 
 export const ApiGetMarketResponseSchema = z.object({
   market: MarketSchema,
@@ -51,6 +77,12 @@ export const ApiGetPositionResponseSchema = z.object({
 
 export type ApiGetPositionResponse = z.infer<typeof ApiGetPositionResponseSchema>;
 
+export const ApiGetMarketInfoResponseSchema = z.object({
+  marketInfo: MarketInfoSchema,
+});
+
+export type ApiGetMarketInfoResponse = z.infer<typeof ApiGetMarketInfoResponseSchema>;
+
 export const ApiListMarketsResponseSchema = z.object({
   markets: z.array(
     z.record(z.string(), MarketSchema)
@@ -59,13 +91,13 @@ export const ApiListMarketsResponseSchema = z.object({
 
 export type ApiListMarketsResponse = z.infer<typeof ApiListMarketsResponseSchema>;
 
-export const MarketWithParamsSchema = z.object({
-  marketId: z.string(),
-  market: MarketSchema,
-  params: MarketParamsSchema,
+export const ApiListMarketsInfoResponseSchema = z.object({
+  markets: z.array(
+    z.record(z.string(), MarketInfoSchema)
+  ),
 });
 
-export type MarketWithParams = z.infer<typeof MarketWithParamsSchema>;
+export type ApiListMarketsInfoResponse = z.infer<typeof ApiListMarketsInfoResponseSchema>;
 
 export function parseAndValidateJson<T>(jsonString: string, schema: z.ZodType<T>): T {
   try {
@@ -93,6 +125,14 @@ export function parseValidatedPosition(jsonString: string): ApiGetPositionRespon
   return parseAndValidateJson(jsonString, ApiGetPositionResponseSchema);
 }
 
+export function parseValidatedMarketInfo(jsonString: string): ApiGetMarketInfoResponse {
+  return parseAndValidateJson(jsonString, ApiGetMarketInfoResponseSchema);
+}
+
 export function parseValidatedMarketsList(jsonString: string): ApiListMarketsResponse {
   return parseAndValidateJson(jsonString, ApiListMarketsResponseSchema);
+}
+
+export function parseValidatedMarketsInfoList(jsonString: string): ApiListMarketsInfoResponse {
+  return parseAndValidateJson(jsonString, ApiListMarketsInfoResponseSchema);
 } 

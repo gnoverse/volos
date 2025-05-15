@@ -8,8 +8,11 @@ import {
   ApiGetPositionResponseSchema,
   ApiListMarketsResponse,
   ApiListMarketsResponseSchema,
-  MarketParams,
-  MarketWithParams,
+  ApiGetMarketInfoResponse,
+  ApiGetMarketInfoResponseSchema,
+  ApiListMarketsInfoResponse,
+  ApiListMarketsInfoResponseSchema,
+  MarketInfo,
 } from "../types"
 import { parseNumberResult, parseStringResult, parseValidatedJsonResult } from "../util"
 
@@ -312,40 +315,50 @@ export async function getRender(path: string = ""): Promise<string> {
   }
 }
 
-export async function getAllMarketsWithParams(): Promise<MarketWithParams[]> {
+export async function apiGetMarketInfo(marketId: string): Promise<ApiGetMarketInfoResponse> {
   try {
-    const marketsResponse = await apiListMarkets();
-    const marketsWithParams: MarketWithParams[] = [];
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiGetMarketInfo("${marketId}")`,
+    )
+    return parseValidatedJsonResult(result, ApiGetMarketInfoResponseSchema)
+  } catch (error) {
+    console.error('Error fetching market info:', error)
+    throw error
+  }
+}
+
+export async function apiListMarketsInfo(): Promise<ApiListMarketsInfoResponse> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiListMarketsInfo()`,
+    )
+    return parseValidatedJsonResult(result, ApiListMarketsInfoResponseSchema)
+  } catch (error) {
+    console.error('Error fetching markets info list:', error)
+    throw error
+  }
+}
+
+export async function getAllMarkets(): Promise<MarketInfo[]> {
+  try {
+    const marketsInfoResponse = await apiListMarketsInfo();
+    const markets: MarketInfo[] = [];
     
-    for (const [marketId, market] of Object.entries(marketsResponse.markets[0])) {
-      try {
-        const loanToken = await getMarketParamsLoanToken(marketId);
-        const collateralToken = await getMarketParamsCollateralToken(marketId);
-        const poolPath = await getMarketParamsPoolPath(marketId);
-        const irm = await getMarketParamsIRM(marketId);
-        const lltv = await getMarketParamsLLTV(marketId);
-        
-        const params: MarketParams = {
-          loanToken,
-          collateralToken,
-          poolPath,
-          irm,
-          lltv
-        };
-        
-        marketsWithParams.push({
-          marketId,
-          market,
-          params
-        });
-      } catch (error) {
-        console.warn(`Skipping market ${marketId} due to error fetching parameters:`, error);
+    for (const marketWrapper of marketsInfoResponse.markets) {
+      for (const marketInfo of Object.values(marketWrapper)) {
+        try {
+          markets.push(marketInfo);
+        } catch (error) {
+          console.warn(`Skipping market due to error:`, error);
+        }
       }
     }
     
-    return marketsWithParams;
+    return markets;
   } catch (error) {
-    console.error('Error fetching all markets with params:', error);
+    console.error('Error fetching all markets:', error);
     throw error;
   }
 } 

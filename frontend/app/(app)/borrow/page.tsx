@@ -55,7 +55,7 @@ function BorrowPageContent() {
       <DataTable 
         columns={columns} 
         data={markets || []} 
-        getRowId={(row) => row.marketId}
+        getRowId={(row) => row.poolPath} //todo change to marketId
         onRowClick={handleRowClick}
       />
     </div>

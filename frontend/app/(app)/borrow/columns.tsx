@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
 import { formatUnits } from "viem"
-import { MarketWithParams } from "@/app/services/types"
+import { MarketInfo } from "@/app/services/types"
 
-export const columns: ColumnDef<MarketWithParams>[] = [
+export const columns: ColumnDef<MarketInfo>[] = [
   {
     accessorKey: "marketId",
     header: () => {
@@ -15,8 +15,8 @@ export const columns: ColumnDef<MarketWithParams>[] = [
       )
     },
     cell: ({ row }) => {
-      const loanSymbol = row.original.params.loanToken
-      const collateralSymbol = row.original.params.collateralToken
+      const loanSymbol = row.original.loanToken
+      const collateralSymbol = row.original.collateralToken
       
       return (
         <div className="flex items-center gap-2 text-left px-3">
@@ -27,7 +27,7 @@ export const columns: ColumnDef<MarketWithParams>[] = [
     },
   },
   {
-    accessorKey: "market.totalSupplyAssets",
+    accessorKey: "totalSupplyAssets",
     header: ({ column }) => {
       return (
         <div className="flex justify-start">
@@ -42,12 +42,12 @@ export const columns: ColumnDef<MarketWithParams>[] = [
       )
     },
     cell: ({ row }) => {
-      const amount = formatUnits(BigInt(row.original.market.totalSupplyAssets), 18)
+      const amount = formatUnits(BigInt(row.original.totalSupplyAssets), 18)
       return <div className="text-left font-medium px-3">{Number(amount).toFixed(2)}</div>
     },
   },
   {
-    accessorKey: "market.totalBorrowAssets",
+    accessorKey: "totalBorrowAssets",
     header: ({ column }) => {
       return (
         <div className="flex justify-start">
@@ -62,7 +62,7 @@ export const columns: ColumnDef<MarketWithParams>[] = [
       )
     },
     cell: ({ row }) => {
-      const amount = formatUnits(BigInt(row.original.market.totalBorrowAssets), 18)
+      const amount = formatUnits(BigInt(row.original.totalBorrowAssets), 18)
       return <div className="text-left font-medium px-3">{Number(amount).toFixed(2)}</div>
     },
   },
@@ -88,12 +88,12 @@ export const columns: ColumnDef<MarketWithParams>[] = [
     },
   },
   {
-    accessorKey: "params.lltv",
+    accessorKey: "lltv",
     header: () => {
       return <div className="text-left">Max LTV</div>
     },
     cell: ({ row }) => {
-      const lltv = formatUnits(BigInt(row.original.params.lltv), 18)
+      const lltv = formatUnits(BigInt(row.original.lltv), 18)
       return <div className="text-left font-medium">{(Number(lltv) * 100).toFixed(0)}%</div>
     },
   },
