@@ -1,10 +1,10 @@
 "use client"
 
+import { MarketInfo } from "@/app/types"
 import { Button } from "@/components/ui/button"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
 import { formatUnits } from "viem"
-import { MarketInfo } from "@/app/services/types"
 
 export const columns: ColumnDef<MarketInfo>[] = [
   {

@@ -10,7 +10,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { columns } from "./columns"
-import { useMarketsQuery } from "./queries"
+import { useMarketsQuery } from "./queries-mutations"
 
 // Create a client
 const queryClient = new QueryClient()

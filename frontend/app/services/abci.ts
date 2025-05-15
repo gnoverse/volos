@@ -1,7 +1,4 @@
-import { GnoService } from "../abci.service"
 import {
-  MarketParams,
-  MarketParamsSchema,
   ApiListMarketsInfoResponse,
   ApiListMarketsInfoResponseSchema,
   ApiListMarketsResponse,
@@ -9,11 +6,14 @@ import {
   Market,
   MarketInfo,
   MarketInfoSchema,
+  MarketParams,
+  MarketParamsSchema,
   MarketSchema,
   Position,
   PositionSchema,
 } from "../types"
 import { parseStringResult, parseValidatedJsonResult } from "../util"
+import { GnoService } from "./abci.service"
 
 const REALM_PATH = "gno.land/r/gnolend"
 const gnoService = GnoService.getInstance()
@@ -110,6 +110,3 @@ export async function getFeeRecipient(): Promise<string> {
     throw error
   }
 }
-
-// GRC20REG QUERIES
-
