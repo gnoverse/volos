@@ -1,6 +1,7 @@
 import { apiGetMarketInfo, apiListMarketsInfo } from "@/app/services/query-funcs/query";
 import { MarketInfo } from "@/app/services/types";
 import { useQuery } from "@tanstack/react-query";
+import { MarketHistory, getHistoryForMarket } from "./mock-history";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
@@ -33,7 +34,17 @@ export function useMarketQuery(marketId: string) {
     queryKey: marketQueryKey(marketId),
     queryFn: async () => {
       const marketInfo = await apiGetMarketInfo(marketId);
-      return marketInfo.marketInfo;
+      return marketInfo;
+    },
+    enabled: !!marketId,
+  });
+}
+
+export function useMarketHistoryQuery(marketId: string) {
+  return useQuery({
+    queryKey: marketHistoryQueryKey(marketId),
+    queryFn: async (): Promise<MarketHistory[]> => {
+      return getHistoryForMarket(marketId);
     },
     enabled: !!marketId,
   });

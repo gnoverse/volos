@@ -61,29 +61,7 @@ export const MarketInfoSchema = z.object({
 
 export type MarketInfo = z.infer<typeof MarketInfoSchema>;
 
-export const ApiGetMarketResponseSchema = z.object({
-  market: MarketSchema,
-});
-
-export type ApiGetMarketResponse = z.infer<typeof ApiGetMarketResponseSchema>;
-
-export const ApiGetMarketParamsResponseSchema = z.object({
-  params: MarketParamsSchema,
-});
-
-export type ApiGetMarketParamsResponse = z.infer<typeof ApiGetMarketParamsResponseSchema>;
-
-export const ApiGetPositionResponseSchema = z.object({
-  position: PositionSchema,
-});
-
-export type ApiGetPositionResponse = z.infer<typeof ApiGetPositionResponseSchema>;
-
-export const ApiGetMarketInfoResponseSchema = z.object({
-  marketInfo: MarketInfoSchema,
-});
-
-export type ApiGetMarketInfoResponse = z.infer<typeof ApiGetMarketInfoResponseSchema>;
+// -------------- listing responses & parsing functions for them
 
 export const ApiListMarketsResponseSchema = z.object({
   markets: z.array(
@@ -111,22 +89,6 @@ export function parseAndValidateJson<T>(jsonString: string, schema: z.ZodType<T>
     }
     throw error;
   }
-}
-
-export function parseValidatedMarket(jsonString: string): ApiGetMarketResponse {
-  return parseAndValidateJson(jsonString, ApiGetMarketResponseSchema);
-}
-
-export function parseValidatedMarketParams(jsonString: string): ApiGetMarketParamsResponse {
-  return parseAndValidateJson(jsonString, ApiGetMarketParamsResponseSchema);
-}
-
-export function parseValidatedPosition(jsonString: string): ApiGetPositionResponse {
-  return parseAndValidateJson(jsonString, ApiGetPositionResponseSchema);
-}
-
-export function parseValidatedMarketInfo(jsonString: string): ApiGetMarketInfoResponse {
-  return parseAndValidateJson(jsonString, ApiGetMarketInfoResponseSchema);
 }
 
 export function parseValidatedMarketsList(jsonString: string): ApiListMarketsResponse {

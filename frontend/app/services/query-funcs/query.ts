@@ -1,56 +1,56 @@
 import { GnoService } from "../abci.service"
 import {
-  ApiGetMarketInfoResponse,
-  ApiGetMarketInfoResponseSchema,
-  ApiGetMarketParamsResponse,
-  ApiGetMarketParamsResponseSchema,
-  ApiGetMarketResponse,
-  ApiGetMarketResponseSchema,
-  ApiGetPositionResponse,
-  ApiGetPositionResponseSchema,
+  MarketParams,
+  MarketParamsSchema,
   ApiListMarketsInfoResponse,
   ApiListMarketsInfoResponseSchema,
   ApiListMarketsResponse,
   ApiListMarketsResponseSchema,
+  Market,
+  MarketInfo,
+  MarketInfoSchema,
+  MarketSchema,
+  Position,
+  PositionSchema,
 } from "../types"
 import { parseStringResult, parseValidatedJsonResult } from "../util"
 
 const REALM_PATH = "gno.land/r/gnolend"
 const gnoService = GnoService.getInstance()
 
-export async function apiGetMarket(marketId: string): Promise<ApiGetMarketResponse> {
+export async function apiGetMarket(marketId: string): Promise<Market> {
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
       `ApiGetMarket("${marketId}")`,
     )
-    return parseValidatedJsonResult(result, ApiGetMarketResponseSchema)
+    return parseValidatedJsonResult(result, MarketSchema)
   } catch (error) {
     console.error('Error fetching market API data:', error)
     throw error
   }
 }
 
-export async function apiGetMarketParams(marketId: string): Promise<ApiGetMarketParamsResponse> {
+export async function apiGetMarketParams(marketId: string): Promise<MarketParams> {
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
       `ApiGetMarketParams("${marketId}")`,
     )
-    return parseValidatedJsonResult(result, ApiGetMarketParamsResponseSchema)
+    return parseValidatedJsonResult(result, MarketParamsSchema)
   } catch (error) {
     console.error('Error fetching market params API data:', error)
     throw error
   }
 }
 
-export async function apiGetPosition(marketId: string, userAddr: string): Promise<ApiGetPositionResponse> {
+export async function apiGetPosition(marketId: string, userAddr: string): Promise<Position> {
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
       `ApiGetPosition("${marketId}", "${userAddr}")`,
     )
-    return parseValidatedJsonResult(result, ApiGetPositionResponseSchema)
+    return parseValidatedJsonResult(result, PositionSchema)
   } catch (error) {
     console.error('Error fetching position API data:', error)
     throw error
@@ -70,13 +70,13 @@ export async function apiListMarkets(): Promise<ApiListMarketsResponse> {
   }
 }
 
-export async function apiGetMarketInfo(marketId: string): Promise<ApiGetMarketInfoResponse> {
+export async function apiGetMarketInfo(marketId: string): Promise<MarketInfo> {
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
       `ApiGetMarketInfo("${marketId}")`,
     )
-    return parseValidatedJsonResult(result, ApiGetMarketInfoResponseSchema)
+    return parseValidatedJsonResult(result, MarketInfoSchema)
   } catch (error) {
     console.error('Error fetching market info:', error)
     throw error
