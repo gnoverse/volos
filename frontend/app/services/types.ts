@@ -59,6 +59,14 @@ export const ApiListMarketsResponseSchema = z.object({
 
 export type ApiListMarketsResponse = z.infer<typeof ApiListMarketsResponseSchema>;
 
+export const MarketWithParamsSchema = z.object({
+  marketId: z.string(),
+  market: MarketSchema,
+  params: MarketParamsSchema,
+});
+
+export type MarketWithParams = z.infer<typeof MarketWithParamsSchema>;
+
 export function parseAndValidateJson<T>(jsonString: string, schema: z.ZodType<T>): T {
   try {
     const parsed = JSON.parse(jsonString);

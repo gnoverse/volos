@@ -9,7 +9,7 @@ import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
-import { MarketChart } from "../components/market-chart"
+import { MarketChart } from "../../../../components/market-chart"
 import { assets } from "../mock"
 import { marketHistory } from "../mock-history"
 

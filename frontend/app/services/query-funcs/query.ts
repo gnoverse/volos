@@ -8,6 +8,8 @@ import {
   ApiGetPositionResponseSchema,
   ApiListMarketsResponse,
   ApiListMarketsResponseSchema,
+  MarketParams,
+  MarketWithParams,
 } from "../types"
 import { parseNumberResult, parseStringResult, parseValidatedJsonResult } from "../util"
 
@@ -307,5 +309,43 @@ export async function getRender(path: string = ""): Promise<string> {
   } catch (error) {
     console.error('Error getting render output:', error)
     throw error
+  }
+}
+
+export async function getAllMarketsWithParams(): Promise<MarketWithParams[]> {
+  try {
+    const marketsResponse = await apiListMarkets();
+    const marketsWithParams: MarketWithParams[] = [];
+    
+    for (const [marketId, market] of Object.entries(marketsResponse.markets[0])) {
+      try {
+        const loanToken = await getMarketParamsLoanToken(marketId);
+        const collateralToken = await getMarketParamsCollateralToken(marketId);
+        const poolPath = await getMarketParamsPoolPath(marketId);
+        const irm = await getMarketParamsIRM(marketId);
+        const lltv = await getMarketParamsLLTV(marketId);
+        
+        const params: MarketParams = {
+          loanToken,
+          collateralToken,
+          poolPath,
+          irm,
+          lltv
+        };
+        
+        marketsWithParams.push({
+          marketId,
+          market,
+          params
+        });
+      } catch (error) {
+        console.warn(`Skipping market ${marketId} due to error fetching parameters:`, error);
+      }
+    }
+    
+    return marketsWithParams;
+  } catch (error) {
+    console.error('Error fetching all markets with params:', error);
+    throw error;
   }
 } 

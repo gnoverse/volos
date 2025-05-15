@@ -7,15 +7,28 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { columns } from "./columns"
-import { Asset, assets } from "./mock"
+import { useMarketsQuery } from "./queries"
 
-export default function BorrowPage() {
+// Create a client
+const queryClient = new QueryClient()
+
+function BorrowPageContent() {
   const router = useRouter()
+  const { data: markets, isLoading, error } = useMarketsQuery()
 
   const handleRowClick = (id: string) => {
     router.push(`/borrow/${id}`)
+  }
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Loading markets data...</div>
+  }
+
+  if (error) {
+    return <div className="text-red-500">Error loading markets: {error.message}</div>
   }
 
   return (
@@ -41,10 +54,18 @@ export default function BorrowPage() {
       <h1 className="text-2xl font-bold mb-6 text-gray-200">Borrow Assets</h1>
       <DataTable 
         columns={columns} 
-        data={assets} 
-        getRowId={(row: Asset) => row.id}
+        data={markets || []} 
+        getRowId={(row) => row.marketId}
         onRowClick={handleRowClick}
       />
     </div>
+  )
+}
+
+export default function BorrowPage() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BorrowPageContent />
+    </QueryClientProvider>
   )
 }
