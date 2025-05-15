@@ -4,22 +4,26 @@ import "@/app/theme.css"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { InfoIcon } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
 import { MarketChart } from "../../../../components/market-chart"
-import { assets } from "../mock"
-import { marketHistory } from "../mock-history"
+import { useMarketHistoryQuery, useMarketQuery } from "../queries"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
-export default function MarketPage() {
+// Create a client
+const queryClient = new QueryClient()
+
+function MarketPageContent() {
   const params = useParams()
   const decodedMarketId = decodeURIComponent(params.marketId as string)
-  const market = assets.find((asset) => asset.id === decodedMarketId)
-  const history = marketHistory[decodedMarketId]
+    
+  const { data: market, isPending: marketLoading, error: marketError } = useMarketQuery(decodedMarketId)
+  const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
 
   const [apyVariations, setApyVariations] = useState({
     sevenDay: 0,
@@ -37,7 +41,7 @@ export default function MarketPage() {
   const borrowAmount = watch("borrowAmount")
 
   const supplyValue = supplyAmount ? 
-    parseFloat(supplyAmount) * Number(formatUnits(BigInt(market?.price || "0"), 18)) : 0
+    parseFloat(supplyAmount) * Number(formatUnits(BigInt(market?.currentPrice || "0"), 18)) : 0
 
   const borrowValue = borrowAmount ? 
     parseFloat(borrowAmount) : 0
@@ -58,12 +62,21 @@ export default function MarketPage() {
   }
 
   useEffect(() => {
-    // todo: get real apy variations from the contract
+    // Generate random variations for demo purposes
+    // In a real app, this would come from the API
     setApyVariations({
       sevenDay: 1 + Math.random() * 0.1,
       ninetyDay: 1 - Math.random() * 0.1
     })
   }, [])
+
+  if (marketLoading || historyLoading) {
+    return <div>Loading market data...</div>
+  }
+
+  if (marketError || historyError) {
+    return <div>Error loading market: {(marketError || historyError)?.message}</div>
+  }
 
   if (!market || !history) {
     return <div>Market not found</div>
@@ -72,7 +85,7 @@ export default function MarketPage() {
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6">
       <h1 className="text-[36px] font-bold mb-6 text-gray-200">
-        {market.loanSymbol} / {market.collateralSymbol} Market
+        {market.loanToken} / {market.collateralToken} Market
       </h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 relative">
@@ -89,16 +102,16 @@ export default function MarketPage() {
               <CardContent className="grid gap-2">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Loan Token</span>
-                  <span className="font-medium text-gray-200">{market.loanSymbol}</span>
+                  <span className="font-medium text-gray-200">{market.loanToken}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Collateral Token</span>
-                  <span className="font-medium text-gray-200">{market.collateralSymbol}</span>
+                  <span className="font-medium text-gray-200">{market.collateralToken}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Price</span>
                   <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.price), 18)).toFixed(2)}
+                    {Number(formatUnits(BigInt(market.currentPrice), 18)).toFixed(2)}
                   </span>
                 </div>
               </CardContent>
@@ -142,7 +155,9 @@ export default function MarketPage() {
               <CardContent className="grid gap-2">
                 <div className="flex justify-between">
                   <span className="text-gray-400">APY</span>
-                  <span className="font-medium text-gray-200">{market.apy}%</span>
+                  <span className="font-medium text-gray-200">
+                    {(Number(formatUnits(BigInt(market.borrowRate), 18)) * 100).toFixed(2)}%
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Max LTV</span>
@@ -204,7 +219,7 @@ export default function MarketPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-200">
-                  {(market.apy * apyVariations.sevenDay).toFixed(2)}%
+                  {(Number(formatUnits(BigInt(market.borrowRate), 18)) * 100 * apyVariations.sevenDay).toFixed(2)}%
                 </div>
               </CardContent>
             </Card>
@@ -215,7 +230,7 @@ export default function MarketPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-200">
-                  {market.apy.toFixed(2)}%
+                  {(Number(formatUnits(BigInt(market.borrowRate), 18)) * 100).toFixed(2)}%
                 </div>
               </CardContent>
             </Card>
@@ -226,7 +241,7 @@ export default function MarketPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-200">
-                  {(market.apy * apyVariations.ninetyDay).toFixed(2)}%
+                  {(Number(formatUnits(BigInt(market.borrowRate), 18)) * 100 * apyVariations.ninetyDay).toFixed(2)}%
                 </div>
               </CardContent>
             </Card>
@@ -314,7 +329,7 @@ export default function MarketPage() {
             <Card className={CARD_STYLES}>
               <CardHeader className="">
                 <CardTitle className="text-gray-200 text-base font-medium">
-                  Supply Collateral {market.collateralSymbol}
+                  Supply Collateral {market.collateralToken}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -329,7 +344,7 @@ export default function MarketPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-400">${supplyValue.toFixed(2)}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">0.00 {market.collateralSymbol}</span>
+                    <span className="text-xs text-gray-400">0.00 {market.collateralToken}</span>
                     <button 
                       type="button" 
                       className="text-xs text-blue-500 font-medium"
@@ -346,7 +361,7 @@ export default function MarketPage() {
             <Card className={CARD_STYLES}>
               <CardHeader className="">
                 <CardTitle className="text-gray-200 text-base font-medium">
-                  Borrow {market.loanSymbol}
+                  Borrow {market.loanToken}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -361,7 +376,7 @@ export default function MarketPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-400">${borrowValue.toFixed(2)}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">0.00 {market.loanSymbol}</span>
+                    <span className="text-xs text-gray-400">0.00 {market.loanToken}</span>
                     <button 
                       type="button" 
                       className="text-xs text-blue-500 font-medium"
@@ -378,12 +393,12 @@ export default function MarketPage() {
             <Card className={CARD_STYLES}>
               <CardContent className="space-y-4">
                 <div>
-                  <div className="text-sm text-gray-400">My collateral position ({market.collateralSymbol})</div>
+                  <div className="text-sm text-gray-400">My collateral position ({market.collateralToken})</div>
                   <div className="text-xl font-semibold text-gray-200">0.00</div>
                 </div>
                 
                 <div>
-                  <div className="text-sm text-gray-400">My loan position ({market.loanSymbol})</div>
+                  <div className="text-sm text-gray-400">My loan position ({market.loanToken})</div>
                   <div className="text-xl font-semibold text-gray-200">0.00</div>
                 </div>
                 
@@ -415,5 +430,13 @@ export default function MarketPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function MarketPage() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MarketPageContent />
+    </QueryClientProvider>
   )
 }

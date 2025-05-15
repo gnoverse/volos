@@ -1,8 +1,10 @@
-import { apiListMarketsInfo } from "@/app/services/query-funcs/query";
+import { apiGetMarketInfo, apiListMarketsInfo } from "@/app/services/query-funcs/query";
 import { MarketInfo } from "@/app/services/types";
 import { useQuery } from "@tanstack/react-query";
 
 export const marketsQueryKey = ["markets"];
+export const marketQueryKey = (marketId: string) => ["market", marketId];
+export const marketHistoryQueryKey = (marketId: string) => ["marketHistory", marketId];
 
 export function useMarketsQuery() {
   return useQuery({
@@ -14,7 +16,6 @@ export function useMarketsQuery() {
       
       for (const marketWrapper of marketsArray) {
         for (const [marketId, marketInfo] of Object.entries(marketWrapper)) {
-          // Add marketId to the marketInfo object for reference
           markets.push({
             ...marketInfo,
             marketId
@@ -25,4 +26,15 @@ export function useMarketsQuery() {
       return markets;
     },
   });
-} 
+}
+
+export function useMarketQuery(marketId: string) {
+  return useQuery({
+    queryKey: marketQueryKey(marketId),
+    queryFn: async () => {
+      const marketInfo = await apiGetMarketInfo(marketId);
+      return marketInfo.marketInfo;
+    },
+    enabled: !!marketId,
+  });
+}

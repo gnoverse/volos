@@ -20,7 +20,7 @@ function BorrowPageContent() {
   const { data: markets, isLoading, error } = useMarketsQuery()
 
   const handleRowClick = (id: string) => {
-    router.push(`/borrow/${id}`)
+    router.push(`/borrow/${encodeURIComponent(id)}`)
   }
 
   if (isLoading) {
