@@ -18,6 +18,8 @@ import { parseStringResult, parseValidatedJsonResult } from "../util"
 const REALM_PATH = "gno.land/r/gnolend"
 const gnoService = GnoService.getInstance()
 
+// GNO LEND API QUERIES
+
 export async function apiGetMarket(marketId: string): Promise<Market> {
   try {
     const result = await gnoService.evaluateExpression(
@@ -108,3 +110,4 @@ export async function getFeeRecipient(): Promise<string> {
     throw error
   }
 }
+
