@@ -1,8 +1,11 @@
+import { z } from "zod"
+
 /**
  * Parses a string result from Gno in the format ("value" string)
  */
 export function parseStringResult(result: string): string {
-  const match = result.match(/\("([^"]+)"\s+string\)/)
+  // More robust regex that can handle strings with any content between quotes
+  const match = result.match(/\("(.*?)"\s+string\)/)
   if (!match) {
     throw new Error('Invalid string result format')
   }
@@ -22,54 +25,45 @@ export function parseNumberResult(result: string): number {
 }
 
 /**
- * Parses a string array result from Gno in the format ([]string) ["elem1" "elem2" "elem3"]
- */
-export function parseStringArrayResult(result: string): string[] {
-  // This handles parsing of a []string result from Gno
-  // Example format: ([]string) [elem1 elem2 elem3]
-  const match = result.match(/\(\[\]string\)\s+\[(.*)\]/)
-  if (!match) {
-    return []
-  }
-  
-  if (!match[1] || match[1].trim() === '') {
-    return []
-  }
-  
-  // Split by spaces but respect quotes
-  const elements: string[] = []
-  const regex = /"([^"]*)"|\S+/g
-  let m
-  
-  while ((m = regex.exec(match[1])) !== null) {
-    // This is necessary to avoid infinite loops with zero-width matches
-    if (m.index === regex.lastIndex) {
-      regex.lastIndex++
-    }
-    
-    elements.push(m[1] || m[0])
-  }
-  
-  return elements
-}
-
-/**
  * Parses a JSON result from Gno in the format ("json_string" string)
  * Handles escaped quotes in the JSON string
  */
 export function parseJsonResult(result: string) {
   try {
-    // Extract the JSON string from the Gno result format
-    const match = result.match(/\("(.*?)"\s+string\)/)
-    if (!match) {
-      throw new Error('Invalid JSON result format')
-    }
-    
-    // The JSON string is inside the quotes and may contain escaped quotes
-    const jsonString = match[1].replace(/\\"/g, '"')
+    const jsonString = parseStringResult(result).replace(/\\"/g, '"')
     return jsonString
   } catch (error) {
     console.error('Error parsing JSON result:', error, 'Raw result:', result)
     throw new Error(`Failed to parse JSON result: ${error}`)
   }
-} 
+}
+
+/**
+ * Parses a JSON result from Gno and returns the parsed object
+ * @param result The raw Gno result string in format ("json_string" string)
+ * @returns The parsed JavaScript object
+ */
+export function parseJsonResultObject<T>(result: string): T {
+  const jsonString = parseJsonResult(result)
+  return JSON.parse(jsonString) as T
+}
+
+/**
+ * Parses a JSON result from Gno and validates it against a Zod schema
+ * @param result The raw Gno result string in format ("json_string" string)
+ * @param schema The Zod schema to validate against
+ * @returns The parsed and validated JavaScript object
+ */
+export function parseValidatedJsonResult<T>(result: string, schema: z.ZodType<T>): T {
+  const jsonString = parseJsonResult(result);
+  try {
+    return schema.parse(JSON.parse(jsonString));
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.error('Zod validation error:', (error as Error).message);
+    } else {
+      console.error('JSON parsing error:', error);
+    }
+    throw new Error(`Failed to validate JSON result: ${error}`);
+  }
+}
