@@ -104,15 +104,12 @@ function MarketPageContent() {
       console.log("Borrowing:", borrowAmount);
     }
     
-    // Handle repay and withdraw
     if (repayAmount && parseFloat(repayAmount) > 0) {
       console.log("Repaying:", repayAmount);
-      // Implement repay functionality
     }
     
     if (withdrawAmount && parseFloat(withdrawAmount) > 0) {
       console.log("Withdrawing:", withdrawAmount);
-      // Implement withdraw functionality
     }
   }
 
@@ -149,9 +146,9 @@ function MarketPageContent() {
         {market.loanTokenSymbol} / {market.collateralTokenSymbol} Market
       </h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 relative">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 relative">
         {/* Left side - market information */}
-        <div className="col-span-1 lg:col-span-3 space-y-6">
+        <div className="col-span-1 lg:col-span-9 space-y-6">
           {/* Market info cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
             {/* Market Overview Card */}
@@ -424,9 +421,9 @@ function MarketPageContent() {
         </div>
 
         {/* Right side - tabbed interface */}
-        <div className="col-span-1 lg:sticky top-6 self-start max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="col-span-1 lg:col-span-3 self-start">
           <Tabs defaultValue="add-borrow" className="w-full">
-            <TabsList className="grid grid-cols-3 mb-4">
+            <TabsList className="mb-4 w-full">
               <TabsTrigger value="add-borrow">Add / Borrow</TabsTrigger>
               <TabsTrigger value="repay-withdraw">Repay / Withdraw</TabsTrigger>
               <TabsTrigger value="supply-only">Supply</TabsTrigger>
