@@ -421,9 +421,9 @@ function MarketPageContent() {
         </div>
 
         {/* Right side - tabbed interface */}
-        <div className="col-span-1 lg:col-span-3 self-start">
-          <Tabs defaultValue="add-borrow" className="w-full">
-            <TabsList className="mb-4 w-full">
+        <div className="col-span-1 lg:col-span-3 lg:sticky top-0 self-start pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+          <Tabs defaultValue="add-borrow" className="w-full sticky top-0 z-10 backdrop-blur-sm">
+            <TabsList className="mb-4 w-full py-2">
               <TabsTrigger value="add-borrow">Add / Borrow</TabsTrigger>
               <TabsTrigger value="repay-withdraw">Repay / Withdraw</TabsTrigger>
               <TabsTrigger value="supply-only">Supply</TabsTrigger>
