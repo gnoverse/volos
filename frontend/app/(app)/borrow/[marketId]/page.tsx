@@ -15,7 +15,6 @@ import { useMarketHistoryQuery, useMarketQuery, useSupplyMutation, useApproveTok
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
-// Create a client
 const queryClient = new QueryClient()
 
 function MarketPageContent() {

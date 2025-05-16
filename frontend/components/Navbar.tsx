@@ -29,8 +29,9 @@ export default function Navbar() {
   };
   
   useEffect(() => {
+    const adenaService = AdenaService.getInstance();
+    
     const checkWalletConnection = async () => {
-      const adenaService = AdenaService.getInstance();
       const connected = adenaService.isConnected();
       setIsConnected(connected);
       
@@ -42,11 +43,28 @@ export default function Navbar() {
       }
     };
     
+    const handleAddressChanged = (event: CustomEvent) => {
+      const { newAddress } = event.detail;
+      if (newAddress) {
+        setIsConnected(true);
+        setWalletAddress(newAddress);
+      } else {
+        setIsConnected(false);
+        setWalletAddress("");
+      }
+    };
+    
     checkWalletConnection();
+    
+    window.addEventListener('adenaAddressChanged', handleAddressChanged as EventListener);
+    
+    return () => {
+      window.removeEventListener('adenaAddressChanged', handleAddressChanged as EventListener);
+    };
   }, []);
   
   const handleWalletConnection = async () => {
-    const adenaService = await AdenaService.getInstance();
+    const adenaService = AdenaService.getInstance();
     
     if (isConnected) {
       adenaService.disconnectWallet();
