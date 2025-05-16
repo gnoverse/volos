@@ -1,17 +1,17 @@
 "use client"
 
 import "@/app/theme.css"
-import { Button } from "@/components/ui/button"
+import { MarketActionForms } from "@/components/market-action-forms"
+import { MarketChart } from "@/components/market-chart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { InfoIcon } from "lucide-react"
 import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
-import { MarketChart } from "../../../../components/market-chart"
-import { useMarketHistoryQuery, useMarketQuery, useSupplyMutation, useApproveTokenMutation } from "../queries-mutations"
+import { useApproveTokenMutation, useMarketHistoryQuery, useMarketQuery, useSupplyMutation } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -24,7 +24,7 @@ function MarketPageContent() {
   const { data: market, isPending: marketLoading, error: marketError } = useMarketQuery(decodedMarketId)
   const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
 
-  const [apyVariations, setApyVariations] = useState({
+  const [apyVariations, ] = useState({
     sevenDay: 0,
     ninetyDay: 0
   })
@@ -32,38 +32,58 @@ function MarketPageContent() {
   const { register, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
       supplyAmount: "",
-      borrowAmount: ""
+      borrowAmount: "",
+      repayAmount: "",
+      withdrawAmount: ""
     }
   })
 
   const supplyAmount = watch("supplyAmount")
   const borrowAmount = watch("borrowAmount")
 
+  const mockExchangeRate = 0.000001
+  
   const supplyValue = supplyAmount ? 
-    parseFloat(supplyAmount) * Number(formatUnits(BigInt(market?.currentPrice || "0"), 18)) : 0
+    parseFloat(supplyAmount) * mockExchangeRate : 0
 
   const borrowValue = borrowAmount ? 
-    parseFloat(borrowAmount) : 0
-
+    parseFloat(borrowAmount) * mockExchangeRate : 0
+    
+  const maxBorrowableAmount = supplyAmount ? 
+    parseFloat(supplyAmount) * 
+    Number(formatUnits(BigInt(market?.currentPrice || "0"), 18)) * 
+    Number(formatUnits(BigInt(market?.lltv || "0"), 18)) : 0
+    
+  const isBorrowValid = !!(borrowAmount && supplyAmount && 
+    parseFloat(borrowAmount) > 0 && 
+    parseFloat(borrowAmount) <= maxBorrowableAmount)
+    
+  const isTransactionValid = !!(
+    (supplyAmount && parseFloat(supplyAmount) > 0) || 
+    isBorrowValid
+  )
+    
   const supplyMutation = useSupplyMutation()
   const approveTokenMutation = useApproveTokenMutation()
 
-  const onSubmit = async (data : { supplyAmount: string }) => {
-    const { supplyAmount } = data;
+  const onSubmit = async (data : { 
+    supplyAmount: string, 
+    borrowAmount: string,
+    repayAmount: string,
+    withdrawAmount: string 
+  }) => {
+    const { supplyAmount, borrowAmount, repayAmount, withdrawAmount } = data;
     
     if (supplyAmount && parseFloat(supplyAmount) > 0) {
       try {
-        // Get the collateral token path from the market data
-        const collateralTokenPath = market?.collateralToken;
+        const loanTokenPath = market?.loanToken;
         const approvalAmount = parseFloat(supplyAmount);
         
-        // Approve the token first
         await approveTokenMutation.mutateAsync({
-          tokenPath: collateralTokenPath!,
-          amount: approvalAmount
+          tokenPath: loanTokenPath!,
+          amount: approvalAmount *2
         });
-        
-        // Then supply to the market
+                
         supplyMutation.mutate({
           marketId: decodedMarketId,
           assets: parseFloat(supplyAmount)
@@ -79,6 +99,21 @@ function MarketPageContent() {
         console.error(`Failed to approve token: ${(error as Error).message}`);
       }
     }
+    
+    if (borrowAmount && parseFloat(borrowAmount) > 0 && isBorrowValid) {
+      console.log("Borrowing:", borrowAmount);
+    }
+    
+    // Handle repay and withdraw
+    if (repayAmount && parseFloat(repayAmount) > 0) {
+      console.log("Repaying:", repayAmount);
+      // Implement repay functionality
+    }
+    
+    if (withdrawAmount && parseFloat(withdrawAmount) > 0) {
+      console.log("Withdrawing:", withdrawAmount);
+      // Implement withdraw functionality
+    }
   }
 
   const handleMaxSupply = () => {
@@ -87,20 +122,14 @@ function MarketPageContent() {
   }
 
   const handleMaxBorrow = () => {
-    // todo: set true maximum value according to the user's balance
-    setValue("borrowAmount", "500.00")
+    if (supplyAmount && parseFloat(supplyAmount) > 0) {
+      setValue("borrowAmount", maxBorrowableAmount.toFixed(2))
+    } else {
+      setValue("borrowAmount", "0.00")
+    }
   }
 
   const isTransactionPending = supplyMutation.isPending
-
-  useEffect(() => {
-    // Generate random variations for demo purposes
-    // In a real app, this would come from the API
-    setApyVariations({
-      sevenDay: 1 + Math.random() * 0.1,
-      ninetyDay: 1 - Math.random() * 0.1
-    })
-  }, [])
 
   if (marketLoading || historyLoading) {
     return <div>Loading market data...</div>
@@ -394,115 +423,78 @@ function MarketPageContent() {
           </div>
         </div>
 
-        {/* Right side - input cards */}
+        {/* Right side - tabbed interface */}
         <div className="col-span-1 lg:sticky top-6 self-start max-h-[calc(100vh-4rem)] overflow-y-auto">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Supply Card */}
-            <Card className={CARD_STYLES}>
-              <CardHeader className="">
-                <CardTitle className="text-gray-200 text-base font-medium">
-                  Supply Collateral {market.collateralTokenSymbol}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Input
-                  type="number"
-                  {...register("supplyAmount", { 
-                    pattern: /^[0-9]*\.?[0-9]*$/
-                  })}
-                  className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-                  placeholder="0.00"
-                />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">${supplyValue.toFixed(2)}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
-                    <button 
-                      type="button" 
-                      className="text-xs text-blue-500 font-medium"
-                      onClick={handleMaxSupply}
-                    >
-                      MAX
-                    </button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Borrow Card */}
-            <Card className={CARD_STYLES}>
-              <CardHeader className="">
-                <CardTitle className="text-gray-200 text-base font-medium">
-                  Borrow {market.loanTokenSymbol}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Input
-                  type="number"
-                  {...register("borrowAmount", { 
-                    pattern: /^[0-9]*\.?[0-9]*$/
-                  })}
-                  className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-                  placeholder="0.00"
-                />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">${borrowValue.toFixed(2)}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
-                    <button 
-                      type="button" 
-                      className="text-xs text-blue-500 font-medium"
-                      onClick={handleMaxBorrow}
-                    >
-                      MAX
-                    </button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Position Card */}
-            <Card className={CARD_STYLES}>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
-                  <div className="text-xl font-semibold text-gray-200">0.00</div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-gray-400">My loan position ({market.loanTokenSymbol})</div>
-                  <div className="text-xl font-semibold text-gray-200">0.00</div>
-                </div>
-                
-                <div>
-                  <div className="text-sm text-gray-400">LTV / Liquidation LTV</div>
-                  <div className="text-xl font-semibold text-gray-200">
-                    0% / {(Number(formatUnits(BigInt(market.lltv), 18)) * 100).toFixed(0)}%
-                  </div>
-                  
-                  <div className="mt-2 relative">
-                    <div className="h-2 bg-gray-600 rounded-full w-full"></div>
-                    <div className="absolute left-0 top-0 w-1/2 h-full opacity-0">
-                      <div className="absolute left-0 -top-1 h-4 w-4 bg-white rounded-full"></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Submit Button */}
-            <Button
-              type="submit" 
-              className="w-full shadow-lg text-gray-200 rounded-2xl bg-midnightPurple-900 hover:bg-gradient-to-tr hover:from-midnightPurple-900 hover:to-midnightPurple-800 transition-all duration-300 text-md relative overflow-hidden hover:before:absolute hover:before:inset-0 hover:before:bg-gradient-to-tr hover:before:from-transparent hover:before:to-white/5 hover:before:animate-shine"
-              disabled={(!supplyAmount && !borrowAmount) || isTransactionPending}
-            >
-              {isTransactionPending 
-                ? "Processing..." 
-                : (!supplyAmount && !borrowAmount 
-                    ? "Enter an amount" 
-                    : "Submit Transaction")}
-            </Button>
-          </form>
+          <Tabs defaultValue="add-borrow" className="w-full">
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="add-borrow">Add / Borrow</TabsTrigger>
+              <TabsTrigger value="repay-withdraw">Repay / Withdraw</TabsTrigger>
+              <TabsTrigger value="supply-only">Supply</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="add-borrow">
+              <MarketActionForms 
+                market={market}
+                formType="add-borrow"
+                onSubmitAction={onSubmit}
+                supplyAmount={supplyAmount}
+                borrowAmount={borrowAmount}
+                supplyValue={supplyValue}
+                borrowValue={borrowValue}
+                maxBorrowableAmount={maxBorrowableAmount}
+                isBorrowValid={isBorrowValid}
+                isTransactionValid={isTransactionValid}
+                isTransactionPending={isTransactionPending}
+                handleMaxSupplyAction={handleMaxSupply}
+                handleMaxBorrowAction={handleMaxBorrow}
+                registerAction={register}
+                setValue={setValue}
+                handleSubmitAction={handleSubmit}
+              />
+            </TabsContent>
+            
+            <TabsContent value="repay-withdraw">
+              <MarketActionForms 
+                market={market}
+                formType="repay-withdraw"
+                onSubmitAction={onSubmit}
+                supplyAmount={supplyAmount}
+                borrowAmount={borrowAmount}
+                supplyValue={supplyValue}
+                borrowValue={borrowValue}
+                maxBorrowableAmount={maxBorrowableAmount}
+                isBorrowValid={isBorrowValid}
+                isTransactionValid={isTransactionValid}
+                isTransactionPending={isTransactionPending}
+                handleMaxSupplyAction={handleMaxSupply}
+                handleMaxBorrowAction={handleMaxBorrow}
+                registerAction={register}
+                setValue={setValue}
+                handleSubmitAction={handleSubmit}
+              />
+            </TabsContent>
+            
+            <TabsContent value="supply-only">
+              <MarketActionForms 
+                market={market}
+                formType="supply-only"
+                onSubmitAction={onSubmit}
+                supplyAmount={supplyAmount}
+                borrowAmount={borrowAmount}
+                supplyValue={supplyValue}
+                borrowValue={borrowValue}
+                maxBorrowableAmount={maxBorrowableAmount}
+                isBorrowValid={isBorrowValid}
+                isTransactionValid={isTransactionValid}
+                isTransactionPending={isTransactionPending}
+                handleMaxSupplyAction={handleMaxSupply}
+                handleMaxBorrowAction={handleMaxBorrow}
+                registerAction={register}
+                setValue={setValue}
+                handleSubmitAction={handleSubmit}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
