@@ -32,7 +32,21 @@ export default function Navbar() {
     const adenaService = AdenaService.getInstance();
     
     const checkWalletConnection = async () => {
-      const connected = adenaService.isConnected();
+      let connected = adenaService.isConnected();
+      
+      if (connected) {
+        try {
+          const account = await adenaService.getSdk().getAccount();
+          if (!account?.data?.address) {
+            adenaService.disconnectWallet();
+            connected = false;
+          }
+        } catch {
+          adenaService.disconnectWallet();
+          connected = false;
+        }
+      }
+      
       setIsConnected(connected);
       
       if (connected) {
@@ -85,7 +99,7 @@ export default function Navbar() {
   };
 
   return (
-    <div className="flex justify-between items-center py-2 pl-50 pr-43">
+    <div className="flex justify-between items-center py-2 pl-40 pr-36">
       {/* Left section with logo and menu */}
       <div className="flex items-center">
         {/* Logo */}
