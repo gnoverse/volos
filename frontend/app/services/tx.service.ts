@@ -1,4 +1,4 @@
-import { BroadcastType, TransactionBuilder, makeMsgCallMessage } from "@adena-wallet/sdk";
+import { BroadcastType, TransactionBuilder, makeMsgCallMessage, makeMsgRunMessage } from "@adena-wallet/sdk";
 import { AdenaService } from './adena.service';
 
 const GAS_WANTED = 50000000;
@@ -34,7 +34,7 @@ export class TxService {
             args: [marketId, assets.toString(), shares.toString()]
           })
         )
-        .fee(1000000, 'ugnot')
+        .fee(100000, 'ugnot')
         .gasWanted(GAS_WANTED)
         .memo("")
         .build();
@@ -444,6 +444,64 @@ export class TxService {
       return response;
     } catch (error) {
       console.error("Error setting fee recipient:", error);
+      throw error;
+    }
+  }
+
+  public async approveToken(tokenPath: string, amount: number) {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    const gnoPackage = {
+      name: "main",
+      path: "",
+      files: [
+        {
+          name: "main.gno",
+          body: `package main
+
+import (
+    "std"
+    "gno.land/r/demo/grc20reg"
+)
+
+func main() {
+    gnolendAddr := std.DerivePkgAddr("${this.GNOLEND_PKG_PATH}")
+    tokenGetter := grc20reg.Get("${tokenPath}")
+    token := tokenGetter()
+    teller := token.CallerTeller()
+    teller.Approve(gnolendAddr, ${amount})
+}`
+        }
+      ]
+    };
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgRunMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            package: gnoPackage
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error approving token:", error);
       throw error;
     }
   }

@@ -53,6 +53,28 @@ export function useMarketHistoryQuery(marketId: string) {
 
 // mutations ------------------------------------------------------------
 
+export function useApproveTokenMutation() {
+  const txService = TxService.getInstance();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      tokenPath, 
+      amount 
+    }: { 
+      tokenPath: string; 
+      amount: number;
+    }) => {
+      return txService.approveToken(tokenPath, amount);
+    },
+    onError: (error) => {
+      console.error("Token approval failed:", error);
+    },
+    onSuccess: (data) => {
+      console.log("Token approval successful:", data);
+    }
+  });
+}
+
 export function useSupplyMutation() {
   const queryClient = useQueryClient();
   const txService = TxService.getInstance();

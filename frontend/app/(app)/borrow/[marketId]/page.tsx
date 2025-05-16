@@ -11,7 +11,7 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
 import { MarketChart } from "../../../../components/market-chart"
-import { useMarketHistoryQuery, useMarketQuery, useSupplyMutation } from "../queries-mutations"
+import { useMarketHistoryQuery, useMarketQuery, useSupplyMutation, useApproveTokenMutation } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -47,22 +47,38 @@ function MarketPageContent() {
     parseFloat(borrowAmount) : 0
 
   const supplyMutation = useSupplyMutation()
+  const approveTokenMutation = useApproveTokenMutation()
 
-  const onSubmit = (data : { supplyAmount: string }) => {
+  const onSubmit = async (data : { supplyAmount: string }) => {
     const { supplyAmount } = data;
     
     if (supplyAmount && parseFloat(supplyAmount) > 0) {
-      supplyMutation.mutate({
-        marketId: decodedMarketId,
-        assets: parseFloat(supplyAmount)
-      }, {
-        onSuccess: () => {
-          setValue("supplyAmount", "");
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to supply: ${error.message}`);
-        }
-      });
+      try {
+        // Get the collateral token path from the market data
+        const collateralTokenPath = market?.collateralToken;
+        const approvalAmount = parseFloat(supplyAmount);
+        
+        // Approve the token first
+        await approveTokenMutation.mutateAsync({
+          tokenPath: collateralTokenPath!,
+          amount: approvalAmount
+        });
+        
+        // Then supply to the market
+        supplyMutation.mutate({
+          marketId: decodedMarketId,
+          assets: parseFloat(supplyAmount)
+        }, {
+          onSuccess: () => {
+            setValue("supplyAmount", "");
+          },
+          onError: (error: Error) => {
+            console.error(`Failed to supply: ${error.message}`);
+          }
+        });
+      } catch (error) {
+        console.error(`Failed to approve token: ${(error as Error).message}`);
+      }
     }
   }
 
