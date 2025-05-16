@@ -18,17 +18,6 @@ const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 const queryClient = new QueryClient()
 
 function MarketPageContent() {
-  const params = useParams()
-  const decodedMarketId = decodeURIComponent(params.marketId as string)
-    
-  const { data: market, isPending: marketLoading, error: marketError } = useMarketQuery(decodedMarketId)
-  const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
-
-  const [apyVariations, ] = useState({
-    sevenDay: 0,
-    ninetyDay: 0
-  })
-
   const { register, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
       supplyAmount: "",
@@ -37,6 +26,16 @@ function MarketPageContent() {
       withdrawAmount: ""
     }
   })
+    const [apyVariations, ] = useState({
+    sevenDay: 0,
+    ninetyDay: 0
+  })
+  const params = useParams()
+  const supplyMutation = useSupplyMutation()
+  const approveTokenMutation = useApproveTokenMutation()
+  const decodedMarketId = decodeURIComponent(params.marketId as string)
+  const { data: market, isPending: marketLoading, error: marketError } = useMarketQuery(decodedMarketId)
+  const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
 
   const supplyAmount = watch("supplyAmount")
   const borrowAmount = watch("borrowAmount")
@@ -62,9 +61,6 @@ function MarketPageContent() {
     (supplyAmount && parseFloat(supplyAmount) > 0) || 
     isBorrowValid
   )
-    
-  const supplyMutation = useSupplyMutation()
-  const approveTokenMutation = useApproveTokenMutation()
 
   const onSubmit = async (data : { 
     supplyAmount: string, 
