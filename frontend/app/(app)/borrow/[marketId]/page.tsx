@@ -7,24 +7,33 @@ import {
   formatUtilization,
 } from "@/app/format.utils"
 import "@/app/theme.css"
+import { InfoCard } from "@/components/InfoCard"
 import { MarketActionForms } from "@/components/market-action-forms"
 import { MarketChart } from "@/components/market-chart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { InfoIcon } from "lucide-react"
 import { useParams } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
+import {
+  borrowValue,
+  healthFactor,
+  isBorrowValid,
+  maxBorrowableAmount,
+  supplyValue
+} from "../mock"
 import { useApproveTokenMutation, useMarketHistoryQuery, useMarketQuery, useSupplyMutation } from "../queries-mutations"
+import { handleMaxBorrow, handleMaxSupply } from "./handlers"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
 const queryClient = new QueryClient()
 
 function MarketPageContent() {
-  const { register, handleSubmit, setValue, watch } = useForm({
+  const [tab, setTab] = useState("add-borrow")
+  const { register, handleSubmit, setValue, watch, reset } = useForm({
     defaultValues: {
       supplyAmount: "",
       borrowAmount: "",
@@ -32,7 +41,7 @@ function MarketPageContent() {
       withdrawAmount: ""
     }
   })
-    const [apyVariations, ] = useState({
+  const [apyVariations, ] = useState({
     sevenDay: 0,
     ninetyDay: 0
   })
@@ -46,23 +55,6 @@ function MarketPageContent() {
   const supplyAmount = watch("supplyAmount")
   const borrowAmount = watch("borrowAmount")
 
-  const mockExchangeRate = 0.000001
-  
-  const supplyValue = supplyAmount ? 
-    parseFloat(supplyAmount) * mockExchangeRate : 0
-
-  const borrowValue = borrowAmount ? 
-    parseFloat(borrowAmount) * mockExchangeRate : 0
-    
-  const maxBorrowableAmount = supplyAmount ? 
-    parseFloat(supplyAmount) * 
-    Number(formatUnits(BigInt(market?.currentPrice || "0"), 18)) * 
-    Number(formatUnits(BigInt(market?.lltv || "0"), 18)) : 0
-    
-  const isBorrowValid = !!(borrowAmount && supplyAmount && 
-    parseFloat(borrowAmount) > 0 && 
-    parseFloat(borrowAmount) <= maxBorrowableAmount)
-    
   const isTransactionValid = !!(
     (supplyAmount && parseFloat(supplyAmount) > 0) || 
     isBorrowValid
@@ -115,20 +107,11 @@ function MarketPageContent() {
     }
   }
 
-  const handleMaxSupply = () => {
-    // todo: set true maximum value according to the user's balance (maybe use tokenhub)
-    setValue("supplyAmount", "1000.00")
-  }
-
-  const handleMaxBorrow = () => {
-    if (supplyAmount && parseFloat(supplyAmount) > 0) {
-      setValue("borrowAmount", maxBorrowableAmount.toFixed(2))
-    } else {
-      setValue("borrowAmount", "0.00")
-    }
-  }
-
   const isTransactionPending = supplyMutation.isPending
+
+  useEffect(() => {
+    reset()
+  }, [tab, reset])
 
   if (marketLoading || historyLoading) {
     return <div>Loading market data...</div>
@@ -342,118 +325,24 @@ function MarketPageContent() {
 
           {/* Performance Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className={CARD_STYLES}>
-              <CardHeader>
-                <CardTitle className="text-gray-200">7D APY</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-200">
-                  {formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100 * apyVariations.sevenDay), 0)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className={CARD_STYLES}>
-              <CardHeader>
-                <CardTitle className="text-gray-200">30D APY</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-200">
-                  {formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100), 0)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className={CARD_STYLES}>
-              <CardHeader>
-                <CardTitle className="text-gray-200">90D APY</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-200">
-                  {formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100 * apyVariations.ninetyDay), 0)}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Risk Section */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-200">Risk</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className={CARD_STYLES}>
-                <CardHeader>
-                  <CardTitle className="text-gray-200 flex items-center gap-2">
-                    Risk Rating by Credora ®
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-400">Has not been rated yet</div>
-                </CardContent>
-              </Card>
-
-              <Card className={CARD_STYLES}>
-                <CardHeader>
-                  <CardTitle className="text-gray-200">Curator TVL</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-200 text-2xl font-bold">$578.40M</div>
-                </CardContent>
-              </Card>
-
-              <Card className={CARD_STYLES}>
-                <CardHeader>
-                  <CardTitle className="text-gray-200">Vault Deployment Date</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-200">15/03/2024</div>
-                </CardContent>
-              </Card>
-
-              <Card className={CARD_STYLES}>
-                <CardHeader>
-                  <CardTitle className="text-gray-200">Owner</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-200 font-mono">0x3300...f8c4</div>
-                </CardContent>
-              </Card>
-
-              <Card className={CARD_STYLES}>
-                <CardHeader>
-                  <CardTitle className="text-gray-200">Curator Address</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-200 font-mono">0x0000...0000</div>
-                </CardContent>
-              </Card>
-
-              <Card className={CARD_STYLES}>
-                <CardHeader>
-                  <CardTitle className="text-gray-200">Timelock / Guardian</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-gray-200">1D / 0x0000...0000</div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Disclosures Section */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-200 flex items-center gap-2">
-              Disclosures <InfoIcon className="h-4 w-4 text-gray-400" />
-            </h2>
-            <Card className={CARD_STYLES}>
-              <CardContent className="">
-                <p className="text-gray-400">Curator has not submitted a Disclosure.</p>
-              </CardContent>
-            </Card>
+            <InfoCard
+              title="7D APY"
+              value={formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100 * apyVariations.sevenDay), 0)}
+            />
+            <InfoCard
+              title="30D APY"
+              value={formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100), 0)}
+            />
+            <InfoCard
+              title="90D APY"
+              value={formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100 * apyVariations.ninetyDay), 0)}
+            />
           </div>
         </div>
 
         {/* Right side - tabbed interface */}
         <div className="col-span-1 lg:col-span-3 lg:sticky top-0 self-start pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-          <Tabs defaultValue="add-borrow" className="w-full sticky top-0 z-10 backdrop-blur-sm">
+          <Tabs value={tab} onValueChange={setTab} className="w-full sticky top-0 z-10 backdrop-blur-sm">
             <TabsList className="mb-4 w-full py-2">
               <TabsTrigger value="add-borrow">Add / Borrow</TabsTrigger>
               <TabsTrigger value="repay-withdraw">Repay / Withdraw</TabsTrigger>
@@ -473,11 +362,13 @@ function MarketPageContent() {
                 isBorrowValid={isBorrowValid}
                 isTransactionValid={isTransactionValid}
                 isTransactionPending={isTransactionPending}
-                handleMaxSupplyAction={handleMaxSupply}
-                handleMaxBorrowAction={handleMaxBorrow}
+                handleMaxSupplyAction={() => handleMaxSupply(setValue)}
+                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, maxBorrowableAmount)}
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
+                healthFactor={healthFactor}
+                watch={watch}
               />
             </TabsContent>
             
@@ -494,11 +385,13 @@ function MarketPageContent() {
                 isBorrowValid={isBorrowValid}
                 isTransactionValid={isTransactionValid}
                 isTransactionPending={isTransactionPending}
-                handleMaxSupplyAction={handleMaxSupply}
-                handleMaxBorrowAction={handleMaxBorrow}
+                handleMaxSupplyAction={() => handleMaxSupply(setValue)}
+                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, maxBorrowableAmount)}
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
+                healthFactor={healthFactor}
+                watch={watch}
               />
             </TabsContent>
             
@@ -515,11 +408,13 @@ function MarketPageContent() {
                 isBorrowValid={isBorrowValid}
                 isTransactionValid={isTransactionValid}
                 isTransactionPending={isTransactionPending}
-                handleMaxSupplyAction={handleMaxSupply}
-                handleMaxBorrowAction={handleMaxBorrow}
+                handleMaxSupplyAction={() => handleMaxSupply(setValue)}
+                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, maxBorrowableAmount)}
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
+                healthFactor={healthFactor}
+                watch={watch}
               />
             </TabsContent>
           </Tabs>

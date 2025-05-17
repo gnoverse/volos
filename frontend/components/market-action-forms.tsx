@@ -4,8 +4,7 @@ import { MarketInfo } from "@/app/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { UseFormHandleSubmit, UseFormRegister, UseFormSetValue } from "react-hook-form"
-import { formatUnits } from "viem"
+import { UseFormHandleSubmit, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -33,6 +32,10 @@ interface MarketActionFormsProps {
   registerAction: UseFormRegister<FormValues>
   setValue: UseFormSetValue<FormValues>
   handleSubmitAction: UseFormHandleSubmit<FormValues>
+  healthFactor: string
+  currentCollateral?: number
+  currentLoan?: number
+  watch: UseFormWatch<FormValues>
 }
 
 export function MarketActionForms({
@@ -50,7 +53,11 @@ export function MarketActionForms({
   handleMaxSupplyAction,
   handleMaxBorrowAction,
   registerAction,
-  handleSubmitAction
+  handleSubmitAction,
+  healthFactor,
+  currentCollateral = 0,
+  currentLoan = 0,
+  watch
 }: MarketActionFormsProps) {
   
   if (formType === "add-borrow") {
@@ -76,13 +83,15 @@ export function MarketActionForms({
               <span className="text-sm text-gray-400">${supplyValue.toFixed(2)}</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
-                <button 
-                  type="button" 
-                  className="text-xs text-blue-500 font-medium"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
                   onClick={handleMaxSupplyAction}
                 >
                   MAX
-                </button>
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -108,13 +117,15 @@ export function MarketActionForms({
               <span className="text-sm text-gray-400">${borrowValue.toFixed(2)}</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
-                <button 
-                  type="button" 
-                  className="text-xs text-blue-500 font-medium"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
                   onClick={handleMaxBorrowAction}
                 >
                   MAX
-                </button>
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -127,6 +138,9 @@ export function MarketActionForms({
           borrowAmount={borrowAmount}
           maxBorrowableAmount={maxBorrowableAmount}
           isBorrowValid={isBorrowValid}
+          healthFactor={healthFactor}
+          currentCollateral={currentCollateral}
+          currentLoan={currentLoan}
         />
 
         {/* Submit Button */}
@@ -168,12 +182,15 @@ export function MarketActionForms({
               <span className="text-sm text-gray-400">$0.00</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
-                <button 
-                  type="button" 
-                  className="text-xs text-blue-500 font-medium"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
+                  onClick={handleMaxBorrowAction}
                 >
                   MAX
-                </button>
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -199,12 +216,15 @@ export function MarketActionForms({
               <span className="text-sm text-gray-400">$0.00</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
-                <button 
-                  type="button" 
-                  className="text-xs text-blue-500 font-medium"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
+                  onClick={handleMaxBorrowAction}
                 >
                   MAX
-                </button>
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -215,8 +235,13 @@ export function MarketActionForms({
           market={market}
           supplyAmount={supplyAmount}
           borrowAmount={borrowAmount}
+          repayAmount={watch("repayAmount") || ""}
+          withdrawAmount={watch("withdrawAmount") || ""}
           maxBorrowableAmount={maxBorrowableAmount}
           isBorrowValid={isBorrowValid}
+          healthFactor={healthFactor}
+          currentCollateral={currentCollateral}
+          currentLoan={currentLoan}
         />
 
         {/* Submit Button */}
@@ -252,13 +277,14 @@ export function MarketActionForms({
               <span className="text-sm text-gray-400">${supplyValue.toFixed(2)}</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
-                <button 
-                  type="button" 
-                  className="text-xs text-blue-500 font-medium"
-                  onClick={handleMaxSupplyAction}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
                 >
                   MAX
-                </button>
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -285,57 +311,74 @@ interface PositionCardProps {
   market: MarketInfo
   supplyAmount: string
   borrowAmount: string
+  repayAmount?: string
+  withdrawAmount?: string
   maxBorrowableAmount: number
   isBorrowValid: boolean
+  healthFactor: string
+  currentCollateral: number
+  currentLoan: number
 }
 
-function PositionCard({ market, supplyAmount, borrowAmount, maxBorrowableAmount, isBorrowValid }: PositionCardProps) {
+function PositionCard({
+  market,
+  supplyAmount,
+  borrowAmount,
+  repayAmount,
+  withdrawAmount,
+  currentCollateral,
+  currentLoan,
+  isBorrowValid,
+  healthFactor
+}: PositionCardProps) {
+  const supplyDelta = parseFloat(supplyAmount || "0")
+  const borrowDelta = parseFloat(borrowAmount || "0")
+  const repayDelta = parseFloat(repayAmount || "0")
+  const withdrawDelta = parseFloat(withdrawAmount || "0")
+
+  const projectedCollateral = currentCollateral + supplyDelta - withdrawDelta
+  const projectedLoan = currentLoan + borrowDelta - repayDelta
+
   return (
     <Card className={CARD_STYLES}>
       <CardContent className="space-y-4">
         <div>
           <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
-          <div className="text-xl font-semibold text-gray-200">0.00</div>
+          <div className="text-xl font-semibold text-gray-200">
+            {currentCollateral.toFixed(2)}
+            {(supplyDelta > 0 || withdrawDelta > 0) && (
+              <>
+                {" "}
+                <span className="text-gray-400">→</span>{" "}
+                <span className="text-green-300">{projectedCollateral.toFixed(0)}</span>
+              </>
+            )}
+          </div>
         </div>
         
         <div>
           <div className="text-sm text-gray-400">My loan position ({market.loanTokenSymbol})</div>
-          <div className="text-xl font-semibold text-gray-200">0.00</div>
+          <div className="text-xl font-semibold text-gray-200">
+            {currentLoan.toFixed(2)}
+            {(borrowDelta > 0 || repayDelta > 0) && (
+              <>
+                {" "}
+                <span className="text-gray-400">→</span>{" "}
+                <span className="text-red-400">{projectedLoan.toFixed(0)}</span>
+              </>
+            )}
+          </div>
         </div>
         
         <div>
-          <div className="text-sm text-gray-400">LTV / Liquidation LTV</div>
+          <div className="text-sm text-gray-400">Health Factor</div>
           <div className="text-xl font-semibold text-gray-200">
-            {borrowAmount && supplyAmount ? 
-              ((parseFloat(borrowAmount) / (parseFloat(supplyAmount) * Number(formatUnits(BigInt(market.currentPrice || "0"), 18)))) * 100).toFixed(2) : 
-              "0"}% / {(Number(formatUnits(BigInt(market.lltv), 18)) * 100).toFixed(0)}%
-          </div>
-          
-          <div className="mt-2 relative">
-            <div className="h-2 bg-gray-600 rounded-full w-full"></div>
-            <div 
-              className={`absolute left-0 top-0 h-full ${borrowAmount && supplyAmount ? 'bg-blue-500' : ''} rounded-full`} 
-              style={{ 
-                width: borrowAmount && supplyAmount ? 
-                  `${Math.min(100, (parseFloat(borrowAmount) / (parseFloat(supplyAmount) * Number(formatUnits(BigInt(market.currentPrice || "0"), 18)))) / (Number(formatUnits(BigInt(market.lltv), 18))) * 100)}%` : 
-                  '0%',
-                opacity: borrowAmount && supplyAmount ? 1 : 0
-              }}
-            >
-              <div className="absolute right-0 -top-1 h-4 w-4 bg-white rounded-full"></div>
-            </div>
+            {healthFactor}
           </div>
         </div>
-        
         {borrowAmount && parseFloat(borrowAmount) > 0 && !isBorrowValid && (
           <div className="text-red-500 text-sm">
             Insufficient collateral for this borrow amount
-          </div>
-        )}
-        
-        {supplyAmount && parseFloat(supplyAmount) > 0 && (
-          <div className="text-gray-400 text-sm">
-            Max borrowable: {maxBorrowableAmount.toFixed(2)} {market.loanTokenSymbol}
           </div>
         )}
       </CardContent>

@@ -189,3 +189,10 @@ export const assets: Asset[] = [
     price: "1000000000000000000"
   }
 ]
+
+// For future real calculations, but currently just mocks:
+export const supplyValue = 0;
+export const borrowValue = 0;
+export const maxBorrowableAmount = 0;
+export const isBorrowValid = false;
+export const healthFactor = "1.00";
