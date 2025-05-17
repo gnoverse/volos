@@ -1,5 +1,11 @@
 "use client"
 
+import {
+  formatLTV,
+  formatRate,
+  formatTokenAmount,
+  formatUtilization,
+} from "@/app/format.utils"
 import "@/app/theme.css"
 import { MarketActionForms } from "@/components/market-action-forms"
 import { MarketChart } from "@/components/market-chart"
@@ -152,10 +158,6 @@ function MarketPageContent() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-gray-200 flex items-center">
                   <span>Market Overview</span>
-                  <div className="ml-auto px-3 py-1 bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-800/30 rounded-full text-xs font-medium flex items-center gap-1.5 text-gray-200">
-                    <span className={`w-2 h-2 rounded-full ${market.isToken0Loan ? 'bg-blue-400' : 'bg-purple-400'}`}></span>
-                    {market.isToken0Loan ? "Token0 Loan" : "Token1 Loan"}
-                  </div>
                 </CardTitle>
                 <CardDescription className="text-gray-400">Basic information about the market</CardDescription>
               </CardHeader>
@@ -193,13 +195,10 @@ function MarketPageContent() {
                   <div className="text-sm text-gray-400 mb-1">Current Price</div>
                   <div className="flex items-baseline flex-wrap">
                     <span className="text-lg font-bold text-gray-200 break-all">
-                      {Number(formatUnits(BigInt(market.currentPrice), 18)).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 6
-                      })}
-                    </span>
-                    <span className="ml-2 text-sm text-gray-400">
-                      {market.loanTokenSymbol} per {market.collateralTokenSymbol}
+                      {formatTokenAmount(market.currentPrice, 18, 2, 6)}
+                      <span className="ml-2 text-sm text-gray-400">
+                        {market.loanTokenSymbol} per {market.collateralTokenSymbol}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -208,62 +207,98 @@ function MarketPageContent() {
 
             {/* Market Size Card */}
             <Card className={CARD_STYLES}>
-              <CardHeader>
-                <CardTitle className="text-gray-200">Market Size</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-gray-200 flex items-center">
+                  <span>Market Size</span>
+                </CardTitle>
                 <CardDescription className="text-gray-400">Supply and borrow information</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Supply</span>
-                  <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.totalSupplyAssets), market.loanTokenDecimals)).toFixed(2)} {market.loanTokenSymbol}
-                  </span>
+              <CardContent className="grid gap-3 pt-2">
+                {/* Total Supply */}
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Total Supply</div>
+                  <div className="text-3xl font-bold text-gray-200">
+                    {formatTokenAmount(market.totalSupplyAssets, market.loanTokenDecimals)} <span className="text-gray-400 text-lg">{market.loanTokenSymbol}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total Borrow</span>
-                  <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.totalBorrowAssets), market.loanTokenDecimals)).toFixed(2)} {market.loanTokenSymbol}
-                  </span>
+                
+                {/* Total Borrow */}
+                <div>
+                  <div className="text-sm text-gray-400 mb-1">Total Borrow</div>
+                  <div className="text-3xl font-bold text-gray-200">
+                    {formatTokenAmount(market.totalBorrowAssets, market.loanTokenDecimals)} <span className="text-gray-400 text-lg">{market.loanTokenSymbol}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Utilization</span>
-                  <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.utilization), 18)).toFixed(2)}%
-                  </span>
+                
+                {/* Utilization Visualization */}
+                <div className="mt-2 pt-2 border-t border-gray-700/50">
+                  <div className="text-sm text-gray-400 mb-2">Utilization Rate</div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-full bg-gray-800 rounded-full h-2.5">
+                      <div 
+                        className="bg-gradient-to-r from-green-500 to-emerald-400 h-2.5 rounded-full" 
+                        style={{ width: `${Math.min(Number(formatTokenAmount(market.utilization, 18)), 100)}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-200 whitespace-nowrap">
+                      {formatUtilization(market.utilization)}
+                    </span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Parameters Card */}
             <Card className={CARD_STYLES}>
-              <CardHeader>
-                <CardTitle className="text-gray-200">Parameters</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-gray-200 flex items-center">
+                  <span>Parameters</span>
+                </CardTitle>
                 <CardDescription className="text-gray-400">Market parameters and rates</CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Borrow APY</span>
-                  <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.borrowRate), 18)).toFixed(2)}%
-                  </span>
+              <CardContent className="grid gap-3 pt-2">
+                {/* APY Rates */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-400 mb-1">Supply APY</div>
+                    <div className="text-xl font-medium text-gray-200">
+                      {formatRate(market.supplyAPR, 18)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-400 mb-1">Borrow APY</div>
+                    <div className="text-xl font-medium text-gray-200">
+                      {formatRate(market.borrowAPR, 18)}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Supply APY</span>
-                  <span className="font-medium text-gray-200">
-                    {Number(formatUnits(BigInt(market.supplyRate), 18)).toFixed(2)}%
-                  </span>
+                
+                {/* Risk Parameters */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-400 mb-1">Max LTV</div>
+                    <div className="text-xl font-medium text-gray-200">
+                      {formatLTV(market.lltv, 18)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-400 mb-1">Fee</div>
+                    <div className="text-xl font-medium text-gray-200">
+                      {formatRate(market.fee, 18)}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Max LTV</span>
-                  <span className="font-medium text-gray-200">
-                    {(Number(formatUnits(BigInt(market.lltv), 18)) * 100).toFixed(0)}%
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Fee</span>
-                  <span className="font-medium text-gray-200">
-                    {(Number(formatUnits(BigInt(market.fee), 18))).toFixed(2)}%
-                  </span>
+                
+                {/* Health Factor Indicator */}
+                <div className="mt-2 pt-2 border-t border-gray-700/50">
+                  <div className="text-sm text-gray-400 mb-1">Risk Level</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"></div>
+                    </div>
+                    <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                    <span className="text-xs text-gray-400">Medium</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -313,7 +348,7 @@ function MarketPageContent() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-200">
-                  {(Number(formatUnits(BigInt(market.borrowRate), 18)) * 100 * apyVariations.sevenDay).toFixed(2)}%
+                  {formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100 * apyVariations.sevenDay), 0)}
                 </div>
               </CardContent>
             </Card>
@@ -324,7 +359,7 @@ function MarketPageContent() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-200">
-                  {(Number(formatUnits(BigInt(market.borrowRate), 18)) * 100).toFixed(2)}%
+                  {formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100), 0)}
                 </div>
               </CardContent>
             </Card>
@@ -335,7 +370,7 @@ function MarketPageContent() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-200">
-                  {(Number(formatUnits(BigInt(market.borrowRate), 18)) * 100 * apyVariations.ninetyDay).toFixed(2)}%
+                  {formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100 * apyVariations.ninetyDay), 0)}
                 </div>
               </CardContent>
             </Card>

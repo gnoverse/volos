@@ -82,7 +82,6 @@ export const columns: ColumnDef<MarketInfo>[] = [
       )
     },
     cell: () => {
-      // placeholder
       const apy = 5; // example value
       return <div className="text-left font-medium px-3">{apy}%</div>
     },

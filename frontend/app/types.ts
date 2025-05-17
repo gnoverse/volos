@@ -52,8 +52,8 @@ export const MarketInfoSchema = z.object({
   loanToken: z.string(),
   collateralToken: z.string(),
   currentPrice: z.string(),
-  borrowRate: Uint256Schema,
-  supplyRate: Uint256Schema,
+  borrowAPR: Uint256Schema,
+  supplyAPR: Uint256Schema,
   utilization: Uint256Schema,
   
   // Token information fields
