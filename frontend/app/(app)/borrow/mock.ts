@@ -19,7 +19,7 @@ export type Asset = {
 // Sample data for the table
 export const assets: Asset[] = [
   {
-    id: "eth:usdc:3000",
+    id: "gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/gns:3000",
     loanToken: "r/tokens/eth",
     collateralToken: "r/tokens/usdc",
     loanSymbol: "ETH",
@@ -189,3 +189,10 @@ export const assets: Asset[] = [
     price: "1000000000000000000"
   }
 ]
+
+// For future real calculations, but currently just mocks:
+export const supplyValue = 0;
+export const borrowValue = 0;
+export const maxBorrowableAmount = 0;
+export const isBorrowValid = false;
+export const healthFactor = "1.00";

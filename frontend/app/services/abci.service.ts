@@ -2,7 +2,8 @@ import { GnoJSONRPCProvider } from '@gnolang/gno-js-client'
 
 export class GnoService {
   private provider: GnoJSONRPCProvider
-  private providers: Record<string, GnoJSONRPCProvider>
+  private rpcUrls: Record<string, string>
+  private currentProviderName: string
   private static instance: GnoService | null = null
   private static defaultRpcUrls: Record<string, string> = {
     'local': 'http://localhost:26657/',
@@ -11,11 +12,9 @@ export class GnoService {
   }
 
   private constructor(rpcUrls: Record<string, string> = GnoService.defaultRpcUrls) {
-    this.providers = {}
-    for (const [name, url] of Object.entries(rpcUrls)) {
-      this.providers[name] = new GnoJSONRPCProvider(url)
-    }
-    this.provider = this.providers['local'] || Object.values(this.providers)[0]
+    this.rpcUrls = rpcUrls
+    this.currentProviderName = 'local'
+    this.provider = new GnoJSONRPCProvider(rpcUrls['local'])
   }
 
   public static getInstance(rpcUrls?: Record<string, string>): GnoService {
@@ -26,38 +25,33 @@ export class GnoService {
   }
 
   changeProvider(providerName: string): boolean {
-    if (this.providers[providerName]) {
-      this.provider = this.providers[providerName]
-      console.log(`Changed provider to ${providerName}`)
-      return true
-    } else {
-      console.error(`Error: No such provider '${providerName}'`)
-      return false
-    }
-  }
-
-  registerRpcUrl(name: string, url: string): boolean {
     try {
-      if (this.providers[name]) {
-        console.error(`Error: Provider with name '${name}' already exists.`)
+      if (!this.rpcUrls[providerName]) {
+        console.error(`Error: No such provider URL for '${providerName}'`)
         return false
       }
-      this.providers[name] = new GnoJSONRPCProvider(url)
+      
+      this.provider = new GnoJSONRPCProvider(this.rpcUrls[providerName])
+      this.currentProviderName = providerName
+      console.log(`Changed provider to ${providerName}`)
       return true
     } catch (error) {
-      console.error('Error registering RPC URL:', error)
+      console.error(`Error changing to provider '${providerName}':`, error)
       return false
     }
   }
 
   getCurrentProvider() {
-    return this.provider.toString()
+    return {
+      name: this.currentProviderName,
+      url: this.rpcUrls[this.currentProviderName]
+    }
   }
 
   getProviders() {
-    return Object.entries(this.providers).map(([name, provider]) => ({
+    return Object.entries(this.rpcUrls).map(([name, url]) => ({
       name,
-      url: provider.toString()
+      url
     }))
   }
 

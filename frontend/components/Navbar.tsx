@@ -29,9 +29,24 @@ export default function Navbar() {
   };
   
   useEffect(() => {
+    const adenaService = AdenaService.getInstance();
+    
     const checkWalletConnection = async () => {
-      const adenaService = AdenaService.getInstance();
-      const connected = adenaService.isConnected();
+      let connected = adenaService.isConnected();
+      
+      if (connected) {
+        try {
+          const account = await adenaService.getSdk().getAccount();
+          if (!account?.data?.address) {
+            adenaService.disconnectWallet();
+            connected = false;
+          }
+        } catch {
+          adenaService.disconnectWallet();
+          connected = false;
+        }
+      }
+      
       setIsConnected(connected);
       
       if (connected) {
@@ -42,11 +57,28 @@ export default function Navbar() {
       }
     };
     
+    const handleAddressChanged = (event: CustomEvent) => {
+      const { newAddress } = event.detail;
+      if (newAddress) {
+        setIsConnected(true);
+        setWalletAddress(newAddress);
+      } else {
+        setIsConnected(false);
+        setWalletAddress("");
+      }
+    };
+    
     checkWalletConnection();
+    
+    window.addEventListener('adenaAddressChanged', handleAddressChanged as EventListener);
+    
+    return () => {
+      window.removeEventListener('adenaAddressChanged', handleAddressChanged as EventListener);
+    };
   }, []);
   
   const handleWalletConnection = async () => {
-    const adenaService = await AdenaService.getInstance();
+    const adenaService = AdenaService.getInstance();
     
     if (isConnected) {
       adenaService.disconnectWallet();
@@ -67,7 +99,7 @@ export default function Navbar() {
   };
 
   return (
-    <div className="flex justify-between items-center py-2 px-4">
+    <div className="flex justify-between items-center py-2 pl-40 pr-36">
       {/* Left section with logo and menu */}
       <div className="flex items-center">
         {/* Logo */}

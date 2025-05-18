@@ -1,11 +1,14 @@
 import Navbar from "@/components/Navbar"
 import { cn } from "@/lib/utils"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Outfit } from "next/font/google"
 import "./globals.css"
 import './theme.css'
 
-const inter = Inter({ subsets: ["latin"] })
+const outfit = Outfit({ 
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"]
+})
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -19,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={cn(inter.className,
+      <body className={cn(outfit.className,
          "min-h-screen bg-[linear-gradient(45deg,#13072a_0%,rgba(19,7,42,0.9)_25%,rgba(44,24,87,0.4)_50%,rgba(19,7,42,0.9)_75%,#13072a_100%),linear-gradient(135deg,rgba(47,46,131,0.3)_0%,rgba(58,34,110,0.4)_33%,rgba(19,7,42,0)_66%,rgba(47,46,131,0.2)_100%),linear-gradient(225deg,rgba(43,24,87,0.4)_0%,rgba(71,46,131,0.5)_25%,rgba(19,7,42,0.2)_75%,rgba(43,24,87,0.3)_100%),linear-gradient(315deg,rgba(31,16,64,0.5)_0%,rgba(55,30,95,0.6)_40%,rgba(19,7,42,0.3)_60%,rgba(31,16,64,0.4)_100%),linear-gradient(90deg,rgba(19,7,42,1)_0%,rgba(43,24,87,0.8)_20%,rgba(31,16,64,0.9)_50%,rgba(47,46,131,0.7)_80%,rgba(19,7,42,0.95)_100%)]")}>
         <div className="flex flex-col">
           <div className="sticky top-0 z-50 w-full">
