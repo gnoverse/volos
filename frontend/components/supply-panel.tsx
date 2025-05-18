@@ -1,7 +1,7 @@
 "use client"
 
 import { MarketInfo } from "@/app/types"
-import { UseFormHandleSubmit, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
+import { useForm, UseFormHandleSubmit, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,17 +18,11 @@ type FormValues = {
 interface SupplyPanelProps {
   market: MarketInfo
   onSubmitAction: (data: FormValues) => void
-  supplyAmount: string
   supplyValue: number
   isTransactionPending: boolean
-  handleMaxSupplyAction: () => void
-  registerAction: UseFormRegister<FormValues>
-  setValue: UseFormSetValue<FormValues>
-  handleSubmitAction: UseFormHandleSubmit<FormValues>
   healthFactor: string
   currentCollateral?: number
   currentLoan?: number
-  watch: UseFormWatch<FormValues>
   ltv: string
   collateralTokenDecimals: number
   loanTokenDecimals: number
@@ -37,14 +31,20 @@ interface SupplyPanelProps {
 export function SupplyPanel({
   market,
   onSubmitAction,
-  supplyAmount,
   supplyValue,
   isTransactionPending,
-  registerAction,
-  handleSubmitAction,
 }: SupplyPanelProps) {
+    const { register, handleSubmit, setValue, watch, reset } = useForm({
+        defaultValues: {
+            supplyAmount: "",
+            borrowAmount: "",
+            repayAmount: "",
+            withdrawAmount: ""
+        }
+        })
+    const supplyAmount = watch("supplyAmount");
     return (
-        <form onSubmit={handleSubmitAction(onSubmitAction)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmitAction)} className="space-y-4">
           {/* Supply Card */}
           <Card className={CARD_STYLES}>
             <CardHeader className="">
@@ -55,7 +55,7 @@ export function SupplyPanel({
             <CardContent className="space-y-2">
               <Input
                 type="number"
-                {...registerAction("supplyAmount", { 
+                {...register("supplyAmount", { 
                   pattern: /^[0-9]*\.?[0-9]*$/
                 })}
                 className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"

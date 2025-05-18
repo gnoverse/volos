@@ -5,7 +5,7 @@ import { PositionCard } from "@/components/position-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { UseFormHandleSubmit, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
+import { useForm, UseFormHandleSubmit, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -19,20 +19,12 @@ type FormValues = {
 interface RepayWithdrawPanelProps {
   market: MarketInfo
   onSubmitAction: (data: FormValues) => void
-  supplyAmount: string
-  borrowAmount: string
   supplyValue: number
   borrowValue: number
   isTransactionPending: boolean
-  handleMaxSupplyAction: () => void
-  handleMaxBorrowAction: () => void
-  registerAction: UseFormRegister<FormValues>
-  setValue: UseFormSetValue<FormValues>
-  handleSubmitAction: UseFormHandleSubmit<FormValues>
   healthFactor: string
   currentCollateral?: number
   currentLoan?: number
-  watch: UseFormWatch<FormValues>
   ltv: string
   collateralTokenDecimals: number
   loanTokenDecimals: number
@@ -41,23 +33,23 @@ interface RepayWithdrawPanelProps {
 export function RepayWithdrawPanel({
   market,
   onSubmitAction,
-  supplyAmount,
-  borrowAmount,
-  handleMaxBorrowAction,
-  registerAction,
-  handleSubmitAction,
   healthFactor,
   currentCollateral = 0,
   currentLoan = 0,
-  watch,
   ltv,
 }: RepayWithdrawPanelProps) {
-  const supplyAmountNum = parseFloat(supplyAmount || "0")
-  const borrowAmountNum = parseFloat(borrowAmount || "0")
   const ltvFloat = parseFloat(ltv) / 1e18
+  const { register, handleSubmit, setValue, watch, reset } = useForm({
+    defaultValues: {
+        supplyAmount: "",
+        borrowAmount: "",
+        repayAmount: "",
+        withdrawAmount: ""
+    }
+    })
 
   return (
-    <form onSubmit={handleSubmitAction(onSubmitAction)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmitAction)} className="space-y-4">
       {/* Repay Card */}
       <Card className={CARD_STYLES}>
         <CardHeader>
@@ -68,7 +60,7 @@ export function RepayWithdrawPanel({
         <CardContent className="space-y-2">
           <Input
             type="number"
-            {...registerAction("repayAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
+            {...register("repayAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
             className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
             placeholder="0.00"
           />
@@ -81,7 +73,9 @@ export function RepayWithdrawPanel({
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
-                onClick={handleMaxBorrowAction}
+                onClick={() => {
+                  setValue("repayAmount", currentLoan.toString());
+                }}
               >
                 MAX
               </Button>
@@ -100,7 +94,7 @@ export function RepayWithdrawPanel({
         <CardContent className="space-y-2">
           <Input
             type="number"
-            {...registerAction("withdrawAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
+            {...register("withdrawAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
             className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
             placeholder="0.00"
           />
@@ -113,7 +107,9 @@ export function RepayWithdrawPanel({
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
-                onClick={handleMaxBorrowAction}
+                onClick={() => {
+                  setValue("withdrawAmount", currentCollateral.toString());
+                }}
               >
                 MAX
               </Button>
@@ -125,11 +121,11 @@ export function RepayWithdrawPanel({
       {/* Position Card */}
       <PositionCard 
         market={market}
-        supplyAmount={supplyAmount}
-        borrowAmount={borrowAmount}
+        supplyAmount={""}
+        borrowAmount={""}
         repayAmount={watch("repayAmount") || ""}
         withdrawAmount={watch("withdrawAmount") || ""}
-        maxBorrowableAmount={supplyAmountNum * ltvFloat}
+        maxBorrowableAmount={currentCollateral * ltvFloat}
         isBorrowValid={true}
         healthFactor={healthFactor}
         currentCollateral={currentCollateral}

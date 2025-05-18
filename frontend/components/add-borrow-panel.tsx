@@ -1,11 +1,11 @@
 "use client"
 
-import { MarketInfo } from "@/app/types"
+import { MarketInfo, Position } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { UseFormHandleSubmit, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
+import { useForm, UseFormWatch } from "react-hook-form"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -18,62 +18,83 @@ type FormValues = {
 
 interface AddBorrowPanelProps {
   market: MarketInfo
-  onSubmitAction: (data: FormValues) => void
-  supplyAmount: string
-  borrowAmount: string
   supplyValue: number
   borrowValue: number
+  onSubmitAction: (data: FormValues) => void
   isTransactionPending: boolean
-  handleMaxSupplyAction: () => void
-  handleMaxBorrowAction: () => void
-  registerAction: UseFormRegister<FormValues>
-  setValue: UseFormSetValue<FormValues>
-  handleSubmitAction: UseFormHandleSubmit<FormValues>
   healthFactor: string
   currentCollateral?: number
   currentLoan?: number
-  watch: UseFormWatch<FormValues>
   ltv: string
   collateralTokenDecimals: number
   loanTokenDecimals: number
+  positionData?: Position
 }
 
 export function AddBorrowPanel({
   market,
-  onSubmitAction,
-  supplyAmount,
-  borrowAmount,
   supplyValue,
   borrowValue,
-  isTransactionPending,
-  handleMaxSupplyAction,
-  handleMaxBorrowAction,
-  registerAction,
-  handleSubmitAction,
+  onSubmitAction,
   healthFactor,
   currentCollateral = 0,
   currentLoan = 0,
   ltv,
+  positionData,
 }: AddBorrowPanelProps) {
+
+    const { register, handleSubmit, setValue, watch, reset } = useForm({
+        defaultValues: {
+            supplyAmount: "",
+            borrowAmount: "",
+            repayAmount: "",
+            withdrawAmount: ""
+        }
+        })
+  const positionCollateral = positionData?.collateral
+    ? parseFloat(positionData.collateral)
+    : currentCollateral;
+
+  const positionLoan = positionData?.borrowShares
+    ? parseFloat(positionData.borrowShares)
+    : currentLoan;
+
+  const supplyAmount = watch("supplyAmount");
+  const borrowAmount = watch("borrowAmount");
+
   const supplyAmountNum = parseFloat(supplyAmount || "0")
+  const totalCollateral = positionCollateral + supplyAmountNum
   const borrowAmountNum = parseFloat(borrowAmount || "0")
   const ltvFloat = parseFloat(ltv) / 1e18
 
-  const areFieldsFilled = supplyAmountNum > 0 && borrowAmountNum > 0
-  const isBorrowValid = areFieldsFilled && (borrowAmountNum / supplyAmountNum <= ltvFloat)
-  const isTransactionValidFinal = areFieldsFilled && isBorrowValid && !isTransactionPending
+  const maxBorrowable = Math.max(positionCollateral * ltvFloat - positionLoan, 0);
 
-  let buttonMessage = "Submit Transaction"
-  if (isTransactionPending) {
-    buttonMessage = "Processing..."
-  } else if (!areFieldsFilled) {
-    buttonMessage = "Enter both amounts"
-  } else if (!isBorrowValid) {
-    buttonMessage = "Borrow exceeds allowed LTV"
-  }
+  const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
+  const supplyButtonMessage = isSupplyInputEmpty ? "Enter supply amount" : "Supply";
+
+  const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0";
+  const isBorrowOverMax = borrowAmountNum > maxBorrowable;
+  const borrowButtonMessage = isBorrowInputEmpty
+    ? "Enter borrow amount"
+    : isBorrowOverMax
+      ? "Exceeds max borrow"
+      : "Borrow";
 
   return (
-    <form onSubmit={handleSubmitAction(onSubmitAction)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmitAction)} className="space-y-4">
+
+    {/* Position Card */}
+      <PositionCard 
+        market={market}
+        supplyAmount={supplyAmount}
+        borrowAmount={borrowAmount}
+        maxBorrowableAmount={totalCollateral * ltvFloat}
+        isBorrowValid={borrowAmountNum <= maxBorrowable}
+        healthFactor={healthFactor}
+        currentCollateral={currentCollateral}
+        currentLoan={currentLoan}
+        ltv={ltv}
+      />
       {/* Supply Card */}
       <Card className={CARD_STYLES}>
         <CardHeader>
@@ -84,7 +105,7 @@ export function AddBorrowPanel({
         <CardContent className="space-y-2">
           <Input
             type="number"
-            {...registerAction("supplyAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
+            {...register("supplyAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
             className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
             placeholder="0.00"
           />
@@ -97,12 +118,26 @@ export function AddBorrowPanel({
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
-                onClick={handleMaxSupplyAction}
+                onClick={() => {
+                  setValue("supplyAmount", maxBorrowable.toString());
+                }}
               >
                 MAX
               </Button>
             </div>
           </div>
+          <Button
+            type="button"
+            className="w-full mt-2"
+            disabled={isSupplyInputEmpty}
+            onClick={() => {
+              if (!isSupplyInputEmpty) {
+                onSubmitAction({ supplyAmount: "", borrowAmount: "", repayAmount: "", withdrawAmount: "" });
+              }
+            }}
+          >
+            {supplyButtonMessage}
+          </Button>
         </CardContent>
       </Card>
 
@@ -116,7 +151,7 @@ export function AddBorrowPanel({
         <CardContent className="space-y-2">
           <Input
             type="number"
-            {...registerAction("borrowAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
+            {...register("borrowAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
             className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
             placeholder="0.00"
           />
@@ -129,35 +164,29 @@ export function AddBorrowPanel({
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
-                onClick={handleMaxBorrowAction}
+                onClick={() => {
+                  setValue("borrowAmount", maxBorrowable.toString());
+                }}
               >
                 MAX
               </Button>
             </div>
           </div>
+          <Button
+            type="button"
+            className="w-full mt-2"
+            disabled={isBorrowInputEmpty || isBorrowOverMax}
+            onClick={() => {
+              if (!isBorrowInputEmpty && !isBorrowOverMax) {
+                onSubmitAction({ supplyAmount: "", borrowAmount: "", repayAmount: "", withdrawAmount: "" });
+                reset();
+              }
+            }}
+          >
+            {borrowButtonMessage}
+          </Button>
         </CardContent>
       </Card>
-
-      {/* Position Card */}
-      <PositionCard 
-        market={market}
-        supplyAmount={supplyAmount}
-        borrowAmount={borrowAmount}
-        maxBorrowableAmount={supplyAmountNum * ltvFloat}
-        isBorrowValid={isBorrowValid}
-        healthFactor={healthFactor}
-        currentCollateral={currentCollateral}
-        currentLoan={currentLoan}
-        ltv={ltv}
-      />
-
-      <Button
-        type="submit"
-        className="w-full shadow-lg text-gray-200 rounded-2xl bg-midnightPurple-900 hover:bg-gradient-to-tr hover:from-midnightPurple-900 hover:to-midnightPurple-800 transition-all duration-300 text-md relative overflow-hidden hover:before:absolute hover:before:inset-0 hover:before:bg-gradient-to-tr hover:before:from-transparent hover:before:to-white/5 hover:before:animate-shine"
-        disabled={!isTransactionValidFinal}
-      >
-        {buttonMessage}
-      </Button>
     </form>
   )
 } 

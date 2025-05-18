@@ -9,23 +9,18 @@ import {
   formatTokenAmount,
   formatUtilization
 } from "@/app/utils/format.utils"
-import { AddBorrowPanel } from "@/components/add-borrow-panel"
 import { InfoCard } from "@/components/InfoCard"
 import { MarketChart } from "@/components/market-chart"
-import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
-import { SupplyPanel } from "@/components/supply-panel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
 import {
   borrowValue,
   supplyValue
 } from "../mock"
 import { useApproveTokenMutation, useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery, useSupplyMutation } from "../queries-mutations"
-import { handleMaxBorrow, handleMaxSupply } from "./handlers"
+import { SidePanel } from "./side-panel"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -33,14 +28,7 @@ const queryClient = new QueryClient()
 
 function MarketPageContent() {
   const [tab, setTab] = useState("add-borrow")
-  const { register, handleSubmit, setValue, watch, reset } = useForm({
-    defaultValues: {
-      supplyAmount: "",
-      borrowAmount: "",
-      repayAmount: "",
-      withdrawAmount: ""
-    }
-  })
+
   const [apyVariations, ] = useState({
     sevenDay: 0,
     ninetyDay: 0
@@ -53,9 +41,6 @@ function MarketPageContent() {
   const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
   const [userAddress, setUserAddress] = useState<string>("")
   const { data: positionData } = usePositionQuery(decodedMarketId, userAddress);
-
-  const supplyAmount = watch("supplyAmount")
-  const borrowAmount = watch("borrowAmount")
 
   const { data: loanAmountData } = useLoanAmountQuery(decodedMarketId, userAddress)
   const { data: healthFactorData } = useHealthFactorQuery(decodedMarketId, userAddress)
@@ -86,7 +71,7 @@ function MarketPageContent() {
           assets: parseFloat(supplyAmount)
         }, {
           onSuccess: () => {
-            setValue("supplyAmount", "");
+            //setValue("supplyAmount", "");
           },
           onError: (error: Error) => {
             console.error(`Failed to supply: ${error.message}`);
@@ -111,10 +96,6 @@ function MarketPageContent() {
   }
 
   const isTransactionPending = supplyMutation.isPending
-
-  useEffect(() => {
-    reset()
-  }, [tab, reset])
 
   // track user address
   useEffect(() => {
@@ -377,84 +358,21 @@ function MarketPageContent() {
         </div>
 
         {/* Right side - tabbed interface */}
-        <div className="col-span-1 lg:col-span-3 lg:sticky top-0 self-start pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-          <Tabs value={tab} onValueChange={setTab} className="w-full sticky top-0 z-10 backdrop-blur-sm">
-            <TabsList className="mb-4 w-full py-2">
-              <TabsTrigger value="add-borrow">Add / Borrow</TabsTrigger>
-              <TabsTrigger value="repay-withdraw">Repay / Withdraw</TabsTrigger>
-              <TabsTrigger value="supply-only">Supply</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="add-borrow">
-              <AddBorrowPanel 
-                market={market}
-                onSubmitAction={onSubmit}
-                supplyAmount={supplyAmount}
-                borrowAmount={borrowAmount}
-                supplyValue={supplyValue}
-                borrowValue={borrowValue}
-                isTransactionPending={isTransactionPending}
-                handleMaxSupplyAction={() => handleMaxSupply(setValue)}
-                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, 0)}
-                registerAction={register}
-                setValue={setValue}
-                handleSubmitAction={handleSubmit}
-                healthFactor={healthFactorData?.healthFactor ?? "0"}
-                currentCollateral={currentCollateral}
-                currentLoan={currentLoan}
-                watch={watch}
-                ltv={market.lltv}
-                collateralTokenDecimals={market.collateralTokenDecimals}
-                loanTokenDecimals={market.loanTokenDecimals}
-              />
-            </TabsContent>
-            
-            <TabsContent value="repay-withdraw">
-              <RepayWithdrawPanel 
-                market={market}
-                onSubmitAction={onSubmit}
-                supplyAmount={supplyAmount}
-                borrowAmount={borrowAmount}
-                supplyValue={supplyValue}
-                borrowValue={borrowValue}
-                isTransactionPending={isTransactionPending}
-                handleMaxSupplyAction={() => handleMaxSupply(setValue)}
-                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, 0)}
-                registerAction={register}
-                setValue={setValue}
-                handleSubmitAction={handleSubmit}
-                healthFactor={healthFactorData?.healthFactor ?? "0"}
-                currentCollateral={currentCollateral}
-                currentLoan={currentLoan}
-                watch={watch}
-                ltv={market.lltv}
-                collateralTokenDecimals={market.collateralTokenDecimals}
-                loanTokenDecimals={market.loanTokenDecimals}
-              />
-            </TabsContent>
-            
-            <TabsContent value="supply-only">
-              <SupplyPanel 
-                market={market}
-                onSubmitAction={onSubmit}
-                supplyAmount={supplyAmount}
-                supplyValue={supplyValue}
-                isTransactionPending={isTransactionPending}
-                handleMaxSupplyAction={() => handleMaxSupply(setValue)}
-                registerAction={register}
-                setValue={setValue}
-                handleSubmitAction={handleSubmit}
-                healthFactor={healthFactorData?.healthFactor ?? "0"}
-                currentCollateral={currentCollateral}
-                currentLoan={currentLoan}
-                watch={watch}
-                ltv={market.lltv}
-                collateralTokenDecimals={market.collateralTokenDecimals}
-                loanTokenDecimals={market.loanTokenDecimals}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
+        <SidePanel
+          tab={tab}
+          setTabAction={setTab}
+          market={market}
+          onSubmitAction={onSubmit}
+          supplyValue={supplyValue}
+          borrowValue={borrowValue}
+          isTransactionPending={isTransactionPending}
+          healthFactor={healthFactorData?.healthFactor ?? "0"}
+          currentCollateral={currentCollateral}
+          currentLoan={currentLoan}
+          ltv={market.lltv}
+          collateralTokenDecimals={market.collateralTokenDecimals}
+          loanTokenDecimals={market.loanTokenDecimals}
+        />
       </div>
     </div>
   )
