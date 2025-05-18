@@ -86,6 +86,24 @@ export const ApiListMarketsInfoResponseSchema = z.array(
 
 export type ApiListMarketsInfoResponse = z.infer<typeof ApiListMarketsInfoResponseSchema>;
 
+export const LoanAmountSchema = z.object({
+  amount: z.string(),
+});
+export type LoanAmount = z.infer<typeof LoanAmountSchema>;
+
+export const UserLoanSchema = z.object({
+  token: z.string(),
+  amount: z.string(),
+});
+export const UserLoansSchema = z.array(UserLoanSchema);
+export type UserLoan = z.infer<typeof UserLoanSchema>;
+export type UserLoans = z.infer<typeof UserLoansSchema>;
+
+export const HealthFactorSchema = z.object({
+  healthFactor: z.string(),
+});
+export type HealthFactor = z.infer<typeof HealthFactorSchema>; 
+
 export function parseAndValidateJson<T>(jsonString: string, schema: z.ZodType<T>): T {
   try {
     const parsed = JSON.parse(jsonString);
@@ -106,4 +124,4 @@ export function parseValidatedMarketsList(jsonString: string): ApiListMarketsRes
 
 export function parseValidatedMarketsInfoList(jsonString: string): ApiListMarketsInfoResponse {
   return parseAndValidateJson(jsonString, ApiListMarketsInfoResponseSchema);
-} 
+}

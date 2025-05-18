@@ -51,4 +51,30 @@ export function formatLTV(
 ): string {
   const num = Number(formatUnits(BigInt(value), decimals)) * 100;
   return `${num.toFixed(0)}%`;
+}
+
+/**
+ * Formats a variable APY (e.g., 7D, 90D) given a base APR, a variation multiplier, and decimals.
+ */
+export function formatApyVariation(
+  apr: string | bigint,
+  variation: number,
+  decimals: number = 18,
+  fractionDigits: number = 2
+): string {
+  const base = Number(formatUnits(BigInt(apr), decimals));
+  const apy = base * 100 * variation;
+  return `${apy.toFixed(fractionDigits)}%`;
+}
+
+/**
+ * Converts a WAD-scaled string (1e18 = 1.00) to a float with 2 decimals.
+ * Example: "2500000000000000000" => "2.50"
+ */
+export function formatHealthFactor(wadString: string | undefined | null, decimals = 2): string {
+  if (!wadString) return "0.00";
+  const WAD = 1e18;
+  const num = Number(wadString);
+  if (isNaN(num)) return "0.00";
+  return (num / WAD).toFixed(decimals);
 } 

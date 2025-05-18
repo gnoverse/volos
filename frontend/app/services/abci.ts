@@ -1,18 +1,24 @@
 import {
-  ApiListMarketsInfoResponse,
-  ApiListMarketsInfoResponseSchema,
-  ApiListMarketsResponse,
-  ApiListMarketsResponseSchema,
-  Market,
-  MarketInfo,
-  MarketInfoSchema,
-  MarketParams,
-  MarketParamsSchema,
-  MarketSchema,
-  Position,
-  PositionSchema,
+    ApiListMarketsInfoResponse,
+    ApiListMarketsInfoResponseSchema,
+    ApiListMarketsResponse,
+    ApiListMarketsResponseSchema,
+    HealthFactor,
+    HealthFactorSchema,
+    LoanAmount,
+    LoanAmountSchema,
+    Market,
+    MarketInfo,
+    MarketInfoSchema,
+    MarketParams,
+    MarketParamsSchema,
+    MarketSchema,
+    Position,
+    PositionSchema,
+    UserLoans,
+    UserLoansSchema,
 } from "../types"
-import { parseStringResult, parseValidatedJsonResult } from "../util"
+import { parseStringResult, parseValidatedJsonResult } from "../utils/parsing.utils"
 import { GnoService } from "./abci.service"
 
 const REALM_PATH = "gno.land/r/gnolend"
@@ -107,6 +113,45 @@ export async function getFeeRecipient(): Promise<string> {
     return parseStringResult(result)
   } catch (error) {
     console.error('Error fetching fee recipient:', error)
+    throw error
+  }
+}
+
+export async function apiGetLoanAmount(marketId: string, user: string): Promise<LoanAmount> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiGetLoanAmount("${marketId}", "${user}")`,
+    )
+    return parseValidatedJsonResult(result, LoanAmountSchema)
+  } catch (error) {
+    console.error('Error fetching loan amount:', error)
+    throw error
+  }
+}
+
+export async function apiGetUserLoans(user: string): Promise<UserLoans> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiGetUserLoans("${user}")`,
+    )
+    return parseValidatedJsonResult(result, UserLoansSchema)
+  } catch (error) {
+    console.error('Error fetching user loans:', error)
+    throw error
+  }
+}
+
+export async function apiGetHealthFactor(marketId: string, userAddr: string): Promise<HealthFactor> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      REALM_PATH,
+      `ApiGetHealthFactor("${marketId}", "${userAddr}")`,
+    )
+    return parseValidatedJsonResult(result, HealthFactorSchema)
+  } catch (error) {
+    console.error('Error fetching health factor:', error)
     throw error
   }
 }

@@ -1,12 +1,14 @@
 "use client"
 
+import { AdenaService } from "@/app/services/adena.service"
+import "@/app/theme.css"
 import {
+  formatApyVariation,
   formatLTV,
   formatRate,
   formatTokenAmount,
-  formatUtilization,
-} from "@/app/format.utils"
-import "@/app/theme.css"
+  formatUtilization
+} from "@/app/utils/format.utils"
 import { InfoCard } from "@/components/InfoCard"
 import { MarketActionForms } from "@/components/market-action-forms"
 import { MarketChart } from "@/components/market-chart"
@@ -16,15 +18,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
-import { formatUnits } from "viem"
 import {
   borrowValue,
-  healthFactor,
   isBorrowValid,
   maxBorrowableAmount,
   supplyValue
 } from "../mock"
-import { useApproveTokenMutation, useMarketHistoryQuery, useMarketQuery, useSupplyMutation } from "../queries-mutations"
+import { useApproveTokenMutation, useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery, useSupplyMutation } from "../queries-mutations"
 import { handleMaxBorrow, handleMaxSupply } from "./handlers"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -51,6 +51,8 @@ function MarketPageContent() {
   const decodedMarketId = decodeURIComponent(params.marketId as string)
   const { data: market, isPending: marketLoading, error: marketError } = useMarketQuery(decodedMarketId)
   const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
+  const [userAddress, setUserAddress] = useState<string>("")
+  const { data: positionData } = usePositionQuery(decodedMarketId, userAddress);
 
   const supplyAmount = watch("supplyAmount")
   const borrowAmount = watch("borrowAmount")
@@ -59,6 +61,15 @@ function MarketPageContent() {
     (supplyAmount && parseFloat(supplyAmount) > 0) || 
     isBorrowValid
   )
+
+  // Fetch user's current loan and health factor
+  const { data: loanAmountData } = useLoanAmountQuery(decodedMarketId, userAddress)
+  const { data: healthFactorData } = useHealthFactorQuery(decodedMarketId, userAddress)
+
+  // Parse values for position card
+  const currentLoan = loanAmountData ? parseFloat(loanAmountData.amount) : 0
+  // Use real collateral from positionData if available, else 0
+  const currentCollateral = positionData ? parseFloat(positionData.collateral) : 0
 
   const onSubmit = async (data : { 
     supplyAmount: string, 
@@ -112,6 +123,21 @@ function MarketPageContent() {
   useEffect(() => {
     reset()
   }, [tab, reset])
+
+  // track user address
+  useEffect(() => {
+    const adena = AdenaService.getInstance()
+    setUserAddress(adena.getAddress())
+
+    const handleAddressChange = (event: CustomEvent) => {
+      setUserAddress(event.detail?.newAddress || "")
+    }
+    window.addEventListener("adenaAddressChanged", handleAddressChange as EventListener)
+
+    return () => {
+      window.removeEventListener("adenaAddressChanged", handleAddressChange as EventListener)
+    }
+  }, [])
 
   if (marketLoading || historyLoading) {
     return <div>Loading market data...</div>
@@ -275,12 +301,30 @@ function MarketPageContent() {
                 {/* Health Factor Indicator */}
                 <div className="mt-2 pt-2 border-t border-gray-700/50">
                   <div className="text-sm text-gray-400 mb-1">Risk Level</div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"></div>
+                  <div className="relative flex items-center gap-2">
+                    <div className="flex-1 h-6 flex items-center justify-center relative">
+                      <div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-md"
+                        style={{
+                          width: "3px", 
+                          height: "60%",
+                          backgroundColor: "rgb(209 213 219)",
+                          borderRadius: "2px",
+                          zIndex: 2
+                        }}
+                      />
+                      <div
+                        className="absolute top-1/2 left-0 right-0 h-2 -translate-y-1/2"
+                        style={{
+                          zIndex: 1,
+                          marginLeft: "0.75rem",
+                          marginRight: "0.75rem"
+                        }}
+                      >
+                        <div className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-full"></div>
+                      </div>
                     </div>
-                    <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                    <span className="text-xs text-gray-400">Medium</span>
+                    <span className="text-xs text-gray-400 ml-2">Medium</span>
                   </div>
                 </div>
               </CardContent>
@@ -327,15 +371,15 @@ function MarketPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <InfoCard
               title="7D APY"
-              value={formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100 * apyVariations.sevenDay), 0)}
+              value={formatApyVariation(market.borrowAPR, apyVariations.sevenDay, 18, 2)}
             />
             <InfoCard
               title="30D APY"
-              value={formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100), 0)}
+              value={formatApyVariation(market.borrowAPR, 1, 18, 2)}
             />
             <InfoCard
               title="90D APY"
-              value={formatRate(BigInt(Number(formatUnits(BigInt(market.borrowAPR), 18)) * 100 * apyVariations.ninetyDay), 0)}
+              value={formatApyVariation(market.borrowAPR, apyVariations.ninetyDay, 18, 2)}
             />
           </div>
         </div>
@@ -367,7 +411,9 @@ function MarketPageContent() {
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
-                healthFactor={healthFactor}
+                healthFactor={healthFactorData?.healthFactor ?? "0"}
+                currentCollateral={currentCollateral}
+                currentLoan={currentLoan}
                 watch={watch}
               />
             </TabsContent>
@@ -390,7 +436,9 @@ function MarketPageContent() {
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
-                healthFactor={healthFactor}
+                healthFactor={healthFactorData?.healthFactor ?? "0"}
+                currentCollateral={currentCollateral}
+                currentLoan={currentLoan}
                 watch={watch}
               />
             </TabsContent>
@@ -413,7 +461,9 @@ function MarketPageContent() {
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
-                healthFactor={healthFactor}
+                healthFactor={healthFactorData?.healthFactor ?? "0"}
+                currentCollateral={currentCollateral}
+                currentLoan={currentLoan}
                 watch={watch}
               />
             </TabsContent>

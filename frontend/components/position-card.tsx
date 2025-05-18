@@ -1,0 +1,133 @@
+import { MarketInfo } from "@/app/types"
+import { formatHealthFactor } from "@/app/utils/format.utils"
+import { Card, CardContent } from "@/components/ui/card"
+
+const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
+
+export interface PositionCardProps {
+  market: MarketInfo
+  supplyAmount: string
+  borrowAmount: string
+  repayAmount?: string
+  withdrawAmount?: string
+  maxBorrowableAmount: number
+  isBorrowValid: boolean
+  healthFactor: string
+  currentCollateral: number
+  currentLoan: number
+}
+
+export function PositionCard({
+  market,
+  supplyAmount,
+  borrowAmount,
+  repayAmount,
+  withdrawAmount,
+  currentCollateral,
+  currentLoan,
+  healthFactor
+}: PositionCardProps) {
+  const supplyDelta = parseFloat(supplyAmount || "0")
+  const borrowDelta = parseFloat(borrowAmount || "0")
+  const repayDelta = parseFloat(repayAmount || "0")
+  const withdrawDelta = parseFloat(withdrawAmount || "0")
+
+  const projectedCollateral = currentCollateral + supplyDelta - withdrawDelta
+  const projectedLoan = currentLoan + borrowDelta - repayDelta
+
+  return (
+    <Card className={CARD_STYLES}>
+      <CardContent className="space-y-4">
+        <div>
+          <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
+          <div className="text-xl font-semibold text-gray-200">
+            {currentCollateral.toFixed(2)}
+            {(supplyDelta > 0 || withdrawDelta > 0) && (
+              <>
+                {" "}
+                <span className="text-gray-400">→</span>{" "}
+                <span className="text-green-300">{projectedCollateral.toFixed(0)}</span>
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div>
+          <div className="text-sm text-gray-400">My loan position ({market.loanTokenSymbol})</div>
+          <div className="text-xl font-semibold text-gray-200">
+            {currentLoan.toFixed(2)}
+            {(borrowDelta > 0 || repayDelta > 0) && (
+              <>
+                {" "}
+                <span className="text-gray-400">→</span>{" "}
+                <span className="text-red-400">{projectedLoan.toFixed(0)}</span>
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div>
+          <div className="flex justify-between items-center mb-1 px-1">
+            <span className="text-sm text-red-400">0</span>
+            <span className="text-sm text-gray-400">Health Factor</span>
+            <span className="text-sm text-blue-400">3+</span>
+          </div>
+          <div className="relative h-10 mb-2">
+            {/* Bar */}
+            <div
+              className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-2 rounded-full"
+              style={{
+                background: "linear-gradient(to right, #ef4444 0%, #ef4444 20%, #3b82f6 40%, #3b82f6 60%, #1e3a8a 80%, #1e3a8a 100%)",
+              }}
+            />
+            {/* Marker & Value */}
+            {(() => {
+              const hfNum = Math.max(0, Math.min(3, parseFloat(formatHealthFactor(healthFactor) || "0")));
+              const markerPercent = (hfNum / 3) * 100;
+              let valueLeft = `calc(${markerPercent}% - 18px)`;
+              if (markerPercent < 10) valueLeft = "0px";
+              if (markerPercent > 90) valueLeft = "calc(100% - 36px)";
+
+              // Determine label color based on segment
+              let labelColor = "text-red-400";
+              if (hfNum >= 2) labelColor = "text-blue-900";
+              else if (hfNum >= 1) labelColor = "text-blue-400";
+
+              return (
+                <>
+                  {/* Marker */}
+                  <div
+                    className="absolute"
+                    style={{
+                      left: `calc(${markerPercent}% - 2px)`,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: "4px",
+                      height: "14px",
+                      background: "#fff",
+                      borderRadius: "2px",
+                      boxShadow: "0 0 4px #0008",
+                      zIndex: 2,
+                    }}
+                  />
+                  {/* Value label below marker */}
+                  <div
+                    className={`absolute text-lg font-bold transition-all ${labelColor}`}
+                    style={{
+                      left: valueLeft,
+                      top: "36px",
+                      width: "36px",
+                      textAlign: "center",
+                    }}
+                  >
+                    {formatHealthFactor(healthFactor)}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+} 
