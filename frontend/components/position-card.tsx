@@ -15,6 +15,7 @@ export interface PositionCardProps {
   healthFactor: string
   currentCollateral: number
   currentLoan: number
+  ltv?: string
 }
 
 export function PositionCard({
@@ -25,7 +26,7 @@ export function PositionCard({
   withdrawAmount,
   currentCollateral,
   currentLoan,
-  healthFactor
+  healthFactor,
 }: PositionCardProps) {
   const supplyDelta = parseFloat(supplyAmount || "0")
   const borrowDelta = parseFloat(borrowAmount || "0")
@@ -68,7 +69,7 @@ export function PositionCard({
         
         <div>
           <div className="flex justify-between items-center mb-1 px-1">
-            <span className="text-sm text-red-400">0</span>
+            <span className="text-sm text-red-400">&lt; 1</span>
             <span className="text-sm text-gray-400">Health Factor</span>
             <span className="text-sm text-blue-400">3+</span>
           </div>
@@ -79,19 +80,21 @@ export function PositionCard({
               style={{
                 background: "linear-gradient(to right, #ef4444 0%, #ef4444 20%, #3b82f6 40%, #3b82f6 60%, #1e3a8a 80%, #1e3a8a 100%)",
               }}
+              
             />
             {/* Marker & Value */}
             {(() => {
-              const hfNum = Math.max(0, Math.min(3, parseFloat(formatHealthFactor(healthFactor) || "0")));
-              const markerPercent = (hfNum / 3) * 100;
+              const rawHf = parseFloat(formatHealthFactor(healthFactor) || "0");
+              const hfNum = Math.max(1, Math.min(3, rawHf));
+              const markerPercent = ((hfNum - 1) / 2) * 100;
               let valueLeft = `calc(${markerPercent}% - 18px)`;
+              
               if (markerPercent < 10) valueLeft = "0px";
               if (markerPercent > 90) valueLeft = "calc(100% - 36px)";
 
-              // Determine label color based on segment
               let labelColor = "text-red-400";
-              if (hfNum >= 2) labelColor = "text-blue-900";
-              else if (hfNum >= 1) labelColor = "text-blue-400";
+              if (hfNum >= 2.1) labelColor = "text-blue-900";
+              else if (hfNum >= 1.55) labelColor = "text-blue-400";
 
               return (
                 <>

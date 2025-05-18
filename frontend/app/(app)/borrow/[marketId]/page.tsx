@@ -9,9 +9,11 @@ import {
   formatTokenAmount,
   formatUtilization
 } from "@/app/utils/format.utils"
+import { AddBorrowPanel } from "@/components/add-borrow-panel"
 import { InfoCard } from "@/components/InfoCard"
-import { MarketActionForms } from "@/components/market-action-forms"
 import { MarketChart } from "@/components/market-chart"
+import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
+import { SupplyPanel } from "@/components/supply-panel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -20,8 +22,6 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import {
   borrowValue,
-  isBorrowValid,
-  maxBorrowableAmount,
   supplyValue
 } from "../mock"
 import { useApproveTokenMutation, useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery, useSupplyMutation } from "../queries-mutations"
@@ -57,18 +57,10 @@ function MarketPageContent() {
   const supplyAmount = watch("supplyAmount")
   const borrowAmount = watch("borrowAmount")
 
-  const isTransactionValid = !!(
-    (supplyAmount && parseFloat(supplyAmount) > 0) || 
-    isBorrowValid
-  )
-
-  // Fetch user's current loan and health factor
   const { data: loanAmountData } = useLoanAmountQuery(decodedMarketId, userAddress)
   const { data: healthFactorData } = useHealthFactorQuery(decodedMarketId, userAddress)
 
-  // Parse values for position card
   const currentLoan = loanAmountData ? parseFloat(loanAmountData.amount) : 0
-  // Use real collateral from positionData if available, else 0
   const currentCollateral = positionData ? parseFloat(positionData.collateral) : 0
 
   const onSubmit = async (data : { 
@@ -105,7 +97,7 @@ function MarketPageContent() {
       }
     }
     
-    if (borrowAmount && parseFloat(borrowAmount) > 0 && isBorrowValid) {
+    if (borrowAmount && parseFloat(borrowAmount) > 0) {
       console.log("Borrowing:", borrowAmount);
     }
     
@@ -394,20 +386,16 @@ function MarketPageContent() {
             </TabsList>
             
             <TabsContent value="add-borrow">
-              <MarketActionForms 
+              <AddBorrowPanel 
                 market={market}
-                formType="add-borrow"
                 onSubmitAction={onSubmit}
                 supplyAmount={supplyAmount}
                 borrowAmount={borrowAmount}
                 supplyValue={supplyValue}
                 borrowValue={borrowValue}
-                maxBorrowableAmount={maxBorrowableAmount}
-                isBorrowValid={isBorrowValid}
-                isTransactionValid={isTransactionValid}
                 isTransactionPending={isTransactionPending}
                 handleMaxSupplyAction={() => handleMaxSupply(setValue)}
-                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, maxBorrowableAmount)}
+                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, 0)}
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
@@ -415,24 +403,23 @@ function MarketPageContent() {
                 currentCollateral={currentCollateral}
                 currentLoan={currentLoan}
                 watch={watch}
+                ltv={market.lltv}
+                collateralTokenDecimals={market.collateralTokenDecimals}
+                loanTokenDecimals={market.loanTokenDecimals}
               />
             </TabsContent>
             
             <TabsContent value="repay-withdraw">
-              <MarketActionForms 
+              <RepayWithdrawPanel 
                 market={market}
-                formType="repay-withdraw"
                 onSubmitAction={onSubmit}
                 supplyAmount={supplyAmount}
                 borrowAmount={borrowAmount}
                 supplyValue={supplyValue}
                 borrowValue={borrowValue}
-                maxBorrowableAmount={maxBorrowableAmount}
-                isBorrowValid={isBorrowValid}
-                isTransactionValid={isTransactionValid}
                 isTransactionPending={isTransactionPending}
                 handleMaxSupplyAction={() => handleMaxSupply(setValue)}
-                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, maxBorrowableAmount)}
+                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, 0)}
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
@@ -440,24 +427,20 @@ function MarketPageContent() {
                 currentCollateral={currentCollateral}
                 currentLoan={currentLoan}
                 watch={watch}
+                ltv={market.lltv}
+                collateralTokenDecimals={market.collateralTokenDecimals}
+                loanTokenDecimals={market.loanTokenDecimals}
               />
             </TabsContent>
             
             <TabsContent value="supply-only">
-              <MarketActionForms 
+              <SupplyPanel 
                 market={market}
-                formType="supply-only"
                 onSubmitAction={onSubmit}
                 supplyAmount={supplyAmount}
-                borrowAmount={borrowAmount}
                 supplyValue={supplyValue}
-                borrowValue={borrowValue}
-                maxBorrowableAmount={maxBorrowableAmount}
-                isBorrowValid={isBorrowValid}
-                isTransactionValid={isTransactionValid}
                 isTransactionPending={isTransactionPending}
                 handleMaxSupplyAction={() => handleMaxSupply(setValue)}
-                handleMaxBorrowAction={() => handleMaxBorrow(setValue, supplyAmount, maxBorrowableAmount)}
                 registerAction={register}
                 setValue={setValue}
                 handleSubmitAction={handleSubmit}
@@ -465,6 +448,9 @@ function MarketPageContent() {
                 currentCollateral={currentCollateral}
                 currentLoan={currentLoan}
                 watch={watch}
+                ltv={market.lltv}
+                collateralTokenDecimals={market.collateralTokenDecimals}
+                loanTokenDecimals={market.loanTokenDecimals}
               />
             </TabsContent>
           </Tabs>
