@@ -41,6 +41,12 @@ export function MarketTabs({ history, market, apyVariations, cardStyles }: Marke
         >
           My Position
         </TabsTrigger>
+        <TabsTrigger 
+          value="activity" 
+          className="bg-transparent px-6 py-3 text-gray-400 hover:bg-transparent data-[state=active]:text-midnightPurple-500 data-[state=active]:bg-transparent data-[state=active]:border-b-1 data-[state=active]:border-midnightPurple-500 rounded-none transition-all"
+        >
+          Activity
+        </TabsTrigger>
       </TabsList>
       
       <TabsContent value="overview" className="mt-0">
@@ -100,6 +106,12 @@ export function MarketTabs({ history, market, apyVariations, cardStyles }: Marke
       <TabsContent value="position" className="mt-0">
         <div className="min-h-[200px] flex items-center justify-center text-gray-400">
           My Position content will be added here
+        </div>
+      </TabsContent>
+
+      <TabsContent value="activity" className="mt-0">
+        <div className="min-h-[200px] flex items-center justify-center text-gray-400">
+          Activity content will be added here - display tx history
         </div>
       </TabsContent>
     </Tabs>

@@ -49,51 +49,41 @@ export function SidePanel({
           <div className="flex justify-center mb-1">
             <TabsList className="flex flex-row bg-customGray-800/60 rounded-lg p-1 w-full">
               <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TabsTrigger 
-                      value="add-borrow" 
-                      className="flex-1 py-1 data-[state=active]:shadow-md data-[state=active]:text-white !data-[state=active]:bg-gray-600/70 !data-[state=active]:font-medium transition-all duration-200"
-                    >
-                      Borrow
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Borrow/Supply collateral</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TabsTrigger 
-                      value="repay-withdraw" 
-                      className="flex-1 py-1 data-[state=active]:shadow-md data-[state=active]:text-white !data-[state=active]:bg-gray-600/70 !data-[state=active]:font-medium transition-all duration-200"
-                    >
-                      Repay
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Repay/Withdraw collateral</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TabsTrigger 
-                      value="supply-only" 
-                      className="flex-1 py-1 data-[state=active]:shadow-md data-[state=active]:text-white !data-[state=active]:bg-gray-600/70 !data-[state=active]:font-medium transition-all duration-200"
-                    >
-                      Supply
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Supply loan token to the market</p>
-                  </TooltipContent>
-                </Tooltip>
+                <TabsTrigger 
+                  value="add-borrow" 
+                  className="flex-1 py-1 data-[state=active]:shadow-md data-[state=active]:text-white !data-[state=active]:bg-gray-600/70 !data-[state=active]:font-medium transition-all duration-200"
+                >
+                  <Tooltip>
+                    <TooltipTrigger className="w-full h-full">Borrow</TooltipTrigger>
+                    <TooltipContent>
+                      <p>Borrow/Supply collateral</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TabsTrigger>
+                
+                <TabsTrigger 
+                  value="repay-withdraw" 
+                  className="flex-1 py-1 data-[state=active]:shadow-md data-[state=active]:text-white !data-[state=active]:bg-gray-600/70 !data-[state=active]:font-medium transition-all duration-200"
+                >
+                  <Tooltip>
+                    <TooltipTrigger className="w-full h-full">Repay</TooltipTrigger>
+                    <TooltipContent>
+                      <p>Repay/Withdraw collateral</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TabsTrigger>
+                
+                <TabsTrigger 
+                  value="supply-only" 
+                  className="flex-1 py-1 data-[state=active]:shadow-md data-[state=active]:text-white !data-[state=active]:bg-gray-600/70 !data-[state=active]:font-medium transition-all duration-200"
+                >
+                  <Tooltip>
+                    <TooltipTrigger className="w-full h-full">Supply</TooltipTrigger>
+                    <TooltipContent>
+                      <p>Supply loan token to the market</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TabsTrigger>
               </TooltipProvider>
             </TabsList>
           </div>
