@@ -78,7 +78,7 @@ export function PositionCard({
             <div
               className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-2 rounded-full"
               style={{
-                background: "linear-gradient(to right, #ef4444 0%, #ef4444 20%, #3b82f6 40%, #3b82f6 60%, #1e3a8a 80%, #1e3a8a 100%)",
+                background: "linear-gradient(to right, #ef4444 0%, #ef4444 20%, #3b82f6 40%, #3b82f6 60%, #2563eb 80%, #2563eb 100%)",
               }}
               
             />
@@ -93,7 +93,7 @@ export function PositionCard({
               if (markerPercent > 90) valueLeft = "calc(100% - 36px)";
 
               let labelColor = "text-red-400";
-              if (hfNum >= 2.1) labelColor = "text-blue-900";
+              if (hfNum >= 2.1) labelColor = "text-blue-600";
               else if (hfNum >= 1.55) labelColor = "text-blue-400";
 
               return (

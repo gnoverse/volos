@@ -8,6 +8,7 @@ import {
   formatTokenAmount,
   formatUtilization
 } from "@/app/utils/format.utils"
+import { MarketTabs } from "@/components/market-tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
@@ -18,7 +19,6 @@ import {
 } from "../mock"
 import { useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery } from "../queries-mutations"
 import { SidePanel } from "./side-panel"
-import { MarketTabs } from "@/components/market-tabs"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -43,7 +43,6 @@ function MarketPageContent() {
 
   const currentLoan = loanAmountData ? parseFloat(loanAmountData.amount) : 0
   const currentCollateral = positionData ? parseFloat(positionData.collateral) : 0
-
   // track user address
   useEffect(() => {
     const adena = AdenaService.getInstance()
@@ -120,14 +119,16 @@ function MarketPageContent() {
                 </div>
                 
                 {/* Price */}
-                <div className="mt-2 pt-2 border-t border-gray-700/50">
-                  <div className="text-sm text-gray-400 mb-1">Current Price</div>
+                <div className="mt-2 pt-2 border-t border-gray-700/50 flex flex-col justify-center">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm text-gray-400">Current Price</div>
+                    <span className="text-xs font-light text-gray-400">
+                      ({market.loanTokenSymbol} / {market.collateralTokenSymbol})
+                    </span>
+                  </div>
                   <div className="flex items-baseline flex-wrap">
-                    <span className="text-lg font-bold text-gray-200 break-all">
+                    <span className="text-3xl font-bold text-gray-200 break-all">
                       {formatTokenAmount(market.currentPrice, 18, 2, 6)}
-                      <span className="ml-2 text-sm text-gray-400">
-                        {market.loanTokenSymbol} per {market.collateralTokenSymbol}
-                      </span>
                     </span>
                   </div>
                 </div>
