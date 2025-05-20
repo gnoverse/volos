@@ -3,14 +3,11 @@
 import { AdenaService } from "@/app/services/adena.service"
 import "@/app/theme.css"
 import {
-  formatApyVariation,
   formatLTV,
   formatRate,
   formatTokenAmount,
   formatUtilization
 } from "@/app/utils/format.utils"
-import { InfoCard } from "@/components/InfoCard"
-import { MarketChart } from "@/components/market-chart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
@@ -19,7 +16,7 @@ import {
   borrowValue,
   supplyValue
 } from "../mock"
-import { useApproveTokenMutation, useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery, useSupplyMutation } from "../queries-mutations"
+import { useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery } from "../queries-mutations"
 import { SidePanel } from "./side-panel"
 import { MarketTabs } from "@/components/market-tabs"
 
@@ -35,8 +32,6 @@ function MarketPageContent() {
     ninetyDay: 0
   })
   const params = useParams()
-  const supplyMutation = useSupplyMutation()
-  const approveTokenMutation = useApproveTokenMutation()
   const decodedMarketId = decodeURIComponent(params.marketId as string)
   const { data: market, isPending: marketLoading, error: marketError } = useMarketQuery(decodedMarketId)
   const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
@@ -48,55 +43,6 @@ function MarketPageContent() {
 
   const currentLoan = loanAmountData ? parseFloat(loanAmountData.amount) : 0
   const currentCollateral = positionData ? parseFloat(positionData.collateral) : 0
-
-  const onSubmit = async (data : { 
-    supplyAmount: string, 
-    borrowAmount: string,
-    repayAmount: string,
-    withdrawAmount: string 
-  }) => {
-    const { supplyAmount, borrowAmount, repayAmount, withdrawAmount } = data;
-    
-    if (supplyAmount && parseFloat(supplyAmount) > 0) {
-      try {
-        const loanTokenPath = market?.loanToken;
-        const approvalAmount = parseFloat(supplyAmount);
-        
-        await approveTokenMutation.mutateAsync({
-          tokenPath: loanTokenPath!,
-          amount: approvalAmount *2
-        });
-                
-        supplyMutation.mutate({
-          marketId: decodedMarketId,
-          assets: parseFloat(supplyAmount)
-        }, {
-          onSuccess: () => {
-            //setValue("supplyAmount", "");
-          },
-          onError: (error: Error) => {
-            console.error(`Failed to supply: ${error.message}`);
-          }
-        });
-      } catch (error) {
-        console.error(`Failed to approve token: ${(error as Error).message}`);
-      }
-    }
-    
-    if (borrowAmount && parseFloat(borrowAmount) > 0) {
-      console.log("Borrowing:", borrowAmount);
-    }
-    
-    if (repayAmount && parseFloat(repayAmount) > 0) {
-      console.log("Repaying:", repayAmount);
-    }
-    
-    if (withdrawAmount && parseFloat(withdrawAmount) > 0) {
-      console.log("Withdrawing:", withdrawAmount);
-    }
-  }
-
-  const isTransactionPending = supplyMutation.isPending
 
   // track user address
   useEffect(() => {
@@ -319,16 +265,15 @@ function MarketPageContent() {
           tab={tab}
           setTabAction={setTab}
           market={market}
-          onSubmitAction={onSubmit}
           supplyValue={supplyValue}
           borrowValue={borrowValue}
-          isTransactionPending={isTransactionPending}
           healthFactor={healthFactorData?.healthFactor ?? "0"}
           currentCollateral={currentCollateral}
           currentLoan={currentLoan}
           ltv={market.lltv}
           collateralTokenDecimals={market.collateralTokenDecimals}
           loanTokenDecimals={market.loanTokenDecimals}
+          positionData={positionData}
         />
       </div>
     </div>

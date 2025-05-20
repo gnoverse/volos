@@ -1,28 +1,21 @@
 "use client"
 
+import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
 import { MarketInfo, Position } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useQueryClient } from "@tanstack/react-query"
 import { ArrowDown, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
 
-const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
-
-type FormValues = {
-  supplyAmount: string
-  borrowAmount: string
-  repayAmount: string
-  withdrawAmount: string
-}
+const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
 
 interface AddBorrowPanelProps {
   market: MarketInfo
   supplyValue: number
   borrowValue: number
-  onSubmitAction: (data: FormValues) => void
-  isTransactionPending: boolean
   healthFactor: string
   currentCollateral?: number
   currentLoan?: number
@@ -36,14 +29,13 @@ export function AddBorrowPanel({
   market,
   supplyValue,
   borrowValue,
-  onSubmitAction,
   healthFactor,
   currentCollateral = 0,
   currentLoan = 0,
   ltv,
   positionData,
 }: AddBorrowPanelProps) {
-    const { register, handleSubmit, setValue, watch, reset } = useForm({
+    const { register, setValue, watch, reset } = useForm({
         defaultValues: {
             supplyAmount: "",
             borrowAmount: "",
@@ -51,6 +43,12 @@ export function AddBorrowPanel({
             withdrawAmount: ""
         }
     })
+  
+  const queryClient = useQueryClient()
+  const supplyCollateralMutation = useSupplyCollateralMutation()
+  const borrowMutation = useBorrowMutation()
+  const approveTokenMutation = useApproveTokenMutation()
+  
   const positionCollateral = positionData?.collateral
     ? parseFloat(positionData.collateral)
     : currentCollateral;
@@ -71,6 +69,7 @@ export function AddBorrowPanel({
 
   const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
   const supplyButtonMessage = isSupplyInputEmpty ? "Enter supply amount" : "Supply";
+  const isSupplyPending = approveTokenMutation.isPending || supplyCollateralMutation.isPending;
 
   const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0";
   const isBorrowOverMax = borrowAmountNum > maxBorrowable;
@@ -79,9 +78,79 @@ export function AddBorrowPanel({
     : isBorrowOverMax
       ? "Exceeds max borrow"
       : "Borrow";
+  const isBorrowPending = approveTokenMutation.isPending || borrowMutation.isPending;
+
+  const handleSupply = async () => {
+    if (isSupplyInputEmpty) return;
+    
+    try {
+      const collateralTokenPath = market?.collateralToken;
+      const approvalAmount = parseFloat(supplyAmount);
+      
+      await approveTokenMutation.mutateAsync({
+        tokenPath: collateralTokenPath!,
+        amount: approvalAmount * 2
+      });
+
+      console.log("collateralTokenPath", collateralTokenPath)
+      console.log("approvalAmount", approvalAmount)
+      console.log("supplyAmount", supplyAmount)
+      console.log("market.poolPath", market.poolPath)
+            
+      supplyCollateralMutation.mutate({
+        marketId: market.poolPath!,
+        amount: parseFloat(supplyAmount)
+      }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
+          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
+          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
+          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
+          reset();
+        },
+        onError: (error: Error) => {
+          console.error(`Failed to supply collateral: ${error.message}`);
+        }
+      });
+    } catch (error) {
+      console.error(`Failed to approve token: ${(error as Error).message}`);
+    }
+  };
+
+  const handleBorrow = async () => {
+    if (isBorrowInputEmpty || isBorrowOverMax) return;
+    
+    try {
+      const loanTokenPath = market?.loanToken;
+      const approvalAmount = parseFloat(borrowAmount);
+      
+      await approveTokenMutation.mutateAsync({
+        tokenPath: loanTokenPath!,
+        amount: approvalAmount * 2
+      });
+            
+      borrowMutation.mutate({
+        marketId: market.poolPath!,
+        assets: parseFloat(borrowAmount)
+      }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
+          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
+          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
+          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
+          reset();
+        },
+        onError: (error: Error) => {
+          console.error(`Failed to borrow: ${error.message}`);
+        }
+      });
+    } catch (error) {
+      console.error(`Failed to approve token: ${(error as Error).message}`);
+    }
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmitAction)} className="space-y-3">
+    <form className="space-y-3">
       {/* Supply Card */}
       <Card className={CARD_STYLES}>
         <CardHeader className="px-4 -mb-4">
@@ -120,15 +189,10 @@ export function AddBorrowPanel({
           <Button
             type="button"
             className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isSupplyInputEmpty}
-            onClick={() => {
-              if (!isSupplyInputEmpty) {
-                onSubmitAction({ supplyAmount: supplyAmount, borrowAmount: "", repayAmount: "", withdrawAmount: "" });
-                reset();
-              }
-            }}
+            disabled={isSupplyInputEmpty || isSupplyPending}
+            onClick={handleSupply}
           >
-            {supplyButtonMessage}
+            {isSupplyPending ? "Processing..." : supplyButtonMessage}
           </Button>
         </CardContent>
       </Card>
@@ -171,15 +235,10 @@ export function AddBorrowPanel({
           <Button
             type="button"
             className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isBorrowInputEmpty || isBorrowOverMax}
-            onClick={() => {
-              if (!isBorrowInputEmpty && !isBorrowOverMax) {
-                onSubmitAction({ supplyAmount: "", borrowAmount: borrowAmount, repayAmount: "", withdrawAmount: "" });
-                reset();
-              }
-            }}
+            disabled={isBorrowInputEmpty || isBorrowOverMax || isBorrowPending}
+            onClick={handleBorrow}
           >
-            {borrowButtonMessage}
+            {isBorrowPending ? "Processing..." : borrowButtonMessage}
           </Button>
         </CardContent>
       </Card>

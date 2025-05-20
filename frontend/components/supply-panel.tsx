@@ -8,18 +8,9 @@ import { Input } from "@/components/ui/input"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
-type FormValues = {
-  supplyAmount: string
-  borrowAmount: string
-  repayAmount: string
-  withdrawAmount: string
-}
-
 interface SupplyPanelProps {
   market: MarketInfo
-  onSubmitAction: (data: FormValues) => void
   supplyValue: number
-  isTransactionPending: boolean
   healthFactor: string
   currentCollateral?: number
   currentLoan?: number
@@ -30,21 +21,16 @@ interface SupplyPanelProps {
 
 export function SupplyPanel({
   market,
-  onSubmitAction,
   supplyValue,
-  isTransactionPending,
 }: SupplyPanelProps) {
-    const { register, handleSubmit, watch } = useForm({
+    const { register, watch } = useForm({
         defaultValues: {
             supplyAmount: "",
-            borrowAmount: "",
-            repayAmount: "",
-            withdrawAmount: ""
         }
         })
     const supplyAmount = watch("supplyAmount");
     return (
-        <form onSubmit={handleSubmit(onSubmitAction)} className="space-y-4">
+        <form className="space-y-4">
           {/* Supply Card */}
           <Card className={CARD_STYLES}>
             <CardHeader className="">
@@ -82,13 +68,11 @@ export function SupplyPanel({
           <Button
             type="submit" 
             className="w-full shadow-lg text-gray-200 rounded-2xl bg-midnightPurple-900 hover:bg-gradient-to-tr hover:from-midnightPurple-900 hover:to-midnightPurple-800 transition-all duration-300 text-md relative overflow-hidden hover:before:absolute hover:before:inset-0 hover:before:bg-gradient-to-tr hover:before:from-transparent hover:before:to-white/5 hover:before:animate-shine"
-            disabled={!supplyAmount || parseFloat(supplyAmount) <= 0 || isTransactionPending}
+            disabled={!supplyAmount || parseFloat(supplyAmount) <= 0}
           >
-            {isTransactionPending 
-              ? "Processing..." 
-              : (!supplyAmount || parseFloat(supplyAmount) <= 0
-                  ? "Enter Valid Amount" 
-                  : "Supply")}
+            {!supplyAmount || parseFloat(supplyAmount) <= 0
+              ? "Enter Valid Amount" 
+              : "Supply"}
           </Button>
         </form>
     )

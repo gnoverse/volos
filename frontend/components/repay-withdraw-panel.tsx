@@ -9,19 +9,10 @@ import { useForm } from "react-hook-form"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
-type FormValues = {
-  supplyAmount: string
-  borrowAmount: string
-  repayAmount: string
-  withdrawAmount: string
-}
-
 interface RepayWithdrawPanelProps {
   market: MarketInfo
-  onSubmitAction: (data: FormValues) => void
   supplyValue: number
   borrowValue: number
-  isTransactionPending: boolean
   healthFactor: string
   currentCollateral?: number
   currentLoan?: number
@@ -32,24 +23,21 @@ interface RepayWithdrawPanelProps {
 
 export function RepayWithdrawPanel({
   market,
-  onSubmitAction,
   healthFactor,
   currentCollateral = 0,
   currentLoan = 0,
   ltv,
 }: RepayWithdrawPanelProps) {
   const ltvFloat = parseFloat(ltv) / 1e18
-  const { register, handleSubmit, setValue, watch } = useForm({
+  const { register, setValue, watch } = useForm({
     defaultValues: {
-        supplyAmount: "",
-        borrowAmount: "",
         repayAmount: "",
         withdrawAmount: ""
     }
     })
 
   return (
-    <form onSubmit={handleSubmit(onSubmitAction)} className="space-y-4">
+    <form className="space-y-4">
       {/* Repay Card */}
       <Card className={CARD_STYLES}>
         <CardHeader>
