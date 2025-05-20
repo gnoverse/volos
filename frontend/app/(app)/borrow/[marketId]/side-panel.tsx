@@ -48,10 +48,10 @@ export function SidePanel({
   return (
     <div className="col-span-1 lg:col-span-3 lg:sticky top-0 self-start pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
       <Tabs value={tab} onValueChange={setTabAction} className="w-full sticky top-0 z-10 backdrop-blur-sm">
-        <TabsList className="mb-4 w-full py-2">
-          <TabsTrigger value="add-borrow">Add / Borrow</TabsTrigger>
-          <TabsTrigger value="repay-withdraw">Repay / Withdraw</TabsTrigger>
-          <TabsTrigger value="supply-only">Supply</TabsTrigger>
+        <TabsList className="mb-4 w-full py-2 bg-customGray-800/60 rounded-lg">
+          <TabsTrigger value="add-borrow" className="data-[state=active]:shadow-md data-[state=active]:text-gray-200">Add / Borrow</TabsTrigger>
+          <TabsTrigger value="repay-withdraw" className="data-[state=active]:shadow-md data-[state=active]:text-gray-200">Repay / Withdraw</TabsTrigger>
+          <TabsTrigger value="supply-only" className="data-[state=active]:shadow-md data-[state=active]:text-gray-200">Supply</TabsTrigger>
         </TabsList>
         
         <TabsContent value="add-borrow">
