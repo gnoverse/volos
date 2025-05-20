@@ -1,7 +1,7 @@
 "use client"
 
 import { MarketInfo } from "@/app/types"
-import { useForm, UseFormHandleSubmit, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -34,7 +34,7 @@ export function SupplyPanel({
   supplyValue,
   isTransactionPending,
 }: SupplyPanelProps) {
-    const { register, handleSubmit, setValue, watch, reset } = useForm({
+    const { register, handleSubmit, watch } = useForm({
         defaultValues: {
             supplyAmount: "",
             borrowAmount: "",

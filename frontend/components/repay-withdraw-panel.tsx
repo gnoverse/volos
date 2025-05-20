@@ -5,7 +5,7 @@ import { PositionCard } from "@/components/position-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useForm, UseFormHandleSubmit, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form"
+import { useForm } from "react-hook-form"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -39,7 +39,7 @@ export function RepayWithdrawPanel({
   ltv,
 }: RepayWithdrawPanelProps) {
   const ltvFloat = parseFloat(ltv) / 1e18
-  const { register, handleSubmit, setValue, watch, reset } = useForm({
+  const { register, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
         supplyAmount: "",
         borrowAmount: "",
