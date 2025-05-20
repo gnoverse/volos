@@ -38,7 +38,7 @@ export function PositionCard({
 
   return (
     <Card className={CARD_STYLES}>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 -mt-2">
         <div>
           <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
           <div className="text-xl font-semibold text-gray-200">
@@ -68,7 +68,7 @@ export function PositionCard({
         </div>
         
         <div>
-          <div className="flex justify-between items-center mb-1 px-1">
+          <div className="flex justify-between items-center px-1">
             <span className="text-sm text-red-400">&lt; 1</span>
             <span className="text-sm text-gray-400">Health Factor</span>
             <span className="text-sm text-blue-400">3+</span>

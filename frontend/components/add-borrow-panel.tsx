@@ -5,6 +5,7 @@ import { PositionCard } from "@/components/position-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ArrowDown, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -42,7 +43,6 @@ export function AddBorrowPanel({
   ltv,
   positionData,
 }: AddBorrowPanelProps) {
-
     const { register, handleSubmit, setValue, watch, reset } = useForm({
         defaultValues: {
             supplyAmount: "",
@@ -50,7 +50,7 @@ export function AddBorrowPanel({
             repayAmount: "",
             withdrawAmount: ""
         }
-        })
+    })
   const positionCollateral = positionData?.collateral
     ? parseFloat(positionData.collateral)
     : currentCollateral;
@@ -81,9 +81,110 @@ export function AddBorrowPanel({
       : "Borrow";
 
   return (
-    <form onSubmit={handleSubmit(onSubmitAction)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmitAction)} className="space-y-3">
+      {/* Supply Card */}
+      <Card className={CARD_STYLES}>
+        <CardHeader className="px-4 -mb-4">
+          <div className="flex items-center gap-2">
+            <Plus size={16} className="text-blue-400" />
+            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
+              Supply Collateral {market.collateralTokenSymbol}
+            </CardTitle>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-1 pt-0 px-4">
+          <Input
+            type="number"
+            {...register("supplyAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
+            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
+            placeholder="0.00"
+          />
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-400">${supplyValue.toFixed(2)}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
+                onClick={() => {
+                  setValue("supplyAmount", maxBorrowable.toString());
+                }}
+              >
+                MAX
+              </Button>
+            </div>
+          </div>
+          <Button
+            type="button"
+            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
+            disabled={isSupplyInputEmpty}
+            onClick={() => {
+              if (!isSupplyInputEmpty) {
+                onSubmitAction({ supplyAmount: supplyAmount, borrowAmount: "", repayAmount: "", withdrawAmount: "" });
+                reset();
+              }
+            }}
+          >
+            {supplyButtonMessage}
+          </Button>
+        </CardContent>
+      </Card>
 
-    {/* Position Card */}
+      {/* Borrow Card */}
+      <Card className={CARD_STYLES}>
+        <CardHeader className="px-4 -mb-4">
+          <div className="flex items-center gap-2">
+            <ArrowDown size={16} className="text-purple-400" />
+            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
+              Borrow {market.loanTokenSymbol}
+            </CardTitle>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-1 pt-0 px-4">
+          <Input
+            type="number"
+            {...register("borrowAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
+            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
+            placeholder="0.00"
+          />
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-400">${borrowValue.toFixed(2)}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
+                onClick={() => {
+                  setValue("borrowAmount", maxBorrowable.toString());
+                }}
+              >
+                MAX
+              </Button>
+            </div>
+          </div>
+          <Button
+            type="button"
+            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
+            disabled={isBorrowInputEmpty || isBorrowOverMax}
+            onClick={() => {
+              if (!isBorrowInputEmpty && !isBorrowOverMax) {
+                onSubmitAction({ supplyAmount: "", borrowAmount: borrowAmount, repayAmount: "", withdrawAmount: "" });
+                reset();
+              }
+            }}
+          >
+            {borrowButtonMessage}
+          </Button>
+        </CardContent>
+      </Card>
+      
+      {/* Position Card */}
       <PositionCard 
         market={market}
         supplyAmount={supplyAmount}
@@ -95,98 +196,6 @@ export function AddBorrowPanel({
         currentLoan={currentLoan}
         ltv={ltv}
       />
-      {/* Supply Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader>
-          <CardTitle className="text-gray-200 text-base font-medium">
-            Supply Collateral {market.collateralTokenSymbol}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Input
-            type="number"
-            {...register("supplyAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-400">${supplyValue.toFixed(2)}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
-                onClick={() => {
-                  setValue("supplyAmount", maxBorrowable.toString());
-                }}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-2"
-            disabled={isSupplyInputEmpty}
-            onClick={() => {
-              if (!isSupplyInputEmpty) {
-                onSubmitAction({ supplyAmount: "", borrowAmount: "", repayAmount: "", withdrawAmount: "" });
-              }
-            }}
-          >
-            {supplyButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Borrow Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader>
-          <CardTitle className="text-gray-200 text-base font-medium">
-            Borrow {market.loanTokenSymbol}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Input
-            type="number"
-            {...register("borrowAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-4xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-400">${borrowValue.toFixed(2)}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-2 py-1 h-auto"
-                onClick={() => {
-                  setValue("borrowAmount", maxBorrowable.toString());
-                }}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-2"
-            disabled={isBorrowInputEmpty || isBorrowOverMax}
-            onClick={() => {
-              if (!isBorrowInputEmpty && !isBorrowOverMax) {
-                onSubmitAction({ supplyAmount: "", borrowAmount: "", repayAmount: "", withdrawAmount: "" });
-                reset();
-              }
-            }}
-          >
-            {borrowButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
     </form>
   )
 } 

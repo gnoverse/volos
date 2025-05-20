@@ -3,12 +3,14 @@
 import { AdenaService } from "@/app/services/adena.service"
 import "@/app/theme.css"
 import {
+  formatApyVariation,
   formatLTV,
   formatRate,
   formatTokenAmount,
   formatUtilization
 } from "@/app/utils/format.utils"
-import { MarketTabs } from "@/components/market-tabs"
+import { InfoCard } from "@/components/InfoCard"
+import { MarketChart } from "@/components/market-chart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
@@ -19,6 +21,7 @@ import {
 } from "../mock"
 import { useApproveTokenMutation, useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery, useSupplyMutation } from "../queries-mutations"
 import { SidePanel } from "./side-panel"
+import { MarketTabs } from "@/components/market-tabs"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
