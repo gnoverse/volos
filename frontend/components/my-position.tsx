@@ -2,10 +2,11 @@
 
 import { PositionHistory, getPositionHistoryForMarket } from "@/app/(app)/borrow/mock-history"
 import { MarketInfo, Position } from "@/app/types"
-import { formatHealthFactor, formatLTV, formatTokenAmount } from "@/app/utils/format.utils"
+import { formatLTV, formatTokenAmount } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { PositionChartTabs } from "./position-chart-tabs"
+import { HealthBar } from "./health-bar"
 
 interface MarketPositionProps {
   market: MarketInfo
@@ -51,17 +52,12 @@ export function MyPosition({
     ? (currentLoan / (currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18)))) * 100 
     : 0
 
-  const healthFactorValue = parseFloat(formatHealthFactor(healthFactor))
-  let healthFactorColor = "text-green-500"
-  if (healthFactorValue < 1.5) healthFactorColor = "text-red-500"
-  else if (healthFactorValue < 2) healthFactorColor = "text-yellow-500"
-
   return (
     <div className="space-y-6">
       {/* Position Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className={cardStyles}>
-          <CardHeader className="pb-2">
+          <CardHeader className="">
             <CardTitle className="text-gray-200">Borrowed</CardTitle>
             <CardDescription className="text-gray-400">Your borrowed assets</CardDescription>
           </CardHeader>
@@ -70,19 +66,19 @@ export function MyPosition({
               {formatTokenAmount(currentLoan.toString(), market.loanTokenDecimals)} 
               <span className="text-gray-400 text-lg ml-2">{market.loanTokenSymbol}</span>
             </div>
-            <div className="text-sm text-gray-400 mt-2">
-              Interest: {formatTokenAmount(market.borrowAPR, 18, 2)}% APR
+            <div className="text-sm text-gray-400 mt-2 break-words">
+              ≈ ${formatTokenAmount((currentLoan * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString(), 0, 2)} USD
             </div>
           </CardContent>
         </Card>
 
         <Card className={cardStyles}>
-          <CardHeader className="pb-2">
+          <CardHeader className="">
             <CardTitle className="text-gray-200">Collateral</CardTitle>
             <CardDescription className="text-gray-400">Your supplied collateral</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-gray-200 flex flex-wrap items-baseline break-all">
+          <CardContent className="items-center">
+            <div className="text-3xl font-bold text-gray-200 flex flex-wrap items-baseline break-all ">
               <span className="break-all mr-2">
                 {formatTokenAmount(currentCollateral.toString(), market.collateralTokenDecimals)}
               </span>
@@ -95,31 +91,20 @@ export function MyPosition({
         </Card>
 
         <Card className={cardStyles}>
-          <CardHeader className="pb-2">
+          <CardHeader className="">
             <CardTitle className="text-gray-200">Health</CardTitle>
             <CardDescription className="text-gray-400">Position health metrics</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <div className="text-sm text-gray-400 mb-1">Current LTV</div>
                 <div className="text-xl font-medium text-gray-200">
                   {(ltv*100).toFixed(2)}% <span className="text-gray-400 text-sm">/ {formatLTV(market.lltv, 18)}</span>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-2.5 mt-1">
-                  <div 
-                    className="bg-gradient-to-r from-green-600 via-yellow-600 to-red-600 h-2.5 rounded-full" 
-                    style={{ width: `${((ltv*100) / parseFloat(formatLTV(market.lltv, 18))) * 100}%` }}
-                  ></div>
-                </div>
               </div>
               
-              <div>
-                <div className="text-sm text-gray-400 mb-1">Health Factor</div>
-                <div className={`text-xl font-medium ${healthFactorColor}`}>
-                  {healthFactorValue.toFixed(2)}
-                </div>
-              </div>
+                <HealthBar healthFactor={healthFactor} />
             </div>
           </CardContent>
         </Card>
