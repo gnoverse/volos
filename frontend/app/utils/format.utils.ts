@@ -9,7 +9,7 @@ export function formatTokenAmount(
   minFractionDigits: number = 2,
   maxFractionDigits: number = 2
 ): string {
-  const num = Number(formatUnits(BigInt(value), decimals))*100;
+  const num = Number(formatUnits(BigInt(value), decimals));
   return num.toLocaleString(undefined, {
     minimumFractionDigits: minFractionDigits,
     maximumFractionDigits: maxFractionDigits,

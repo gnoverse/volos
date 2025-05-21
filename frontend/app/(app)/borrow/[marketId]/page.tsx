@@ -37,6 +37,7 @@ function MarketPageContent() {
 
   const currentLoan = loanAmountData ? parseFloat(loanAmountData.amount) : 0
   const currentCollateral = positionData ? parseFloat(positionData.collateral) : 0
+
   // track user address
   useEffect(() => {
     const adena = AdenaService.getInstance()
@@ -67,7 +68,7 @@ function MarketPageContent() {
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6">
       <h1 className="text-[36px] font-bold mb-6 text-gray-200">
-        {market.loanTokenSymbol} / {market.collateralTokenSymbol} Market
+        {market.loanTokenSymbol} / {market.collateralTokenSymbol.toUpperCase()} Market
       </h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 relative">

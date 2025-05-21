@@ -82,7 +82,7 @@ function BorrowPageContent() {
                   <PositionChart
                     data={loanHistory}
                     dataKey="borrowed"
-                    color="rgb(239, 68, 68)"
+                    color="#5B21B6"
                     className="bg-transparent border-none p-0 shadow-none"
                   />
                 )}
