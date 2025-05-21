@@ -78,3 +78,18 @@ export function formatHealthFactor(wadString: string | undefined | null, decimal
   if (isNaN(num)) return "0.00";
   return (num / WAD).toFixed(decimals);
 } 
+
+/**
+ * Formats a number as USD currency string with 2 decimal places.
+ * Example: 1234.5678 => "$1,234.57"
+ */
+export function formatCurrency(value: string | number): string {
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(numValue);
+}
+

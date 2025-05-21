@@ -20,6 +20,7 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useState } from "react"
 
 interface DataTableProps<TData, TValue> {
@@ -122,29 +123,31 @@ export function DataTable<TData, TValue>({
           )}
         </TableBody>
       </Table>
-      {pagination && (
-        <div className="flex items-center justify-end space-x-2 py-4">
+      {pagination && table.getPageCount() > 1 && (
+        <div className="flex items-center justify-center space-x-4 py-4">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
-            className="text-gray-200 hover:text-gray-100 hover:bg-gray-600/60 rounded-3xl"
+            className="text-gray-200 hover:text-gray-100 hover:bg-gray-600/60 rounded-full w-8 h-8 p-0"
           >
-            Previous
+            <ChevronLeft className="h-4 w-4" />
+            <span className="sr-only">Previous</span>
           </Button>
-          <span className="mx-2 text-gray-200">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
+          <span className="text-gray-200">
+            {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </span>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="text-gray-200 hover:text-gray-100 hover:bg-gray-600/60 rounded-3xl"
+            className="text-gray-200 hover:text-gray-100 hover:bg-gray-600/60 rounded-full w-8 h-8 p-0"
           >
-            Next
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Next</span>
           </Button>
         </div>
       )}

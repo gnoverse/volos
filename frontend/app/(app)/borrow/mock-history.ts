@@ -248,3 +248,27 @@ export const getPositionHistoryForMarket = (marketId: string): PositionHistory[]
   
   return positionHistory[marketId]
 } 
+export const getUserLoanHistory = (): PositionHistory[] => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const history: PositionHistory[] = []
+
+  for (let i = 30; i >= 0; i--) {
+    const date = new Date(today)
+    date.setDate(date.getDate() - i)
+    
+    // Generate random variations around a base value
+    const baseValue = 5000
+    const variation = Math.random() * 0.15 - 0.075 // Random variation between -7.5% and +7.5%
+    const value = baseValue * (1 + variation)
+    
+    history.push({
+      name: date.toISOString().split('T')[0],
+      collateral: 0,
+      borrowed: value,
+      healthFactor: 0
+    })
+  }
+
+  return history
+}
