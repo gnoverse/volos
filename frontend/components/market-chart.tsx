@@ -3,10 +3,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import { MarketHistory } from "../app/(app)/borrow/mock-history"
+import { MarketHistory, PositionHistory } from "../app/(app)/borrow/mock-history"
 
 interface MarketChartProps {
-  data: MarketHistory[]
+  data: MarketHistory[] | PositionHistory[]
   title: string
   description: string
   dataKey: string

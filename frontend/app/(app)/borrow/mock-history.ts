@@ -1,5 +1,5 @@
 export type MarketHistory = {
-  name: string // Date as string for x-axis
+  name: string
   supply: number
   borrow: number
   utilization: number
@@ -11,7 +11,6 @@ export type MarketHistoryMap = {
   [marketId: string]: MarketHistory[]
 }
 
-// Hardcoded market history data for better performance
 export const marketHistory: MarketHistoryMap = {
   "eth:usdc:3000": [
     { name: "2023-04-01", supply: 420.34, borrow: 154.21, utilization: 36.69, price: 2423.45, apy: 5.12 },
@@ -85,17 +84,11 @@ export const marketHistory: MarketHistoryMap = {
     { name: "2023-04-03", supply: 207.89, borrow: 119.34, utilization: 57.41, price: 17.12, apy: 4.13 },
     { name: "2023-04-04", supply: 213.45, borrow: 123.56, utilization: 57.89, price: 17.34, apy: 4.16 },
     { name: "2023-04-05", supply: 212.67, borrow: 124.89, utilization: 58.72, price: 17.23, apy: 4.22 },
-    // ... additional days data omitted for brevity ...
-    { name: "2023-04-29", supply: 218.32, borrow: 127.56, utilization: 58.43, price: 17.89, apy: 4.20 },
+    { name: "2023-04-06", supply: 218.32, borrow: 127.56, utilization: 58.43, price: 17.89, apy: 4.20 },
     { name: "2023-04-30", supply: 214.59, borrow: 128.75, utilization: 60.00, price: 18.00, apy: 4.45 }
   ],
 }
 
-// Hardcoded marketHistoryMap for remaining markets would go here
-// I've included just a few examples to show the pattern
-
-// Use this function to get history data for a market that doesn't have hardcoded data
-// Only used as a fallback to ensure all markets have data
 function generateFallbackHistoryData(
   days: number,
   baseSupply: number,
@@ -105,17 +98,16 @@ function generateFallbackHistoryData(
 ): MarketHistory[] {
   const history: MarketHistory[] = []
   const today = new Date()
-  today.setHours(0, 0, 0, 0) // Reset time to start of day
+  today.setHours(0, 0, 0, 0)
   
   for (let i = days; i >= 0; i--) {
     const date = new Date(today)
-    date.setDate(date.getDate() - i) // Subtract days to go backwards from today
+    date.setDate(date.getDate() - i)
     
-    // Simplified variation for fallback data
-    const variation = Math.random() * 0.2 - 0.1      // Random -10% to +10%
+    const variation = Math.random() * 0.2 - 0.1
     
     history.push({
-      name: date.toISOString().split('T')[0], // Store as YYYY-MM-DD
+      name: date.toISOString().split('T')[0],
       supply: baseSupply * (1 + variation),
       borrow: baseBorrow * (1 + variation),
       utilization: (baseBorrow / baseSupply) * 100,
@@ -127,11 +119,8 @@ function generateFallbackHistoryData(
   return history
 }
 
-// For markets without explicitly defined data, generate on-demand but only once
 const getMarketHistory = (marketId: string): MarketHistory[] => {
   if (!marketHistory[marketId]) {
-    // Add fallback values based on the market ID
-    // These would normally come from your mock data generation logic
     const defaultValues = {
       "matic:usdc:3000": [756.24, 453.75, 1.5, 5.87],
       "usdt:usdc:3000": [850.00, 510.00, 1.0, 4.25],
@@ -156,7 +145,106 @@ const getMarketHistory = (marketId: string): MarketHistory[] => {
   return marketHistory[marketId]
 }
 
-// Ensure all market IDs have history data
 export const getHistoryForMarket = (marketId: string): MarketHistory[] => {
   return marketHistory[marketId] || getMarketHistory(marketId)
+}
+
+export type PositionHistory = {
+  name: string
+  collateral: number
+  borrowed: number
+  healthFactor: number
+}
+
+export type PositionHistoryMap = {
+  [marketId: string]: PositionHistory[]
+}
+
+export const positionHistory: PositionHistoryMap = {
+  "eth:usdc:3000": [
+    { name: "2023-04-01", collateral: 2.5, borrowed: 1500, healthFactor: 2.1 },
+    { name: "2023-04-02", collateral: 2.5, borrowed: 1520, healthFactor: 2.05 },
+    { name: "2023-04-03", collateral: 2.7, borrowed: 1520, healthFactor: 2.23 },
+    { name: "2023-04-04", collateral: 2.7, borrowed: 1600, healthFactor: 2.11 },
+    { name: "2023-04-05", collateral: 2.7, borrowed: 1650, healthFactor: 2.05 },
+    { name: "2023-04-06", collateral: 3.0, borrowed: 1650, healthFactor: 2.28 },
+    { name: "2023-04-07", collateral: 3.0, borrowed: 1700, healthFactor: 2.21 },
+    { name: "2023-04-08", collateral: 3.0, borrowed: 1750, healthFactor: 2.14 },
+    { name: "2023-04-09", collateral: 3.0, borrowed: 1800, healthFactor: 2.08 },
+    { name: "2023-04-10", collateral: 3.2, borrowed: 1800, healthFactor: 2.22 },
+    { name: "2023-04-11", collateral: 3.2, borrowed: 1850, healthFactor: 2.16 },
+    { name: "2023-04-12", collateral: 3.2, borrowed: 1900, healthFactor: 2.10 },
+    { name: "2023-04-13", collateral: 3.5, borrowed: 1900, healthFactor: 2.30 },
+    { name: "2023-04-14", collateral: 3.5, borrowed: 1950, healthFactor: 2.24 },
+    { name: "2023-04-15", collateral: 3.5, borrowed: 2000, healthFactor: 2.18 },
+    { name: "2023-04-16", collateral: 3.5, borrowed: 2050, healthFactor: 2.13 },
+    { name: "2023-04-17", collateral: 3.8, borrowed: 2050, healthFactor: 2.32 },
+    { name: "2023-04-18", collateral: 3.8, borrowed: 2100, healthFactor: 2.26 },
+    { name: "2023-04-19", collateral: 3.8, borrowed: 2150, healthFactor: 2.21 },
+    { name: "2023-04-20", collateral: 4.0, borrowed: 2150, healthFactor: 2.32 },
+    { name: "2023-04-21", collateral: 4.0, borrowed: 2200, healthFactor: 2.27 },
+    { name: "2023-04-22", collateral: 4.0, borrowed: 2250, healthFactor: 2.22 },
+    { name: "2023-04-23", collateral: 4.0, borrowed: 2300, healthFactor: 2.17 },
+    { name: "2023-04-24", collateral: 4.2, borrowed: 2300, healthFactor: 2.28 },
+    { name: "2023-04-25", collateral: 4.2, borrowed: 2350, healthFactor: 2.23 },
+    { name: "2023-04-26", collateral: 4.2, borrowed: 2400, healthFactor: 2.18 },
+    { name: "2023-04-27", collateral: 4.5, borrowed: 2400, healthFactor: 2.34 },
+    { name: "2023-04-28", collateral: 4.5, borrowed: 2450, healthFactor: 2.29 },
+    { name: "2023-04-29", collateral: 4.5, borrowed: 2500, healthFactor: 2.25 },
+    { name: "2023-04-30", collateral: 4.5, borrowed: 2550, healthFactor: 2.20 }
+  ],
+}
+
+function generateFallbackPositionHistory(
+  days: number,
+  baseCollateral: number,
+  baseBorrowed: number,
+  baseHealthFactor: number
+): PositionHistory[] {
+  const history: PositionHistory[] = []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  for (let i = days; i >= 0; i--) {
+    const date = new Date(today)
+    date.setDate(date.getDate() - i)
+    
+    const variation = Math.random() * 0.1 - 0.05   
+    
+    const collateral = baseCollateral * (1 + variation * 0.5)
+    const borrowed = baseBorrowed * (1 + variation)
+    const healthFactor = baseHealthFactor * (1 - variation * 0.5)
+    
+    history.push({
+      name: date.toISOString().split('T')[0],
+      collateral,
+      borrowed,
+      healthFactor
+    })
+  }
+  
+  return history
+}
+
+export const getPositionHistoryForMarket = (marketId: string): PositionHistory[] => {
+  if (!positionHistory[marketId]) {
+    const defaultValues = {
+      "matic:usdc:3000": [10, 5000, 2.5],
+      "usdt:usdc:3000": [1000, 800, 1.8],
+      "dai:usdc:3000": [1200, 900, 2.0],
+      "avax:usdc:3000": [15, 400, 2.2],
+      "sol:usdc:3000": [25, 1500, 1.9],
+      "btc:usdc:3000": [0.15, 3000, 2.3],
+      "link:usdc:3000": [100, 800, 2.1]
+    }[marketId] || [5, 2000, 2.0]
+    
+    positionHistory[marketId] = generateFallbackPositionHistory(
+      30,
+      defaultValues[0],
+      defaultValues[1],
+      defaultValues[2]
+    )
+  }
+  
+  return positionHistory[marketId]
 } 

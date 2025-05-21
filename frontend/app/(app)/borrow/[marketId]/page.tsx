@@ -242,7 +242,7 @@ function MarketPageContent() {
                           marginRight: "0.75rem"
                         }}
                       >
-                        <div className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 rounded-full"></div>
+                        <div className="h-full bg-gradient-to-r from-transparent via-yellow-600 to-red-500 rounded-full"></div>
                       </div>
                     </div>
                     <span className="text-xs text-gray-400 ml-2">Medium</span>
@@ -257,7 +257,11 @@ function MarketPageContent() {
             history={history} 
             market={market} 
             apyVariations={apyVariations} 
-            cardStyles={CARD_STYLES} 
+            cardStyles={CARD_STYLES}
+            healthFactor={healthFactorData?.healthFactor ?? "0"}
+            currentCollateral={currentCollateral}
+            currentLoan={currentLoan}
+            positionData={positionData}
           />
         </div>
 
