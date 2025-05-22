@@ -80,7 +80,7 @@ export function MyPosition({
           <CardContent className="items-center">
             <div className="text-3xl font-bold text-gray-200 flex flex-wrap items-baseline break-all ">
               <span className="break-all mr-2">
-                {formatTokenAmount(currentCollateral.toString(), market.collateralTokenDecimals)}
+                {currentCollateral.toString()}
               </span>
               <span className="text-gray-400 text-lg">{market.collateralTokenSymbol}</span>
             </div>
