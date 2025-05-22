@@ -53,7 +53,7 @@ export function MarketOverview({ history, market, apyVariations, cardStyles }: M
         />
         <MarketChart
           data={history}
-          title="APY"
+          title="APR"
           description="Annual Percentage Yield"
           dataKey="apy"
           color="rgba(245, 158, 11, 0.95)"
@@ -64,15 +64,15 @@ export function MarketOverview({ history, market, apyVariations, cardStyles }: M
       {/* Performance Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <InfoCard
-          title="7D APY"
+          title="7D APR"
           value={formatApyVariation(market.borrowAPR, apyVariations.sevenDay, 18, 2)}
         />
         <InfoCard
-          title="30D APY"
+          title="30D APR"
           value={formatApyVariation(market.borrowAPR, 1, 18, 2)}
         />
         <InfoCard
-          title="90D APY"
+          title="90D APR"
           value={formatApyVariation(market.borrowAPR, apyVariations.ninetyDay, 18, 2)}
         />
       </div>

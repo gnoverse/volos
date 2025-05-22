@@ -25,7 +25,7 @@ export function formatTokenAmount(
 }
 
 /**
- * Formats a rate (e.g., APY) as a percentage string with 2 decimals.
+ * Formats a rate (e.g., APR) as a percentage string with 2 decimals.
  */
 export function formatRate(
   value: string | bigint,
@@ -62,7 +62,7 @@ export function formatLTV(
 }
 
 /**
- * Formats a variable APY (e.g., 7D, 90D) given a base APR, a variation multiplier, and decimals.
+ * Formats a variable APR (e.g., 7D, 90D) given a base APR, a variation multiplier, and decimals.
  */
 export function formatApyVariation(
   apr: string | bigint,

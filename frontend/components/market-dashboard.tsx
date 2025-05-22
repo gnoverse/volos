@@ -1,6 +1,6 @@
+import { MarketInfo } from "@/app/types";
 import { formatLTV, formatRate, formatTokenAmount, formatUtilization } from "@/app/utils/format.utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MarketInfo } from "@/app/types";
 interface MarketDashboardProps {
   market: MarketInfo;
   cardStyles: string;
@@ -115,16 +115,16 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           <CardDescription className="text-gray-400">Market parameters and rates</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 pt-2">
-          {/* APY Rates */}
+          {/* APR Rates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-sm text-gray-400 mb-1">Supply APY</div>
+              <div className="text-sm text-gray-400 mb-1">Supply APR</div>
               <div className="text-3xl font-medium text-gray-200">
                 {formatRate(market.supplyAPR, 18, true)}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-400 mb-1">Borrow APY</div>
+              <div className="text-sm text-gray-400 mb-1">Borrow APR</div>
               <div className="text-3xl font-medium text-gray-200">
                 {formatRate(market.borrowAPR, 18, true)}
               </div>

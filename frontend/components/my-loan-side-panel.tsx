@@ -25,7 +25,7 @@ export function MyLoanSidePanel({ netRate, className }: MyLoanSidePanelProps) {
                 value="apy" 
                 className="rounded-md text-gray-400 text-xs data-[state=active]:text-gray-200 px-3 py-1"
             >
-                APY
+                APR
             </TabsTrigger>
             <TabsTrigger 
                 value="rewards" 
