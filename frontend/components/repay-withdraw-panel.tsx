@@ -33,6 +33,8 @@ export function RepayWithdrawPanel({
   currentCollateral = 0,
   currentLoan = 0,
   ltv,
+  //collateralTokenDecimals,
+  loanTokenDecimals,
   positionData,
 }: RepayWithdrawPanelProps) {
   const ltvFloat = parseFloat(ltv) / 1e18
@@ -94,12 +96,12 @@ export function RepayWithdrawPanel({
       
       await approveTokenMutation.mutateAsync({
         tokenPath: loanTokenPath!,
-        amount: approvalAmount * 2
+        amount: approvalAmount * Math.pow(10, loanTokenDecimals) * 1.2
       });
             
       repayMutation.mutate({
         marketId: market.poolPath!,
-        assets: parseFloat(repayAmount)
+        assets: parseFloat(repayAmount) * Math.pow(10, loanTokenDecimals)
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
@@ -121,9 +123,17 @@ export function RepayWithdrawPanel({
     if (isWithdrawInputEmpty || isWithdrawOverMax) return;
     
     try {
+      const collateralTokenPath = market?.collateralToken;
+      const approvalAmount = parseFloat(withdrawAmount);
+      
+      await approveTokenMutation.mutateAsync({
+        tokenPath: collateralTokenPath!,
+        amount: approvalAmount * Math.pow(10, 6) * 1.2
+      });
+            
       withdrawCollateralMutation.mutate({
         marketId: market.poolPath!,
-        amount: parseFloat(withdrawAmount)
+        amount: parseFloat(withdrawAmount) * Math.pow(10, 6)
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
