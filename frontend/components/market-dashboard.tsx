@@ -118,13 +118,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           {/* APR Rates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-sm text-gray-400 mb-1">Supply APR</div>
+              <div className="text-sm text-gray-400 mb-1">Supply Rate</div>
               <div className="text-3xl font-medium text-gray-200">
                 {formatRate(market.supplyAPR, 18, true)}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-400 mb-1">Borrow APR</div>
+              <div className="text-sm text-gray-400 mb-1">Borrow Rate</div>
               <div className="text-3xl font-medium text-gray-200">
                 {formatRate(market.borrowAPR, 18, true)}
               </div>
@@ -134,13 +134,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           {/* Risk Parameters */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-sm text-gray-400 mb-1">Max LTV</div>
+              <div className="text-sm text-gray-400 mb-1">Liq. LTV</div>
               <div className="text-3xl font-medium text-gray-200">
                 {formatLTV(market.lltv, 18)}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-400 mb-1">Fee</div>
+              <div className="text-sm text-gray-400 mb-1">Market Fee</div>
               <div className="text-3xl font-medium text-gray-200">
                 {/* {formatRate(market.fee, 18, true)} */}
                 3.00%

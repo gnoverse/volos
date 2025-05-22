@@ -18,7 +18,6 @@ import { columns } from "./columns"
 import { getUserLoanHistory, PositionHistory } from "./mock-history"
 import { useMarketsQuery, useUserLoansQuery } from "./queries-mutations"
 
-// Create a client
 const queryClient = new QueryClient()
 
 function BorrowPageContent() {
@@ -95,6 +94,7 @@ function BorrowPageContent() {
               apy="5.2%"
               rewards="$12.45"
               className="h-full bg-transparent border-none shadow-none rounded-none md:rounded-r-3xl md:rounded-l-none"
+              userLoans={userLoans}
             />
           </div>
         </div>

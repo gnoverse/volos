@@ -25,7 +25,7 @@ export function formatTokenAmount(
 }
 
 /**
- * Formats a rate (e.g., APR) as a percentage string with 2 decimals.
+ * Formats a rate (e.g., APY) as a percentage string with 2 decimals.
  */
 export function formatRate(
   value: string | bigint,
@@ -33,8 +33,11 @@ export function formatRate(
   multiplyBy100: boolean = false,
   fractionDigits: number = 2
 ): string {
-  let num = Number(formatUnits(BigInt(value), decimals));
-  if (multiplyBy100) num *= 100;
+  let num 
+  if (multiplyBy100)
+     num = Number(formatUnits(BigInt(value), decimals - 2));
+  else
+     num = Number(formatUnits(BigInt(value), decimals));
   return `${num.toFixed(fractionDigits)}%`;
 }
 
@@ -62,7 +65,7 @@ export function formatLTV(
 }
 
 /**
- * Formats a variable APR (e.g., 7D, 90D) given a base APR, a variation multiplier, and decimals.
+ * Formats a variable APY (e.g., 7D, 90D) given a base APR, a variation multiplier, and decimals.
  */
 export function formatApyVariation(
   apr: string | bigint,

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { LogOutIcon, WalletIcon } from "lucide-react";
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from "react";
+import Logo from "./logo";
 
 const menuItems = [
   { name: "Borrow", href: "/borrow" },
@@ -103,18 +104,18 @@ export default function Navbar() {
       {/* Left section with logo and menu */}
       <div className="flex items-center">
         {/* Logo */}
-        <div className="mr-6 text-gray-200">Logo</div>
+          <Logo />
         
         {/* Navigation Menu */}
         <NavigationMenu>
-          <NavigationMenuList className="bg-customGray-800/70 rounded-full">
+          <NavigationMenuList className="bg-customGray-800/70 rounded-full px-2 py-1">
             {menuItems.map((item, index) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname.startsWith(item.href);
               return (
                 <NavigationMenuItem key={index} className="text-gray-400">
                   <NavigationMenuLink
                     href={item.href}
-                    className={`block rounded-full text-gray-200 ${
+                    className={`block rounded-full px-4 py-2 text-gray-200 text-lg ${
                       isActive ? 'bg-customGray-700/60 text-gray-200 hover:bg-customGray-700/60 hover:text-gray-200' : 'hover:bg-customGray-700 hover:text-gray-200'
                     }`}
                   >
@@ -132,7 +133,7 @@ export default function Navbar() {
         <Button 
           variant="ghost" 
           className={cn(
-            "bg-customGray-800 text-gray-200 rounded-full",
+            "bg-customGray-800 text-gray-200 rounded-full text-lg",
             isConnected 
               ? "mr-2"
               : "mr-5 hover:bg-customGray-700 hover:text-gray-200"

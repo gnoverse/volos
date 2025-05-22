@@ -1,27 +1,42 @@
 "use client"
 
 import { MarketInfo } from "@/app/types"
+import { formatLTV, formatRate, parseTokenAmount } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
-import { formatUnits } from "viem"
 
 export const columns: ColumnDef<MarketInfo>[] = [
   {
-    accessorKey: "marketId",
+    accessorKey: "loanTokenSymbol",
     header: () => {
       return (
-        <div className="text-left px-3">Asset</div>
+        <div className="text-left px-3">Loan Asset</div>
       )
     },
     cell: ({ row }) => {
-      const loanSymbol = row.original.loanTokenName
-      const collateralSymbol = row.original.collateralTokenName
+      const loanSymbol = row.original.loanTokenSymbol
       
       return (
-        <div className="flex items-center gap-2 text-left px-3">
-          <span className="font-medium ">{loanSymbol}</span>
-          <span className="text-gray-500">/ {collateralSymbol}</span>
+        <div className="flex items-center text-left px-3">
+          <span className="font-medium">{loanSymbol}</span>
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: "collateralTokenSymbol",
+    header: () => {
+      return (
+        <div className="text-left px-3">Collateral Asset</div>
+      )
+    },
+    cell: ({ row }) => {
+      const collateralSymbol = row.original.collateralTokenSymbol
+      
+      return (
+        <div className="flex items-center text-left px-3">
+          <span className="font-medium">{collateralSymbol}</span>
         </div>
       )
     },
@@ -42,8 +57,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       )
     },
     cell: ({ row }) => {
-      const amount = formatUnits(BigInt(row.original.totalSupplyAssets), 18)
-      return <div className="text-left font-medium px-3">{Number(amount).toFixed(2)}</div>
+      return <div className="text-left font-medium px-3">{parseTokenAmount(row.original.totalSupplyAssets, row.original.loanTokenDecimals)} {row.original.loanTokenSymbol}</div>
     },
   },
   {
@@ -62,8 +76,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       )
     },
     cell: ({ row }) => {
-      const amount = formatUnits(BigInt(row.original.totalBorrowAssets), 18)
-      return <div className="text-left font-medium px-3">{Number(amount).toFixed(2)}</div>
+      return <div className="text-left font-medium px-3">{parseTokenAmount(row.original.totalBorrowAssets, row.original.loanTokenDecimals)} {row.original.loanTokenSymbol}</div>
     },
   },
   {
@@ -81,9 +94,8 @@ export const columns: ColumnDef<MarketInfo>[] = [
         </div>
       )
     },
-    cell: () => {
-      const apy = 5; // example value
-      return <div className="text-left font-medium px-3">{apy}%</div>
+    cell: ({ row }) => {
+      return <div className="text-left font-medium px-3">{formatRate(row.original.borrowAPR, 18, true)}</div>
     },
   },
   {
@@ -92,8 +104,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       return <div className="text-left">Max LTV</div>
     },
     cell: ({ row }) => {
-      const lltv = formatUnits(BigInt(row.original.lltv), 18)
-      return <div className="text-left font-medium">{(Number(lltv) * 100).toFixed(0)}%</div>
+      return <div className="text-left font-medium">{formatLTV(row.original.lltv)}</div>
     },
   },
 ] 
