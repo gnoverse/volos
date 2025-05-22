@@ -64,15 +64,15 @@ export function MarketOverview({ history, market, apyVariations, cardStyles }: M
       {/* Performance Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <InfoCard
-          title="7D APR"
+          title="7D APY"
           value={formatApyVariation(market.borrowAPR, apyVariations.sevenDay, 18, 2)}
         />
         <InfoCard
-          title="30D APR"
+          title="30D APY"
           value={formatApyVariation(market.borrowAPR, 1, 18, 2)}
         />
         <InfoCard
-          title="90D APR"
+          title="90D APY"
           value={formatApyVariation(market.borrowAPR, apyVariations.ninetyDay, 18, 2)}
         />
       </div>

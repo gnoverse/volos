@@ -23,11 +23,11 @@ const queryClient = new QueryClient()
 
 function BorrowPageContent() {
   const router = useRouter()
-  const { data: markets, isLoading, error } = useMarketsQuery()
   const [userAddress, setUserAddress] = useState<string>("")
-  const { data: userLoans } = useUserLoansQuery(userAddress || "")
   const [totalLoanAmount, setTotalLoanAmount] = useState("0.00")
   const [loanHistory, setLoanHistory] = useState<PositionHistory[]>([])
+  const { data: userLoans } = useUserLoansQuery(userAddress || "")
+  const { data: markets, isLoading, error } = useMarketsQuery()
 
   // track user address
   useEffect(() => {

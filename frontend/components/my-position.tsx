@@ -49,7 +49,7 @@ export function MyPosition({
   }
 
   const ltv = currentLoan > 0 && currentCollateral > 0 
-    ? (currentLoan / (currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18)))) * 100 
+    ? (currentLoan / (currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18)))) 
     : 0
 
   return (
@@ -63,11 +63,11 @@ export function MyPosition({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-200">
-              {formatTokenAmount(currentLoan.toString(), market.loanTokenDecimals)} 
+              {currentLoan.toString()} 
               <span className="text-gray-400 text-lg ml-2">{market.loanTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${formatTokenAmount((currentLoan * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString(), 0, 2)} USD
+              ≈ ${(currentLoan * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString()} USD
             </div>
           </CardContent>
         </Card>

@@ -5,7 +5,9 @@ import "@/app/theme.css"
 import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
+import { Button } from "@/components/ui/button"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { RefreshCw } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import {
@@ -29,11 +31,11 @@ function MarketPageContent() {
   const params = useParams()
   const decodedMarketId = decodeURIComponent(params.marketId as string)
   const [userAddress, setUserAddress] = useState<string>("")
-  const { data: market, isPending: marketLoading, error: marketError } = useMarketQuery(decodedMarketId)
+  const { data: market, isPending: marketLoading, error: marketError, refetch: refetchMarket } = useMarketQuery(decodedMarketId)
   const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
-  const { data: positionData } = usePositionQuery(decodedMarketId, userAddress);
-  const { data: loanAmountData } = useLoanAmountQuery(decodedMarketId, userAddress)
-  const { data: healthFactorData } = useHealthFactorQuery(decodedMarketId, userAddress)
+  const { data: positionData, refetch: refetchPosition } = usePositionQuery(decodedMarketId, userAddress);
+  const { data: loanAmountData, refetch: refetchLoanAmount } = useLoanAmountQuery(decodedMarketId, userAddress)
+  const { data: healthFactorData, refetch: refetchHealthFactor } = useHealthFactorQuery(decodedMarketId, userAddress)
 
   const currentLoan = loanAmountData ? parseTokenAmount(loanAmountData.amount, market?.loanTokenDecimals) : 0
   // 6 is just a mock for demo purposes
@@ -55,6 +57,13 @@ function MarketPageContent() {
     }
   }, [])
 
+  const handleRefetch = () => {
+    refetchMarket();
+    refetchPosition();
+    refetchLoanAmount();
+    refetchHealthFactor();
+  };
+
   if (marketLoading || historyLoading) {
     return <div>Loading market data...</div>
   }
@@ -68,7 +77,18 @@ function MarketPageContent() {
   }
 
   return (
-    <div className="items-center justify-center space-y-6 -mt-6 py-6">
+    <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
+      {/* Refetch button in top right corner */}
+      <Button 
+        onClick={handleRefetch}
+        className="absolute top-0 right-0 mt-2 mr-2 p-3 bg-gray-700/60 rounded-lg hover:bg-gray-600/80 transition-colors flex items-center gap-2 z-10"
+        title="Refetch data"
+        variant="outline"
+      >
+        <RefreshCw size={20} className="text-gray-200" />
+        <span className="text-sm text-gray-200 font-medium">Refetch Data</span>
+      </Button>
+
       <h1 className="text-[36px] font-bold mb-6 text-gray-200">
         {market.loanTokenSymbol} / {market.collateralTokenSymbol.toUpperCase()} Market
       </h1>
