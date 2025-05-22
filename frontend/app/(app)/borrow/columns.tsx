@@ -15,8 +15,8 @@ export const columns: ColumnDef<MarketInfo>[] = [
       )
     },
     cell: ({ row }) => {
-      const loanSymbol = row.original.loanToken
-      const collateralSymbol = row.original.collateralToken
+      const loanSymbol = row.original.loanTokenName
+      const collateralSymbol = row.original.collateralTokenName
       
       return (
         <div className="flex items-center gap-2 text-left px-3">

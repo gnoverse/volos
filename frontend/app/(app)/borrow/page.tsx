@@ -46,8 +46,8 @@ function BorrowPageContent() {
   
   useEffect(() => {
     if (userLoans && userLoans.length > 0) {
-      const total = userLoans.reduce((sum, loan) => { //data represented is as if all tokens were worth $1
-        return sum + parseFloat(loan.amount)
+      const total = userLoans.reduce((sum, loan) => { //data represented is as if all tokens were worth $100
+        return sum + (parseFloat(loan.amount)*100 / Math.pow(10, 6))  // 6 is just assuming all tokens have 6 decimals for demo purposes
       }, 0)
       setTotalLoanAmount(total.toFixed(2))
       

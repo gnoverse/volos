@@ -35,8 +35,6 @@ function MarketPageContent() {
   const { data: loanAmountData } = useLoanAmountQuery(decodedMarketId, userAddress)
   const { data: healthFactorData } = useHealthFactorQuery(decodedMarketId, userAddress)
 
-  console.log(loanAmountData?.amount)
-  console.log(positionData?.collateral)
   const currentLoan = loanAmountData ? parseTokenAmount(loanAmountData.amount, market?.loanTokenDecimals) : 0
   // 6 is just a mock for demo purposes
   // const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, market?.collateralTokenDecimals) : 0

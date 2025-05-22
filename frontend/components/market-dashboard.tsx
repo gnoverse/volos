@@ -143,7 +143,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
               <div className="text-sm text-gray-400 mb-1">Fee</div>
               <div className="text-3xl font-medium text-gray-200">
                 {/* {formatRate(market.fee, 18, true)} */}
-                0.30%
+                3.00%
               </div>
             </div>
           </div>
