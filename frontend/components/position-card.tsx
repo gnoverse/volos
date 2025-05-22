@@ -1,6 +1,7 @@
-import { MarketInfo } from "@/app/types"
-import { HealthBar } from "@/components/health-bar"
-import { Card, CardContent } from "@/components/ui/card"
+import { MarketInfo } from "@/app/types";
+import { formatNumber } from "@/app/utils/format.utils";
+import { HealthBar } from "@/components/health-bar";
+import { Card, CardContent } from "@/components/ui/card";
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -42,12 +43,12 @@ export function PositionCard({
         <div>
           <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
           <div className="text-xl font-semibold text-gray-200">
-            {currentCollateral.toFixed(2)}
+            {formatNumber(currentCollateral)}
             {(supplyDelta > 0 || withdrawDelta > 0) && (
               <>
                 {" "}
                 <span className="text-gray-400">→</span>{" "}
-                <span className="text-green-300">{projectedCollateral.toFixed(0)}</span>
+                <span className="text-green-300">{formatNumber(projectedCollateral)}</span>
               </>
             )}
           </div>
@@ -56,12 +57,12 @@ export function PositionCard({
         <div>
           <div className="text-sm text-gray-400">My loan position ({market.loanTokenSymbol})</div>
           <div className="text-xl font-semibold text-gray-200">
-            {currentLoan.toFixed(2)}
+            {formatNumber(currentLoan)}
             {(borrowDelta > 0 || repayDelta > 0) && (
               <>
                 {" "}
                 <span className="text-gray-400">→</span>{" "}
-                <span className="text-red-400">{projectedLoan.toFixed(0)}</span>
+                <span className="text-red-400">{formatNumber(projectedLoan)}</span>
               </>
             )}
           </div>

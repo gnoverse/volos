@@ -1,6 +1,14 @@
 import { formatUnits } from "viem";
 
 /**
+ * Formats a number with decimals only when needed (2 decimal places for non-integers)
+ * Example: 5 => "5", 5.2 => "5.20"
+ */
+export function formatNumber(value: number): string {
+  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+}
+
+/**
  * Formats a BigInt or string value to a localized string with custom decimals and fraction digits.
  */
 export function formatTokenAmount(
@@ -77,7 +85,7 @@ export function formatHealthFactor(wadString: string | undefined | null, decimal
   const num = Number(wadString);
   if (isNaN(num)) return "0.00";
   return (num / WAD).toFixed(decimals);
-} 
+}
 
 /**
  * Formats a number as USD currency string with 2 decimal places.
@@ -91,5 +99,22 @@ export function formatCurrency(value: string | number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(numValue);
+}
+
+/**
+ * Converts a raw token amount string to a float value using the token's decimals.
+ * Example: "1000000" with 6 decimals => 1.0
+ */
+export function parseTokenAmount(
+  amount: string | undefined | null,
+  decimals: number = 18
+): number {
+  if (!amount) return 0;
+  try {
+    return parseFloat(amount) / Math.pow(10, decimals);
+  } catch (error) {
+    console.error("Error parsing token amount:", error);
+    return 0;
+  }
 }
 

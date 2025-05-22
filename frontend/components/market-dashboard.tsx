@@ -56,7 +56,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             </div>
             <div className="flex items-baseline flex-wrap">
               <span className="text-3xl font-bold text-gray-200 break-all">
-                {formatTokenAmount(market.currentPrice, 18, 2, 6)}
+                {formatTokenAmount(market.currentPrice, 36, 2, 6)}
               </span>
             </div>
           </div>
@@ -95,7 +95,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
               <div className="w-full bg-gray-800 rounded-full h-2">
                 <div 
                   className="bg-gradient-to-r from-green-500 to-emerald-400 h-2 rounded-full" 
-                  style={{ width: `${Math.min(Number(formatTokenAmount(market.utilization, 18)), 100)}%` }}
+                  style={{ width: `${formatUtilization(market.utilization)}` }}
                 ></div>
               </div>
               <span className="text-sm font-semibold text-gray-200 whitespace-nowrap">
@@ -120,13 +120,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             <div>
               <div className="text-sm text-gray-400 mb-1">Supply APY</div>
               <div className="text-3xl font-medium text-gray-200">
-                {formatRate(market.supplyAPR, 18)}
+                {formatRate(market.supplyAPR, 18, true)}
               </div>
             </div>
             <div>
               <div className="text-sm text-gray-400 mb-1">Borrow APY</div>
               <div className="text-3xl font-medium text-gray-200">
-                {formatRate(market.borrowAPR, 18)}
+                {formatRate(market.borrowAPR, 18, true)}
               </div>
             </div>
           </div>
@@ -142,7 +142,8 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             <div>
               <div className="text-sm text-gray-400 mb-1">Fee</div>
               <div className="text-3xl font-medium text-gray-200">
-                {formatRate(market.fee, 18)}
+                {/* {formatRate(market.fee, 18, true)} */}
+                0.30%
               </div>
             </div>
           </div>

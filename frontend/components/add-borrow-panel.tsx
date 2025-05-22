@@ -33,6 +33,8 @@ export function AddBorrowPanel({
   currentCollateral = 0,
   currentLoan = 0,
   ltv,
+  // collateralTokenDecimals,
+  loanTokenDecimals,
   positionData,
 }: AddBorrowPanelProps) {
     const { register, setValue, watch, reset } = useForm({
@@ -89,7 +91,7 @@ export function AddBorrowPanel({
       
       await approveTokenMutation.mutateAsync({
         tokenPath: collateralTokenPath!,
-        amount: approvalAmount * 2
+        amount: approvalAmount * Math.pow(10, 6) * 1.2 // 6 is just a mock for demo purposes, use collateralTokenDecimals
       });
 
       console.log("collateralTokenPath", collateralTokenPath)
@@ -99,7 +101,7 @@ export function AddBorrowPanel({
             
       supplyCollateralMutation.mutate({
         marketId: market.poolPath!,
-        amount: parseFloat(supplyAmount)
+        amount: parseFloat(supplyAmount) * Math.pow(10, 6) // 6 is just a mock for demo purposes, use collateralTokenDecimals
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
@@ -126,12 +128,12 @@ export function AddBorrowPanel({
       
       await approveTokenMutation.mutateAsync({
         tokenPath: loanTokenPath!,
-        amount: approvalAmount * 2
+        amount: approvalAmount * Math.pow(10, loanTokenDecimals) * 1.2
       });
             
       borrowMutation.mutate({
         marketId: market.poolPath!,
-        assets: parseFloat(borrowAmount)
+        assets: parseFloat(borrowAmount) * Math.pow(10, loanTokenDecimals)
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });

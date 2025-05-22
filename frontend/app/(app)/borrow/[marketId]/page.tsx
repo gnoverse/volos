@@ -2,6 +2,8 @@
 
 import { AdenaService } from "@/app/services/adena.service"
 import "@/app/theme.css"
+import { parseTokenAmount } from "@/app/utils/format.utils"
+import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
@@ -11,7 +13,6 @@ import {
   supplyValue
 } from "../mock"
 import { useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery } from "../queries-mutations"
-import { MarketDashboard } from "@/components/market-dashboard"
 import { SidePanel } from "./side-panel"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -27,16 +28,19 @@ function MarketPageContent() {
   })
   const params = useParams()
   const decodedMarketId = decodeURIComponent(params.marketId as string)
+  const [userAddress, setUserAddress] = useState<string>("")
   const { data: market, isPending: marketLoading, error: marketError } = useMarketQuery(decodedMarketId)
   const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(decodedMarketId)
-  const [userAddress, setUserAddress] = useState<string>("")
   const { data: positionData } = usePositionQuery(decodedMarketId, userAddress);
-
   const { data: loanAmountData } = useLoanAmountQuery(decodedMarketId, userAddress)
   const { data: healthFactorData } = useHealthFactorQuery(decodedMarketId, userAddress)
 
-  const currentLoan = loanAmountData ? parseFloat(loanAmountData.amount) : 0
-  const currentCollateral = positionData ? parseFloat(positionData.collateral) : 0
+  console.log(loanAmountData?.amount)
+  console.log(positionData?.collateral)
+  const currentLoan = loanAmountData ? parseTokenAmount(loanAmountData.amount, market?.loanTokenDecimals) : 0
+  // 6 is just a mock for demo purposes
+  // const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, market?.collateralTokenDecimals) : 0
+  const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0
 
   // track user address
   useEffect(() => {
