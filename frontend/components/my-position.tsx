@@ -85,7 +85,7 @@ export function MyPosition({
               <span className="text-gray-400 text-lg">{market.collateralTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${formatTokenAmount((currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString(), 0, 2)} USD
+              ≈ ${(currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString()} USD
             </div>
           </CardContent>
         </Card>
