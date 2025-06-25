@@ -1,6 +1,10 @@
 import axios from "axios"
 
-const txIndexerUrl = "https://indexer.test6.testnets.gno.land"
+// start tx indexer for gnodev on port 3100:
+// /build/tx-indexer start --remote http://localhost:26657 --db-path indexer-db --listen-address localhost:3100
+
+// const txIndexerUrl = "https://indexer.test6.testnets.gno.land"
+const txIndexerUrl = "http://localhost:3100"
 
 export async function queryIndexer(
   query: string, 
@@ -24,9 +28,9 @@ export async function queryIndexer(
 }
 
 // example usage, at the end of these functions we should parse them into predefined types
-export async function getPoolCreationFeeEvents(): Promise<unknown> {
+export async function getBorrowEvents(): Promise<unknown> {
   const query = `
-    query getEvents {
+    query getBorrowEvents {
       getTransactions(
         where: {
           block_height: { gt: 100000 }
@@ -34,14 +38,7 @@ export async function getPoolCreationFeeEvents(): Promise<unknown> {
           response: {
             events: {
               GnoEvent: {
-                type: { eq: "GNOSWAP" }
-                func: { eq: "SetPoolCreationFee" }
-                attrs: {
-                  _and: [
-                    { key: { eq: "p_fee" } }
-                    { _not: { value: { eq: "0" } } }
-                  ]
-                }
+                type: { eq: "Borrow" }
               }
             }
           }
@@ -79,6 +76,6 @@ export async function getPoolCreationFeeEvents(): Promise<unknown> {
       }
     }
   `
-  const operationName = "getEvents"
+  const operationName = "getBorrowEvents"
   return queryIndexer(query, operationName)
 }
