@@ -15,7 +15,7 @@ import {
   supplyValue
 } from "../mock"
 import { useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery } from "../queries-mutations"
-import { SidePanel } from "./side-panel"
+import { SidePanel } from "../../../../components/side-panel"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
