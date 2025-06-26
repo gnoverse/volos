@@ -108,7 +108,7 @@ export default function Navbar() {
         
         {/* Navigation Menu */}
         <NavigationMenu>
-          <NavigationMenuList className="bg-customGray-800/70 rounded-full px-2 py-1">
+          <NavigationMenuList className="bg-customGray-800/70 rounded-full px-1 py-1">
             {menuItems.map((item, index) => {
               const isActive = pathname.startsWith(item.href);
               return (
