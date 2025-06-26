@@ -2,9 +2,12 @@
 
 import { MarketHistory } from "@/app/(app)/borrow/mock-history"
 import { MarketInfo, Position } from "@/app/types"
+import { Activity, activityColumns } from "@/components/activity-columns"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"
+import { DataTable } from "@/components/ui/data-table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMarketActivityQuery } from "@/app/(app)/borrow/queries-mutations"
 
 interface MarketTabsProps {
   history: MarketHistory[];
@@ -30,6 +33,16 @@ export function MarketTabs({
   currentLoan,
   positionData
 }: MarketTabsProps) {
+  const { data: activityData, isLoading: isActivityLoading } = useMarketActivityQuery(market.poolPath);
+
+  const mappedActivity: Activity[] = (activityData || []).map((item) => ({
+    date: item.block_height, // temporary
+    type: item.type,
+    amount: item.amount ? Number(item.amount) : 0,
+    user: item.caller || "-",
+    transaction: item.tx_hash,
+  })).sort((a, b) => b.date - a.date);
+
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="mb-6 border-b border-gray-700/50 w-full bg-transparent p-0 h-auto flex flex-row justify-start">
@@ -74,9 +87,11 @@ export function MarketTabs({
       </TabsContent>
 
       <TabsContent value="activity" className="mt-0">
-        <div className="min-h-[200px] flex items-center justify-center text-gray-400">
-          Activity content will be added here - display tx history
-        </div>
+        {isActivityLoading ? (
+          <div className="text-gray-400 p-8">Loading activity...</div>
+        ) : (
+          <DataTable columns={activityColumns} data={mappedActivity} className="w-full h-full mt-0" />
+        )}
       </TabsContent>
     </Tabs>
   )

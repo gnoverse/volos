@@ -31,6 +31,7 @@ interface DataTableProps<TData, TValue> {
   className?: string
   getRowId?: (row: TData) => string
   onRowClick?: (id: string) => void
+  centered?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -41,19 +42,20 @@ export function DataTable<TData, TValue>({
   className,
   getRowId,
   onRowClick,
+  centered = true,
 }: DataTableProps<TData, TValue>) {
   const [sortingState, setSortingState] = useState<SortingState>([])
   const [paginationState, setPaginationState] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 5,
   })
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: pagination ? getPaginationRowModel() : undefined,
     getSortedRowModel: sorting ? getSortedRowModel() : undefined,
+    getPaginationRowModel: pagination ? getPaginationRowModel() : undefined,
     state: {
       sorting: sortingState,
       pagination: paginationState,
@@ -75,6 +77,7 @@ export function DataTable<TData, TValue>({
                     key={header.id} 
                     className={cn(
                       "text-gray-200 h-12",
+                      centered ? "text-center" : "text-left",
                       index === 0 && "rounded-l-xl",
                       index === headerGroup.headers.length - 1 && "rounded-r-xl"
                     )}
@@ -105,6 +108,7 @@ export function DataTable<TData, TValue>({
                     key={cell.id} 
                     className={cn(
                       "text-gray-200 h-18",
+                      centered ? "text-center" : "text-left",
                       index === 0 && "rounded-l-xl",
                       index === row.getVisibleCells().length - 1 && "rounded-r-xl"
                     )}
@@ -116,7 +120,7 @@ export function DataTable<TData, TValue>({
             ))
           ) : (
             <TableRow className="rounded-3xl">
-              <TableCell colSpan={columns.length} className="h-24 text-center text-gray-400 rounded-3xl">
+              <TableCell colSpan={columns.length} className={cn("h-24 text-gray-400 rounded-3xl", centered ? "text-center" : "text-left") }>
                 No results.
               </TableCell>
             </TableRow>

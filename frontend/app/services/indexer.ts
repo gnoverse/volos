@@ -8,7 +8,7 @@ const txIndexerUrl = "http://localhost:3100"
 
 type GnoEventAttr = { key: string; value: string }
 type GnoEvent = { type: string; attrs: GnoEventAttr[] }
-type Transaction = { block_height: number; response: { events: GnoEvent[] } }
+type Transaction = { block_height: number; hash?: string; response: { events: GnoEvent[] }, messages?: { value: { caller: string } }[] }
 
 export async function queryIndexer(
   query: string, 
@@ -269,5 +269,95 @@ export async function getNetBorrowHistory(marketId: string): Promise<{ value: nu
   });
 
   return netBorrowHistory;
+}
+
+// ------------------------------------------------------------ ALL ACTIVITY HISTORY ------------------------------------------------------------
+
+export async function getMarketActivity(marketId: string): Promise<{
+block_height: number;
+type: string;
+amount: string | null;
+caller: string | null;
+  tx_hash: string;
+}[]> {
+  const query = `
+    query getMarketActivity {
+      getTransactions(
+        where: {
+          success: { eq: true }
+          response: {
+            events: {
+              GnoEvent: {
+                attrs: { key: { eq: \"market_id\" }, value: { eq: \"${marketId}\" } }
+              }
+            }
+          }
+        }
+      ) {
+        block_height
+        hash
+        messages {
+        ... on TransactionMessage{
+          value {
+            ... on MsgCall {
+              caller
+            }
+          }
+        }
+     }
+        response {
+          events {
+            ... on GnoEvent {
+              type
+              attrs {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  const operationName = "getMarketActivity";
+  const res = await queryIndexer(query, operationName) as { data?: { getTransactions?: Transaction[] } };
+  const transactions = res?.data?.getTransactions ?? [];
+
+  const activity: {
+    block_height: number;
+    type: string;
+    amount: string | null;
+    caller: string | null;
+    tx_hash: string;
+  }[] = [];
+
+  for (const tx of transactions) {
+    const blockHeight = tx.block_height;
+    const txHash = tx.hash;
+    let caller: string | null = null;
+    if (Array.isArray(tx.messages) && tx.messages.length > 0) {
+      const msgValue = tx.messages[0]?.value;
+      if (msgValue && typeof msgValue === 'object' && 'caller' in msgValue) {
+        caller = (msgValue as { caller?: string }).caller ?? null;
+      }
+    }
+    for (const event of tx.response?.events || []) {
+      const marketIdAttr = event.attrs.find((a: GnoEventAttr) => a.key === "market_id" && a.value === marketId);
+      if (marketIdAttr) {
+        const amountAttr = event.attrs.find((a: GnoEventAttr) => a.key === "amount") || event.attrs.find((a: GnoEventAttr) => a.key === "assets");
+        // format type: separate camel case words
+        const formattedType = event.type.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+        activity.push({
+          block_height: blockHeight,
+          type: formattedType,
+          amount: amountAttr ? amountAttr.value : null,
+          caller,
+          tx_hash: txHash || "",
+        });
+      }
+    }
+  }
+
+  return activity;
 }
 

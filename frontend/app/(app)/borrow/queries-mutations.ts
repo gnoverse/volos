@@ -112,6 +112,14 @@ export function useNetBorrowHistoryQuery(marketId: string) {
   });
 }
 
+export function useMarketActivityQuery(marketId: string) {
+  return useQuery({
+    queryKey: ["marketActivity", marketId],
+    queryFn: () => import("@/app/services/indexer").then(m => m.getMarketActivity(marketId)),
+    enabled: !!marketId,
+  });
+}
+
 // mutations ------------------------------------------------------------
 
 export function useApproveTokenMutation() {

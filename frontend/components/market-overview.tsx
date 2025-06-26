@@ -44,7 +44,7 @@ export function MarketOverview({ history, market, apyVariations, cardStyles }: M
           className={cardStyles}
         />
         <MarketChart
-          data={netBorrowChartData as any[]}
+          data={netBorrowChartData}
           title="Net Borrow"
           description="Net borrow (borrow - repay) over time"
           dataKey="netBorrow"
