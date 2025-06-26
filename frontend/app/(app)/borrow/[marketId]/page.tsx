@@ -14,7 +14,7 @@ import {
   borrowValue,
   supplyValue
 } from "../mock"
-import { useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, usePositionQuery } from "../queries-mutations"
+import { useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery, usePositionQuery } from "../queries-mutations"
 import { SidePanel } from "../../../../components/side-panel"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -36,6 +36,8 @@ function MarketPageContent() {
   const { data: positionData, refetch: refetchPosition } = usePositionQuery(decodedMarketId, userAddress);
   const { data: loanAmountData, refetch: refetchLoanAmount } = useLoanAmountQuery(decodedMarketId, userAddress)
   const { data: healthFactorData, refetch: refetchHealthFactor } = useHealthFactorQuery(decodedMarketId, userAddress)
+  const { refetch: refetchNetSupplyHistory } = useNetSupplyHistoryQuery(decodedMarketId)
+  const { refetch: refetchNetBorrowHistory } = useNetBorrowHistoryQuery(decodedMarketId)
 
   const currentLoan = loanAmountData ? parseTokenAmount(loanAmountData.amount, market?.loanTokenDecimals) : 0
   // 6 is just a mock for demo purposes
@@ -62,6 +64,8 @@ function MarketPageContent() {
     refetchPosition();
     refetchLoanAmount();
     refetchHealthFactor();
+    refetchNetSupplyHistory();
+    refetchNetBorrowHistory();
   };
 
   if (marketLoading || historyLoading) {
