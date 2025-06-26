@@ -8,6 +8,12 @@ import {
   NavigationMenuLink,
   NavigationMenuList
 } from "@/components/ui/navigation-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { LogOutIcon, WalletIcon } from "lucide-react";
 import { usePathname } from 'next/navigation';
@@ -23,6 +29,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState("");
+  const [copied, setCopied] = useState(false);
   
   const formatAddress = (address: string) => {
     if (!address) return "";
@@ -99,6 +106,15 @@ export default function Navbar() {
     }
   };
 
+  // todo: replace this with a toast
+  const handleCopyAddress = async () => {
+    if (isConnected && walletAddress) {
+      await navigator.clipboard.writeText(walletAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
+    }
+  };
+
   return (
     <div className="flex justify-between items-center py-2 pl-40 pr-36">
       {/* Left section with logo and menu */}
@@ -130,19 +146,30 @@ export default function Navbar() {
       
       {/* Right-aligned wallet button */}
       <div className="flex justify-end items-center">
-        <Button 
-          variant="ghost" 
-          className={cn(
-            "bg-customGray-800 text-gray-200 rounded-full text-lg",
-            isConnected 
-              ? "mr-2"
-              : "mr-5 hover:bg-customGray-700 hover:text-gray-200"
-          )}
-          onClick={isConnected ? undefined : handleWalletConnection}
-        >
-          <WalletIcon className="w-4 h-4 mr-2" />
-          {isConnected ? formatAddress(walletAddress) : "Connect Wallet"}
-        </Button>
+        <TooltipProvider>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className={cn(
+                  "bg-customGray-800 text-gray-200 rounded-full text-lg",
+                  isConnected 
+                    ? "mr-2 hover:bg-customGray-800 hover:text-gray-200"
+                    : "mr-5 hover:bg-customGray-700 hover:text-gray-200"
+                )}
+                onClick={isConnected ? handleCopyAddress : handleWalletConnection}
+              >
+                <WalletIcon className="w-4 h-4 mr-2" />
+                {isConnected ? (copied ? "Copied!" : formatAddress(walletAddress)) : "Connect Wallet"}
+              </Button>
+            </TooltipTrigger>
+            {isConnected && (
+              <TooltipContent>
+                <p>{walletAddress}</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
         
         {isConnected && (
           <Button
