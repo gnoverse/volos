@@ -1,20 +1,13 @@
 import { MarketHistory } from "@/app/(app)/borrow/mock-history";
-import { formatApyVariation } from "@/app/utils/format.utils";
+import { useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations";
+import { formatApyVariation, parseTokenAmount } from "@/app/utils/format.utils";
 import { InfoCard } from "@/components/info-card";
 import { MarketChart } from "@/components/market-chart";
-
-interface Market {
-  borrowAPR: string;
-  loanTokenSymbol: string;
-  collateralTokenSymbol: string;
-  collateralTokenDecimals: number;
-  loanTokenDecimals: number;
-  lltv: string;
-}
+import { MarketInfo } from "@/app/types";
 
 interface MarketOverviewProps {
   history: MarketHistory[];
-  market: Market;
+  market: MarketInfo;
   apyVariations: {
     sevenDay: number;
     ninetyDay: number;
@@ -23,12 +16,21 @@ interface MarketOverviewProps {
 }
 
 export function MarketOverview({ history, market, apyVariations, cardStyles }: MarketOverviewProps) {
+  const { data: netSupplyHistory, isLoading } = useNetSupplyHistoryQuery(market.poolPath); //will become marketId
+
+  if (isLoading) return <div>Loading...</div>;
+
+  const supplyChartData = netSupplyHistory?.map(item => ({
+    supply: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
+    name: item.block_height,
+  })) ?? [];
+
   return (
     <>
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6">
         <MarketChart
-          data={history}
+          data={supplyChartData}
           title="Total Supply"
           description="Total assets supplied to the market"
           dataKey="supply"

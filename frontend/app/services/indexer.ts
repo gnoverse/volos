@@ -1,4 +1,4 @@
-import axios from "axios"
+import axios from "axios";
 
 // start tx indexer for gnodev on port 3100:
 // /build/tx-indexer start --remote http://localhost:26657 --db-path indexer-db --listen-address localhost:3100
@@ -6,19 +6,21 @@ import axios from "axios"
 // const txIndexerUrl = "https://indexer.test6.testnets.gno.land"
 const txIndexerUrl = "http://localhost:3100"
 
+type GnoEventAttr = { key: string; value: string }
+type GnoEvent = { type: string; attrs: GnoEventAttr[] }
+type Transaction = { block_height: number; response: { events: GnoEvent[] } }
+
 export async function queryIndexer(
   query: string, 
   operationName: string, 
   variables?: Record<string, unknown>
 ): Promise<unknown> {
   try {
-    const response = await axios.post(`${txIndexerUrl}/graphql/query`, {
-      data: {
-        query,
-        operationName,
-        variables
-      }
-    })
+    const response = await axios.post(
+      `${txIndexerUrl}/graphql/query`,
+      { query, operationName, variables },
+      { headers: { 'Content-Type': 'application/json' } }
+    )
 
     return response.data
   } catch (error) {
@@ -27,45 +29,58 @@ export async function queryIndexer(
   }
 }
 
-// example usage, at the end of these functions we should parse them into predefined types
-export async function getBorrowEvents(): Promise<unknown> {
+// Helper to extract event data
+function extractEventHistory(
+  transactions: { block_height: number; response: { events: { type: string; attrs: { key: string; value: string }[] }[] } }[],
+  eventType: string,
+  marketId?: string // optional: filter by market
+) {
+  const history: { amount: string; block_height: number; market_id?: string }[] = [];
+  for (const tx of transactions) {
+    const blockHeight = tx.block_height;
+    for (const event of tx.response?.events || []) {
+      if (event.type === eventType) {
+        const amountAttr = event.attrs.find(a => a.key === "amount");
+        const marketIdAttr = event.attrs.find(a => a.key === "market_id");
+        if (
+          amountAttr &&
+          (!marketId || (marketIdAttr && marketIdAttr.value === marketId))
+        ) {
+          history.push({
+            amount: amountAttr.value,
+            block_height: blockHeight,
+            market_id: marketIdAttr?.value,
+          });
+        }
+      }
+    }
+  }
+
+  return history;
+}
+
+// SUPPLY (Deposit) HISTORY
+export async function getSupplyHistory(marketId: string): Promise<{ amount: string, block_height: number }[]> {
   const query = `
-    query getBorrowEvents {
+    query getSupplyEvents {
       getTransactions(
         where: {
-          block_height: { gt: 100000 }
           success: { eq: true }
           response: {
             events: {
               GnoEvent: {
-                type: { eq: "Borrow" }
+                type: { eq: "Deposit" }
+                attrs: { key: { eq: "market_id" }, value: { eq: "${marketId}" } }
               }
             }
           }
         }
       ) {
         block_height
-        index
-        messages {
-          ... on TransactionMessage {
-            typeUrl
-            route
-            value {
-              ... on MsgCall {
-                caller
-                send
-                pkg_path
-                func
-                args
-              }
-            }
-          }
-        }
         response {
           events {
             ... on GnoEvent {
               type
-              func
               attrs {
                 key
                 value
@@ -76,6 +91,76 @@ export async function getBorrowEvents(): Promise<unknown> {
       }
     }
   `
-  const operationName = "getBorrowEvents"
-  return queryIndexer(query, operationName)
+  const operationName = "getSupplyEvents"
+  const res = await queryIndexer(query, operationName) as { data?: { getTransactions?: Transaction[] } }
+  const transactions = res?.data?.getTransactions ?? [];
+  return extractEventHistory(transactions, "Deposit", marketId)
 }
+
+// WITHDRAW HISTORY
+export async function getWithdrawHistory(marketId: string): Promise<{ amount: string, block_height: number }[]> {
+  const query = `
+    query getWithdrawEvents {
+      getTransactions(
+        where: {
+          success: { eq: true }
+          response: {
+            events: {
+              GnoEvent: {
+                type: { eq: "Withdraw" }
+                attrs: { key: { eq: "market_id" }, value: { eq: "${marketId}" } }
+              }
+            }
+          }
+        }
+      ) {
+        block_height
+        response {
+          events {
+            ... on GnoEvent {
+              type
+              attrs {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  `
+  const operationName = "getWithdrawEvents"
+  const res = await queryIndexer(query, operationName) as { data?: { getTransactions?: Transaction[] } }
+  const transactions = res?.data?.getTransactions ?? [];
+  return extractEventHistory(transactions, "Withdraw", marketId)
+}
+
+export async function getNetSupplyHistory(marketId: string): Promise<{ value: number; block_height: number }[]> {
+  const [deposits, withdraws] = await Promise.all([
+    getSupplyHistory(marketId),
+    getWithdrawHistory(marketId)
+  ]);
+
+  const depositEvents = deposits.map(d => ({
+    value: Number(d.amount),
+    block_height: d.block_height,
+  }));
+
+  const withdrawEvents = withdraws.map(w => ({
+    value: -Number(w.amount),
+    block_height: w.block_height,
+  }));
+
+  const allEvents = [...depositEvents, ...withdrawEvents].sort((a, b) => a.block_height - b.block_height);
+
+  let runningTotal = 0;
+  const netSupplyHistory = allEvents.map(event => {
+    runningTotal += event.value;
+    return {
+      value: runningTotal,
+      block_height: event.block_height,
+    };
+  });
+
+  return netSupplyHistory;
+} 

@@ -6,7 +6,7 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import { MarketHistory, PositionHistory } from "../app/(app)/borrow/mock-history"
 
 interface MarketChartProps {
-  data: MarketHistory[] | PositionHistory[]
+  data: Array<{ supply: number; name: number } | MarketHistory | PositionHistory>
   title: string
   description: string
   dataKey: string
