@@ -1,9 +1,9 @@
 import { MarketHistory } from "@/app/(app)/borrow/mock-history";
-import { useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations";
+import { useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations";
+import { MarketInfo } from "@/app/types";
 import { formatApyVariation, parseTokenAmount } from "@/app/utils/format.utils";
 import { InfoCard } from "@/components/info-card";
 import { MarketChart } from "@/components/market-chart";
-import { MarketInfo } from "@/app/types";
 
 interface MarketOverviewProps {
   history: MarketHistory[];
@@ -16,12 +16,18 @@ interface MarketOverviewProps {
 }
 
 export function MarketOverview({ history, market, apyVariations, cardStyles }: MarketOverviewProps) {
-  const { data: netSupplyHistory, isLoading } = useNetSupplyHistoryQuery(market.poolPath); //will become marketId
+  const { data: netSupplyHistory, isLoading } = useNetSupplyHistoryQuery(market.poolPath); //poolPath will become marketId
+  const { data: netBorrowHistory, isLoading: isNetBorrowLoading } = useNetBorrowHistoryQuery(market.poolPath);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading || isNetBorrowLoading) return <div>Loading...</div>;
 
   const supplyChartData = netSupplyHistory?.map(item => ({
     supply: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
+    name: item.block_height,
+  })) ?? [];
+
+  const netBorrowChartData = netBorrowHistory?.map(item => ({
+    netBorrow: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
     name: item.block_height,
   })) ?? [];
 
@@ -38,10 +44,10 @@ export function MarketOverview({ history, market, apyVariations, cardStyles }: M
           className={cardStyles}
         />
         <MarketChart
-          data={history}
-          title="Total Borrow"
-          description="Total assets borrowed from the market"
-          dataKey="borrow"
+          data={netBorrowChartData as any[]}
+          title="Net Borrow"
+          description="Net borrow (borrow - repay) over time"
+          dataKey="netBorrow"
           color="rgba(239, 68, 68, 0.95)"
           className={cardStyles}
         />

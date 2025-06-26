@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { MarketHistory, PositionHistory } from "../app/(app)/borrow/mock-history"
 
+// TODO: fix this type
 interface MarketChartProps {
   data: Array<{ supply: number; name: number } | MarketHistory | PositionHistory>
   title: string

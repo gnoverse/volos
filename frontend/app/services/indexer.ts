@@ -59,7 +59,8 @@ function extractEventHistory(
   return history;
 }
 
-// SUPPLY (Deposit) HISTORY
+// ------------------------------------------------------------ TOTAL SUPPLY HISTORY ------------------------------------------------------------
+
 export async function getSupplyHistory(marketId: string): Promise<{ amount: string, block_height: number }[]> {
   const query = `
     query getSupplyEvents {
@@ -97,7 +98,6 @@ export async function getSupplyHistory(marketId: string): Promise<{ amount: stri
   return extractEventHistory(transactions, "Deposit", marketId)
 }
 
-// WITHDRAW HISTORY
 export async function getWithdrawHistory(marketId: string): Promise<{ amount: string, block_height: number }[]> {
   const query = `
     query getWithdrawEvents {
@@ -164,3 +164,110 @@ export async function getNetSupplyHistory(marketId: string): Promise<{ value: nu
 
   return netSupplyHistory;
 } 
+
+// ------------------------------------------------------------ BORROW HISTORY ------------------------------------------------------------
+
+export async function getBorrowHistory(marketId: string): Promise<{ amount: string, block_height: number }[]> {
+  const query = `
+    query getBorrowEvents {
+      getTransactions(
+        where: {
+          success: { eq: true }
+          response: {
+            events: {
+              GnoEvent: {
+                type: { eq: "Borrow" }
+                attrs: { key: { eq: "market_id" }, value: { eq: "${marketId}" } }
+              }
+            }
+          }
+        }
+      ) {
+        block_height
+        response {
+          events {
+            ... on GnoEvent {
+              type
+              attrs {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  const operationName = "getBorrowEvents";
+  const res = await queryIndexer(query, operationName) as { data?: { getTransactions?: Transaction[] } };
+  const transactions = res?.data?.getTransactions ?? [];
+  return extractEventHistory(transactions, "Borrow", marketId);
+}
+
+export async function getRepayHistory(marketId: string): Promise<{ amount: string, block_height: number }[]> {
+  const query = `
+    query getRepayEvents {
+      getTransactions(
+        where: {
+          success: { eq: true }
+          response: {
+            events: {
+              GnoEvent: {
+                type: { eq: "Repay" }
+                attrs: { key: { eq: "market_id" }, value: { eq: "${marketId}" } }
+              }
+            }
+          }
+        }
+      ) {
+        block_height
+        response {
+          events {
+            ... on GnoEvent {
+              type
+              attrs {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  const operationName = "getRepayEvents";
+  const res = await queryIndexer(query, operationName) as { data?: { getTransactions?: Transaction[] } };
+  const transactions = res?.data?.getTransactions ?? [];
+  return extractEventHistory(transactions, "Repay", marketId);
+}
+
+export async function getNetBorrowHistory(marketId: string): Promise<{ value: number; block_height: number }[]> {
+  const [borrows, repays] = await Promise.all([
+    getBorrowHistory(marketId),
+    getRepayHistory(marketId)
+  ]);
+
+  const borrowEvents = borrows.map(b => ({
+    value: Number(b.amount),
+    block_height: b.block_height,
+  }));
+
+  const repayEvents = repays.map(r => ({
+    value: -Number(r.amount),
+    block_height: r.block_height,
+  }));
+
+  const allEvents = [...borrowEvents, ...repayEvents].sort((a, b) => a.block_height - b.block_height);
+
+  let runningTotal = 0;
+  const netBorrowHistory = allEvents.map(event => {
+    runningTotal += event.value;
+    return {
+      value: runningTotal,
+      block_height: event.block_height,
+    };
+  });
+
+  return netBorrowHistory;
+}
+
