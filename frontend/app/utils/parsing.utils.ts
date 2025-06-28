@@ -4,7 +4,6 @@ import { z } from "zod"
  * Parses a string result from Gno in the format ("value" string)
  */
 export function parseStringResult(result: string): string {
-  // Improved regex that captures the entire string content between quotes
   const match = result.match(/\("([^"]*)"\s+string\)/)
   if (!match) {
     throw new Error('Invalid string result format')
@@ -30,12 +29,10 @@ export function parseNumberResult(result: string): number {
  */
 export function parseJsonResult(result: string) {
   try {
-    // Check if the result has the expected format
     if (!result.startsWith('("') || !result.endsWith('" string)')) {
       throw new Error('Invalid string result format')
     }
     
-    // Remove the prefix and suffix
     const jsonString = result.substring(2, result.length - 9).replace(/\\"/g, '"')
     return jsonString
   } catch (error) {

@@ -40,7 +40,6 @@ export const UNIVERSAL_TRANSACTION_FIELDS = `
   }
 `
 
-// Combined query builder with fluent API
 export class QueryBuilder {
   private operationName: string;
   private whereBuilder: WhereClauseBuilder;
@@ -94,12 +93,10 @@ export class QueryBuilder {
   }
 }
 
-// Factory function to create a new query builder
 export function buildQuery(operationName: string): QueryBuilder {
   return new QueryBuilder(operationName);
 }
 
-// Legacy function for backward compatibility
 export function buildUniversalQuery(
   operationName: string,
   whereClause: string,
@@ -118,8 +115,6 @@ export function buildUniversalQuery(
     }
   `
 }
-
-// Chaining where clause builder
 export class WhereClauseBuilder {
   private conditions: string[] = [];
   private eventConditions: string[] = [];
@@ -188,7 +183,6 @@ export class WhereClauseBuilder {
     return this;
   }
 
-  // Methods to return to QueryBuilder
   async execute(variables?: Record<string, unknown>): Promise<GraphQLResponse> {
     return this.queryBuilder.execute(variables);
   }
@@ -204,9 +198,8 @@ export class WhereClauseBuilder {
   }
 }
 
-// Legacy factory function for backward compatibility
 export function where(): WhereClauseBuilder {
-  return new WhereClauseBuilder(new QueryBuilder("legacy"));
+  return new WhereClauseBuilder(new QueryBuilder("generic"));
 }
 
 export async function queryIndexer(

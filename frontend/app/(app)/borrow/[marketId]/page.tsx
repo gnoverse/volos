@@ -12,8 +12,8 @@ export default async function MarketPage({ params }: { params: Promise<{ marketI
   const [marketInfo, mockHistory, netSupplyHistory, netBorrowHistory, marketActivity] = await Promise.all([
     apiGetMarketInfo(decodedMarketId),
     getHistoryForMarket(decodedMarketId), // targeting through backend/historic.ts
-    getNetSupplyHistory(decodedMarketId), // targeting through backend/historic.ts
-    getNetBorrowHistory(decodedMarketId), // targeting through backend/historic.ts
+    getNetSupplyHistory(decodedMarketId), // ^
+    getNetBorrowHistory(decodedMarketId), // ^
     getMarketActivity(decodedMarketId) // targeting through indexer/historic.ts directly
   ]);
 
