@@ -4,36 +4,6 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 
-const CopyableCell = ({ value, display, maxWidth }: { value: string | null, display: string, maxWidth: string }) => {
-  const [copied, setCopied] = useState(false);
-  
-  const handleClick = async () => {
-    if (value) {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1000);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={`text-left truncate cursor-pointer transition-colors text-white hover:text-gray-300 ${
-        copied ? 'text-green-500' : ''
-      }`}
-      style={{ 
-        background: "none", 
-        border: "none", 
-        padding: 0,
-        maxWidth 
-      }}
-      title={value || ""}
-    >
-      {copied ? "Copied!" : display}
-    </button>
-  );
-};
-
 export const activityColumns: ColumnDef<MarketActivity>[] = [
   {
     accessorKey: "block_height",
@@ -100,3 +70,33 @@ export const activityColumns: ColumnDef<MarketActivity>[] = [
     },
   },
 ]
+
+const CopyableCell = ({ value, display, maxWidth }: { value: string | null, display: string, maxWidth: string }) => {
+  const [copied, setCopied] = useState(false);
+  
+  const handleClick = async () => {
+    if (value) {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`text-left truncate cursor-pointer transition-colors text-white hover:text-gray-300 ${
+        copied ? 'text-green-500' : ''
+      }`}
+      style={{ 
+        background: "none", 
+        border: "none", 
+        padding: 0,
+        maxWidth 
+      }}
+      title={value || ""}
+    >
+      {copied ? "Copied!" : display}
+    </button>
+  );
+};
