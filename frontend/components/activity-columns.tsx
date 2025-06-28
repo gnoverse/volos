@@ -1,100 +1,102 @@
+import { MarketActivity } from "@/app/services/indexer/utils/types.indexer";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 
-export type Activity = {
-  date: number;
-  type: string;
-  amount: number;
-  user: string;
-  transaction: string;
+const CopyableCell = ({ value, display, maxWidth }: { value: string | null, display: string, maxWidth: string }) => {
+  const [copied, setCopied] = useState(false);
+  
+  const handleClick = async () => {
+    if (value) {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1000);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`text-left truncate cursor-pointer transition-colors text-white hover:text-gray-300 ${
+        copied ? 'text-green-500' : ''
+      }`}
+      style={{ 
+        background: "none", 
+        border: "none", 
+        padding: 0,
+        maxWidth 
+      }}
+      title={value || ""}
+    >
+      {copied ? "Copied!" : display}
+    </button>
+  );
 };
 
-export const activityColumns: ColumnDef<Activity>[] = [
+export const activityColumns: ColumnDef<MarketActivity>[] = [
   {
-    accessorKey: "date",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Date
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => row.getValue("date"),
-    enableSorting: true,
+    accessorKey: "block_height",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="text-gray-400 hover:text-white"
+        >
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      return <div className="text-white">{row.getValue("block_height")}</div>
+    },
   },
   {
     accessorKey: "type",
     header: "Type",
-    cell: ({ row }) => row.getValue("type"),
+    cell: ({ row }) => {
+      return <div className="text-white">{row.getValue("type")}</div>
+    },
   },
   {
     accessorKey: "amount",
-    header: ({ column }) => (
+    header: ({ column }) => {
+      return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="text-gray-400 hover:text-white"
         >
           Amount
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-    ),
-    cell: ({ row }) => row.getValue("amount"),
-    enableSorting: true,
+      )
+    },
+    cell: ({ row }) => {
+      const amount = row.getValue("amount") as string | null;
+      return <div className="text-white">{amount ? Number(amount) : 0}</div>
+    },
   },
   {
-    accessorKey: "user",
+    accessorKey: "caller",
     header: "User",
-    cell: ({ row }) => <UserCell value={row.getValue("user") as string} />,
+    cell: ({ row }) => {
+      const caller = row.getValue("caller") as string | null;
+      const display = caller && caller.length > 15 ? caller.slice(0, 15) + "..." : caller || "-";
+      
+      return <CopyableCell value={caller} display={display} maxWidth="180px" />;
+    },
   },
   {
-    accessorKey: "transaction",
+    accessorKey: "tx_hash",
     header: "Transaction",
-    cell: ({ row }) => <TransactionCell value={row.getValue("transaction") as string} />,
+    cell: ({ row }) => {
+      const txHash = row.getValue("tx_hash") as string;
+      const display = txHash.length > 15 ? txHash.slice(0, 15) + "..." : txHash;
+      
+      return <CopyableCell value={txHash} display={display} maxWidth="260px" />;
+    },
   },
-] 
-
-function TransactionCell({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  const display = value.length > 15 ? value.slice(0, 15) + "..." : value;
-  return (
-    <button
-      className={`text-left truncate max-w-[260px] cursor-pointer transition-colors ${copied ? 'text-green-500' : ''}`}
-      title={value}
-      onClick={async (e) => {
-        e.stopPropagation();
-        await navigator.clipboard.writeText(value);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1000);
-      }}
-      style={{ background: "none", border: "none", padding: 0 }}
-    >
-      {/* TODO: Replace with a toast notification instead of inline text */}
-      {copied ? <span className="ml-2 text-xs">Copied!</span> : display}
-    </button>
-  );
-}
-
-function UserCell({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  const display = value.length > 15 ? value.slice(0, 15) + "..." : value;
-  return (
-    <button
-      className={`text-left truncate max-w-[180px] cursor-pointer transition-colors ${copied ? 'text-green-500' : ''}`}
-      title={value}
-      onClick={async (e) => {
-        e.stopPropagation();
-        await navigator.clipboard.writeText(value);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1000);
-      }}
-      style={{ background: "none", border: "none", padding: 0 }}
-    >
-      {/* TODO: Replace with a toast notification instead of inline text */}
-      {copied ? <span className="ml-2 text-xs">Copied!</span> : display}
-    </button>
-  );
-}
+]

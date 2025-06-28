@@ -1,5 +1,5 @@
 import { MarketHistory } from "@/app/(app)/borrow/mock-history";
-import { useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations";
+import { ChartData } from "@/app/services/indexer/utils/types.indexer";
 import { MarketInfo } from "@/app/types";
 import { formatApyVariation, parseTokenAmount } from "@/app/utils/format.utils";
 import { InfoCard } from "@/components/info-card";
@@ -13,23 +13,28 @@ interface MarketOverviewProps {
     ninetyDay: number;
   };
   cardStyles: string;
+  netSupplyHistory: ChartData[];
+  netBorrowHistory: ChartData[];
 }
 
-export function MarketOverview({ history, market, apyVariations, cardStyles }: MarketOverviewProps) {
-  const { data: netSupplyHistory, isLoading } = useNetSupplyHistoryQuery(market.poolPath); //poolPath will become marketId
-  const { data: netBorrowHistory, isLoading: isNetBorrowLoading } = useNetBorrowHistoryQuery(market.poolPath);
-
-  if (isLoading || isNetBorrowLoading) return <div>Loading...</div>;
-
-  const supplyChartData = netSupplyHistory?.map(item => ({
+export function MarketOverview({ 
+  history, 
+  market, 
+  apyVariations, 
+  cardStyles,
+  netSupplyHistory,
+  netBorrowHistory
+}: MarketOverviewProps) {
+  
+  const supplyChartData = netSupplyHistory.map(item => ({
     supply: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
     name: item.block_height,
-  })) ?? [];
+  }));
 
-  const netBorrowChartData = netBorrowHistory?.map(item => ({
+  const netBorrowChartData = netBorrowHistory.map(item => ({
     netBorrow: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
     name: item.block_height,
-  })) ?? [];
+  }));
 
   return (
     <>

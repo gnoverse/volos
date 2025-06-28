@@ -1,5 +1,4 @@
 import { apiGetHealthFactor, apiGetLoanAmount, apiGetMarketInfo, apiGetPosition, apiGetUserLoans, apiListMarketsInfo } from "@/app/services/abci";
-import { getNetBorrowHistory, getNetSupplyHistory } from "@/app/services/indexer";
 import { TxService } from "@/app/services/tx.service";
 import { HealthFactor, LoanAmount, MarketInfo, Position, UserLoans } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -93,30 +92,6 @@ export function usePositionQuery(marketId: string, user: string) {
       return apiGetPosition(marketId, user);
     },
     enabled: !!marketId && !!user,
-  });
-}
-
-export function useNetSupplyHistoryQuery(marketId: string) {
-  return useQuery({
-    queryKey: ["netSupplyHistory", marketId],
-    queryFn: () => getNetSupplyHistory(marketId),
-    enabled: !!marketId,
-  });
-}
-
-export function useNetBorrowHistoryQuery(marketId: string) {
-  return useQuery({
-    queryKey: ["netBorrowHistory", marketId],
-    queryFn: () => getNetBorrowHistory(marketId),
-    enabled: !!marketId,
-  });
-}
-
-export function useMarketActivityQuery(marketId: string) {
-  return useQuery({
-    queryKey: ["marketActivity", marketId],
-    queryFn: () => import("@/app/services/indexer").then(m => m.getMarketActivity(marketId)),
-    enabled: !!marketId,
   });
 }
 

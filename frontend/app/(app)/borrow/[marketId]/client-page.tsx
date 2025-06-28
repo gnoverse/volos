@@ -2,7 +2,9 @@
 "use client"
 
 import { AdenaService } from "@/app/services/adena.service"
+import { ChartData, MarketActivity } from "@/app/services/indexer/utils/types.indexer"
 import "@/app/theme.css"
+import { MarketInfo } from "@/app/types"
 import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
@@ -12,38 +14,46 @@ import { RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
 import {
-    borrowValue,
-    supplyValue
+  borrowValue,
+  supplyValue
 } from "../mock"
-import { useHealthFactorQuery, useLoanAmountQuery, useMarketHistoryQuery, useMarketQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery, usePositionQuery } from "../queries-mutations"
+import { MarketHistory } from "../mock-history"
+import { useHealthFactorQuery, useLoanAmountQuery, usePositionQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 const queryClient = new QueryClient()
 
 interface MarketPageClientProps {
   marketId: string;
+  marketInfo: MarketInfo;
+  mockHistory: MarketHistory[];
+  netSupplyHistory: ChartData[];
+  netBorrowHistory: ChartData[];
+  marketActivity: MarketActivity[];
+  apyVariations: {
+    sevenDay: number;
+    ninetyDay: number;
+  };
 }
 
-function MarketPageContent({ marketId }: MarketPageClientProps) {
+function MarketPageContent({ 
+  marketId, 
+  marketInfo, 
+  mockHistory, 
+  netSupplyHistory, 
+  netBorrowHistory, 
+  marketActivity,
+  apyVariations 
+}: MarketPageClientProps) {
   const [tab, setTab] = useState("add-borrow")
-
-  const [apyVariations, ] = useState({
-    sevenDay: 0,
-    ninetyDay: 0
-  })
   const [userAddress, setUserAddress] = useState<string>("")
-  const { data: market, isPending: marketLoading, error: marketError, refetch: refetchMarket } = useMarketQuery(marketId)
-  const { data: history, isPending: historyLoading, error: historyError } = useMarketHistoryQuery(marketId)
+  
   const { data: positionData, refetch: refetchPosition } = usePositionQuery(marketId, userAddress);
   const { data: loanAmountData, refetch: refetchLoanAmount } = useLoanAmountQuery(marketId, userAddress)
   const { data: healthFactorData, refetch: refetchHealthFactor } = useHealthFactorQuery(marketId, userAddress)
-  const { refetch: refetchNetSupplyHistory } = useNetSupplyHistoryQuery(marketId)
-  const { refetch: refetchNetBorrowHistory } = useNetBorrowHistoryQuery(marketId)
 
-  const currentLoan = loanAmountData ? parseTokenAmount(loanAmountData.amount, market?.loanTokenDecimals) : 0
-  // 6 is just a mock for demo purposes
-  // const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, market?.collateralTokenDecimals) : 0
-  const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0
+  const currentLoan = loanAmountData ? parseTokenAmount(loanAmountData.amount, marketInfo?.loanTokenDecimals) : 0
+  const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
 
   // track user address
   useEffect(() => {
@@ -61,25 +71,10 @@ function MarketPageContent({ marketId }: MarketPageClientProps) {
   }, [])
 
   const handleRefetch = () => {
-    refetchMarket();
     refetchPosition();
     refetchLoanAmount();
     refetchHealthFactor();
-    refetchNetSupplyHistory();
-    refetchNetBorrowHistory();
   };
-
-  if (marketLoading || historyLoading) {
-    return <div>Loading market data...</div>
-  }
-
-  if (marketError || historyError) {
-    return <div>Error loading market: {(marketError || historyError)?.message}</div>
-  }
-
-  if (!market || !history) {
-    return <div>Market not found</div>
-  }
 
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
@@ -95,7 +90,7 @@ function MarketPageContent({ marketId }: MarketPageClientProps) {
       </Button>
 
       <h1 className="text-[36px] font-bold mb-6 text-gray-200">
-        {market.loanTokenSymbol} / {market.collateralTokenSymbol.toUpperCase()} Market
+        {marketInfo.loanTokenSymbol} / {marketInfo.collateralTokenSymbol.toUpperCase()} Market
       </h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 relative">
@@ -103,20 +98,23 @@ function MarketPageContent({ marketId }: MarketPageClientProps) {
         <div className="col-span-1 lg:col-span-9 space-y-6">
           {/* Market info cards */}
           <MarketDashboard 
-            market={market}
+            market={marketInfo}
             cardStyles={CARD_STYLES}
           />
 
           {/* Tabbed content */}
           <MarketTabs 
-            history={history} 
-            market={market} 
+            history={mockHistory} 
+            market={marketInfo} 
             apyVariations={apyVariations} 
             cardStyles={CARD_STYLES}
             healthFactor={healthFactorData?.healthFactor ?? "0"}
             currentCollateral={currentCollateral}
             currentLoan={currentLoan}
             positionData={positionData}
+            netSupplyHistory={netSupplyHistory}
+            netBorrowHistory={netBorrowHistory}
+            marketActivity={marketActivity}
           />
         </div>
 
@@ -124,15 +122,15 @@ function MarketPageContent({ marketId }: MarketPageClientProps) {
         <SidePanel
           tab={tab}
           setTabAction={setTab}
-          market={market}
+          market={marketInfo}
           supplyValue={supplyValue}
           borrowValue={borrowValue}
           healthFactor={healthFactorData?.healthFactor ?? "0"}
           currentCollateral={currentCollateral}
           currentLoan={currentLoan}
-          ltv={market.lltv}
-          collateralTokenDecimals={market.collateralTokenDecimals}
-          loanTokenDecimals={market.loanTokenDecimals}
+          ltv={marketInfo.lltv}
+          collateralTokenDecimals={marketInfo.collateralTokenDecimals}
+          loanTokenDecimals={marketInfo.loanTokenDecimals}
           positionData={positionData}
         />
       </div>
