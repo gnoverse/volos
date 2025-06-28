@@ -7,6 +7,10 @@ interface MarketDashboardProps {
 }
 
 export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
+  // mock data from utilization for risk level
+  const utilizationPercent = Number(formatUtilization(market.utilization).replace('%', ''));
+  const riskLevel = Math.min(utilizationPercent, 100);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
       {/* Market Overview Card */}
@@ -151,30 +155,19 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           {/* Health Factor Indicator */}
           <div className="mt-2 pt-2 border-t border-gray-700/50">
             <div className="text-sm text-gray-400 mb-1">Risk Level</div>
-            <div className="relative flex items-center gap-2">
-              <div className="flex-1 h-6 flex items-center justify-center relative">
-                <div
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-md"
-                  style={{
-                    width: "3px", 
-                    height: "60%",
-                    backgroundColor: "rgb(209 213 219)",
-                    borderRadius: "2px",
-                    zIndex: 2
+            <div className="flex items-center gap-2">
+              <div className="w-full bg-gray-800 rounded-full h-2">
+                <div 
+                  className="h-2 rounded-full" 
+                  style={{ 
+                    width: `${riskLevel}%`,
+                    background: "linear-gradient(to right, #10b981, #f59e0b, #ef4444)"
                   }}
-                />
-                <div
-                  className="absolute top-1/2 left-0 right-0 h-2 -translate-y-1/2"
-                  style={{
-                    zIndex: 1,
-                    marginLeft: "0.75rem",
-                    marginRight: "0.75rem"
-                  }}
-                >
-                  <div className="h-full bg-gradient-to-r from-green-600 to-red-600 rounded-full"></div>
-                </div>
+                ></div>
               </div>
-              <span className="text-xs text-gray-400 ml-2">Medium</span>
+              <span className="text-sm font-semibold text-gray-200 whitespace-nowrap">
+                {riskLevel}%
+              </span>
             </div>
           </div>
         </CardContent>
