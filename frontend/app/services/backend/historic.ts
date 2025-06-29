@@ -3,12 +3,12 @@ import { ChartData, TransactionData } from '../indexer/utils/types.indexer';
 
 // ------------------------------------------------------------ SERVER-SIDE UTILIZATION RATE HISTORY ------------------------------------------------------------
 
-export async function getUtilizationHistory(marketId: string, timeFrame?: number): Promise<ChartData[]> {
+export async function getUtilizationHistory(marketId: string): Promise<ChartData[]> {
   const [supplyHistory, withdrawHistory, borrowHistory, repayHistory] = await Promise.all([
-    getSupplyHistory(marketId, timeFrame),
-    getWithdrawHistory(marketId, timeFrame),
-    getBorrowHistory(marketId, timeFrame),
-    getRepayHistory(marketId, timeFrame)
+    getSupplyHistory(marketId),
+    getWithdrawHistory(marketId),
+    getBorrowHistory(marketId),
+    getRepayHistory(marketId)
   ]);
 
   const eventsByBlock = new Map<number, {
@@ -79,10 +79,10 @@ export async function getUtilizationHistory(marketId: string, timeFrame?: number
 
 // ------------------------------------------------------------ SERVER-SIDE NET SUPPLY HISTORY ------------------------------------------------------------
 
-export async function getNetSupplyHistory(marketId: string, timeFrame?: number) {
+export async function getNetSupplyHistory(marketId: string) {
   const [deposits, withdraws] = await Promise.all([
-    getSupplyHistory(marketId, timeFrame),
-    getWithdrawHistory(marketId, timeFrame)
+    getSupplyHistory(marketId),
+    getWithdrawHistory(marketId)
   ]);
 
   const depositEvents = deposits.map((d: TransactionData) => ({
@@ -111,10 +111,10 @@ export async function getNetSupplyHistory(marketId: string, timeFrame?: number) 
 
 // ------------------------------------------------------------ SERVER-SIDE NET BORROW HISTORY ------------------------------------------------------------
 
-export async function getNetBorrowHistory(marketId: string, timeFrame?: number) {
+export async function getNetBorrowHistory(marketId: string) {
   const [borrows, repays] = await Promise.all([
-    getBorrowHistory(marketId, timeFrame),
-    getRepayHistory(marketId, timeFrame)
+    getBorrowHistory(marketId),
+    getRepayHistory(marketId)
   ]);
 
   const borrowEvents = borrows.map((b: TransactionData) => ({

@@ -118,13 +118,6 @@ export class WhereClauseBuilder {
     return this;
   }
   
-  sampleByBlockInterval(interval: number): WhereClauseBuilder {
-    // Add a condition to sample one transaction per interval blocks
-    // This will be handled by the GraphQL query with modulo operation
-    this.conditions.push(`block_height_mod: { eq: 0, divisor: ${interval} }`);
-    return this;
-  }
-  
   eventType(eventType: string): WhereClauseBuilder {
     this.eventConditions.push(`type: { eq: "${eventType}" }`);
     return this;
