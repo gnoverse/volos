@@ -1,4 +1,5 @@
 import { MarketActivity } from "@/app/services/indexer/utils/types.indexer";
+import { formatTimestamp } from "@/app/utils/format.utils";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
@@ -6,7 +7,7 @@ import { useState } from "react";
 
 export const activityColumns: ColumnDef<MarketActivity>[] = [
   {
-    accessorKey: "block_height",
+    accessorKey: "timestamp",
     header: ({ column }) => {
       return (
         <Button
@@ -20,7 +21,7 @@ export const activityColumns: ColumnDef<MarketActivity>[] = [
       )
     },
     cell: ({ row }) => {
-      return <div className="text-white">{row.getValue("block_height")}</div>
+      return <div className="text-white">{formatTimestamp(row.getValue("timestamp"))}</div>
     },
   },
   {

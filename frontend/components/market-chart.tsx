@@ -1,5 +1,6 @@
 "use client"
 
+import { formatTimestamp } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
@@ -41,12 +42,7 @@ export function MarketChart({
                 fontSize={10}
                 tickLine={false}
                 tickFormatter={(str) => {
-                  const date = new Date(str)
-                  return date.toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                  })
+                  return formatTimestamp(str);
                 }}
                 height={50}
                 interval={7}
@@ -82,12 +78,7 @@ export function MarketChart({
                 labelStyle={{ color: 'rgb(156 163 175)' }}
                 itemStyle={{ color: 'rgb(229 231 235)' }}
                 labelFormatter={(label) => {
-                  const date = new Date(label)
-                  return date.toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                  })
+                  return formatTimestamp(label);
                 }}
               />
             </LineChart>

@@ -1,4 +1,4 @@
-import { SUPPLY_BORROW_FIELDS } from './utils/indexer.fields';
+import { SUPPLY_BORROW_FIELDS } from './utils/fields.indexer';
 import {
   buildQuery
 } from './utils/query-builder';
@@ -91,6 +91,7 @@ export async function getMarketActivity(marketId: string): Promise<MarketActivit
     caller: item.caller || null,
     tx_hash: item.hash || '',
     func: item.event_func,
+    timestamp: item.timestamp!,
   }));
 }
 

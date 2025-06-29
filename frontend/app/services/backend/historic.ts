@@ -18,9 +18,9 @@ export async function getUtilizationHistory(marketId: string): Promise<ChartData
     repay: number;
   }>();
 
-  const initializeBlock = (blockHeight: number) => {
-    if (!eventsByBlock.has(blockHeight)) {
-      eventsByBlock.set(blockHeight, {
+  const initializeBlock = (timestamp: number) => {
+    if (!eventsByBlock.has(timestamp)) {
+      eventsByBlock.set(timestamp, {
         supply: 0,
         withdraw: 0,
         borrow: 0,
@@ -60,8 +60,8 @@ export async function getUtilizationHistory(marketId: string): Promise<ChartData
 
   const sortedBlocks = Array.from(eventsByBlock.keys()).sort((a, b) => a - b);
 
-  sortedBlocks.forEach(blockHeight => {
-    const events = eventsByBlock.get(blockHeight)!;
+  sortedBlocks.forEach(timestamp => {
+    const events = eventsByBlock.get(timestamp)!;
     
     currentSupply += events.supply - events.withdraw;
     currentBorrow += events.borrow - events.repay;
@@ -70,7 +70,7 @@ export async function getUtilizationHistory(marketId: string): Promise<ChartData
     
     utilizationHistory.push({
       value: currentUtilization,
-      block_height: blockHeight,
+      timestamp: timestamp,
     });
   });
   
@@ -87,22 +87,22 @@ export async function getNetSupplyHistory(marketId: string) {
 
   const depositEvents = deposits.map((d: TransactionData) => ({
     value: Number(d.amount),
-    block_height: d.block_height,
+    timestamp: d.timestamp,
   }));
 
   const withdrawEvents = withdraws.map((w: TransactionData) => ({
     value: -Number(w.amount),
-    block_height: w.block_height,
+    timestamp: w.timestamp,
   }));
 
-  const allEvents = [...depositEvents, ...withdrawEvents].sort((a, b) => a.block_height - b.block_height);
+  const allEvents = [...depositEvents, ...withdrawEvents].sort((a, b) => a.timestamp! - b.timestamp!);
 
   let runningTotal = 0;
   const netSupplyHistory = allEvents.map(event => {
     runningTotal += event.value;
     return {
       value: runningTotal,
-      block_height: event.block_height,
+      timestamp: event.timestamp,
     };
   });
 
@@ -119,22 +119,22 @@ export async function getNetBorrowHistory(marketId: string) {
 
   const borrowEvents = borrows.map((b: TransactionData) => ({
     value: Number(b.amount),
-    block_height: b.block_height,
+    timestamp: b.timestamp,
   }));
 
   const repayEvents = repays.map((r: TransactionData) => ({
     value: -Number(r.amount),
-    block_height: r.block_height,
+    timestamp: r.timestamp,
   }));
 
-  const allEvents = [...borrowEvents, ...repayEvents].sort((a, b) => a.block_height - b.block_height);
+  const allEvents = [...borrowEvents, ...repayEvents].sort((a, b) => a.timestamp! - b.timestamp!);
 
   let runningTotal = 0;
   const netBorrowHistory = allEvents.map(event => {
     runningTotal += event.value;
     return {
       value: runningTotal,
-      block_height: event.block_height,
+      timestamp: event.timestamp,
     };
   });
 

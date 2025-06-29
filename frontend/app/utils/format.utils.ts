@@ -121,3 +121,30 @@ export function parseTokenAmount(
   }
 }
 
+/**
+ * Formats a timestamp (milliseconds) to a readable date string.
+ * Format: "01 Jan 2025, 20:00"
+ * Returns "Not available" if timestamp is 0, null, or undefined.
+ */
+export function formatTimestamp(timestamp: number | null | undefined): string {
+  if (!timestamp || timestamp === 0) {
+    return "Not available";
+  }
+  
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }) + ', ' + date.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } catch (error) {
+    console.error("Error formatting timestamp:", error);
+    return "Not available";
+  }
+}
+

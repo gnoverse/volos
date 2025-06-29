@@ -27,21 +27,28 @@ export function MarketOverview({
   netBorrowHistory,
   utilizationHistory
 }: MarketOverviewProps) {
+  console.log(netSupplyHistory[0].timestamp);
   
-  const supplyChartData = netSupplyHistory.map(item => ({
-    supply: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
-    name: item.block_height,
-  }));
+  const supplyChartData = netSupplyHistory
+    .filter(item => item.timestamp !== undefined)
+    .map(item => ({
+      supply: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
+      name: item.timestamp!,
+    }));
 
-  const netBorrowChartData = netBorrowHistory.map(item => ({
-    netBorrow: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
-    name: item.block_height,
-  }));
+  const netBorrowChartData = netBorrowHistory
+    .filter(item => item.timestamp !== undefined)
+    .map(item => ({
+      netBorrow: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
+      name: item.timestamp!,
+    }));
 
-  const utilizationChartData = utilizationHistory.map(item => ({
-    utilization: item.value,
-    name: item.block_height,
-  }));
+  const utilizationChartData = utilizationHistory
+    .filter(item => item.timestamp !== undefined)
+    .map(item => ({
+      utilization: item.value,
+      name: item.timestamp!,
+    }));
 
   return (
     <>

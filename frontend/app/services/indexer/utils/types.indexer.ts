@@ -1,3 +1,4 @@
+// TODO: which fields require ? and which don't?
 export type GnoEventAttr = { key: string; value: string }
 
 export type GnoEvent = { type: string; func?: string; attrs: GnoEventAttr[] }
@@ -51,7 +52,7 @@ export type TransactionData = {
 // charts
 export type ChartData = {
   value: number;
-  block_height: number;
+  timestamp?: number;
 }
 
 // market activity data table
@@ -62,4 +63,5 @@ export type MarketActivity = {
   caller: string | null;
   tx_hash: string;
   func?: string;
+  timestamp: number;
 }
