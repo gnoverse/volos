@@ -24,6 +24,7 @@ interface MarketTabsProps {
   netSupplyHistory: ChartData[];
   netBorrowHistory: ChartData[];
   marketActivity: MarketActivity[];
+  utilizationHistory: ChartData[];
 }
 
 export function MarketTabs({ 
@@ -37,7 +38,8 @@ export function MarketTabs({
   positionData,
   netSupplyHistory,
   netBorrowHistory,
-  marketActivity
+  marketActivity,
+  utilizationHistory
 }: MarketTabsProps) {
   const sortedActivity = marketActivity.sort((a, b) => b.block_height - a.block_height);
 
@@ -72,6 +74,7 @@ export function MarketTabs({
           cardStyles={cardStyles}
           netSupplyHistory={netSupplyHistory}
           netBorrowHistory={netBorrowHistory}
+          utilizationHistory={utilizationHistory}
         />
       </TabsContent>
       

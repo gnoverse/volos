@@ -146,8 +146,8 @@ export default function Navbar() {
       
       {/* Right-aligned wallet button */}
       <div className="flex justify-end items-center">
-        <TooltipProvider>
-          <Tooltip delayDuration={0}>
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 

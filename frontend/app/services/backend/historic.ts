@@ -1,12 +1,88 @@
 import { getBorrowHistory, getRepayHistory, getSupplyHistory, getWithdrawHistory } from '../indexer/historic';
-import { TransactionData } from '../indexer/utils/types.indexer';
+import { ChartData, TransactionData } from '../indexer/utils/types.indexer';
+
+// ------------------------------------------------------------ SERVER-SIDE UTILIZATION RATE HISTORY ------------------------------------------------------------
+
+export async function getUtilizationHistory(marketId: string, timeFrame?: number): Promise<ChartData[]> {
+  const [supplyHistory, withdrawHistory, borrowHistory, repayHistory] = await Promise.all([
+    getSupplyHistory(marketId, timeFrame),
+    getWithdrawHistory(marketId, timeFrame),
+    getBorrowHistory(marketId, timeFrame),
+    getRepayHistory(marketId, timeFrame)
+  ]);
+
+  const eventsByBlock = new Map<number, {
+    supply: number;
+    withdraw: number;
+    borrow: number;
+    repay: number;
+  }>();
+
+  const initializeBlock = (blockHeight: number) => {
+    if (!eventsByBlock.has(blockHeight)) {
+      eventsByBlock.set(blockHeight, {
+        supply: 0,
+        withdraw: 0,
+        borrow: 0,
+        repay: 0
+      });
+    }
+  };
+
+  supplyHistory.forEach(item => {
+    initializeBlock(item.block_height);
+    const block = eventsByBlock.get(item.block_height)!;
+    block.supply += Number(item.amount || 0);
+  });
+
+  withdrawHistory.forEach(item => {
+    initializeBlock(item.block_height);
+    const block = eventsByBlock.get(item.block_height)!;
+    block.withdraw += Number(item.amount || 0);
+  });
+
+  borrowHistory.forEach(item => {
+    initializeBlock(item.block_height);
+    const block = eventsByBlock.get(item.block_height)!;
+    block.borrow += Number(item.amount || 0);
+  });
+
+  repayHistory.forEach(item => {
+    initializeBlock(item.block_height);
+    const block = eventsByBlock.get(item.block_height)!;
+    block.repay += Number(item.amount || 0);
+  });
+
+  const utilizationHistory: ChartData[] = [];
+  let currentSupply = 0;
+  let currentBorrow = 0;
+  let currentUtilization = 0;
+
+  const sortedBlocks = Array.from(eventsByBlock.keys()).sort((a, b) => a - b);
+
+  sortedBlocks.forEach(blockHeight => {
+    const events = eventsByBlock.get(blockHeight)!;
+    
+    currentSupply += events.supply - events.withdraw;
+    currentBorrow += events.borrow - events.repay;
+    
+    currentUtilization = currentSupply > 0 ? (currentBorrow / currentSupply) * 100 : 0;
+    
+    utilizationHistory.push({
+      value: currentUtilization,
+      block_height: blockHeight,
+    });
+  });
+  
+  return utilizationHistory;
+}
 
 // ------------------------------------------------------------ SERVER-SIDE NET SUPPLY HISTORY ------------------------------------------------------------
 
-export async function getNetSupplyHistory(marketId: string) {
+export async function getNetSupplyHistory(marketId: string, timeFrame?: number) {
   const [deposits, withdraws] = await Promise.all([
-    getSupplyHistory(marketId),
-    getWithdrawHistory(marketId)
+    getSupplyHistory(marketId, timeFrame),
+    getWithdrawHistory(marketId, timeFrame)
   ]);
 
   const depositEvents = deposits.map((d: TransactionData) => ({
@@ -35,10 +111,10 @@ export async function getNetSupplyHistory(marketId: string) {
 
 // ------------------------------------------------------------ SERVER-SIDE NET BORROW HISTORY ------------------------------------------------------------
 
-export async function getNetBorrowHistory(marketId: string) {
+export async function getNetBorrowHistory(marketId: string, timeFrame?: number) {
   const [borrows, repays] = await Promise.all([
-    getBorrowHistory(marketId),
-    getRepayHistory(marketId)
+    getBorrowHistory(marketId, timeFrame),
+    getRepayHistory(marketId, timeFrame)
   ]);
 
   const borrowEvents = borrows.map((b: TransactionData) => ({

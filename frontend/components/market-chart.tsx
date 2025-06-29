@@ -7,7 +7,7 @@ import { MarketHistory, PositionHistory } from "../app/(app)/borrow/mock-history
 
 // TODO: fix this type
 interface MarketChartProps {
-  data: Array<{ supply: number; name: number } | MarketHistory | PositionHistory | { netBorrow: number; name: number }>
+  data: Array<{ supply: number; name: number } | MarketHistory | PositionHistory | { netBorrow: number; name: number } | { utilization: number; name: number }>
   title: string
   description: string
   dataKey: string

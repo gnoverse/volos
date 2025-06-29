@@ -1,4 +1,7 @@
 import axios from "axios";
+import {
+  UNIVERSAL_TRANSACTION_FIELDS
+} from './indexer.fields';
 import { GnoEventAttr, GraphQLResponse, Transaction } from './types.indexer';
 
 // start tx indexer for gnodev on port 3100:
@@ -7,46 +10,14 @@ import { GnoEventAttr, GraphQLResponse, Transaction } from './types.indexer';
 // const txIndexerUrl = "https://indexer.test6.testnets.gno.land"
 const txIndexerUrl = "http://localhost:3100"
 
-export const UNIVERSAL_TRANSACTION_FIELDS = `
-  block_height
-  index
-  hash
-  messages {
-    ... on TransactionMessage {
-      typeUrl
-      route
-      value {
-        ... on MsgCall {
-          caller
-          send
-          pkg_path
-          func
-          args
-        }
-      }
-    }
-  }
-  response {
-    events {
-      ... on GnoEvent {
-        type
-        func
-        attrs {
-          key
-          value
-        }
-      }
-    }
-  }
-`
-
 export class QueryBuilder {
   private operationName: string;
   private whereBuilder: WhereClauseBuilder;
-  private additionalFields?: string;
+  private fields: string;
 
-  constructor(operationName: string) {
+  constructor(operationName: string, fields: string = UNIVERSAL_TRANSACTION_FIELDS) {
     this.operationName = operationName;
+    this.fields = fields;
     this.whereBuilder = new WhereClauseBuilder(this);
   }
 
@@ -54,8 +25,13 @@ export class QueryBuilder {
     return this.whereBuilder;
   }
 
+  useFields(fields: string): QueryBuilder {
+    this.fields = fields;
+    return this;
+  }
+
   addFields(fields: string): QueryBuilder {
-    this.additionalFields = fields;
+    this.fields += `\n          ${fields}`;
     return this;
   }
 
@@ -68,8 +44,7 @@ export class QueryBuilder {
             ${whereClause}
           }
         ) {
-          ${UNIVERSAL_TRANSACTION_FIELDS}
-          ${this.additionalFields || ''}
+          ${this.fields}
         }
       }
     `;
@@ -93,14 +68,14 @@ export class QueryBuilder {
   }
 }
 
-export function buildQuery(operationName: string): QueryBuilder {
-  return new QueryBuilder(operationName);
+export function buildQuery(operationName: string, fields?: string): QueryBuilder {
+  return new QueryBuilder(operationName, fields);
 }
 
 export function buildUniversalQuery(
   operationName: string,
   whereClause: string,
-  additionalFields?: string
+  fields: string = UNIVERSAL_TRANSACTION_FIELDS
 ): string {
   return `
     query ${operationName} {
@@ -109,12 +84,12 @@ export function buildUniversalQuery(
           ${whereClause}
         }
       ) {
-        ${UNIVERSAL_TRANSACTION_FIELDS}
-        ${additionalFields || ''}
+        ${fields}
       }
     }
   `
 }
+
 export class WhereClauseBuilder {
   private conditions: string[] = [];
   private eventConditions: string[] = [];
@@ -140,6 +115,13 @@ export class WhereClauseBuilder {
     if (conditions.length > 0) {
       this.conditions.push(`block_height: { ${conditions.join(', ')} }`);
     }
+    return this;
+  }
+  
+  sampleByBlockInterval(interval: number): WhereClauseBuilder {
+    // Add a condition to sample one transaction per interval blocks
+    // This will be handled by the GraphQL query with modulo operation
+    this.conditions.push(`block_height_mod: { eq: 0, divisor: ${interval} }`);
     return this;
   }
   
@@ -251,49 +233,59 @@ export function parseTransactions(
   timestamp?: number; // ?
 }[] {
   const results: ReturnType<typeof parseTransactions> = [];
-  
+
   for (const tx of transactions) {
-    const baseData = {
+    // Safely extract base data - only include fields that exist
+    const baseData: Partial<ReturnType<typeof parseTransactions>[0]> = {
       block_height: tx.block_height,
-      index: tx.index,
-      hash: tx.hash,
-      caller: tx.messages?.[0]?.value?.caller,
-      send: tx.messages?.[0]?.value?.send,
-      pkg_path: tx.messages?.[0]?.value?.pkg_path,
-      func: tx.messages?.[0]?.value?.func,
-      args: tx.messages?.[0]?.value?.args,
     };
 
-    for (const event of tx.response?.events || []) {
-      if (options?.filterByEventTypes && !options.filterByEventTypes.includes(event.type)) {
-        continue;
-      }
+    // Only add optional fields if they exist in the response
+    if (tx.index !== undefined) baseData.index = tx.index;
+    if (tx.hash !== undefined) baseData.hash = tx.hash;
+    if (tx.messages?.[0]?.value?.caller !== undefined) baseData.caller = tx.messages[0].value.caller;
+    if (tx.messages?.[0]?.value?.send !== undefined) baseData.send = tx.messages[0].value.send;
+    if (tx.messages?.[0]?.value?.pkg_path !== undefined) baseData.pkg_path = tx.messages[0].value.pkg_path;
+    if (tx.messages?.[0]?.value?.func !== undefined) baseData.func = tx.messages[0].value.func;
+    if (tx.messages?.[0]?.value?.args !== undefined) baseData.args = tx.messages[0].value.args;
 
-      if (options?.filterByMarketId) {
-        const marketIdAttr = event.attrs.find(a => a.key === "market_id");
-        if (!marketIdAttr || marketIdAttr.value !== options.filterByMarketId) {
+    const events = tx.response?.events || [];
+    
+    if (events.length > 0) {
+      for (const event of events) {
+        // Skip if event type filtering is applied and doesn't match
+        if (options?.filterByEventTypes && !options.filterByEventTypes.includes(event.type)) {
           continue;
         }
+
+        // Skip if market ID filtering is applied and doesn't match
+        if (options?.filterByMarketId) {
+          const marketIdAttr = event.attrs?.find(a => a.key === "market_id");
+          if (!marketIdAttr || marketIdAttr.value !== options.filterByMarketId) {
+            continue;
+          }
+        }
+
+        // Extract amount from attrs (prioritize 'amount', fallback to 'assets')
+        const amountAttr = event.attrs?.find(a => a.key === "amount") || event.attrs?.find(a => a.key === "assets");
+        const marketIdAttr = event.attrs?.find(a => a.key === "market_id");
+
+        const eventData: Partial<ReturnType<typeof parseTransactions>[0]> = {
+          ...baseData,
+        };
+
+        // Only add event fields if they exist in the response
+        if (event.type !== undefined) eventData.event_type = event.type;
+        if (event.func !== undefined) eventData.event_func = event.func;
+        if (event.attrs !== undefined) eventData.event_attrs = event.attrs;
+        if (amountAttr?.value !== undefined) eventData.amount = amountAttr.value;
+        if (marketIdAttr?.value !== undefined) eventData.market_id = marketIdAttr.value;
+
+        results.push(eventData as ReturnType<typeof parseTransactions>[0]);
       }
-
-      const amountAttr = event.attrs.find(a => a.key === "amount") || 
-                        event.attrs.find(a => a.key === "assets");
-      const marketIdAttr = event.attrs.find(a => a.key === "market_id");
-
-      const eventData = {
-        ...baseData,
-        event_type: event.type,
-        event_func: event.func,
-        event_attrs: event.attrs,
-        amount: amountAttr?.value,
-        market_id: marketIdAttr?.value,
-      };
-
-      results.push(eventData);
-    }
-
-    if (options?.includeAllEvents === false && tx.response?.events?.length === 0) {
-      results.push(baseData);
+    } else if (options?.includeAllEvents !== false) {
+      // If no events and we want to include transactions without events
+      results.push(baseData as ReturnType<typeof parseTransactions>[0]);
     }
   }
 

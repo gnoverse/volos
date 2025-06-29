@@ -34,6 +34,7 @@ interface MarketPageClientProps {
     sevenDay: number;
     ninetyDay: number;
   };
+  utilizationHistory: ChartData[];
 }
 
 function MarketPageContent({ 
@@ -43,7 +44,8 @@ function MarketPageContent({
   netSupplyHistory, 
   netBorrowHistory, 
   marketActivity,
-  apyVariations 
+  apyVariations,
+  utilizationHistory
 }: MarketPageClientProps) {
   const [tab, setTab] = useState("add-borrow")
   const [userAddress, setUserAddress] = useState<string>("")
@@ -115,6 +117,7 @@ function MarketPageContent({
             netSupplyHistory={netSupplyHistory}
             netBorrowHistory={netBorrowHistory}
             marketActivity={marketActivity}
+            utilizationHistory={utilizationHistory}
           />
         </div>
 

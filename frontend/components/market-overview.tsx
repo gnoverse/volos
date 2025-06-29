@@ -15,6 +15,7 @@ interface MarketOverviewProps {
   cardStyles: string;
   netSupplyHistory: ChartData[];
   netBorrowHistory: ChartData[];
+  utilizationHistory: ChartData[];
 }
 
 export function MarketOverview({ 
@@ -23,7 +24,8 @@ export function MarketOverview({
   apyVariations, 
   cardStyles,
   netSupplyHistory,
-  netBorrowHistory
+  netBorrowHistory,
+  utilizationHistory
 }: MarketOverviewProps) {
   
   const supplyChartData = netSupplyHistory.map(item => ({
@@ -33,6 +35,11 @@ export function MarketOverview({
 
   const netBorrowChartData = netBorrowHistory.map(item => ({
     netBorrow: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
+    name: item.block_height,
+  }));
+
+  const utilizationChartData = utilizationHistory.map(item => ({
+    utilization: item.value,
     name: item.block_height,
   }));
 
@@ -57,7 +64,7 @@ export function MarketOverview({
           className={cardStyles}
         />
         <MarketChart
-          data={history}
+          data={utilizationChartData}
           title="Utilization Rate"
           description="Percentage of supplied assets being borrowed"
           dataKey="utilization"

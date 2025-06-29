@@ -46,7 +46,7 @@ export type TransactionData = {
   timestamp?: number;
 }
 
-// types needed for specific components
+// ------------------------------------------------------------ TYPES NEEDED FOR SPECIFIC COMPONENTS ------------------------------------------------------------
 
 // charts
 export type ChartData = {

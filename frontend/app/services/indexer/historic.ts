@@ -1,3 +1,4 @@
+import { SUPPLY_BORROW_FIELDS } from './utils/indexer.fields';
 import {
   buildQuery
 } from './utils/query-builder';
@@ -5,31 +6,41 @@ import { MarketActivity, TransactionData } from './utils/types.indexer';
 
 // ------------------------------------------------------------ TOTAL SUPPLY HISTORY ------------------------------------------------------------
 
-export async function getSupplyHistory(marketId: string): Promise<TransactionData[]> {
-  const parsed = await buildQuery("getSupplyEvents")
+export async function getSupplyHistory(marketId: string, timeFrame?: number): Promise<TransactionData[]> {
+  const query = buildQuery("getSupplyEvents", SUPPLY_BORROW_FIELDS)
     .where()
     .success(true)
     .eventType("Deposit")
-    .marketId(marketId)
-    .executeAndParse({
-      filterByEventTypes: ["Deposit"],
-      filterByMarketId: marketId,
-    });
+    .marketId(marketId);
+
+  if (timeFrame) {
+    query.sampleByBlockInterval(timeFrame);
+  }
+
+  const parsed = await query.executeAndParse({
+    filterByEventTypes: ["Deposit"],
+    filterByMarketId: marketId,
+  });
 
   return parsed
     .filter((item: TransactionData) => item.amount);
 }
 
-export async function getWithdrawHistory(marketId: string): Promise<TransactionData[]> {
-  const parsed = await buildQuery("getWithdrawEvents")
+export async function getWithdrawHistory(marketId: string, timeFrame?: number): Promise<TransactionData[]> {
+  const query = buildQuery("getWithdrawEvents", SUPPLY_BORROW_FIELDS)
     .where()
     .success(true)
     .eventType("Withdraw")
-    .marketId(marketId)
-    .executeAndParse({
-      filterByEventTypes: ["Withdraw"],
-      filterByMarketId: marketId,
-    });
+    .marketId(marketId);
+
+  if (timeFrame) {
+    query.sampleByBlockInterval(timeFrame);
+  }
+
+  const parsed = await query.executeAndParse({
+    filterByEventTypes: ["Withdraw"],
+    filterByMarketId: marketId,
+  });
 
   return parsed
     .filter((item: TransactionData) => item.amount);
@@ -37,31 +48,41 @@ export async function getWithdrawHistory(marketId: string): Promise<TransactionD
 
 // ------------------------------------------------------------ BORROW HISTORY ------------------------------------------------------------
 
-export async function getBorrowHistory(marketId: string): Promise<TransactionData[]> {
-  const parsed = await buildQuery("getBorrowEvents")
+export async function getBorrowHistory(marketId: string, timeFrame?: number): Promise<TransactionData[]> {
+  const query = buildQuery("getBorrowEvents", SUPPLY_BORROW_FIELDS)
     .where()
     .success(true)
     .eventType("Borrow")
-    .marketId(marketId)
-    .executeAndParse({
-      filterByEventTypes: ["Borrow"],
-      filterByMarketId: marketId,
-    });
+    .marketId(marketId);
+
+  if (timeFrame) {
+    query.sampleByBlockInterval(timeFrame);
+  }
+
+  const parsed = await query.executeAndParse({
+    filterByEventTypes: ["Borrow"],
+    filterByMarketId: marketId,
+  });
 
   return parsed
     .filter((item: TransactionData) => item.amount);
 }
 
-export async function getRepayHistory(marketId: string): Promise<TransactionData[]> {
-  const parsed = await buildQuery("getRepayEvents")
+export async function getRepayHistory(marketId: string, timeFrame?: number): Promise<TransactionData[]> {
+  const query = buildQuery("getRepayEvents", SUPPLY_BORROW_FIELDS)
     .where()
     .success(true)
     .eventType("Repay")
-    .marketId(marketId)
-    .executeAndParse({
-      filterByEventTypes: ["Repay"],
-      filterByMarketId: marketId,
-    });
+    .marketId(marketId);
+
+  if (timeFrame) {
+    query.sampleByBlockInterval(timeFrame);
+  }
+
+  const parsed = await query.executeAndParse({
+    filterByEventTypes: ["Repay"],
+    filterByMarketId: marketId,
+  });
 
   return parsed
     .filter((item: TransactionData) => item.amount);
@@ -69,14 +90,19 @@ export async function getRepayHistory(marketId: string): Promise<TransactionData
 
 // ------------------------------------------------------------ ALL ACTIVITY HISTORY ------------------------------------------------------------
 
-export async function getMarketActivity(marketId: string): Promise<MarketActivity[]> {
-  const parsed = await buildQuery("getMarketActivity")
+export async function getMarketActivity(marketId: string, timeFrame?: number): Promise<MarketActivity[]> {
+  const query = buildQuery("getMarketActivity")
     .where()
     .success(true)
-    .marketId(marketId)
-    .executeAndParse({
-      filterByMarketId: marketId,
-    });
+    .marketId(marketId);
+
+  if (timeFrame) {
+    query.sampleByBlockInterval(timeFrame);
+  }
+
+  const parsed = await query.executeAndParse({
+    filterByMarketId: marketId,
+  });
 
   return parsed.map((item: TransactionData) => ({
     block_height: item.block_height,
