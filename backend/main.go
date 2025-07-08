@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"volos-backend/internal/endpoints"
 	"net/http"
+	"volos-backend/internal/endpoints"
 )
 
 func main() {
@@ -12,6 +12,7 @@ func main() {
 	})
 
 	http.HandleFunc("/api/total-supply-history", endpoints.TotalSupplyHistoryHandler)
+	http.HandleFunc("/api/total-borrow-history", endpoints.TotalBorrowHistoryHandler)
 
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
