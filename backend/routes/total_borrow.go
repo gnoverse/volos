@@ -3,17 +3,17 @@ package endpoints
 import (
 	"encoding/json"
 	"net/http"
-	"volos-backend/internal/service"
+	"volos-backend/service"
 )
 
-func TotalUtilizationHistoryHandler(w http.ResponseWriter, r *http.Request) {
+func TotalBorrowHistoryHandler(w http.ResponseWriter, r *http.Request) {
 	marketId := r.URL.Query().Get("marketId")
 	if marketId == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"error": "marketId is required"}`))
 		return
 	}
-	result, err := service.GetUtilizationHistory(marketId)
+	result, err := service.GetTotalBorrowHistory(marketId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error": "` + err.Error() + `"}`))

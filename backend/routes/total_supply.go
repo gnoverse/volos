@@ -2,7 +2,7 @@ package endpoints
 
 import (
 	"encoding/json"
-	"volos-backend/internal/service"
+	"volos-backend/service"
 	"net/http"
 )
 
