@@ -19,7 +19,6 @@ type UtilizationEvent struct {
 //   - []UtilizationEvent: Each entry contains the utilization rate and the corresponding block timestamp.
 //   - error: Any error encountered during the process.
 func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
-	// Fetch all events
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
 	supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
 	supplyResp, err := supplyQB.Execute()
@@ -72,14 +71,12 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	}
 	json.Unmarshal(repayResp, &repayData)
 
-	// Aggregate all events by block height
 	heightSet := make(map[int64]struct{})
 	supplyEvents := extractEvents(supplyData.Data.GetTransactions, 1, heightSet)
 	withdrawEvents := extractEvents(withdrawData.Data.GetTransactions, -1, heightSet)
 	borrowEvents := extractEvents(borrowData.Data.GetTransactions, 1, heightSet)
 	repayEvents := extractEvents(repayData.Data.GetTransactions, -1, heightSet)
 
-	// Map block height to event deltas
 	type blockDelta struct {
 		supply float64
 		borrow float64
@@ -110,7 +107,6 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 		deltas[ev.BlockHeight].borrow += ev.Value
 	}
 
-	// Prepare block heights for query
 	var heights []int64
 	for h := range heightSet {
 		heights = append(heights, h)
@@ -121,10 +117,8 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 		return nil, err
 	}
 
-	// Calculate utilization rate at each block
 	var result []UtilizationEvent
 	var runningSupply, runningBorrow float64
-	// Sort block heights
 	sortedHeights := heights
 	for i := 0; i < len(sortedHeights)-1; i++ {
 		for j := i + 1; j < len(sortedHeights); j++ {

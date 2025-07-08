@@ -2,9 +2,6 @@
 
 import { apiGetMarketInfo } from '@/app/services/abci'
 import { AdenaService } from "@/app/services/adena.service"
-import { getNetBorrowHistory, getNetSupplyHistory, getUtilizationHistory } from '@/app/services/backend/historic'
-import { getMarketActivity } from '@/app/services/indexer/historic'
-import { ChartData, MarketActivity } from "@/app/services/indexer/utils/types.indexer"
 import "@/app/theme.css"
 import { MarketInfo } from "@/app/types"
 import { parseTokenAmount } from "@/app/utils/format.utils"
@@ -17,10 +14,9 @@ import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
 import {
-    borrowValue,
-    supplyValue
+  borrowValue,
+  supplyValue
 } from "../mock"
-import { MarketHistory, getHistoryForMarket } from "../mock-history"
 import { useHealthFactorQuery, useLoanAmountQuery, usePositionQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -31,11 +27,6 @@ function MarketPageContent() {
   const marketId = decodeURIComponent(params.marketId)
 
   const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null)
-  const [mockHistory, setMockHistory] = useState<MarketHistory[]>([])
-  const [netSupplyHistory, setNetSupplyHistory] = useState<ChartData[]>([])
-  const [netBorrowHistory, setNetBorrowHistory] = useState<ChartData[]>([])
-  const [marketActivity, setMarketActivity] = useState<MarketActivity[]>([])
-  const [utilizationHistory, setUtilizationHistory] = useState<ChartData[]>([])
   const [apyVariations, setApyVariations] = useState({ sevenDay: 0, ninetyDay: 0 })
   const [tab, setTab] = useState("add-borrow")
   const [userAddress, setUserAddress] = useState<string>("")
@@ -43,20 +34,8 @@ function MarketPageContent() {
   // Fetch all data on mount
   useEffect(() => {
     async function fetchData() {
-      const [marketInfoRes, mockHistoryRes, netSupplyRes, netBorrowRes, marketActivityRes, utilizationRes] = await Promise.all([
-        apiGetMarketInfo(marketId),
-        getHistoryForMarket(marketId),
-        getNetSupplyHistory(marketId),
-        getNetBorrowHistory(marketId),
-        getMarketActivity(marketId),
-        getUtilizationHistory(marketId)
-      ])
+      const marketInfoRes = await apiGetMarketInfo(marketId)
       setMarketInfo(marketInfoRes)
-      setMockHistory(mockHistoryRes)
-      setNetSupplyHistory(netSupplyRes)
-      setNetBorrowHistory(netBorrowRes)
-      setMarketActivity(marketActivityRes)
-      setUtilizationHistory(utilizationRes)
       setApyVariations({ sevenDay: 0, ninetyDay: 0 }) // TODO: update if needed
     }
     fetchData()
@@ -122,7 +101,6 @@ function MarketPageContent() {
 
           {/* Tabbed content */}
           <MarketTabs 
-            history={mockHistory} 
             market={marketInfo} 
             apyVariations={apyVariations} 
             cardStyles={CARD_STYLES}
@@ -130,10 +108,6 @@ function MarketPageContent() {
             currentCollateral={currentCollateral}
             currentLoan={currentLoan}
             positionData={positionData}
-            netSupplyHistory={netSupplyHistory}
-            netBorrowHistory={netBorrowHistory}
-            marketActivity={marketActivity}
-            utilizationHistory={utilizationHistory}
           />
         </div>
 

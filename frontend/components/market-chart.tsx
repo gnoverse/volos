@@ -1,14 +1,14 @@
 "use client"
 
+import { Event as HistoryEvent } from "@/app/services/api.service"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import { MarketHistory, PositionHistory } from "../app/(app)/borrow/mock-history"
 
 // TODO: fix this type
 interface MarketChartProps {
-  data: Array<{ supply: number; name: number } | MarketHistory | PositionHistory | { netBorrow: number; name: number } | { utilization: number; name: number }>
+  data: Array<HistoryEvent>
   title: string
   description: string
   dataKey: string
@@ -38,7 +38,7 @@ export function MarketChart({
               margin={{ top: 5, right: 10, bottom: 10, left: 10 }}
             >
               <XAxis 
-                dataKey="name"
+                dataKey="timestamp"
                 fontSize={10}
                 tickLine={false}
                 tickFormatter={(str) => {

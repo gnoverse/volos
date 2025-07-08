@@ -1,80 +1,87 @@
-import { MarketHistory } from "@/app/(app)/borrow/mock-history";
-import { ChartData } from "@/app/services/indexer/utils/types.indexer";
+import { Event as HistoryEvent, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
 import { MarketInfo } from "@/app/types";
-import { formatApyVariation, parseTokenAmount } from "@/app/utils/format.utils";
+import { formatApyVariation } from "@/app/utils/format.utils";
 import { InfoCard } from "@/components/info-card";
 import { MarketChart } from "@/components/market-chart";
+import { useQuery } from '@tanstack/react-query';
 
 interface MarketOverviewProps {
-  history: MarketHistory[];
+  history?: HistoryEvent[];
   market: MarketInfo;
   apyVariations: {
     sevenDay: number;
     ninetyDay: number;
   };
-  cardStyles: string;
-  netSupplyHistory: ChartData[];
-  netBorrowHistory: ChartData[];
-  utilizationHistory: ChartData[];
+  cardStyles: string
 }
 
 export function MarketOverview({ 
-  history, 
+  history = [], 
   market, 
   apyVariations, 
-  cardStyles,
-  netSupplyHistory,
-  netBorrowHistory,
-  utilizationHistory
+  cardStyles
 }: MarketOverviewProps) {
-  console.log(netSupplyHistory[0].timestamp);
-  
-  const supplyChartData = netSupplyHistory
-    .filter(item => item.timestamp !== undefined)
-    .map(item => ({
-      supply: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
-      name: item.timestamp!,
-    }));
 
-  const netBorrowChartData = netBorrowHistory
-    .filter(item => item.timestamp !== undefined)
-    .map(item => ({
-      netBorrow: parseTokenAmount(item.value.toString(), market.loanTokenDecimals),
-      name: item.timestamp!,
-    }));
+  const { data: netSupplyHistory = [], isLoading: isSupplyLoading } = useQuery({
+    queryKey: ['netSupplyHistory', market.poolPath],
+    queryFn: () => getTotalSupplyHistory(market.poolPath!),
+    enabled: !!market.poolPath
+  });
 
-  const utilizationChartData = utilizationHistory
-    .filter(item => item.timestamp !== undefined)
-    .map(item => ({
-      utilization: item.value,
-      name: item.timestamp!,
-    }));
+  const { data: netBorrowHistory = [], isLoading: isBorrowLoading } = useQuery({
+    queryKey: ['netBorrowHistory', market.poolPath],
+    queryFn: () => getTotalBorrowHistory(market.poolPath!),
+    enabled: !!market.poolPath
+  });
+
+  const { data: utilizationHistory = [], isLoading: isUtilizationLoading } = useQuery({
+    queryKey: ['utilizationHistory', market.poolPath],
+    queryFn: () => getUtilizationHistory(market.poolPath!),
+    enabled: !!market.poolPath
+  });
+
+  if (isSupplyLoading || isBorrowLoading || isUtilizationLoading) { //todo add a loading spinner
+    return <div>Loading chart data...</div>;
+  }
+
+  const supplyHistory = netSupplyHistory.map(item => ({
+    ...item,
+    value: item.value / Math.pow(10, market.loanTokenDecimals)
+  }));
+  const borrowHistory = netBorrowHistory.map(item => ({
+    ...item,
+    value: item.value / Math.pow(10, market.loanTokenDecimals)
+  }));
+  const utilizationHistoryMapped = utilizationHistory.map(item => ({
+    ...item,
+    value: item.value / 100
+  }));
 
   return (
     <>
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6">
         <MarketChart
-          data={supplyChartData}
+          data={supplyHistory}
           title="Total Supply"
           description="Total assets supplied to the market"
-          dataKey="supply"
+          dataKey="value"
           color="rgba(34, 197, 94, 0.95)"
           className={cardStyles}
         />
         <MarketChart
-          data={netBorrowChartData}
+          data={borrowHistory}
           title="Net Borrow"
           description="Net borrow (borrow - repay) over time"
-          dataKey="netBorrow"
+          dataKey="value"
           color="rgba(239, 68, 68, 0.95)"
           className={cardStyles}
         />
         <MarketChart
-          data={utilizationChartData}
+          data={utilizationHistoryMapped}
           title="Utilization Rate"
           description="Percentage of supplied assets being borrowed"
-          dataKey="utilization"
+          dataKey="value"
           color="rgba(99, 102, 241, 0.95)"
           className={cardStyles}
         />
@@ -82,7 +89,7 @@ export function MarketOverview({
           data={history}
           title="APR"
           description="Annual Percentage Yield"
-          dataKey="apy"
+          dataKey="value"
           color="rgba(245, 158, 11, 0.95)"
           className={cardStyles}
         />
