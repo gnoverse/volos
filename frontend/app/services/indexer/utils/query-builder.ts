@@ -1,6 +1,6 @@
 import axios from "axios";
 import {
-  UNIVERSAL_TRANSACTION_FIELDS
+    UNIVERSAL_TRANSACTION_FIELDS
 } from './fields.indexer';
 import { parseTransactions } from "./parsing";
 import { GraphQLResponse } from './types.indexer';
@@ -78,6 +78,75 @@ export class QueryBuilder {
     const response = await this.execute();
     const transactions = response?.data?.getTransactions ?? [];
     return await parseTransactions(transactions, options);
+  }
+}
+
+export class BlockQueryBuilder {
+  private operationName: string;
+  private whereBuilder: BlockWhereClauseBuilder;
+  private fields: string;
+
+  constructor(operationName: string, fields: string) {
+    this.operationName = operationName;
+    this.fields = fields;
+    this.whereBuilder = new BlockWhereClauseBuilder(this);
+  }
+
+  where(): BlockWhereClauseBuilder {
+    return this.whereBuilder;
+  }
+
+  useFields(fields: string): BlockQueryBuilder {
+    this.fields = fields;
+    return this;
+  }
+
+  addFields(fields: string): BlockQueryBuilder {
+    this.fields += `\n          ${fields}`;
+    return this;
+  }
+
+  build(): string {
+    const whereClause = this.whereBuilder.build();
+    return `
+      query ${this.operationName} {
+        getBlocks(
+          where: {
+            ${whereClause}
+          }
+        ) {
+          ${this.fields}
+        }
+      }
+    `;
+  }
+}
+
+export class BlockWhereClauseBuilder {
+  private conditions: string[] = [];
+  private queryBuilder: BlockQueryBuilder;
+
+  constructor(queryBuilder: BlockQueryBuilder) {
+    this.queryBuilder = queryBuilder;
+  }
+
+  heightEq(height: number): BlockWhereClauseBuilder {
+    this.conditions.push(`height: { eq: ${height} }`);
+    return this;
+  }
+
+  or(clauses: string[]): BlockWhereClauseBuilder {
+    this.conditions.push(`OR: [${clauses.join(", ")}]`);
+    return this;
+  }
+
+  add(condition: string): BlockWhereClauseBuilder {
+    this.conditions.push(condition);
+    return this;
+  }
+
+  build(): string {
+    return this.conditions.join("\n          ");
   }
 }
 

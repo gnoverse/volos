@@ -109,3 +109,8 @@ const MarketActivityFields = `
     }
   }
 `
+
+const BlockFields = `
+  height
+  time
+`

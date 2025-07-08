@@ -8,7 +8,7 @@ import (
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello from GnoLend backend!")
+		fmt.Fprintln(w, "Hello from Volos backend!")
 	})
 
 	http.HandleFunc("/api/total-supply-history", endpoints.TotalSupplyHistoryHandler)

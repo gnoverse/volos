@@ -2,18 +2,35 @@ package service
 
 import (
 	"encoding/json"
-	"sort"
-	"strconv"
+	"fmt"
+	"strings"
 	"volos-backend/internal/indexer"
 )
 
 type TotalSupplyEvent struct {
 	Value     float64 `json:"value"`
-	Timestamp int64   `json:"timestamp"`
+	Timestamp string  `json:"timestamp"`
 }
 
+type Event struct {
+	Value       float64
+	BlockHeight int64
+}
+
+// GetTotalSupplyHistory fetches all deposit and withdraw events for a given marketId from the indexer,
+// aggregates them by block height, and returns the running total supply over time with real block timestamps.
+//
+// The function performs the following steps:
+//  1. Queries the indexer for all deposit and withdraw events for the specified market.
+//  2. Extracts the amount and block height from each event, collecting all unique block heights.
+//  3. Queries the indexer for the actual timestamp of each block height.
+//  4. Aggregates the events in block height order, accumulating the running total supply after each event.
+//  5. Returns a slice of TotalSupplyEvent, each containing the running total and the corresponding block timestamp.
+//
+// Returns:
+//   - []TotalSupplyEvent: Each entry contains the running total supply and the corresponding block timestamp.
+//   - error: Any error encountered during the process.
 func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
-	// 1. Fetch deposit events
 	depositsQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
 	depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
 	depositsResp, err := depositsQB.Execute()
@@ -27,7 +44,6 @@ func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
 	}
 	json.Unmarshal(depositsResp, &depositsData)
 
-	// 2. Fetch withdraw events
 	withdrawsQB := indexer.NewQueryBuilder("getWithdrawEvents", indexer.SupplyBorrowFields)
 	withdrawsQB.Where().Success(true).EventType("Withdraw").MarketId(marketId)
 	withdrawsResp, err := withdrawsQB.Execute()
@@ -41,76 +57,56 @@ func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
 	}
 	json.Unmarshal(withdrawsResp, &withdrawsData)
 
-	// 3. Parse and combine events
-	type Event struct {
-		Value     float64
-		Timestamp int64
-	}
-	var events []Event
+	heightSet := make(map[int64]struct{})
+	events := extractEvents(depositsData.Data.GetTransactions, 1, heightSet)
+	events = append(events, extractEvents(withdrawsData.Data.GetTransactions, -1, heightSet)...)
 
-	extract := func(tx map[string]interface{}, sign float64) {
-		timestamp := int64(0)
-		if ts, ok := tx["block_height"].(float64); ok {
-			timestamp = int64(ts)
-		}
-		if response, ok := tx["response"].(map[string]interface{}); ok {
-			if eventsArr, ok := response["events"].([]interface{}); ok {
-				for _, ev := range eventsArr {
-					if evMap, ok := ev.(map[string]interface{}); ok {
-						if attrs, ok := evMap["attrs"].([]interface{}); ok {
-							for _, attr := range attrs {
-								if attrMap, ok := attr.(map[string]interface{}); ok {
-									if attrMap["key"] == "amount" {
-										amountStr := attrMap["value"].(string)
-										if amountStr != "" {
-											if val, err := strconv.ParseFloat(amountStr, 64); err == nil {
-												events = append(events, Event{Value: sign * val, Timestamp: timestamp})
-											}
-										}
-									}
-								}
-							}
-						}
-					}
+	var heights []int64
+	for h := range heightSet {
+		heights = append(heights, h)
+	}
+
+	var orClauses []string
+	for _, h := range heights {
+		orClauses = append(orClauses, fmt.Sprintf("{ height: { eq: %d } }", h))
+	}
+	// Workaround: add dummy height to ensure last real block is included: https://github.com/gnolang/tx-indexer/issues/175
+	if len(heights) > 0 {
+		maxHeight := heights[len(heights)-1]
+		orClauses = append(orClauses, fmt.Sprintf("{ height: { eq: %d } }", maxHeight+1))
+	}
+	blockQuery := fmt.Sprintf(`
+		query getSpecificBlocksByHeight {
+			getBlocks(
+				where: {
+					_or: [
+						%s
+					]
 				}
+			) {
+				%s
 			}
 		}
+	`, strings.Join(orClauses, "\n"), indexer.BlockFields)
+
+	blockResp, err := indexer.FetchIndexerData(blockQuery, "getSpecificBlocksByHeight")
+	if err != nil {
+		return nil, err
 	}
 
-	for _, tx := range depositsData.Data.GetTransactions {
-		// Get the block_height for this transaction
-		timestamp := int64(0)
-		if ts, ok := tx["block_height"].(float64); ok {
-			timestamp = int64(ts)
-		}
-		if response, ok := tx["response"].(map[string]interface{}); ok {
-			if eventsArr, ok := response["events"].([]interface{}); ok {
-				for _, ev := range eventsArr {
-					if evMap, ok := ev.(map[string]interface{}); ok {
-						if attrs, ok := evMap["attrs"].([]interface{}); ok {
-							for _, attr := range attrs {
-								if attrMap, ok := attr.(map[string]interface{}); ok {
-									if attrMap["key"] == "amount" {
-										amountStr := attrMap["value"].(string)
-										if amountStr != "" {
-											if val, err := strconv.ParseFloat(amountStr, 64); err == nil {
-												events = append(events, Event{Value: 1 * val, Timestamp: timestamp})
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+	var blockData struct {
+		Data struct {
+			GetBlocks []struct {
+				Height float64 `json:"height"`
+				Time   string  `json:"time"`
+			} `json:"getBlocks"`
+		} `json:"data"`
 	}
-	for _, tx := range withdrawsData.Data.GetTransactions {
-		extract(tx, -1)
+	json.Unmarshal(blockResp, &blockData)
+	heightToTime := make(map[int64]string)
+	for _, b := range blockData.Data.GetBlocks {
+		heightToTime[int64(b.Height)] = b.Time
 	}
-
-	sort.Slice(events, func(i, j int) bool { return events[i].Timestamp < events[j].Timestamp })
 
 	var result []TotalSupplyEvent
 	runningTotal := 0.0
@@ -118,7 +114,7 @@ func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
 		runningTotal += ev.Value
 		result = append(result, TotalSupplyEvent{
 			Value:     runningTotal,
-			Timestamp: ev.Timestamp,
+			Timestamp: heightToTime[ev.BlockHeight],
 		})
 	}
 
