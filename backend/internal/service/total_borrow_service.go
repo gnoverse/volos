@@ -2,7 +2,7 @@ package service
 
 import (
 	"encoding/json"
-	"volos-backend/internal/indexer"
+	"volos-backend/indexer"
 )
 
 type TotalBorrowEvent struct {

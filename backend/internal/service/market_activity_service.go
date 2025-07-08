@@ -3,7 +3,7 @@ package service
 import (
 	"encoding/json"
 	"strconv"
-	"volos-backend/internal/indexer"
+	"volos-backend/indexer"
 )
 
 type MarketActivity struct {

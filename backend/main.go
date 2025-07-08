@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"volos-backend/internal/endpoints"
+	"volos-backend/internal/routes"
 )
 
 func withCORS(handler http.HandlerFunc) http.HandlerFunc {

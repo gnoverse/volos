@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"volos-backend/internal/indexer"
+	"volos-backend/indexer"
 )
 
 // Helper to process events from transactions and collect unique block heights
