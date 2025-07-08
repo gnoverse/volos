@@ -7,6 +7,8 @@ import { MyPosition } from "@/components/my-position"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DataTable } from "./ui/data-table"
 import { activityColumns } from "./activity-columns"
+import { useQuery } from '@tanstack/react-query';
+import { getMarketActivity } from '@/app/services/api.service';
 
 interface MarketTabsProps {
   history?: HistoryEvent[];
@@ -33,7 +35,12 @@ export function MarketTabs({
   positionData
 }: MarketTabsProps) {
 
-  //get market activity
+  const { data: marketActivity = [] } = useQuery({
+    queryKey: ['marketActivity', market.poolPath],
+    queryFn: () => getMarketActivity(market.poolPath!),
+    enabled: !!market.poolPath
+  });
+
   return (
     <Tabs defaultValue="overview" className="w-full">
       <TabsList className="mb-6 border-b border-gray-700/50 w-full bg-transparent p-0 h-auto flex flex-row justify-start">
@@ -78,7 +85,7 @@ export function MarketTabs({
       </TabsContent>
 
       <TabsContent value="activity" className="mt-0">
-        <DataTable columns={activityColumns} data={[]} className="w-full h-full mt-0" />
+        <DataTable columns={activityColumns} data={marketActivity} className="w-full h-full mt-0" />
       </TabsContent>
     </Tabs>
   )

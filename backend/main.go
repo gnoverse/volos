@@ -27,6 +27,7 @@ func main() {
 	http.HandleFunc("/api/total-supply-history", withCORS(endpoints.TotalSupplyHistoryHandler))
 	http.HandleFunc("/api/total-borrow-history", withCORS(endpoints.TotalBorrowHistoryHandler))
 	http.HandleFunc("/api/total-utilization-history", withCORS(endpoints.TotalUtilizationHistoryHandler))
+	http.HandleFunc("/api/market-activity", withCORS(endpoints.MarketActivityHandler))
 
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)

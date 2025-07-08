@@ -1,4 +1,4 @@
-import { MarketActivity } from "@/app/services/indexer/utils/types.indexer";
+import { MarketActivity } from "@/app/services/api.service";
 import { formatTimestamp } from "@/app/utils/format.utils";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
@@ -61,11 +61,11 @@ export const activityColumns: ColumnDef<MarketActivity>[] = [
     },
   },
   {
-    accessorKey: "tx_hash",
+    accessorKey: "hash",
     header: "Transaction",
     cell: ({ row }) => {
-      const txHash = row.getValue("tx_hash") as string;
-      const display = txHash.length > 15 ? txHash.slice(0, 15) + "..." : txHash;
+      const txHash = row.getValue("hash") as string;
+      const display = txHash && txHash.length > 15 ? txHash.slice(0, 15) + "..." : txHash || "-";
       
       return <CopyableCell value={txHash} display={display} maxWidth="260px" />;
     },
