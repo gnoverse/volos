@@ -13,6 +13,7 @@ func main() {
 
 	http.HandleFunc("/api/total-supply-history", endpoints.TotalSupplyHistoryHandler)
 	http.HandleFunc("/api/total-borrow-history", endpoints.TotalBorrowHistoryHandler)
+	http.HandleFunc("/api/total-utilization-history", endpoints.TotalUtilizationHistoryHandler)
 
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)

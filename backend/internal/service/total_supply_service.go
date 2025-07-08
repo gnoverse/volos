@@ -2,8 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
-	"strings"
 	"volos-backend/internal/indexer"
 )
 
@@ -66,46 +64,9 @@ func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
 		heights = append(heights, h)
 	}
 
-	var orClauses []string
-	for _, h := range heights {
-		orClauses = append(orClauses, fmt.Sprintf("{ height: { eq: %d } }", h))
-	}
-	// Workaround: add dummy height to ensure last real block is included: https://github.com/gnolang/tx-indexer/issues/175
-	if len(heights) > 0 {
-		maxHeight := heights[len(heights)-1]
-		orClauses = append(orClauses, fmt.Sprintf("{ height: { eq: %d } }", maxHeight+1))
-	}
-	blockQuery := fmt.Sprintf(`
-		query getSpecificBlocksByHeight {
-			getBlocks(
-				where: {
-					_or: [
-						%s
-					]
-				}
-			) {
-				%s
-			}
-		}
-	`, strings.Join(orClauses, "\n"), indexer.BlockFields)
-
-	blockResp, err := indexer.FetchIndexerData(blockQuery, "getSpecificBlocksByHeight")
+	heightToTime, err := FetchBlockTimestamps(heights)
 	if err != nil {
 		return nil, err
-	}
-
-	var blockData struct {
-		Data struct {
-			GetBlocks []struct {
-				Height float64 `json:"height"`
-				Time   string  `json:"time"`
-			} `json:"getBlocks"`
-		} `json:"data"`
-	}
-	json.Unmarshal(blockResp, &blockData)
-	heightToTime := make(map[int64]string)
-	for _, b := range blockData.Data.GetBlocks {
-		heightToTime[int64(b.Height)] = b.Time
 	}
 
 	var result []TotalSupplyEvent
