@@ -121,16 +121,12 @@ func (w *WhereClauseBuilder) Add(condition string) *WhereClauseBuilder {
 func (w *WhereClauseBuilder) Build() string {
 	allConditions := append([]string{}, w.conditions...)
 	if len(w.eventConditions) > 0 {
-		eventCondition := fmt.Sprintf(`
-			response: {
-				events: {
-					GnoEvent: {
-						%s
-					}
-				}
-			}
-		`, strings.Join(w.eventConditions, "\n"))
-		allConditions = append(allConditions, eventCondition)
+		eventBlock := strings.Join(w.eventConditions, "\n")
+		responseBlock := fmt.Sprintf(
+			"response: {\n  events: {\n    GnoEvent: {\n      %s\n    }\n  }\n}",
+			eventBlock,
+		)
+		allConditions = append(allConditions, responseBlock)
 	}
 	return strings.Join(allConditions, "\n")
 }
