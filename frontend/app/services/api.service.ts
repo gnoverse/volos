@@ -14,6 +14,11 @@ export type MarketActivity = {
   isAmountInShares: boolean;
 };
 
+export type APREvent = {
+  borrowAPR: number;
+  timestamp: string;
+};
+
 const API_BASE = 'http://localhost:8080/api';
 
 export async function getTotalSupplyHistory(marketId: string): Promise<Event[]> {
@@ -33,5 +38,10 @@ export async function getUtilizationHistory(marketId: string): Promise<Event[]> 
 
 export async function getMarketActivity(marketId: string): Promise<MarketActivity[]> {
   const res = await axios.get(`${API_BASE}/market-activity`, { params: { marketId } });
+  return res.data;
+}
+
+export async function getAPRHistory(marketId: string): Promise<APREvent[]> {
+  const res = await axios.get(`${API_BASE}/apr-history`, { params: { marketId } });
   return res.data;
 } 

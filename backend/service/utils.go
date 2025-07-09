@@ -8,32 +8,31 @@ import (
 	"volos-backend/indexer"
 )
 
-// Helper to process events from transactions and collect unique block heights
-func extractEvents(transactions []map[string]interface{}, sign float64, heightSet map[int64]struct{}) []Event {
+// Helper to process events from transactions and collect unique block heights used in total_borrow_service, total_supply_service, total_utilization_service
+func parseEvents(transactions []map[string]interface{}, sign float64, heightSet map[int64]struct{}) []Event {
+	defer func() {
+		if r := recover(); r != nil {
+			// Return default values if panic occurs
+		}
+	}()
+
 	var events []Event
 	for _, tx := range transactions {
-		timestamp := int64(0)
-		if ts, ok := tx["block_height"].(float64); ok {
-			timestamp = int64(ts)
-		}
-		if response, ok := tx["response"].(map[string]interface{}); ok {
-			if eventsArr, ok := response["events"].([]interface{}); ok {
-				for _, ev := range eventsArr {
-					if evMap, ok := ev.(map[string]interface{}); ok {
-						if attrs, ok := evMap["attrs"].([]interface{}); ok {
-							for _, attr := range attrs {
-								if attrMap, ok := attr.(map[string]interface{}); ok {
-									if attrMap["key"] == "amount" {
-										amountStr := attrMap["value"].(string)
-										if amountStr != "" {
-											if val, err := strconv.ParseFloat(amountStr, 64); err == nil {
-												events = append(events, Event{Value: sign * val, BlockHeight: timestamp})
-												heightSet[timestamp] = struct{}{}
-											}
-										}
-									}
-								}
-							}
+		timestamp := int64(tx["block_height"].(float64))
+
+		response := tx["response"].(map[string]interface{})
+		eventsArr := response["events"].([]interface{})
+		for _, ev := range eventsArr {
+			evMap := ev.(map[string]interface{})
+			attrs := evMap["attrs"].([]interface{})
+			for _, attr := range attrs {
+				attrMap := attr.(map[string]interface{})
+				if attrMap["key"].(string) == "amount" {
+					amountStr := attrMap["value"].(string)
+					if amountStr != "" {
+						if val, err := strconv.ParseFloat(amountStr, 64); err == nil {
+							events = append(events, Event{Value: sign * val, BlockHeight: timestamp})
+							heightSet[timestamp] = struct{}{}
 						}
 					}
 				}
