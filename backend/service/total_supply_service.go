@@ -48,16 +48,19 @@ func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var withdrawsData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
 		} `json:"data"`
 	}
+
 	json.Unmarshal(withdrawsResp, &withdrawsData)
 
 	heightSet := make(map[int64]struct{})
-	events := extractEvents(depositsData.Data.GetTransactions, 1, heightSet)
-	events = append(events, extractEvents(withdrawsData.Data.GetTransactions, -1, heightSet)...)
+	depositEvents := parseEvents(depositsData.Data.GetTransactions, 1, heightSet)
+	withdrawEvents := parseEvents(withdrawsData.Data.GetTransactions, -1, heightSet)
+	events := append(depositEvents, withdrawEvents...)
 
 	var heights []int64
 	for h := range heightSet {

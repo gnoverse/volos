@@ -56,8 +56,9 @@ func GetTotalBorrowHistory(marketId string) ([]TotalBorrowEvent, error) {
 	json.Unmarshal(repaysResp, &repaysData)
 
 	heightSet := make(map[int64]struct{})
-	events := extractEvents(borrowsData.Data.GetTransactions, 1, heightSet)
-	events = append(events, extractEvents(repaysData.Data.GetTransactions, -1, heightSet)...)
+	borrowEvents := parseEvents(borrowsData.Data.GetTransactions, 1, heightSet)
+	repayEvents := parseEvents(repaysData.Data.GetTransactions, -1, heightSet)
+	events := append(borrowEvents, repayEvents...)
 
 	var heights []int64
 	for h := range heightSet {

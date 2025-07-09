@@ -1,6 +1,5 @@
 "use client"
 
-import { Event as HistoryEvent } from "@/app/services/api.service"
 import { MarketInfo, Position } from "@/app/types"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"
@@ -11,7 +10,6 @@ import { useQuery } from '@tanstack/react-query';
 import { getMarketActivity } from '@/app/services/api.service';
 
 interface MarketTabsProps {
-  history?: HistoryEvent[];
   market: MarketInfo;
   apyVariations: {
     sevenDay: number;
@@ -25,7 +23,6 @@ interface MarketTabsProps {
 }
 
 export function MarketTabs({ 
-  history = [], 
   market, 
   apyVariations, 
   cardStyles,
@@ -66,7 +63,6 @@ export function MarketTabs({
       
       <TabsContent value="overview" className="mt-0">
         <MarketOverview 
-          history={history} 
           market={market} 
           apyVariations={apyVariations} 
           cardStyles={cardStyles}

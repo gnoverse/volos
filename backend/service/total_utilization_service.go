@@ -25,11 +25,13 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var supplyData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
 		} `json:"data"`
 	}
+
 	json.Unmarshal(supplyResp, &supplyData)
 
 	withdrawQB := indexer.NewQueryBuilder("getWithdrawEvents", indexer.SupplyBorrowFields)
@@ -38,11 +40,13 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var withdrawData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
 		} `json:"data"`
 	}
+
 	json.Unmarshal(withdrawResp, &withdrawData)
 
 	borrowQB := indexer.NewQueryBuilder("getBorrowEvents", indexer.SupplyBorrowFields)
@@ -51,11 +55,13 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var borrowData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
 		} `json:"data"`
 	}
+
 	json.Unmarshal(borrowResp, &borrowData)
 
 	repayQB := indexer.NewQueryBuilder("getRepayEvents", indexer.SupplyBorrowFields)
@@ -64,6 +70,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var repayData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
@@ -72,10 +79,10 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	json.Unmarshal(repayResp, &repayData)
 
 	heightSet := make(map[int64]struct{})
-	supplyEvents := extractEvents(supplyData.Data.GetTransactions, 1, heightSet)
-	withdrawEvents := extractEvents(withdrawData.Data.GetTransactions, -1, heightSet)
-	borrowEvents := extractEvents(borrowData.Data.GetTransactions, 1, heightSet)
-	repayEvents := extractEvents(repayData.Data.GetTransactions, -1, heightSet)
+	supplyEvents := parseEvents(supplyData.Data.GetTransactions, 1, heightSet)
+	withdrawEvents := parseEvents(withdrawData.Data.GetTransactions, -1, heightSet)
+	borrowEvents := parseEvents(borrowData.Data.GetTransactions, 1, heightSet)
+	repayEvents := parseEvents(repayData.Data.GetTransactions, -1, heightSet)
 
 	type blockDelta struct {
 		supply float64

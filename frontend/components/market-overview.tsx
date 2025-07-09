@@ -1,4 +1,4 @@
-import { Event as HistoryEvent, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
+import { getAPRHistory, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
 import { MarketInfo } from "@/app/types";
 import { formatApyVariation } from "@/app/utils/format.utils";
 import { InfoCard } from "@/components/info-card";
@@ -6,7 +6,6 @@ import { MarketChart } from "@/components/market-chart";
 import { useQuery } from '@tanstack/react-query';
 
 interface MarketOverviewProps {
-  history?: HistoryEvent[];
   market: MarketInfo;
   apyVariations: {
     sevenDay: number;
@@ -16,7 +15,6 @@ interface MarketOverviewProps {
 }
 
 export function MarketOverview({ 
-  history = [], 
   market, 
   apyVariations, 
   cardStyles
@@ -40,7 +38,13 @@ export function MarketOverview({
     enabled: !!market.poolPath
   });
 
-  if (isSupplyLoading || isBorrowLoading || isUtilizationLoading) { //todo add a loading spinner
+  const { data: aprHistory = [], isLoading: isAprLoading } = useQuery({
+    queryKey: ['aprHistory', market.poolPath],
+    queryFn: () => getAPRHistory(market.poolPath!),
+    enabled: !!market.poolPath
+  });
+
+  if (isSupplyLoading || isBorrowLoading || isUtilizationLoading || isAprLoading) { //todo add a loading spinner
     return <div>Loading chart data...</div>;
   }
 
@@ -55,6 +59,10 @@ export function MarketOverview({
   const utilizationHistoryMapped = utilizationHistory.map(item => ({
     ...item,
     value: item.value / 100
+  }));
+  const aprHistoryMapped = aprHistory.map(item => ({
+    value: item.borrowAPR,
+    timestamp: item.timestamp
   }));
 
   return (
@@ -86,9 +94,9 @@ export function MarketOverview({
           className={cardStyles}
         />
         <MarketChart
-          data={history}
+          data={aprHistoryMapped}
           title="APR"
-          description="Annual Percentage Yield"
+          description="Annual Percentage Rate"
           dataKey="value"
           color="rgba(245, 158, 11, 0.95)"
           className={cardStyles}

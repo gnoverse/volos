@@ -52,7 +52,8 @@ func GetMarketActivity(marketId string) ([]MarketActivity, error) {
 	}
 
 	for _, tx := range data.Data.GetTransactions {
-		raw = append(raw, parseMarketActivityTx(tx, heightSet))
+		parsedTx := parseMarketActivity(tx, heightSet)
+		raw = append(raw, parsedTx)
 	}
 
 	var heights []int64
@@ -79,66 +80,44 @@ func GetMarketActivity(marketId string) ([]MarketActivity, error) {
 }
 
 // Helper to parse a single transaction map into a rawTx-like struct, updating heightSet
-func parseMarketActivityTx(tx map[string]interface{}, heightSet map[int64]struct{}) struct {
+func parseMarketActivity(tx map[string]interface{}, heightSet map[int64]struct{}) (struct {
 	Type             string
 	Amount           float64
 	Caller           string
 	Hash             string
 	BlockHeight      int64
 	IsAmountInShares bool
-} {
-	getNestedString := func(m map[string]interface{}, path ...string) string {
-		var current interface{} = m
-		for _, key := range path {
-			mm, ok := current.(map[string]interface{})
-			if !ok {
-				return ""
-			}
-			current = mm[key]
+}) {
+	defer func() {
+		if r := recover(); r != nil {
+			// Return default values if panic occurs
 		}
-		if s, ok := current.(string); ok {
-			return s
-		}
-		return ""
-	}
-	getNestedFloat := func(m map[string]interface{}, path ...string) float64 {
-		str := getNestedString(m, path...)
-		if f, err := strconv.ParseFloat(str, 64); err == nil {
-			return f
-		}
-		return 0
-	}
-	getFirstMap := func(arr interface{}) map[string]interface{} {
-		if a, ok := arr.([]interface{}); ok && len(a) > 0 {
-			if m, ok := a[0].(map[string]interface{}); ok {
-				return m
-			}
-		}
-		return nil
-	}
+	}()
 
-	blockHeight := int64(0)
-	if bh, ok := tx["block_height"].(float64); ok {
-		blockHeight = int64(bh)
-		heightSet[blockHeight] = struct{}{}
-	}
-	hash := getNestedString(tx, "hash")
-	caller := getNestedString(getFirstMap(tx["messages"]), "value", "caller")
+	blockHeight := int64(tx["block_height"].(float64))
+	heightSet[blockHeight] = struct{}{}
+
+	hash := tx["hash"].(string)
+	messages := tx["messages"].([]interface{})
+	caller := messages[0].(map[string]interface{})["value"].(map[string]interface{})["caller"].(string)
+
+	response := tx["response"].(map[string]interface{})
+	eventsArr := response["events"].([]interface{})
+
 	txType := ""
 	amount := 0.0
 	isAmountInShares := false
-	response, _ := tx["response"].(map[string]interface{})
-	eventsArr, _ := response["events"].([]interface{})
+
 	for _, ev := range eventsArr {
-		evMap, _ := ev.(map[string]interface{})
-		txType = getNestedString(evMap, "type")
-		attrs, _ := evMap["attrs"].([]interface{})
+		evMap := ev.(map[string]interface{})
+		txType = evMap["type"].(string)
+		attrs := evMap["attrs"].([]interface{})
 		for _, attr := range attrs {
-			attrMap, _ := attr.(map[string]interface{})
-			key := getNestedString(attrMap, "key")
+			attrMap := attr.(map[string]interface{})
+			key := attrMap["key"].(string)
 			if key == "amount" || key == "assets" || key == "shares" {
-				val := getNestedFloat(attrMap, "value")
-				if val != 0 {
+				value := attrMap["value"].(string)
+				if val, err := strconv.ParseFloat(value, 64); err == nil && val != 0 {
 					amount = val
 					if key == "shares" {
 						isAmountInShares = true
@@ -147,6 +126,7 @@ func parseMarketActivityTx(tx map[string]interface{}, heightSet map[int64]struct
 			}
 		}
 	}
+
 	return struct {
 		Type             string
 		Amount           float64

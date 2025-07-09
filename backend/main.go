@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"volos-backend/routes"
+	routes "volos-backend/routes"
 )
 
 func withCORS(handler http.HandlerFunc) http.HandlerFunc {
@@ -24,10 +24,11 @@ func main() {
 		fmt.Fprintln(w, "Hello from Volos backend!")
 	})
 
-	http.HandleFunc("/api/total-supply-history", withCORS(endpoints.TotalSupplyHistoryHandler))
-	http.HandleFunc("/api/total-borrow-history", withCORS(endpoints.TotalBorrowHistoryHandler))
-	http.HandleFunc("/api/total-utilization-history", withCORS(endpoints.TotalUtilizationHistoryHandler))
-	http.HandleFunc("/api/market-activity", withCORS(endpoints.MarketActivityHandler))
+	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler))
+	http.HandleFunc("/api/total-borrow-history", withCORS(routes.TotalBorrowHistoryHandler))
+	http.HandleFunc("/api/total-utilization-history", withCORS(routes.TotalUtilizationHistoryHandler))
+	http.HandleFunc("/api/market-activity", withCORS(routes.MarketActivityHandler))
+	http.HandleFunc("/api/apr-history", withCORS(routes.APRHistoryHandler))
 
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
