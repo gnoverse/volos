@@ -70,7 +70,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	var repayData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`

@@ -61,7 +61,7 @@ export function MarketOverview({
     value: item.value / 100
   }));
   const aprHistoryMapped = aprHistory.map(item => ({
-    value: item.borrowAPR,
+    value: item.value,
     timestamp: item.timestamp
   }));
 

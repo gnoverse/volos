@@ -7,7 +7,7 @@ import (
 )
 
 type APREvent struct {
-	BorrowAPR float64 `json:"borrowAPR"`
+	Value     float64 `json:"value"`
 	Timestamp string  `json:"timestamp"`
 }
 
@@ -78,7 +78,7 @@ func GetAPRHistory(marketId string) ([]APREvent, error) {
 		apr := (event.BorrowRate * secondsPerYear) / wad
 
 		result = append(result, APREvent{
-			BorrowAPR: apr,
+			Value:     apr,
 			Timestamp: heightToTime[event.BlockHeight],
 		})
 	}
@@ -87,10 +87,10 @@ func GetAPRHistory(marketId string) ([]APREvent, error) {
 }
 
 // Helper to parse a single AccrueInterest event and extract borrow rate
-func parseAPREvent(tx map[string]interface{}, heightSet map[int64]struct{}) (struct {
+func parseAPREvent(tx map[string]interface{}, heightSet map[int64]struct{}) struct {
 	BorrowRate  float64
 	BlockHeight int64
-}) {
+} {
 	defer func() {
 		if r := recover(); r != nil {
 			// return default values if panic occurs
