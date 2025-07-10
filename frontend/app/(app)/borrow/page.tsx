@@ -3,7 +3,7 @@
 import { AdenaService } from "@/app/services/adena.service"
 import { getUserLoanHistory } from "@/app/services/api.service"
 import { formatCurrency } from "@/app/utils/format.utils"
-import { MarketChart } from "@/components/market-chart"
+import { Chart } from "@/components/chart"
 import { MyLoanSidePanel } from "@/components/my-loan-side-panel"
 import {
   Card,
@@ -81,7 +81,7 @@ function BorrowPageContent() {
             <CardContent>
               <div className="min-h-[100px] rounded-md mt-6">
                 {userLoanHistory.length > 0 && (
-                  <MarketChart
+                  <Chart
                     data={userLoanHistory}
                     title="My Loan History"
                     description="Your total borrowed amount over time"
