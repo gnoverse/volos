@@ -12,7 +12,7 @@ import (
 func parseEvents(transactions []map[string]interface{}, sign float64, heightSet map[int64]struct{}) []Event {
 	defer func() {
 		if r := recover(); r != nil {
-			// Return default values if panic occurs
+			// return default values if panic occurs
 		}
 	}()
 

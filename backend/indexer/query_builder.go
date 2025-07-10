@@ -113,6 +113,19 @@ func (w *WhereClauseBuilder) MarketId(marketId string) *WhereClauseBuilder {
 	return w
 }
 
+func (w *WhereClauseBuilder) Caller(caller string) *WhereClauseBuilder {
+	w.conditions = append(w.conditions, fmt.Sprintf(`
+		messages: {
+			value: {
+				MsgCall: {
+					caller: { eq: "%s" }
+				}
+			}
+		}
+	`, caller))
+	return w
+}
+
 func (w *WhereClauseBuilder) Add(condition string) *WhereClauseBuilder {
 	w.conditions = append(w.conditions, condition)
 	return w
