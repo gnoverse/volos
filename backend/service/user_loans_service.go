@@ -6,14 +6,9 @@ import (
 	"volos-backend/indexer"
 )
 
-type UserLoanEvent struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
 // GetUserLoanHistory fetches all borrow and repay events for a given caller (user address),
 // aggregates them by block height, and returns the running total fiat value over time.
-func GetUserLoanHistory(caller string) ([]UserLoanEvent, error) {
+func GetUserLoanHistory(caller string) ([]Data, error) {
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEventsByCaller", indexer.SupplyBorrowFields)
 	borrowsQB.Where().Success(true).EventType("Borrow").Caller(caller)
 	borrowsResp, err := borrowsQB.Execute()
@@ -55,7 +50,7 @@ func GetUserLoanHistory(caller string) ([]UserLoanEvent, error) {
 	}
 
 	runningTotals := make(map[string]float64)
-	var result []UserLoanEvent
+	var result []Data
 
 	for _, ev := range allEvents {
 		runningTotals[ev.MarketId] += ev.Value
@@ -63,7 +58,7 @@ func GetUserLoanHistory(caller string) ([]UserLoanEvent, error) {
 		for marketId := range runningTotals {
 			totalFiat += runningTotals[marketId] * GetTokenPrice(marketId)
 		}
-		result = append(result, UserLoanEvent{
+		result = append(result, Data{
 			Value:     totalFiat,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})
@@ -76,7 +71,7 @@ func parseUserEvents(
 	transactions []map[string]interface{},
 	sign float64,
 ) []struct {
-	Event
+	TransactionData
 	MarketId string
 } {
 	defer func() {
@@ -86,7 +81,7 @@ func parseUserEvents(
 	}()
 
 	var events []struct {
-		Event
+		TransactionData
 		MarketId string
 	}
 	for _, tx := range transactions {
@@ -115,10 +110,10 @@ func parseUserEvents(
 			}
 			if marketId != "" && amount != 0 {
 				events = append(events, struct {
-					Event
+					TransactionData
 					MarketId string
 				}{
-					Event: Event{
+					TransactionData: TransactionData{
 						Value:       sign * amount,
 						BlockHeight: timestamp,
 					},

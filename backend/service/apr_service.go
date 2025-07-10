@@ -6,11 +6,6 @@ import (
 	"volos-backend/indexer"
 )
 
-type APREvent struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
 // GetAPRHistory fetches all AccrueInterest events for a given marketId from the indexer,
 // extracts the borrow rate from each event, and calculates the historical APR over time.
 //
@@ -18,8 +13,7 @@ type APREvent struct {
 //   - The borrow rate from events is per-second and WAD-scaled (1e18)
 //   - APR = borrow_rate * seconds_per_year / WAD
 //   - seconds_per_year = 365 * 24 * 60 * 60 = 31,536,000
-//
-func GetAPRHistory(marketId string) ([]APREvent, error) {
+func GetAPRHistory(marketId string) ([]Data, error) {
 	qb := indexer.NewQueryBuilder("getAPREvents", indexer.SupplyBorrowFields)
 	qb.Where().Success(true).EventType("AccrueInterest").MarketId(marketId)
 	resp, err := qb.Execute()
@@ -56,7 +50,7 @@ func GetAPRHistory(marketId string) ([]APREvent, error) {
 		return nil, err
 	}
 
-	var result []APREvent
+	var result []Data
 	for _, event := range rawEvents {
 		// Calculate APR: borrow_rate * seconds_per_year / WAD
 		// borrow_rate is WAD-scaled (1e18), so we divide by WAD to get the actual rate
@@ -66,7 +60,7 @@ func GetAPRHistory(marketId string) ([]APREvent, error) {
 		wad := 1e18
 		apr := (event.BorrowRate * secondsPerYear) / wad
 
-		result = append(result, APREvent{
+		result = append(result, Data{
 			Value:     apr,
 			Timestamp: heightToTime[event.BlockHeight],
 		})

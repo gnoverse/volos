@@ -5,19 +5,9 @@ import (
 	"volos-backend/indexer"
 )
 
-type TotalBorrowEvent struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
-type BorrowEvent struct {
-	Value       float64
-	BlockHeight int64
-}
-
 // GetTotalBorrowHistory fetches all borrow and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running total borrow over time with real block timestamps.
-func GetTotalBorrowHistory(marketId string) ([]TotalBorrowEvent, error) {
+func GetTotalBorrowHistory(marketId string) ([]Data, error) {
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEvents", indexer.SupplyBorrowFields)
 	borrowsQB.Where().Success(true).EventType("Borrow").MarketId(marketId)
 	borrowsResp, err := borrowsQB.Execute()
@@ -58,11 +48,11 @@ func GetTotalBorrowHistory(marketId string) ([]TotalBorrowEvent, error) {
 		return nil, err
 	}
 
-	var result []TotalBorrowEvent
+	var result []Data
 	runningTotal := 0.0
 	for _, ev := range events {
 		runningTotal += ev.Value
-		result = append(result, TotalBorrowEvent{
+		result = append(result, Data{
 			Value:     runningTotal,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})

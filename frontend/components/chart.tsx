@@ -1,6 +1,6 @@
 "use client"
 
-import { Event as HistoryEvent } from "@/app/services/api.service"
+import { ChartData as HistoryEvent } from "@/app/services/api.service"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"

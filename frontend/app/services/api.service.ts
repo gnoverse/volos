@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export type Event = {
+export type ChartData = {
   value: number;
   timestamp: string;
 };
@@ -16,17 +16,17 @@ export type MarketActivity = {
 
 const API_BASE = 'http://localhost:8080/api';
 
-export async function getTotalSupplyHistory(marketId: string): Promise<Event[]> {
+export async function getTotalSupplyHistory(marketId: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/total-supply-history`, { params: { marketId } });
   return res.data;
 }
 
-export async function getTotalBorrowHistory(marketId: string): Promise<Event[]> {
+export async function getTotalBorrowHistory(marketId: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/total-borrow-history`, { params: { marketId } });
   return res.data;
 }
 
-export async function getUtilizationHistory(marketId: string): Promise<Event[]> {
+export async function getUtilizationHistory(marketId: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/total-utilization-history`, { params: { marketId } });
   return res.data;
 }
@@ -36,12 +36,12 @@ export async function getMarketActivity(marketId: string): Promise<MarketActivit
   return res.data;
 }
 
-export async function getAPRHistory(marketId: string): Promise<Event[]> {
+export async function getAPRHistory(marketId: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/apr-history`, { params: { marketId } });
   return res.data;
 }
 
-export async function getUserLoanHistory(caller: string): Promise<Event[]> {
+export async function getUserLoanHistory(caller: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/user-loans`, { params: { caller } });
   return res.data;
 } 

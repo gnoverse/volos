@@ -8,15 +8,25 @@ import (
 	"volos-backend/indexer"
 )
 
+type Data struct {
+	Value     float64 `json:"value"`
+	Timestamp string  `json:"timestamp"`
+}
+
+type TransactionData struct {
+	Value       float64
+	BlockHeight int64
+}
+
 // Helper to process events from transactions and collect unique block heights used in total_borrow_service, total_supply_service, total_utilization_service
-func parseEvents(transactions []map[string]interface{}, sign float64) []Event {
+func parseEvents(transactions []map[string]interface{}, sign float64) []TransactionData {
 	defer func() {
 		if r := recover(); r != nil {
 			// return default values if panic occurs
 		}
 	}()
 
-	var events []Event
+	var events []TransactionData
 	for _, tx := range transactions {
 		timestamp := int64(tx["block_height"].(float64))
 
@@ -31,7 +41,7 @@ func parseEvents(transactions []map[string]interface{}, sign float64) []Event {
 					amountStr := attrMap["value"].(string)
 					if amountStr != "" {
 						if val, err := strconv.ParseFloat(amountStr, 64); err == nil {
-							events = append(events, Event{Value: sign * val, BlockHeight: timestamp})
+							events = append(events, TransactionData{Value: sign * val, BlockHeight: timestamp})
 						}
 					}
 				}

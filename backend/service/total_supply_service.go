@@ -5,19 +5,9 @@ import (
 	"volos-backend/indexer"
 )
 
-type TotalSupplyEvent struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
-type Event struct {
-	Value       float64
-	BlockHeight int64
-}
-
 // GetTotalSupplyHistory fetches all deposit and withdraw events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running total supply over time with real block timestamps.
-func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
+func GetTotalSupplyHistory(marketId string) ([]Data, error) {
 	depositsQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
 	depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
 	depositsResp, err := depositsQB.Execute()
@@ -60,11 +50,11 @@ func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
 		return nil, err
 	}
 
-	var result []TotalSupplyEvent
+	var result []Data
 	runningTotal := 0.0
 	for _, ev := range events {
 		runningTotal += ev.Value
-		result = append(result, TotalSupplyEvent{
+		result = append(result, Data{
 			Value:     runningTotal,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})

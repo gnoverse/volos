@@ -5,14 +5,9 @@ import (
 	"volos-backend/indexer"
 )
 
-type UtilizationEvent struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
 // GetUtilizationHistory fetches all supply, withdraw, borrow, and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running utilization rate over time with real block timestamps.
-func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
+func GetUtilizationHistory(marketId string) ([]Data, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
 	supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
 	supplyResp, err := supplyQB.Execute()
@@ -64,7 +59,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var repayData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
@@ -117,7 +112,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 		return nil, err
 	}
 
-	var result []UtilizationEvent
+	var result []Data
 	var runningSupply, runningBorrow float64
 	sortedHeights := heights
 	for i := 0; i < len(sortedHeights)-1; i++ {
@@ -137,7 +132,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 		if runningSupply > 0 {
 			utilization = (runningBorrow / runningSupply) * 100
 		}
-		result = append(result, UtilizationEvent{
+		result = append(result, Data{
 			Value:     utilization,
 			Timestamp: heightToTime[h],
 		})
