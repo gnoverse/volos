@@ -2,10 +2,10 @@
 
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import { PositionHistory } from "../app/(app)/borrow/mock-history"
+import { Event } from "@/app/services/api.service"
 
 interface PositionChartProps {
-  data: PositionHistory[]
+  data: Event[]
   dataKey: "collateral" | "borrowed" | "healthFactor"
   color?: string
   className?: string

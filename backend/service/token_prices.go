@@ -1,14 +1,14 @@
 package service
 
-// TokenPrices is a global map that stores the fiat price of each loan token by market ID.
+// TokenPrices is a global map that stores the fiat price of each loan token denomination by market ID.
 // In the future, this file will contain logic to fetch real-time token prices from external APIs
 // and update this map periodically.
 // For now, it contains mock values for development purposes.
 var TokenPrices = map[string]float64{
 	// Mock token prices - these will be replaced with real price fetching logic
 	// Format: "market_id": fiat_price_in_usd
-	"gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/gns:3000":  1.0, // Example market ID for GNOT token
-	"gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/test_token/bar:3000": 1.0, // Example market ID for uGNOT token
+	"gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/gns:3000":  0.00001, // Example market ID for GNOT token denom
+	"gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/test_token/bar:3000": 0.00001, // Example market ID for uGNOT token denom
 }
 
 // GetTokenPrice returns the fiat price for a given market ID.

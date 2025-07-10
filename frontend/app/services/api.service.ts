@@ -39,4 +39,9 @@ export async function getMarketActivity(marketId: string): Promise<MarketActivit
 export async function getAPRHistory(marketId: string): Promise<Event[]> {
   const res = await axios.get(`${API_BASE}/apr-history`, { params: { marketId } });
   return res.data;
+}
+
+export async function getUserLoanHistory(caller: string): Promise<Event[]> {
+  const res = await axios.get(`${API_BASE}/user-loans`, { params: { caller } });
+  return res.data;
 } 

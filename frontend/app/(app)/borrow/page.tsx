@@ -1,21 +1,21 @@
 "use client"
 
 import { AdenaService } from "@/app/services/adena.service"
+import { getUserLoanHistory } from "@/app/services/api.service"
 import { formatCurrency } from "@/app/utils/format.utils"
+import { MarketChart } from "@/components/market-chart"
 import { MyLoanSidePanel } from "@/components/my-loan-side-panel"
-import { PositionChart } from "@/components/position-chart"
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { columns } from "./columns"
-import { getUserLoanHistory, PositionHistory } from "./mock-history"
 import { useMarketsQuery, useUserLoansQuery } from "./queries-mutations"
 
 const queryClient = new QueryClient()
@@ -24,9 +24,14 @@ function BorrowPageContent() {
   const router = useRouter()
   const [userAddress, setUserAddress] = useState<string>("")
   const [totalLoanAmount, setTotalLoanAmount] = useState("0.00")
-  const [loanHistory, setLoanHistory] = useState<PositionHistory[]>([])
   const { data: userLoans } = useUserLoansQuery(userAddress || "")
   const { data: markets, isLoading, error } = useMarketsQuery()
+
+  const { data: userLoanHistory = [], isLoading: isUserLoanLoading } = useQuery({
+    queryKey: ['userLoanHistory', userAddress],
+    queryFn: () => getUserLoanHistory(userAddress!),
+    enabled: !!userAddress
+  });
 
   // track user address
   useEffect(() => {
@@ -49,8 +54,6 @@ function BorrowPageContent() {
         return sum + (parseFloat(loan.amount)*100 / Math.pow(10, 6))  // 6 is just assuming all tokens have 6 decimals for demo purposes
       }, 0)
       setTotalLoanAmount(total.toFixed(2))
-      
-      setLoanHistory(getUserLoanHistory())
     }
   }, [userLoans])
 
@@ -58,7 +61,7 @@ function BorrowPageContent() {
     router.push(`/borrow/${encodeURIComponent(id)}`)
   }
 
-  if (isLoading) {
+  if (isLoading || isUserLoanLoading) {
     return <div className="flex justify-center items-center h-64">Loading markets data...</div>
   }
 
@@ -77,10 +80,12 @@ function BorrowPageContent() {
             </CardHeader>
             <CardContent>
               <div className="min-h-[100px] rounded-md mt-6">
-                {loanHistory.length > 0 && (
-                  <PositionChart
-                    data={loanHistory}
-                    dataKey="borrowed"
+                {userLoanHistory.length > 0 && (
+                  <MarketChart
+                    data={userLoanHistory}
+                    title="My Loan History"
+                    description="Your total borrowed amount over time"
+                    dataKey="value"
                     color="#5B21B6"
                     className="bg-transparent border-none p-0 shadow-none"
                   />
