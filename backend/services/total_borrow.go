@@ -9,7 +9,7 @@ import (
 // aggregates them by block height, and returns the running total borrow over time with real block timestamps.
 func GetTotalBorrowHistory(marketId string) ([]Data, error) {
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEvents", indexer.SupplyBorrowFields)
-	borrowsQB.Where().Success(true).EventType("Borrow").MarketId(marketId)
+	borrowsQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(VolosPkgPath)
 	borrowsResp, err := borrowsQB.Execute()
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func GetTotalBorrowHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(borrowsResp, &borrowsData)
 
 	repaysQB := indexer.NewQueryBuilder("getRepayEvents", indexer.SupplyBorrowFields)
-	repaysQB.Where().Success(true).EventType("Repay").MarketId(marketId)
+	repaysQB.Where().Success(true).EventType("Repay").MarketId(marketId).PkgPath(VolosPkgPath)
 	repaysResp, err := repaysQB.Execute()
 	if err != nil {
 		return nil, err

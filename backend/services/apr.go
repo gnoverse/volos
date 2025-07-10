@@ -15,7 +15,7 @@ import (
 //   - seconds_per_year = 365 * 24 * 60 * 60 = 31,536,000
 func GetAPRHistory(marketId string) ([]Data, error) {
 	qb := indexer.NewQueryBuilder("getAPREvents", indexer.SupplyBorrowFields)
-	qb.Where().Success(true).EventType("AccrueInterest").MarketId(marketId)
+	qb.Where().Success(true).EventType("AccrueInterest").MarketId(marketId).PkgPath(VolosPkgPath)
 	resp, err := qb.Execute()
 	if err != nil {
 		return nil, err

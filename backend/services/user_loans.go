@@ -10,7 +10,7 @@ import (
 // aggregates them by block height, and returns the running total fiat value over time.
 func GetUserLoanHistory(caller string) ([]Data, error) {
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEventsByCaller", indexer.SupplyBorrowFields)
-	borrowsQB.Where().Success(true).EventType("Borrow").Caller(caller)
+	borrowsQB.Where().Success(true).EventType("Borrow").Caller(caller).PkgPath(VolosPkgPath)
 	borrowsResp, err := borrowsQB.Execute()
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func GetUserLoanHistory(caller string) ([]Data, error) {
 	json.Unmarshal(borrowsResp, &borrowsData)
 
 	repaysQB := indexer.NewQueryBuilder("getRepayEventsByCaller", indexer.SupplyBorrowFields)
-	repaysQB.Where().Success(true).EventType("Repay").Caller(caller)
+	repaysQB.Where().Success(true).EventType("Repay").Caller(caller).PkgPath(VolosPkgPath)
 	repaysResp, err := repaysQB.Execute()
 	if err != nil {
 		return nil, err

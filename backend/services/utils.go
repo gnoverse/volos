@@ -8,6 +8,8 @@ import (
 	"volos-backend/indexer"
 )
 
+const VolosPkgPath = "gno.land/r/gnolend"
+
 type Data struct {
 	Value     float64 `json:"value"`
 	Timestamp string  `json:"timestamp"`

@@ -23,7 +23,7 @@ type MarketActivity struct {
 // Retrieving the last X transactions directly is not possible with the current API, so a solution for efficient pagination or limiting must be considered.
 func GetMarketActivity(marketId string) ([]MarketActivity, error) {
 	qb := indexer.NewQueryBuilder("getMarketActivity", indexer.MarketActivityFields)
-	qb.Where().MarketId(marketId)
+	qb.Where().MarketId(marketId).PkgPath(VolosPkgPath)
 	resp, err := qb.Execute()
 	if err != nil {
 		return nil, err

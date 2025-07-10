@@ -9,7 +9,7 @@ import (
 // aggregates them by block height, and returns the running total supply over time with real block timestamps.
 func GetTotalSupplyHistory(marketId string) ([]Data, error) {
 	depositsQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
-	depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
+	depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(VolosPkgPath)
 	depositsResp, err := depositsQB.Execute()
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func GetTotalSupplyHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(depositsResp, &depositsData)
 
 	withdrawsQB := indexer.NewQueryBuilder("getWithdrawEvents", indexer.SupplyBorrowFields)
-	withdrawsQB.Where().Success(true).EventType("Withdraw").MarketId(marketId)
+	withdrawsQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(VolosPkgPath)
 	withdrawsResp, err := withdrawsQB.Execute()
 	if err != nil {
 		return nil, err

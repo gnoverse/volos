@@ -73,14 +73,16 @@ func (qb *QueryBuilder) Execute() ([]byte, error) {
 
 // WhereClauseBuilder helps build the where clause for GraphQL queries
 type WhereClauseBuilder struct {
-	conditions      []string
-	eventConditions []string
+	conditions        []string
+	eventConditions   []string
+	msgCallConditions []string
 }
 
 func NewWhereClauseBuilder() *WhereClauseBuilder {
 	return &WhereClauseBuilder{
-		conditions:      []string{},
-		eventConditions: []string{},
+		conditions:        []string{},
+		eventConditions:   []string{},
+		msgCallConditions: []string{},
 	}
 }
 
@@ -114,15 +116,12 @@ func (w *WhereClauseBuilder) MarketId(marketId string) *WhereClauseBuilder {
 }
 
 func (w *WhereClauseBuilder) Caller(caller string) *WhereClauseBuilder {
-	w.conditions = append(w.conditions, fmt.Sprintf(`
-		messages: {
-			value: {
-				MsgCall: {
-					caller: { eq: "%s" }
-				}
-			}
-		}
-	`, caller))
+	w.msgCallConditions = append(w.msgCallConditions, fmt.Sprintf(`caller: { eq: "%s" }`, caller))
+	return w
+}
+
+func (w *WhereClauseBuilder) PkgPath(pkgPath string) *WhereClauseBuilder {
+	w.msgCallConditions = append(w.msgCallConditions, fmt.Sprintf(`pkg_path: { eq: "%s" }`, pkgPath))
 	return w
 }
 
@@ -133,6 +132,20 @@ func (w *WhereClauseBuilder) Add(condition string) *WhereClauseBuilder {
 
 func (w *WhereClauseBuilder) Build() string {
 	allConditions := append([]string{}, w.conditions...)
+
+	if len(w.msgCallConditions) > 0 {
+		msgCallCondition := fmt.Sprintf(`
+			messages: {
+				value: {
+					MsgCall: {
+						%s
+					}
+				}
+			}
+		`, strings.Join(w.msgCallConditions, "\n"))
+		allConditions = append(allConditions, msgCallCondition)
+	}
+
 	if len(w.eventConditions) > 0 {
 		eventCondition := fmt.Sprintf(`
 			response: {
@@ -151,5 +164,6 @@ func (w *WhereClauseBuilder) Build() string {
 func (w *WhereClauseBuilder) Reset() *WhereClauseBuilder {
 	w.conditions = []string{}
 	w.eventConditions = []string{}
+	w.msgCallConditions = []string{}
 	return w
 }

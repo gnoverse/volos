@@ -9,7 +9,7 @@ import (
 // aggregates them by block height, and returns the running utilization rate over time with real block timestamps.
 func GetUtilizationHistory(marketId string) ([]Data, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
-	supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
+	supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(VolosPkgPath)
 	supplyResp, err := supplyQB.Execute()
 	if err != nil {
 		return nil, err
@@ -24,7 +24,7 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(supplyResp, &supplyData)
 
 	withdrawQB := indexer.NewQueryBuilder("getWithdrawEvents", indexer.SupplyBorrowFields)
-	withdrawQB.Where().Success(true).EventType("Withdraw").MarketId(marketId)
+	withdrawQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(VolosPkgPath)
 	withdrawResp, err := withdrawQB.Execute()
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(withdrawResp, &withdrawData)
 
 	borrowQB := indexer.NewQueryBuilder("getBorrowEvents", indexer.SupplyBorrowFields)
-	borrowQB.Where().Success(true).EventType("Borrow").MarketId(marketId)
+	borrowQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(VolosPkgPath)
 	borrowResp, err := borrowQB.Execute()
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(borrowResp, &borrowData)
 
 	repayQB := indexer.NewQueryBuilder("getRepayEvents", indexer.SupplyBorrowFields)
-	repayQB.Where().Success(true).EventType("Repay").MarketId(marketId)
+	repayQB.Where().Success(true).EventType("Repay").MarketId(marketId).PkgPath(VolosPkgPath)
 	repayResp, err := repayQB.Execute()
 	if err != nil {
 		return nil, err
