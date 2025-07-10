@@ -172,7 +172,7 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${supplyValue.toFixed(2)}</span>
+            <span className="text-xs text-gray-400">${(supplyValue * supplyAmountNum).toFixed(2)}</span>
             <div className="flex items-center gap-1">
               <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
               <Button
@@ -218,7 +218,7 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${borrowValue.toFixed(2)}</span>
+            <span className="text-xs text-gray-400">${(borrowValue * borrowAmountNum).toFixed(2)}</span>
             <div className="flex items-center gap-1">
               <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
               <Button

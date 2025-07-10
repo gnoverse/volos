@@ -1,13 +1,13 @@
 "use client"
 
-import { Event as HistoryEvent } from "@/app/services/api.service"
+import { ChartData as HistoryEvent } from "@/app/services/api.service"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 // TODO: fix this type
-interface MarketChartProps {
+interface ChartProps {
   data: Array<HistoryEvent>
   title: string
   description: string
@@ -16,14 +16,14 @@ interface MarketChartProps {
   className?: string
 }
 
-export function MarketChart({
+export function Chart({
   data,
   title,
   description,
   dataKey,
   color = "rgb(99, 102, 241)",
   className
-}: MarketChartProps) {
+}: ChartProps) {
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
       <CardHeader className="pb-4">

@@ -5,30 +5,9 @@ import (
 	"volos-backend/indexer"
 )
 
-type TotalSupplyEvent struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
-type Event struct {
-	Value       float64
-	BlockHeight int64
-}
-
 // GetTotalSupplyHistory fetches all deposit and withdraw events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running total supply over time with real block timestamps.
-//
-// The function performs the following steps:
-//  1. Queries the indexer for all deposit and withdraw events for the specified market.
-//  2. Extracts the amount and block height from each event, collecting all unique block heights.
-//  3. Queries the indexer for the actual timestamp of each block height.
-//  4. Aggregates the events in block height order, accumulating the running total supply after each event.
-//  5. Returns a slice of TotalSupplyEvent, each containing the running total and the corresponding block timestamp.
-//
-// Returns:
-//   - []TotalSupplyEvent: Each entry contains the running total supply and the corresponding block timestamp.
-//   - error: Any error encountered during the process.
-func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
+func GetTotalSupplyHistory(marketId string) ([]Data, error) {
 	depositsQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
 	depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
 	depositsResp, err := depositsQB.Execute()
@@ -57,14 +36,13 @@ func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
 
 	json.Unmarshal(withdrawsResp, &withdrawsData)
 
-	heightSet := make(map[int64]struct{})
-	depositEvents := parseEvents(depositsData.Data.GetTransactions, 1, heightSet)
-	withdrawEvents := parseEvents(withdrawsData.Data.GetTransactions, -1, heightSet)
+	depositEvents := parseEvents(depositsData.Data.GetTransactions, 1)
+	withdrawEvents := parseEvents(withdrawsData.Data.GetTransactions, -1)
 	events := append(depositEvents, withdrawEvents...)
 
 	var heights []int64
-	for h := range heightSet {
-		heights = append(heights, h)
+	for _, ev := range events {
+		heights = append(heights, ev.BlockHeight)
 	}
 
 	heightToTime, err := FetchBlockTimestamps(heights)
@@ -72,11 +50,11 @@ func GetTotalSupplyHistory(marketId string) ([]TotalSupplyEvent, error) {
 		return nil, err
 	}
 
-	var result []TotalSupplyEvent
+	var result []Data
 	runningTotal := 0.0
 	for _, ev := range events {
 		runningTotal += ev.Value
-		result = append(result, TotalSupplyEvent{
+		result = append(result, Data{
 			Value:     runningTotal,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})

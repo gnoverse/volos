@@ -1,11 +1,11 @@
 "use client"
 
+import { ChartData } from "@/app/services/api.service"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import { PositionHistory } from "../app/(app)/borrow/mock-history"
 
 interface PositionChartProps {
-  data: PositionHistory[]
+  data: ChartData[]
   dataKey: "collateral" | "borrowed" | "healthFactor"
   color?: string
   className?: string

@@ -1,22 +1,22 @@
 "use client"
 
 import { AdenaService } from "@/app/services/adena.service"
+import { getUserLoanHistory } from "@/app/services/api.service"
 import { formatCurrency } from "@/app/utils/format.utils"
+import { Chart } from "@/components/chart"
 import { MyLoanSidePanel } from "@/components/my-loan-side-panel"
-import { PositionChart } from "@/components/position-chart"
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { columns } from "./columns"
-import { getUserLoanHistory, PositionHistory } from "./mock-history"
-import { useMarketsQuery, useUserLoansQuery } from "./queries-mutations"
+import { useMarketsQuery } from "./queries-mutations"
 
 const queryClient = new QueryClient()
 
@@ -24,9 +24,13 @@ function BorrowPageContent() {
   const router = useRouter()
   const [userAddress, setUserAddress] = useState<string>("")
   const [totalLoanAmount, setTotalLoanAmount] = useState("0.00")
-  const [loanHistory, setLoanHistory] = useState<PositionHistory[]>([])
-  const { data: userLoans } = useUserLoansQuery(userAddress || "")
   const { data: markets, isLoading, error } = useMarketsQuery()
+
+  const { data: userLoanHistory = [], isLoading: isUserLoanLoading } = useQuery({
+    queryKey: ['userLoanHistory', userAddress],
+    queryFn: () => getUserLoanHistory(userAddress!),
+    enabled: !!userAddress
+  });
 
   // track user address
   useEffect(() => {
@@ -44,21 +48,20 @@ function BorrowPageContent() {
   }, [])
   
   useEffect(() => {
-    if (userLoans && userLoans.length > 0) {
-      const total = userLoans.reduce((sum, loan) => { //data represented is as if all tokens were worth $100
-        return sum + (parseFloat(loan.amount)*100 / Math.pow(10, 6))  // 6 is just assuming all tokens have 6 decimals for demo purposes
-      }, 0)
-      setTotalLoanAmount(total.toFixed(2))
-      
-      setLoanHistory(getUserLoanHistory())
+    if (userLoanHistory && userLoanHistory.length > 0) {
+      // Get the last (most recent) value from the history
+      const lastEntry = userLoanHistory[userLoanHistory.length - 1]
+      setTotalLoanAmount(lastEntry.value.toFixed(2))
+    } else {
+      setTotalLoanAmount("0.00")
     }
-  }, [userLoans])
+  }, [userLoanHistory])
 
   const handleRowClick = (id: string) => {
     router.push(`/borrow/${encodeURIComponent(id)}`)
   }
 
-  if (isLoading) {
+  if (isLoading || isUserLoanLoading) {
     return <div className="flex justify-center items-center h-64">Loading markets data...</div>
   }
 
@@ -77,10 +80,12 @@ function BorrowPageContent() {
             </CardHeader>
             <CardContent>
               <div className="min-h-[100px] rounded-md mt-6">
-                {loanHistory.length > 0 && (
-                  <PositionChart
-                    data={loanHistory}
-                    dataKey="borrowed"
+                {userLoanHistory.length > 0 && (
+                  <Chart
+                    data={userLoanHistory}
+                    title="My Loan History"
+                    description="Your total borrowed amount over time"
+                    dataKey="value"
                     color="#5B21B6"
                     className="bg-transparent border-none p-0 shadow-none"
                   />
@@ -90,11 +95,11 @@ function BorrowPageContent() {
           </div>
           <div className="w-full md:w-1/3 md:border-l md:border-gray-700/50">
             <MyLoanSidePanel 
-              netRate={userLoans && userLoans.length > 0 ? "4.8%" : "0%"}
+              netRate={userLoanHistory.length > 0 ? "4.8%" : "0%"}
               apy="5.2%"
               rewards="$12.45"
               className="h-full bg-transparent border-none shadow-none rounded-none md:rounded-r-3xl md:rounded-l-none"
-              userLoans={userLoans}
+              userLoans={[]} // Pass empty array since we're not using userLoans anymore
             />
           </div>
         </div>

@@ -1,8 +1,8 @@
 import { getAPRHistory, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
 import { MarketInfo } from "@/app/types";
 import { formatApyVariation } from "@/app/utils/format.utils";
+import { Chart } from "@/components/chart";
 import { InfoCard } from "@/components/info-card";
-import { MarketChart } from "@/components/market-chart";
 import { useQuery } from '@tanstack/react-query';
 
 interface MarketOverviewProps {
@@ -61,7 +61,7 @@ export function MarketOverview({
     value: item.value / 100
   }));
   const aprHistoryMapped = aprHistory.map(item => ({
-    value: item.borrowAPR,
+    value: item.value,
     timestamp: item.timestamp
   }));
 
@@ -69,7 +69,7 @@ export function MarketOverview({
     <>
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6">
-        <MarketChart
+        <Chart
           data={supplyHistory}
           title="Total Supply"
           description="Total assets supplied to the market"
@@ -77,7 +77,7 @@ export function MarketOverview({
           color="rgba(34, 197, 94, 0.95)"
           className={cardStyles}
         />
-        <MarketChart
+        <Chart
           data={borrowHistory}
           title="Net Borrow"
           description="Net borrow (borrow - repay) over time"
@@ -85,7 +85,7 @@ export function MarketOverview({
           color="rgba(239, 68, 68, 0.95)"
           className={cardStyles}
         />
-        <MarketChart
+        <Chart
           data={utilizationHistoryMapped}
           title="Utilization Rate"
           description="Percentage of supplied assets being borrowed"
@@ -93,7 +93,7 @@ export function MarketOverview({
           color="rgba(99, 102, 241, 0.95)"
           className={cardStyles}
         />
-        <MarketChart
+        <Chart
           data={aprHistoryMapped}
           title="APR"
           description="Annual Percentage Rate"

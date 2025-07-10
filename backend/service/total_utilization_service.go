@@ -5,20 +5,9 @@ import (
 	"volos-backend/indexer"
 )
 
-type UtilizationEvent struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
 // GetUtilizationHistory fetches all supply, withdraw, borrow, and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running utilization rate over time with real block timestamps.
-//
-// Utilization rate is calculated as: (totalBorrow / totalSupply) * 100, recalculated at each event.
-//
-// Returns:
-//   - []UtilizationEvent: Each entry contains the utilization rate and the corresponding block timestamp.
-//   - error: Any error encountered during the process.
-func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
+func GetUtilizationHistory(marketId string) ([]Data, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
 	supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
 	supplyResp, err := supplyQB.Execute()
@@ -78,11 +67,10 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	}
 	json.Unmarshal(repayResp, &repayData)
 
-	heightSet := make(map[int64]struct{})
-	supplyEvents := parseEvents(supplyData.Data.GetTransactions, 1, heightSet)
-	withdrawEvents := parseEvents(withdrawData.Data.GetTransactions, -1, heightSet)
-	borrowEvents := parseEvents(borrowData.Data.GetTransactions, 1, heightSet)
-	repayEvents := parseEvents(repayData.Data.GetTransactions, -1, heightSet)
+	supplyEvents := parseEvents(supplyData.Data.GetTransactions, 1)
+	withdrawEvents := parseEvents(withdrawData.Data.GetTransactions, -1)
+	borrowEvents := parseEvents(borrowData.Data.GetTransactions, 1)
+	repayEvents := parseEvents(repayData.Data.GetTransactions, -1)
 
 	type blockDelta struct {
 		supply float64
@@ -115,7 +103,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	}
 
 	var heights []int64
-	for h := range heightSet {
+	for h := range deltas {
 		heights = append(heights, h)
 	}
 
@@ -124,7 +112,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 		return nil, err
 	}
 
-	var result []UtilizationEvent
+	var result []Data
 	var runningSupply, runningBorrow float64
 	sortedHeights := heights
 	for i := 0; i < len(sortedHeights)-1; i++ {
@@ -144,7 +132,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 		if runningSupply > 0 {
 			utilization = (runningBorrow / runningSupply) * 100
 		}
-		result = append(result, UtilizationEvent{
+		result = append(result, Data{
 			Value:     utilization,
 			Timestamp: heightToTime[h],
 		})
