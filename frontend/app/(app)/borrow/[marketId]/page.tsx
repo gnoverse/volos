@@ -13,10 +13,6 @@ import { RefreshCw } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
-import {
-  borrowValue,
-  supplyValue
-} from "../mock"
 import { useHealthFactorQuery, useLoanAmountQuery, usePositionQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -116,8 +112,8 @@ function MarketPageContent() {
           tab={tab}
           setTabAction={setTab}
           market={marketInfo}
-          supplyValue={supplyValue}
-          borrowValue={borrowValue}
+          supplyValue={100}
+          borrowValue={100}
           healthFactor={healthFactorData?.healthFactor ?? "0"}
           currentCollateral={currentCollateral}
           currentLoan={currentLoan}

@@ -2,7 +2,6 @@ import { apiGetHealthFactor, apiGetLoanAmount, apiGetMarketInfo, apiGetPosition,
 import { TxService } from "@/app/services/tx.service";
 import { HealthFactor, LoanAmount, MarketInfo, Position, UserLoans } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MarketHistory, getHistoryForMarket } from "./mock-history";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
@@ -40,16 +39,6 @@ export function useMarketQuery(marketId: string) {
     queryFn: async () => {
       const marketInfo = await apiGetMarketInfo(marketId);
       return marketInfo;
-    },
-    enabled: !!marketId,
-  });
-}
-
-export function useMarketHistoryQuery(marketId: string) {
-  return useQuery({
-    queryKey: marketHistoryQueryKey(marketId),
-    queryFn: async (): Promise<MarketHistory[]> => {
-      return getHistoryForMarket(marketId);
     },
     enabled: !!marketId,
   });

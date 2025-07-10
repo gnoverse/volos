@@ -94,7 +94,7 @@ export function SupplyPanel({
                 placeholder="0.00"
               />
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-400">${supplyValue.toFixed(2)}</span>
+                <span className="text-xs text-gray-400">${(supplyValue * parseFloat(supplyAmount)).toFixed(2)}</span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
                   <Button

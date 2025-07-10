@@ -16,7 +16,7 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { columns } from "./columns"
-import { useMarketsQuery, useUserLoansQuery } from "./queries-mutations"
+import { useMarketsQuery } from "./queries-mutations"
 
 const queryClient = new QueryClient()
 
@@ -24,7 +24,6 @@ function BorrowPageContent() {
   const router = useRouter()
   const [userAddress, setUserAddress] = useState<string>("")
   const [totalLoanAmount, setTotalLoanAmount] = useState("0.00")
-  const { data: userLoans } = useUserLoansQuery(userAddress || "")
   const { data: markets, isLoading, error } = useMarketsQuery()
 
   const { data: userLoanHistory = [], isLoading: isUserLoanLoading } = useQuery({
@@ -49,13 +48,14 @@ function BorrowPageContent() {
   }, [])
   
   useEffect(() => {
-    if (userLoans && userLoans.length > 0) {
-      const total = userLoans.reduce((sum, loan) => { //data represented is as if all tokens were worth $100
-        return sum + (parseFloat(loan.amount)*100 / Math.pow(10, 6))  // 6 is just assuming all tokens have 6 decimals for demo purposes
-      }, 0)
-      setTotalLoanAmount(total.toFixed(2))
+    if (userLoanHistory && userLoanHistory.length > 0) {
+      // Get the last (most recent) value from the history
+      const lastEntry = userLoanHistory[userLoanHistory.length - 1]
+      setTotalLoanAmount(lastEntry.value.toFixed(2))
+    } else {
+      setTotalLoanAmount("0.00")
     }
-  }, [userLoans])
+  }, [userLoanHistory])
 
   const handleRowClick = (id: string) => {
     router.push(`/borrow/${encodeURIComponent(id)}`)
@@ -95,11 +95,11 @@ function BorrowPageContent() {
           </div>
           <div className="w-full md:w-1/3 md:border-l md:border-gray-700/50">
             <MyLoanSidePanel 
-              netRate={userLoans && userLoans.length > 0 ? "4.8%" : "0%"}
+              netRate={userLoanHistory.length > 0 ? "4.8%" : "0%"}
               apy="5.2%"
               rewards="$12.45"
               className="h-full bg-transparent border-none shadow-none rounded-none md:rounded-r-3xl md:rounded-l-none"
-              userLoans={userLoans}
+              userLoans={[]} // Pass empty array since we're not using userLoans anymore
             />
           </div>
         </div>
