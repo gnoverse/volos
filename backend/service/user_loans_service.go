@@ -2,12 +2,10 @@ package service
 
 import (
 	"encoding/json"
-	"sort"
 	"strconv"
 	"volos-backend/indexer"
 )
 
-// Reuse Event type from total_supply_service.go
 type UserLoanEvent struct {
 	Value     float64 `json:"value"`
 	Timestamp string  `json:"timestamp"`
@@ -16,10 +14,8 @@ type UserLoanEvent struct {
 // GetUserLoanHistory fetches all borrow and repay events for a given caller (user address),
 // aggregates them by block height, and returns the running total fiat value over time.
 func GetUserLoanHistory(caller string) ([]UserLoanEvent, error) {
-	// Query all borrow events for the caller
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEventsByCaller", indexer.SupplyBorrowFields)
 	borrowsQB.Where().Success(true).EventType("Borrow").Caller(caller)
-	println("borrowsQB", borrowsQB.Build())
 	borrowsResp, err := borrowsQB.Execute()
 	if err != nil {
 		return nil, err
@@ -31,7 +27,6 @@ func GetUserLoanHistory(caller string) ([]UserLoanEvent, error) {
 	}
 	json.Unmarshal(borrowsResp, &borrowsData)
 
-	// Query all repay events for the caller
 	repaysQB := indexer.NewQueryBuilder("getRepayEventsByCaller", indexer.SupplyBorrowFields)
 	repaysQB.Where().Success(true).EventType("Repay").Caller(caller)
 	repaysResp, err := repaysQB.Execute()
@@ -45,43 +40,28 @@ func GetUserLoanHistory(caller string) ([]UserLoanEvent, error) {
 	}
 	json.Unmarshal(repaysResp, &repaysData)
 
-	// Track unique marketIds and block heights
-	marketIdMap := make(map[string]float64) // marketId -> mock fiat value (1)
-	heightSet := make(map[int64]struct{})
-
-	// Parse events
-	borrowEvents := parseUserEvents(borrowsData.Data.GetTransactions, 1, marketIdMap, heightSet)
-	repayEvents := parseUserEvents(repaysData.Data.GetTransactions, -1, marketIdMap, heightSet)
+	borrowEvents := parseUserEvents(borrowsData.Data.GetTransactions, 1)
+	repayEvents := parseUserEvents(repaysData.Data.GetTransactions, -1)
 	allEvents := append(borrowEvents, repayEvents...)
 
-	// Sort events by block height (timestamp)
-	sort.Slice(allEvents, func(i, j int) bool {
-		return allEvents[i].BlockHeight < allEvents[j].BlockHeight
-	})
-
-	// Get all unique block heights
 	var heights []int64
-	for h := range heightSet {
-		heights = append(heights, h)
+	for _, ev := range allEvents {
+		heights = append(heights, ev.BlockHeight)
 	}
 
-	// Fetch block timestamps using utils.go
 	heightToTime, err := FetchBlockTimestamps(heights)
 	if err != nil {
 		return nil, err
 	}
 
-	// Running total per market
 	runningTotals := make(map[string]float64)
 	var result []UserLoanEvent
 
 	for _, ev := range allEvents {
-		// Add/subtract for this market
 		runningTotals[ev.MarketId] += ev.Value
-		// Sum all markets' running totals, multiply by mock fiat value (1)
 		totalFiat := 0.0
 		for marketId := range runningTotals {
-			totalFiat += runningTotals[marketId] * marketIdMap[marketId]
+			totalFiat += runningTotals[marketId] * GetTokenPrice(marketId)
 		}
 		result = append(result, UserLoanEvent{
 			Value:     totalFiat,
@@ -92,16 +72,19 @@ func GetUserLoanHistory(caller string) ([]UserLoanEvent, error) {
 	return result, nil
 }
 
-// Helper to parse events and collect marketIds
 func parseUserEvents(
 	transactions []map[string]interface{},
 	sign float64,
-	marketIdMap map[string]float64,
-	heightSet map[int64]struct{},
 ) []struct {
 	Event
 	MarketId string
 } {
+	defer func() {
+		if r := recover(); r != nil {
+			// return default values if panic occurs
+		}
+	}()
+
 	var events []struct {
 		Event
 		MarketId string
@@ -131,7 +114,6 @@ func parseUserEvents(
 				}
 			}
 			if marketId != "" && amount != 0 {
-				marketIdMap[marketId] = 1 // mock fiat value
 				events = append(events, struct {
 					Event
 					MarketId string
@@ -142,7 +124,6 @@ func parseUserEvents(
 					},
 					MarketId: marketId,
 				})
-				heightSet[timestamp] = struct{}{}
 			}
 		}
 	}

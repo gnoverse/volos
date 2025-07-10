@@ -9,7 +9,7 @@ import (
 )
 
 // Helper to process events from transactions and collect unique block heights used in total_borrow_service, total_supply_service, total_utilization_service
-func parseEvents(transactions []map[string]interface{}, sign float64, heightSet map[int64]struct{}) []Event {
+func parseEvents(transactions []map[string]interface{}, sign float64) []Event {
 	defer func() {
 		if r := recover(); r != nil {
 			// return default values if panic occurs
@@ -32,7 +32,6 @@ func parseEvents(transactions []map[string]interface{}, sign float64, heightSet 
 					if amountStr != "" {
 						if val, err := strconv.ParseFloat(amountStr, 64); err == nil {
 							events = append(events, Event{Value: sign * val, BlockHeight: timestamp})
-							heightSet[timestamp] = struct{}{}
 						}
 					}
 				}

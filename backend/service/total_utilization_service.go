@@ -12,12 +12,6 @@ type UtilizationEvent struct {
 
 // GetUtilizationHistory fetches all supply, withdraw, borrow, and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running utilization rate over time with real block timestamps.
-//
-// Utilization rate is calculated as: (totalBorrow / totalSupply) * 100, recalculated at each event.
-//
-// Returns:
-//   - []UtilizationEvent: Each entry contains the utilization rate and the corresponding block timestamp.
-//   - error: Any error encountered during the process.
 func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
 	supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId)
@@ -78,11 +72,10 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	}
 	json.Unmarshal(repayResp, &repayData)
 
-	heightSet := make(map[int64]struct{})
-	supplyEvents := parseEvents(supplyData.Data.GetTransactions, 1, heightSet)
-	withdrawEvents := parseEvents(withdrawData.Data.GetTransactions, -1, heightSet)
-	borrowEvents := parseEvents(borrowData.Data.GetTransactions, 1, heightSet)
-	repayEvents := parseEvents(repayData.Data.GetTransactions, -1, heightSet)
+	supplyEvents := parseEvents(supplyData.Data.GetTransactions, 1)
+	withdrawEvents := parseEvents(withdrawData.Data.GetTransactions, -1)
+	borrowEvents := parseEvents(borrowData.Data.GetTransactions, 1)
+	repayEvents := parseEvents(repayData.Data.GetTransactions, -1)
 
 	type blockDelta struct {
 		supply float64
@@ -115,7 +108,7 @@ func GetUtilizationHistory(marketId string) ([]UtilizationEvent, error) {
 	}
 
 	var heights []int64
-	for h := range heightSet {
+	for h := range deltas {
 		heights = append(heights, h)
 	}
 
