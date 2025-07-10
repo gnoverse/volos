@@ -3,7 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
-	"volos-backend/service"
+	"volos-backend/services"
 )
 
 // Handler for GET /user-loans?caller=ADDRESS
@@ -14,7 +14,7 @@ func UserLoansHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := service.GetUserLoanHistory(caller)
+	result, err := services.GetUserLoanHistory(caller)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

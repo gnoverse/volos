@@ -3,7 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
-	"volos-backend/service"
+	"volos-backend/services"
 )
 
 func TotalUtilizationHistoryHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +13,7 @@ func TotalUtilizationHistoryHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"error": "marketId is required"}`))
 		return
 	}
-	result, err := service.GetUtilizationHistory(marketId)
+	result, err := services.GetUtilizationHistory(marketId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error": "` + err.Error() + `"}`))

@@ -3,7 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
-	"volos-backend/service"
+	"volos-backend/services"
 )
 
 func MarketActivityHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +13,7 @@ func MarketActivityHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`{"error": "marketId is required"}`))
 		return
 	}
-	result, err := service.GetMarketActivity(marketId)
+	result, err := services.GetMarketActivity(marketId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error": "` + err.Error() + `"}`))
@@ -21,4 +21,4 @@ func MarketActivityHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
-} 
+}

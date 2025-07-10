@@ -2,8 +2,8 @@ package routes
 
 import (
 	"encoding/json"
-	"volos-backend/service"
 	"net/http"
+	"volos-backend/services"
 )
 
 func TotalSupplyHistoryHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +13,7 @@ func TotalSupplyHistoryHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "marketId is required", http.StatusBadRequest)
 		return
 	}
-	result, err := service.GetTotalSupplyHistory(marketId)
+	result, err := services.GetTotalSupplyHistory(marketId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
