@@ -1,21 +1,28 @@
-package services
+package fetch
 
 import (
 	"encoding/json"
 	"strconv"
 	"volos-backend/indexer"
+
+	"volos-backend/services"
 )
 
 // GetAPRHistory fetches all AccrueInterest events for a given marketId from the indexer,
 // extracts the borrow rate from each event, and calculates the historical APR over time.
 //
+// Optionally, you can provide minBlockHeight to only fetch events after a certain block.
+//
 // APR Calculation:
 //   - The borrow rate from events is per-second and WAD-scaled (1e18)
 //   - APR = borrow_rate * seconds_per_year / WAD
 //   - seconds_per_year = 365 * 24 * 60 * 60 = 31,536,000
-func GetAPRHistory(marketId string) ([]Data, error) {
+func GetAPRHistory(marketId string, minBlockHeight *int) ([]services.Data, error) {
 	qb := indexer.NewQueryBuilder("getAPREvents", indexer.SupplyBorrowFields)
-	qb.Where().Success(true).EventType("AccrueInterest").MarketId(marketId).PkgPath(VolosPkgPath)
+	where := qb.Where().Success(true).EventType("AccrueInterest").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		where.BlockHeightRange(minBlockHeight, nil)
+	}
 	resp, err := qb.Execute()
 	if err != nil {
 		return nil, err
@@ -45,12 +52,12 @@ func GetAPRHistory(marketId string) ([]Data, error) {
 		heights = append(heights, event.BlockHeight)
 	}
 
-	heightToTime, err := FetchBlockTimestamps(heights)
+	heightToTime, err := services.FetchBlockTimestamps(heights)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Data
+	var result []services.Data
 	for _, event := range rawEvents {
 		// Calculate APR: borrow_rate * seconds_per_year / WAD
 		// borrow_rate is WAD-scaled (1e18), so we divide by WAD to get the actual rate
@@ -60,7 +67,7 @@ func GetAPRHistory(marketId string) ([]Data, error) {
 		wad := 1e18
 		apr := (event.BorrowRate * secondsPerYear) / wad
 
-		result = append(result, Data{
+		result = append(result, services.Data{
 			Value:     apr,
 			Timestamp: heightToTime[event.BlockHeight],
 		})

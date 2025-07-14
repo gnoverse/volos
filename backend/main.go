@@ -1,10 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	routes "volos-backend/routes"
+	"cloud.google.com/go/firestore"
+	"volos-backend/firebase"
+
+	// Firestore
+	"google.golang.org/api/option"
 )
+
+var FirestoreClient *firestore.Client
 
 func withCORS(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -19,16 +28,32 @@ func withCORS(handler http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func init() {
+	ctx := context.Background()
+	projectID := "volos-f06d9"
+	serviceAccountPath := "firebase/firebase.json"
+	client, err := firestore.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountPath))
+	if err != nil {
+		log.Fatalf("Failed to create Firestore client: %v", err)
+	}
+	FirestoreClient = client
+
+	// Fill the database with data from services
+	if err := firebase.InitFirestoreData(FirestoreClient); err != nil {
+		log.Printf("Warning: Failed to initialize Firestore data: %v", err)
+	}
+}
+
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Hello from Volos backend!")
 	})
 
-	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler))
-	http.HandleFunc("/api/total-borrow-history", withCORS(routes.TotalBorrowHistoryHandler))
-	http.HandleFunc("/api/total-utilization-history", withCORS(routes.TotalUtilizationHistoryHandler))
+	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler(FirestoreClient)))
+	http.HandleFunc("/api/total-borrow-history", withCORS(routes.TotalBorrowHistoryHandler(FirestoreClient)))
+	http.HandleFunc("/api/total-utilization-history", withCORS(routes.TotalUtilizationHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/market-activity", withCORS(routes.MarketActivityHandler))
-	http.HandleFunc("/api/apr-history", withCORS(routes.APRHistoryHandler))
+	http.HandleFunc("/api/apr-history", withCORS(routes.APRHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-loans", withCORS(routes.UserLoansHandler))
 
 	fmt.Println("Server running on http://localhost:8080")

@@ -1,15 +1,20 @@
-package services
+package fetch
 
 import (
 	"encoding/json"
 	"volos-backend/indexer"
+	"volos-backend/services"
 )
 
 // GetUtilizationHistory fetches all supply, withdraw, borrow, and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running utilization rate over time with real block timestamps.
-func GetUtilizationHistory(marketId string) ([]Data, error) {
+// Optionally, you can provide minBlockHeight to only fetch events after a certain block.
+func GetUtilizationHistory(marketId string, minBlockHeight *int) ([]services.Data, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
-	supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(VolosPkgPath)
+	whereSupply := supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		whereSupply.BlockHeightRange(minBlockHeight, nil)
+	}
 	supplyResp, err := supplyQB.Execute()
 	if err != nil {
 		return nil, err
@@ -24,7 +29,10 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(supplyResp, &supplyData)
 
 	withdrawQB := indexer.NewQueryBuilder("getWithdrawEvents", indexer.SupplyBorrowFields)
-	withdrawQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(VolosPkgPath)
+	whereWithdraw := withdrawQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		whereWithdraw.BlockHeightRange(minBlockHeight, nil)
+	}
 	withdrawResp, err := withdrawQB.Execute()
 	if err != nil {
 		return nil, err
@@ -39,7 +47,10 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(withdrawResp, &withdrawData)
 
 	borrowQB := indexer.NewQueryBuilder("getBorrowEvents", indexer.SupplyBorrowFields)
-	borrowQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(VolosPkgPath)
+	whereBorrow := borrowQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		whereBorrow.BlockHeightRange(minBlockHeight, nil)
+	}
 	borrowResp, err := borrowQB.Execute()
 	if err != nil {
 		return nil, err
@@ -54,7 +65,10 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(borrowResp, &borrowData)
 
 	repayQB := indexer.NewQueryBuilder("getRepayEvents", indexer.SupplyBorrowFields)
-	repayQB.Where().Success(true).EventType("Repay").MarketId(marketId).PkgPath(VolosPkgPath)
+	whereRepay := repayQB.Where().Success(true).EventType("Repay").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		whereRepay.BlockHeightRange(minBlockHeight, nil)
+	}
 	repayResp, err := repayQB.Execute()
 	if err != nil {
 		return nil, err
@@ -67,10 +81,10 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 	}
 	json.Unmarshal(repayResp, &repayData)
 
-	supplyEvents := parseEvents(supplyData.Data.GetTransactions, 1)
-	withdrawEvents := parseEvents(withdrawData.Data.GetTransactions, -1)
-	borrowEvents := parseEvents(borrowData.Data.GetTransactions, 1)
-	repayEvents := parseEvents(repayData.Data.GetTransactions, -1)
+	supplyEvents := services.ParseEvents(supplyData.Data.GetTransactions, 1)
+	withdrawEvents := services.ParseEvents(withdrawData.Data.GetTransactions, -1)
+	borrowEvents := services.ParseEvents(borrowData.Data.GetTransactions, 1)
+	repayEvents := services.ParseEvents(repayData.Data.GetTransactions, -1)
 
 	type blockDelta struct {
 		supply float64
@@ -107,12 +121,12 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 		heights = append(heights, h)
 	}
 
-	heightToTime, err := FetchBlockTimestamps(heights)
+	heightToTime, err := services.FetchBlockTimestamps(heights)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Data
+	var result []services.Data
 	var runningSupply, runningBorrow float64
 	sortedHeights := heights
 	for i := 0; i < len(sortedHeights)-1; i++ {
@@ -132,7 +146,7 @@ func GetUtilizationHistory(marketId string) ([]Data, error) {
 		if runningSupply > 0 {
 			utilization = (runningBorrow / runningSupply) * 100
 		}
-		result = append(result, Data{
+		result = append(result, services.Data{
 			Value:     utilization,
 			Timestamp: heightToTime[h],
 		})

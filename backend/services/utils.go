@@ -21,7 +21,7 @@ type TransactionData struct {
 }
 
 // Helper to process events from transactions and collect unique block heights used in total_borrow_service, total_supply_service, total_utilization_service
-func parseEvents(transactions []map[string]interface{}, sign float64) []TransactionData {
+func ParseEvents(transactions []map[string]interface{}, sign float64) []TransactionData {
 	defer func() {
 		if r := recover(); r != nil {
 			// return default values if panic occurs

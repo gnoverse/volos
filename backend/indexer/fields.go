@@ -110,6 +110,19 @@ const MarketActivityFields = `
   }
 `
 
+const CreateMarketFields = `
+  response {
+    events {
+      ... on GnoEvent {
+        attrs {
+          key
+          value
+        }
+      }
+    }
+  }
+`
+
 const BlockFields = `
   height
   time

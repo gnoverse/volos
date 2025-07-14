@@ -1,15 +1,20 @@
-package services
+package fetch
 
 import (
 	"encoding/json"
 	"volos-backend/indexer"
+	"volos-backend/services"
 )
 
 // GetTotalBorrowHistory fetches all borrow and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running total borrow over time with real block timestamps.
-func GetTotalBorrowHistory(marketId string) ([]Data, error) {
+// Optionally, you can provide minBlockHeight to only fetch events after a certain block.
+func GetTotalBorrowHistory(marketId string, minBlockHeight *int) ([]services.Data, error) {
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEvents", indexer.SupplyBorrowFields)
-	borrowsQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(VolosPkgPath)
+	whereBorrows := borrowsQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		whereBorrows.BlockHeightRange(minBlockHeight, nil)
+	}
 	borrowsResp, err := borrowsQB.Execute()
 	if err != nil {
 		return nil, err
@@ -22,7 +27,10 @@ func GetTotalBorrowHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(borrowsResp, &borrowsData)
 
 	repaysQB := indexer.NewQueryBuilder("getRepayEvents", indexer.SupplyBorrowFields)
-	repaysQB.Where().Success(true).EventType("Repay").MarketId(marketId).PkgPath(VolosPkgPath)
+	whereRepays := repaysQB.Where().Success(true).EventType("Repay").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		whereRepays.BlockHeightRange(minBlockHeight, nil)
+	}
 	repaysResp, err := repaysQB.Execute()
 	if err != nil {
 		return nil, err
@@ -34,8 +42,8 @@ func GetTotalBorrowHistory(marketId string) ([]Data, error) {
 	}
 	json.Unmarshal(repaysResp, &repaysData)
 
-	borrowEvents := parseEvents(borrowsData.Data.GetTransactions, 1)
-	repayEvents := parseEvents(repaysData.Data.GetTransactions, -1)
+	borrowEvents := services.ParseEvents(borrowsData.Data.GetTransactions, 1)
+	repayEvents := services.ParseEvents(repaysData.Data.GetTransactions, -1)
 	events := append(borrowEvents, repayEvents...)
 
 	var heights []int64
@@ -43,16 +51,16 @@ func GetTotalBorrowHistory(marketId string) ([]Data, error) {
 		heights = append(heights, ev.BlockHeight)
 	}
 
-	heightToTime, err := FetchBlockTimestamps(heights)
+	heightToTime, err := services.FetchBlockTimestamps(heights)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Data
+	var result []services.Data
 	runningTotal := 0.0
 	for _, ev := range events {
 		runningTotal += ev.Value
-		result = append(result, Data{
+		result = append(result, services.Data{
 			Value:     runningTotal,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})

@@ -1,15 +1,20 @@
-package services
+package fetch
 
 import (
 	"encoding/json"
 	"volos-backend/indexer"
+	"volos-backend/services"
 )
 
 // GetTotalSupplyHistory fetches all deposit and withdraw events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running total supply over time with real block timestamps.
-func GetTotalSupplyHistory(marketId string) ([]Data, error) {
+// Optionally, you can provide minBlockHeight to only fetch events after a certain block.
+func GetTotalSupplyHistory(marketId string, minBlockHeight *int) ([]services.Data, error) {
 	depositsQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
-	depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(VolosPkgPath)
+	whereDeposits := depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		whereDeposits.BlockHeightRange(minBlockHeight, nil)
+	}
 	depositsResp, err := depositsQB.Execute()
 	if err != nil {
 		return nil, err
@@ -22,7 +27,10 @@ func GetTotalSupplyHistory(marketId string) ([]Data, error) {
 	json.Unmarshal(depositsResp, &depositsData)
 
 	withdrawsQB := indexer.NewQueryBuilder("getWithdrawEvents", indexer.SupplyBorrowFields)
-	withdrawsQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(VolosPkgPath)
+	whereWithdraws := withdrawsQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		whereWithdraws.BlockHeightRange(minBlockHeight, nil)
+	}
 	withdrawsResp, err := withdrawsQB.Execute()
 	if err != nil {
 		return nil, err
@@ -36,8 +44,8 @@ func GetTotalSupplyHistory(marketId string) ([]Data, error) {
 
 	json.Unmarshal(withdrawsResp, &withdrawsData)
 
-	depositEvents := parseEvents(depositsData.Data.GetTransactions, 1)
-	withdrawEvents := parseEvents(withdrawsData.Data.GetTransactions, -1)
+	depositEvents := services.ParseEvents(depositsData.Data.GetTransactions, 1)
+	withdrawEvents := services.ParseEvents(withdrawsData.Data.GetTransactions, -1)
 	events := append(depositEvents, withdrawEvents...)
 
 	var heights []int64
@@ -45,16 +53,16 @@ func GetTotalSupplyHistory(marketId string) ([]Data, error) {
 		heights = append(heights, ev.BlockHeight)
 	}
 
-	heightToTime, err := FetchBlockTimestamps(heights)
+	heightToTime, err := services.FetchBlockTimestamps(heights)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Data
+	var result []services.Data
 	runningTotal := 0.0
 	for _, ev := range events {
 		runningTotal += ev.Value
-		result = append(result, Data{
+		result = append(result, services.Data{
 			Value:     runningTotal,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})
