@@ -1,9 +1,10 @@
-package services
+package fetch
 
 import (
 	"encoding/json"
 	"strconv"
 	"volos-backend/indexer"
+	"volos-backend/services"
 )
 
 type MarketActivity struct {
@@ -15,15 +16,14 @@ type MarketActivity struct {
 	IsAmountInShares bool    `json:"isAmountInShares"`
 }
 
-// GetMarketActivity fetches all activity transactions (deposits, withdraws, borrows, repays, etc.) for a given marketId from the indexer.
-//
-// NOTE: This function currently retrieves ALL transactions for the given market, which can become a very large number very quickly as the market grows.
-//
-// For scalability, time-based or block height-based pagination should be implemented in the future.
-// Retrieving the last X transactions directly is not possible with the current API, so a solution for efficient pagination or limiting must be considered.
-func GetMarketActivity(marketId string) ([]MarketActivity, error) {
+// GetMarketActivity fetches all activity transactions for a given marketId from the indexer.
+// Optionally, you can provide minBlockHeight to only fetch events after a certain block.
+func GetMarketActivity(marketId string, minBlockHeight *int) ([]MarketActivity, error) {
 	qb := indexer.NewQueryBuilder("getMarketActivity", indexer.MarketActivityFields)
-	qb.Where().MarketId(marketId).PkgPath(VolosPkgPath)
+	where := qb.Where().MarketId(marketId).PkgPath(services.VolosPkgPath)
+	if minBlockHeight != nil {
+		where.BlockHeightRange(minBlockHeight, nil)
+	}
 	resp, err := qb.Execute()
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func GetMarketActivity(marketId string) ([]MarketActivity, error) {
 	for _, tx := range raw {
 		heights = append(heights, tx.BlockHeight)
 	}
-	heightToTime, err := FetchBlockTimestamps(heights)
+	heightToTime, err := services.FetchBlockTimestamps(heights)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func GetMarketActivity(marketId string) ([]MarketActivity, error) {
 	return result, nil
 }
 
-// Helper to parse a single transaction map into a rawTx-like struct, updating heightSet
+// Helper to parse a single transaction map into a rawTx-like struct
 func parseMarketActivity(tx map[string]interface{}) struct {
 	Type             string
 	Amount           float64
@@ -134,4 +134,4 @@ func parseMarketActivity(tx map[string]interface{}) struct {
 		BlockHeight:      blockHeight,
 		IsAmountInShares: isAmountInShares,
 	}
-}
+} 

@@ -25,6 +25,12 @@ func FetchMarketData(client *firestore.Client, marketId, path string) (string, e
 	var dataArray []map[string]interface{}
 	for _, doc := range docs {
 		data := doc.Data()
+		// If this is market_activity, unsanitize the hash field
+		if path == "market_activity" {
+			if hash, ok := data["hash"].(string); ok {
+				data["hash"] = strings.ReplaceAll(hash, "~", "/")
+			}
+		}
 		dataArray = append(dataArray, data)
 	}
 
@@ -35,4 +41,4 @@ func FetchMarketData(client *firestore.Client, marketId, path string) (string, e
 	}
 
 	return string(jsonData), nil
-} 
+}

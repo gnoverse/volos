@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	routes "volos-backend/routes"
-	"cloud.google.com/go/firestore"
 	"volos-backend/firebase"
+	routes "volos-backend/routes"
+
+	"cloud.google.com/go/firestore"
 
 	// Firestore
 	"google.golang.org/api/option"
@@ -52,7 +53,7 @@ func main() {
 	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/total-borrow-history", withCORS(routes.TotalBorrowHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/total-utilization-history", withCORS(routes.TotalUtilizationHistoryHandler(FirestoreClient)))
-	http.HandleFunc("/api/market-activity", withCORS(routes.MarketActivityHandler))
+	http.HandleFunc("/api/market-activity", withCORS(routes.MarketActivityHandler(FirestoreClient)))
 	http.HandleFunc("/api/apr-history", withCORS(routes.APRHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-loans", withCORS(routes.UserLoansHandler))
 

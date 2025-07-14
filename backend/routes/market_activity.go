@@ -1,24 +1,27 @@
 package routes
 
 import (
-	"encoding/json"
 	"net/http"
-	"volos-backend/services"
+	"volos-backend/firebase"
+
+	"cloud.google.com/go/firestore"
 )
 
-func MarketActivityHandler(w http.ResponseWriter, r *http.Request) {
-	marketId := r.URL.Query().Get("marketId")
-	if marketId == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error": "marketId is required"}`))
-		return
+func MarketActivityHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		marketId := r.URL.Query().Get("marketId")
+		if marketId == "" {
+			http.Error(w, "marketId is required", http.StatusBadRequest)
+			return
+		}
+
+		jsonData, err := firebase.FetchMarketData(client, marketId, "market_activity")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Write([]byte(jsonData))
 	}
-	result, err := services.GetMarketActivity(marketId)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "` + err.Error() + `"}`))
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
 }

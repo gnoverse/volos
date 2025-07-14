@@ -15,7 +15,6 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-
 func InitFirestoreData(client *firestore.Client) error {
 	ctx := context.Background()
 
@@ -50,6 +49,9 @@ func fillMarketSubcollections(ctx context.Context, client *firestore.Client, mar
 		return err
 	}
 	if err := fillSubcollection(ctx, client, safeMarketId, "total_utilization", update.GetUtilizationHistory, marketId, nil); err != nil {
+		return err
+	}
+	if err := fillMarketActivitySubcollection(ctx, client, safeMarketId, marketId, update.GetMarketActivity, nil); err != nil {
 		return err
 	}
 	return nil
@@ -87,5 +89,41 @@ func fillSubcollection(ctx context.Context, client *firestore.Client, marketId, 
 	}
 
 	log.Printf("Filled markets/%s/%s subcollection with %d documents", marketId, subcollectionName, len(data))
+	return nil
+}
+
+type marketActivityFetcher func(string, *int) ([]update.MarketActivity, error)
+
+func fillMarketActivitySubcollection(ctx context.Context, client *firestore.Client, safeMarketId string, marketId string, fetcher marketActivityFetcher, minBlockHeight *int) error {
+	data, err := fetcher(marketId, minBlockHeight)
+	if err != nil {
+		log.Printf("Error fetching data for %s/market_activity: %v", marketId, err)
+		return err
+	}
+	if data == nil {
+		log.Printf("No data returned for %s/market_activity", marketId)
+		return nil
+	}
+
+	marketDoc := client.Collection("markets").Doc(safeMarketId)
+	subcollection := marketDoc.Collection("market_activity")
+
+	docs, err := subcollection.Documents(ctx).GetAll()
+	if err != nil {
+		return err
+	}
+	for _, doc := range docs {
+		doc.Ref.Delete(ctx)
+	}
+
+	for _, item := range data {
+		safeHash := strings.ReplaceAll(item.Hash, "/", "~")
+		_, err := subcollection.Doc(safeHash).Set(ctx, item)
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Printf("Filled markets/%s/market_activity subcollection with %d documents", safeMarketId, len(data))
 	return nil
 }

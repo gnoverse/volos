@@ -27,7 +27,6 @@ func GetAPRHistory(marketId string, minBlockHeight *int) ([]services.Data, error
 	if err != nil {
 		return nil, err
 	}
-
 	var data struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
@@ -72,7 +71,6 @@ func GetAPRHistory(marketId string, minBlockHeight *int) ([]services.Data, error
 			Timestamp: heightToTime[event.BlockHeight],
 		})
 	}
-
 	return result, nil
 }
 
