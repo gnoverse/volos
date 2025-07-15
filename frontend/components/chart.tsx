@@ -26,10 +26,12 @@ export function Chart({
 }: ChartProps) {
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-gray-200">{title}</CardTitle>
-        <CardDescription className="text-gray-400">{description}</CardDescription>
-      </CardHeader>
+      {(title || description) && (
+        <CardHeader className="pb-4">
+          {title && <CardTitle className="text-gray-200">{title}</CardTitle>}
+          {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+        </CardHeader>
+      )}
       <CardContent className="-px-6">
         <div style={{ width: '100%', height: 220 }}>
           <ResponsiveContainer>

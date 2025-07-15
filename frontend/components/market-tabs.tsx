@@ -20,6 +20,7 @@ interface MarketTabsProps {
   currentCollateral: number;
   currentLoan: number;
   positionData?: Position | null;
+  caller: string;
 }
 
 export function MarketTabs({ 
@@ -29,7 +30,8 @@ export function MarketTabs({
   healthFactor,
   currentCollateral,
   currentLoan,
-  positionData
+  positionData,
+  caller
 }: MarketTabsProps) {
 
   const { data: marketActivity = [] } = useQuery({
@@ -77,6 +79,7 @@ export function MarketTabs({
           currentCollateral={currentCollateral}
           currentLoan={currentLoan}
           positionData={positionData}
+          caller={caller}
         />
       </TabsContent>
 

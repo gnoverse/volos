@@ -8,16 +8,17 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-// Handler for GET /user-loans?caller=ADDRESS
-func UserLoansHandler(client *firestore.Client) http.HandlerFunc {
+// Handler for GET /user-collateral?caller=ADDRESS&marketId=MARKETID
+func UserCollateralHandler(client *firestore.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		caller := r.URL.Query().Get("caller")
-		if caller == "" {
-			http.Error(w, "Missing 'caller' query parameter", http.StatusBadRequest)
+		marketId := r.URL.Query().Get("marketId")
+		if caller == "" || marketId == "" {
+			http.Error(w, "Missing 'caller' or 'marketId' query parameter", http.StatusBadRequest)
 			return
 		}
 
-		result, err := user_specific.GetOrUpdateUserLoanHistory(client, caller)
+		result, err := user_specific.GetOrUpdateUserCollateralHistory(client, caller, marketId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

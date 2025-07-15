@@ -104,6 +104,7 @@ function MarketPageContent() {
             currentCollateral={currentCollateral}
             currentLoan={currentLoan}
             positionData={positionData}
+            caller={userAddress}
           />
         </div>
 

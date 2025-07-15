@@ -1,4 +1,4 @@
-package update
+package user_specific
 
 import (
 	"context"
@@ -23,9 +23,9 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 	ctx := context.Background()
 	userDoc := client.Collection("users").Doc(caller)
 	loanHistoryCol := userDoc.Collection("loan_history")
-	metadataCol := userDoc.Collection("metadata")
+	metadataDoc := loanHistoryCol.Doc("metadata")
 
-	metaDoc, err := metadataCol.Doc("latest_block_height").Get(ctx)
+	metaDoc, err := metadataDoc.Get(ctx)
 	var latestBlockHeight int
 	var latestLoanValue float64
 	if err == nil {
@@ -45,6 +45,9 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 	}
 	var existing []services.Data
 	for _, doc := range docs {
+		if doc.Ref.ID == "metadata" {
+			continue
+		}
 		var d services.Data
 		m := doc.Data()
 		b, _ := json.Marshal(m)
@@ -121,7 +124,7 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 		}
 	}
 	if len(newEvents) > 0 && maxBlock > latestBlockHeight {
-		_, _ = bulkWriter.Set(metadataCol.Doc("latest_block_height"), map[string]interface{}{
+		_, _ = bulkWriter.Set(metadataDoc, map[string]interface{}{
 			"block_height":      maxBlock,
 			"latest_loan_value": runningTotal,
 		})

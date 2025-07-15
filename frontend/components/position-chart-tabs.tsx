@@ -1,17 +1,36 @@
 "use client"
 
-import { PositionHistory } from "@/app/(app)/borrow/mock-history"
+import { getUserCollateralHistory } from '@/app/services/api.service'
+import { MarketInfo } from '@/app/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { PositionChart } from "./position-chart"
+import { useQuery } from '@tanstack/react-query'
+import { Chart } from './chart'
 
 interface PositionChartTabsProps {
-  positionHistory: PositionHistory[]
+  caller: string
+  marketId: string
+  market: MarketInfo
   cardStyles: string
 }
 
-export function PositionChartTabs({ positionHistory, cardStyles }: PositionChartTabsProps) {
+export function PositionChartTabs({ caller, marketId, market, cardStyles }: PositionChartTabsProps) {
+  const { data: collateralHistory = [] } = useQuery({
+    queryKey: ['userCollateralHistory', caller, marketId],
+    queryFn: () => getUserCollateralHistory(caller, marketId),
+    enabled: !!caller && !!marketId
+  });
+
+  // todo: fix collateral token decimals in the contract (it is 0)
+  const mappedCollateral = collateralHistory.map(d => ({
+    value: d.value / Math.pow(10, market.collateralTokenDecimals),
+    timestamp: d.timestamp
+  }));
+
+
+  // Health factor logic can be added here if needed
+
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", cardStyles)}>
       <Tabs defaultValue="collateral" className="w-auto">
@@ -41,26 +60,32 @@ export function PositionChartTabs({ positionHistory, cardStyles }: PositionChart
             </TabsTrigger>
           </TabsList>
       </CardHeader>
-      <CardContent>
-          <TabsContent value="collateral" className="mt-0 -ml-6">
-            <PositionChart
-              data={positionHistory}
-              dataKey="collateral"
+      <CardContent className="items-center">
+          <TabsContent value="collateral" className="mt-0">
+            <Chart
+              title=""
+              description=""
+              data={mappedCollateral}
+              dataKey="value"
               color="rgba(34, 197, 94, 0.95)"
               className="pt-6"
             />
           </TabsContent>
-          <TabsContent value="borrowed" className="mt-0 -ml-6">
-            <PositionChart
-              data={positionHistory}
-              dataKey="borrowed"
+          <TabsContent value="borrowed" className="mt-0">
+            <Chart
+              title=""
+              description=""
+              data={mappedCollateral}
+              dataKey="value"
               color="rgba(239, 68, 68, 0.95)"
               className="pt-6"
             />
           </TabsContent>
-          <TabsContent value="health" className="mt-0 -ml-6">
-            <PositionChart
-              data={positionHistory}
+          <TabsContent value="health" className="mt-0">
+            <Chart
+              title=""
+              description=""
+              data={[]}
               dataKey="healthFactor"
               color="rgba(99, 102, 241, 0.95)"
               className="pt-6"

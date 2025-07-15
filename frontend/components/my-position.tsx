@@ -1,10 +1,8 @@
 "use client"
 
-import { PositionHistory, getPositionHistoryForMarket } from "@/app/(app)/borrow/mock-history"
 import { MarketInfo, Position } from "@/app/types"
 import { formatLTV, formatTokenAmount } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useEffect, useState } from "react"
 import { PositionChartTabs } from "./position-chart-tabs"
 import { HealthBar } from "./health-bar"
 
@@ -15,6 +13,7 @@ interface MarketPositionProps {
   currentCollateral: number
   currentLoan: number
   positionData?: Position | null
+  caller: string
 }
 
 export function MyPosition({ 
@@ -23,14 +22,10 @@ export function MyPosition({
   healthFactor, 
   currentCollateral, 
   currentLoan,
-  positionData
+  positionData,
+  caller
 }: MarketPositionProps) {
-  const [positionHistory, setPositionHistory] = useState<PositionHistory[]>([])
-  
-  useEffect(() => {
-    const history = getPositionHistoryForMarket(market.marketId || `${market.collateralTokenSymbol.toLowerCase()}:${market.loanTokenSymbol.toLowerCase()}:3000`)
-    setPositionHistory(history)
-  }, [market])
+
 
   const hasPosition = positionData && (
     parseFloat(positionData.collateral) > 0 || 
@@ -111,7 +106,7 @@ export function MyPosition({
       </div>
 
       {/* Position History Chart with Tabs */}
-      <PositionChartTabs positionHistory={positionHistory} cardStyles={cardStyles} />
+      <PositionChartTabs caller={caller} market={market} marketId={market.poolPath || ''} cardStyles={cardStyles} />
     </div>
   )
 } 
