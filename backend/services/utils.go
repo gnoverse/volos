@@ -20,6 +20,15 @@ type TransactionData struct {
 	BlockHeight int64
 }
 
+type MarketActivity struct {
+	Type             string  `json:"type"`
+	Amount           float64 `json:"amount"`
+	Caller           string  `json:"caller"`
+	Hash             string  `json:"hash"`
+	Timestamp        string  `json:"timestamp"`
+	IsAmountInShares bool    `json:"isAmountInShares"`
+}
+
 // Helper to process events from transactions and collect unique block heights used in total_borrow_service, total_supply_service, total_utilization_service
 func ParseEvents(transactions []map[string]interface{}, sign float64) []TransactionData {
 	defer func() {

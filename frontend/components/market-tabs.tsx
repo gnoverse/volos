@@ -1,13 +1,13 @@
 "use client"
 
+import { getMarketActivity } from '@/app/services/api.service'
 import { MarketInfo, Position } from "@/app/types"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DataTable } from "./ui/data-table"
+import { useQuery } from '@tanstack/react-query'
 import { activityColumns } from "./activity-columns"
-import { useQuery } from '@tanstack/react-query';
-import { getMarketActivity } from '@/app/services/api.service';
+import { DataTable } from "./ui/data-table"
 
 interface MarketTabsProps {
   market: MarketInfo;
@@ -81,7 +81,7 @@ export function MarketTabs({
       </TabsContent>
 
       <TabsContent value="activity" className="mt-0">
-        <DataTable columns={activityColumns} data={marketActivity} className="w-full h-full mt-0" />
+        <DataTable columns={activityColumns} data={Array.isArray(marketActivity) ? marketActivity : []} className="w-full h-full mt-0" />
       </TabsContent>
     </Tabs>
   )

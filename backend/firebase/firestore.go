@@ -12,6 +12,8 @@ import (
 	update "volos-backend/firebase/update_db"
 	"volos-backend/services"
 
+	"encoding/json"
+
 	"cloud.google.com/go/firestore"
 )
 
@@ -48,10 +50,10 @@ func fillMarketSubcollections(ctx context.Context, client *firestore.Client, mar
 	if err := fillSubcollection(ctx, client, safeMarketId, "apr", update.GetAPRHistory, marketId, nil); err != nil {
 		return err
 	}
-	if err := fillSubcollection(ctx, client, safeMarketId, "total_utilization", update.GetUtilizationHistory, marketId, nil); err != nil {
+	if err := fillMarketActivitySubcollection(ctx, client, safeMarketId, marketId, update.GetMarketActivity, nil); err != nil {
 		return err
 	}
-	if err := fillMarketActivitySubcollection(ctx, client, safeMarketId, marketId, update.GetMarketActivity, nil); err != nil {
+	if err := fillSubcollection(ctx, client, safeMarketId, "total_utilization", update.GetUtilizationHistory, marketId, nil); err != nil {
 		return err
 	}
 	return nil
@@ -82,7 +84,8 @@ func fillSubcollection(ctx context.Context, client *firestore.Client, marketId, 
 	}
 
 	for _, item := range data {
-		_, err := subcollection.Doc(item.Timestamp).Set(ctx, item)
+		m := structToLowercaseMap(item)
+		_, err := subcollection.Doc(item.Timestamp).Set(ctx, m)
 		if err != nil {
 			return err
 		}
@@ -92,7 +95,7 @@ func fillSubcollection(ctx context.Context, client *firestore.Client, marketId, 
 	return nil
 }
 
-type marketActivityFetcher func(string, *int) ([]update.MarketActivity, error)
+type marketActivityFetcher func(string, *int) ([]services.MarketActivity, error)
 
 func fillMarketActivitySubcollection(ctx context.Context, client *firestore.Client, safeMarketId string, marketId string, fetcher marketActivityFetcher, minBlockHeight *int) error {
 	data, err := fetcher(marketId, minBlockHeight)
@@ -118,7 +121,8 @@ func fillMarketActivitySubcollection(ctx context.Context, client *firestore.Clie
 
 	for _, item := range data {
 		safeHash := strings.ReplaceAll(item.Hash, "/", "~")
-		_, err := subcollection.Doc(safeHash).Set(ctx, item)
+		m := structToLowercaseMap(item)
+		_, err := subcollection.Doc(safeHash).Set(ctx, m)
 		if err != nil {
 			return err
 		}
@@ -126,4 +130,16 @@ func fillMarketActivitySubcollection(ctx context.Context, client *firestore.Clie
 
 	log.Printf("Filled markets/%s/market_activity subcollection with %d documents", safeMarketId, len(data))
 	return nil
+}
+
+// Helper to convert struct to map with lower-cased keys
+func structToLowercaseMap(v interface{}) map[string]interface{} {
+	b, _ := json.Marshal(v)
+	var m map[string]interface{}
+	json.Unmarshal(b, &m)
+	lower := make(map[string]interface{})
+	for k, v := range m {
+		lower[strings.ToLower(k)] = v
+	}
+	return lower
 }
