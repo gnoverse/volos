@@ -9,7 +9,7 @@ import (
 func GetAllMarketIDs() ([]string, error) {
 	qb := indexer.NewQueryBuilder("getEvents", indexer.CreateMarketFields)
 	qb.Where().Success(true).
-		PkgPath("gno.land/r/gnolend").
+		PkgPath(VolosPkgPath).
 		EventType("CreateMarket")
 
 	resp, err := qb.Execute()

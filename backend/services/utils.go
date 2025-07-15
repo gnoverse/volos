@@ -108,3 +108,48 @@ func FetchBlockTimestamps(heights []int64) (map[int64]string, error) {
 	}
 	return heightToTime, nil
 }
+
+// FetchBlockHeightForTimestamp queries the indexer for the block with the given timestamp.
+func FetchBlockHeightsForTimestamps(timestamps []string) (map[string]int64, error) {
+	if len(timestamps) == 0 {
+		return map[string]int64{}, nil
+	}
+	var orClauses []string
+	for _, t := range timestamps {
+		orClauses = append(orClauses, fmt.Sprintf("{ time: { eq: \"%s\" } }", t))
+	}
+	blockQuery := fmt.Sprintf(`
+		query getBlocksByTimestamps {
+			getBlocks(
+				where: {
+					_or: [
+						%s
+					]
+				}
+			) {
+				height
+				time
+			}
+		}
+	`, strings.Join(orClauses, "\n"))
+
+	resp, err := indexer.FetchIndexerData(blockQuery, "getBlocksByTimestamps")
+	if err != nil {
+		return nil, err
+	}
+
+	var data struct {
+		Data struct {
+			GetBlocks []struct {
+				Height float64 `json:"height"`
+				Time   string  `json:"time"`
+			} `json:"getBlocks"`
+		} `json:"data"`
+	}
+	json.Unmarshal(resp, &data)
+	timeToHeight := make(map[string]int64)
+	for _, b := range data.Data.GetBlocks {
+		timeToHeight[b.Time] = int64(b.Height)
+	}
+	return timeToHeight, nil
+}

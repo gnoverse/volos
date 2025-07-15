@@ -1,4 +1,4 @@
-package fetch
+package update
 
 import (
 	"encoding/json"
