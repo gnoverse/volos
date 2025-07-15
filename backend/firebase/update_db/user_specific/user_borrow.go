@@ -10,34 +10,34 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-// GetOrUpdateUserCollateralHistory retrieves a user's collateral history for a market
+// GetOrUpdateUserBorrowHistory retrieves a user's borrow history for a market
 // from Firestore, updating it with new events from the indexer if needed.
 //
 // If cached data exists, only new events since the last block are fetched and appended,
 // updating the running total and metadata. If not, all events are fetched and stored.
 //
-// Returns the full, cumulative collateral history sorted by timestamp.
-func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, marketId string) ([]services.Data, error) {
+// Returns the full, cumulative borrow history sorted by timestamp.
+func GetOrUpdateUserBorrowHistory(client *firestore.Client, caller string, marketId string) ([]services.Data, error) {
 	ctx := context.Background()
 	userDoc := client.Collection("users").Doc(caller)
-	collateralHistoryCol := userDoc.Collection("collateral_history")
-	metadataDoc := collateralHistoryCol.Doc("metadata")
+	borrowHistoryCol := userDoc.Collection("borrow_history")
+	metadataDoc := borrowHistoryCol.Doc("metadata")
 	metaDoc, err := metadataDoc.Get(ctx)
 
 	var latestBlockHeight int
-	var latestCollateralValue float64
+	var latestBorrowValue float64
 	if err == nil {
 		if bh, ok := metaDoc.Data()["block_height"].(int64); ok {
 			latestBlockHeight = int(bh)
 		} else if bhf, ok := metaDoc.Data()["block_height"].(float64); ok {
 			latestBlockHeight = int(bhf)
 		}
-		if lv, ok := metaDoc.Data()["latest_collateral_value"].(float64); ok {
-			latestCollateralValue = lv
+		if lv, ok := metaDoc.Data()["latest_borrow_value"].(float64); ok {
+			latestBorrowValue = lv
 		}
 	}
 
-	docs, err := collateralHistoryCol.Documents(ctx).GetAll()
+	docs, err := borrowHistoryCol.Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
 	}
@@ -60,45 +60,45 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 		minBlockHeight = &next
 	}
 
-	supplyQB := indexer.NewQueryBuilder("getSupplyCollateralEvents", indexer.SupplyBorrowFields)
-	whereSupply := supplyQB.Where().Success(true).EventType("SupplyCollateral").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
+	borrowQB := indexer.NewQueryBuilder("getBorrowEventsByCaller", indexer.SupplyBorrowFields)
+	whereBorrow := borrowQB.Where().Success(true).EventType("Borrow").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
 	if minBlockHeight != nil {
-		whereSupply.BlockHeightRange(minBlockHeight, nil)
+		whereBorrow.BlockHeightRange(minBlockHeight, nil)
 	}
 
-	supplyResp, err := supplyQB.Execute()
+	borrowResp, err := borrowQB.Execute()
 	if err != nil {
 		return nil, err
 	}
 
-	var supplyData struct {
+	var borrowData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
 		} `json:"data"`
 	}
-	json.Unmarshal(supplyResp, &supplyData)
+	json.Unmarshal(borrowResp, &borrowData)
 
-	withdrawQB := indexer.NewQueryBuilder("getWithdrawCollateralEvents", indexer.SupplyBorrowFields)
-	whereWithdraw := withdrawQB.Where().Success(true).EventType("WithdrawCollateral").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
+	repayQB := indexer.NewQueryBuilder("getRepayEventsByCaller", indexer.SupplyBorrowFields)
+	whereRepay := repayQB.Where().Success(true).EventType("Repay").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
 	if minBlockHeight != nil {
-		whereWithdraw.BlockHeightRange(minBlockHeight, nil)
+		whereRepay.BlockHeightRange(minBlockHeight, nil)
 	}
 
-	withdrawResp, err := withdrawQB.Execute()
+	repayResp, err := repayQB.Execute()
 	if err != nil {
 		return nil, err
 	}
 
-	var withdrawData struct {
+	var repayData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
 		} `json:"data"`
 	}
-	json.Unmarshal(withdrawResp, &withdrawData)
+	json.Unmarshal(repayResp, &repayData)
 
-	supplyEvents := services.ParseEvents(supplyData.Data.GetTransactions, 1)
-	withdrawEvents := services.ParseEvents(withdrawData.Data.GetTransactions, -1)
-	allEvents := append(supplyEvents, withdrawEvents...)
+	borrowEvents := services.ParseEvents(borrowData.Data.GetTransactions, 1)
+	repayEvents := services.ParseEvents(repayData.Data.GetTransactions, -1)
+	allEvents := append(borrowEvents, repayEvents...)
 
 	var heights []int64
 	for _, ev := range allEvents {
@@ -108,7 +108,7 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 	heightToTime, _ := services.FetchBlockTimestamps(heights)
 	bulkWriter := client.BulkWriter(ctx)
 	maxBlock := latestBlockHeight
-	runningTotal := latestCollateralValue
+	runningTotal := latestBorrowValue
 
 	var newEvents []services.Data
 	for _, ev := range allEvents {
@@ -124,7 +124,7 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 		}
 
 		newEvents = append(newEvents, newEvent)
-		_, _ = bulkWriter.Create(collateralHistoryCol.Doc(timestamp), newEvent)
+		_, _ = bulkWriter.Create(borrowHistoryCol.Doc(timestamp), newEvent)
 		if int(ev.BlockHeight) > maxBlock {
 			maxBlock = int(ev.BlockHeight)
 		}
@@ -132,8 +132,8 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 
 	if len(newEvents) > 0 && maxBlock > latestBlockHeight {
 		_, _ = bulkWriter.Set(metadataDoc, map[string]interface{}{
-			"block_height":            maxBlock,
-			"latest_collateral_value": runningTotal,
+			"block_height":        maxBlock,
+			"latest_borrow_value": runningTotal,
 		})
 	}
 
@@ -146,52 +146,52 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 	return combined, nil
 }
 
-// GetUserCollateralHistory fetches all SupplyCollateral and WithdrawCollateral events for a given caller and marketId
-// from the indexer and returns the running total collateral supplied over time with real block timestamps.
+// GetUserBorrowHistory fetches all Borrow and Repay events for a given caller and marketId
+// from the indexer and returns the running total borrowed over time with real block timestamps.
 //
 // This function always fetches all relevant events from the indexer (optionally after a given minBlockHeight),
-// parses them, and computes the running total by summing supply and subtracting withdraw events.
-// The result is a slice of Data, each entry containing the user's total collateral at a given block timestamp.
-func GetUserCollateralHistory(caller string, marketId string, minBlockHeight *int) ([]services.Data, error) {
-	supplyQB := indexer.NewQueryBuilder("getSupplyCollateralEvents", indexer.SupplyBorrowFields)
-	whereSupply := supplyQB.Where().Success(true).EventType("SupplyCollateral").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
+// parses them, and computes the running total by summing borrow and subtracting repay events.
+// The result is a slice of Data, each entry containing the user's total borrowed at a given block timestamp.
+func GetUserBorrowHistory(caller string, marketId string, minBlockHeight *int) ([]services.Data, error) {
+	borrowQB := indexer.NewQueryBuilder("getBorrowEventsByCaller", indexer.SupplyBorrowFields)
+	whereBorrow := borrowQB.Where().Success(true).EventType("Borrow").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
 	if minBlockHeight != nil {
-		whereSupply.BlockHeightRange(minBlockHeight, nil)
+		whereBorrow.BlockHeightRange(minBlockHeight, nil)
 	}
 
-	supplyResp, err := supplyQB.Execute()
+	borrowResp, err := borrowQB.Execute()
 	if err != nil {
 		return nil, err
 	}
 
-	var supplyData struct {
+	var borrowData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
 		} `json:"data"`
 	}
-	json.Unmarshal(supplyResp, &supplyData)
+	json.Unmarshal(borrowResp, &borrowData)
 
-	withdrawQB := indexer.NewQueryBuilder("getWithdrawCollateralEvents", indexer.SupplyBorrowFields)
-	whereWithdraw := withdrawQB.Where().Success(true).EventType("WithdrawCollateral").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
+	repayQB := indexer.NewQueryBuilder("getRepayEventsByCaller", indexer.SupplyBorrowFields)
+	whereRepay := repayQB.Where().Success(true).EventType("Repay").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
 	if minBlockHeight != nil {
-		whereWithdraw.BlockHeightRange(minBlockHeight, nil)
+		whereRepay.BlockHeightRange(minBlockHeight, nil)
 	}
 
-	withdrawResp, err := withdrawQB.Execute()
+	repayResp, err := repayQB.Execute()
 	if err != nil {
 		return nil, err
 	}
 
-	var withdrawData struct {
+	var repayData struct {
 		Data struct {
 			GetTransactions []map[string]interface{} `json:"getTransactions"`
 		} `json:"data"`
 	}
-	json.Unmarshal(withdrawResp, &withdrawData)
+	json.Unmarshal(repayResp, &repayData)
 
-	supplyEvents := services.ParseEvents(supplyData.Data.GetTransactions, 1)
-	withdrawEvents := services.ParseEvents(withdrawData.Data.GetTransactions, -1)
-	events := append(supplyEvents, withdrawEvents...)
+	borrowEvents := services.ParseEvents(borrowData.Data.GetTransactions, 1)
+	repayEvents := services.ParseEvents(repayData.Data.GetTransactions, -1)
+	events := append(borrowEvents, repayEvents...)
 	var heights []int64
 	for _, ev := range events {
 		heights = append(heights, ev.BlockHeight)

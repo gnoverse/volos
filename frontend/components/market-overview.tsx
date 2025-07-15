@@ -48,59 +48,81 @@ export function MarketOverview({
     return <div>Loading chart data...</div>;
   }
 
-  const supplyHistory = netSupplyHistory.map(item => ({
+  // these may be undefined ? covers those cases
+  const supplyHistory = netSupplyHistory?.map(item => ({
     ...item,
     value: item.value / Math.pow(10, market.loanTokenDecimals)
   }));
-  const borrowHistory = netBorrowHistory.map(item => ({
+  const borrowHistory = netBorrowHistory?.map(item => ({
     ...item,
     value: item.value / Math.pow(10, market.loanTokenDecimals)
   }));
-  const utilizationHistoryMapped = utilizationHistory.map(item => ({
+  const utilizationHistoryMapped = utilizationHistory?.map(item => ({
     ...item,
     value: item.value / 100
   }));
-  const aprHistoryMapped = aprHistory.map(item => ({
+  const aprHistoryMapped = aprHistory?.map(item => ({
     value: item.value,
     timestamp: item.timestamp
   }));
+
+  const noMarketInfo = !supplyHistory && !borrowHistory && !utilizationHistoryMapped && !aprHistoryMapped;
+
+  if (noMarketInfo) {
+    return (
+      <div className="min-h-[300px] flex flex-col items-center justify-center text-gray-400 p-8">
+        <div className="text-2xl mb-4">No Market Info Available</div>
+        <p className="text-center max-w-md">
+          There is no historical data available for this market at the moment.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6">
-        <Chart
-          data={supplyHistory}
-          title="Total Supply"
-          description="Total assets supplied to the market"
-          dataKey="value"
-          color="rgba(34, 197, 94, 0.95)"
-          className={cardStyles}
-        />
-        <Chart
-          data={borrowHistory}
-          title="Net Borrow"
-          description="Net borrow (borrow - repay) over time"
-          dataKey="value"
-          color="rgba(239, 68, 68, 0.95)"
-          className={cardStyles}
-        />
-        <Chart
-          data={utilizationHistoryMapped}
-          title="Utilization Rate"
-          description="Percentage of supplied assets being borrowed"
-          dataKey="value"
-          color="rgba(99, 102, 241, 0.95)"
-          className={cardStyles}
-        />
-        <Chart
-          data={aprHistoryMapped}
-          title="APR"
-          description="Annual Percentage Rate"
-          dataKey="value"
-          color="rgba(245, 158, 11, 0.95)"
-          className={cardStyles}
-        />
+        {supplyHistory && (
+          <Chart
+            data={supplyHistory}
+            title="Total Supply"
+            description="Total assets supplied to the market"
+            dataKey="value"
+            color="rgba(34, 197, 94, 0.95)"
+            className={cardStyles}
+          />
+        )}
+        {borrowHistory && (
+          <Chart
+            data={borrowHistory}
+            title="Net Borrow"
+            description="Net borrow (borrow - repay) over time"
+            dataKey="value"
+            color="rgba(239, 68, 68, 0.95)"
+            className={cardStyles}
+          />
+        )}
+        {utilizationHistoryMapped && (
+          <Chart
+            data={utilizationHistoryMapped}
+            title="Utilization Rate"
+            description="Percentage of supplied assets being borrowed"
+            dataKey="value"
+            color="rgba(99, 102, 241, 0.95)"
+            className={cardStyles}
+          />
+        )}
+        {aprHistoryMapped && (
+          <Chart
+            data={aprHistoryMapped}
+            title="APR"
+            description="Annual Percentage Rate"
+            dataKey="value"
+            color="rgba(245, 158, 11, 0.95)"
+            className={cardStyles}
+          />
+        )}
       </div>
 
       {/* Performance Section */}
