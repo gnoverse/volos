@@ -65,10 +65,6 @@ function MarketPageContent() {
     refetchHealthFactor();
   };
 
-  if (!marketInfo) {
-    return <div className="flex justify-center items-center h-64">Loading market data...</div>
-  }
-
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
       {/* Refetch button in top right corner */}
@@ -77,52 +73,67 @@ function MarketPageContent() {
         className="absolute top-0 right-0 mt-2 mr-2 p-3 bg-gray-700/60 rounded-lg hover:bg-gray-600/80 transition-colors flex items-center gap-2 z-10"
         title="Refetch data"
         variant="outline"
+        disabled={!marketInfo}
       >
         <RefreshCw size={20} className="text-gray-200" />
         <span className="text-sm text-gray-200 font-medium">Refetch Data</span>
       </Button>
 
       <h1 className="text-[36px] font-bold mb-6 text-gray-200">
-        {marketInfo.loanTokenSymbol} / {marketInfo.collateralTokenSymbol.toUpperCase()} Market
+        {marketInfo
+          ? `${marketInfo.loanTokenSymbol} / ${marketInfo.collateralTokenSymbol.toUpperCase()} Market`
+          : <span className="animate-pulse bg-gray-700 rounded-xl w-96 h-15 inline-block mt-4" />}
       </h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 relative">
         {/* Left side - market information */}
         <div className="col-span-1 lg:col-span-9 space-y-6">
           {/* Market info cards */}
-          <MarketDashboard 
-            market={marketInfo}
-            cardStyles={CARD_STYLES}
-          />
+          {marketInfo ? (
+            <MarketDashboard 
+              market={marketInfo}
+              cardStyles={CARD_STYLES}
+            />
+          ) : (
+            <div className="h-40 bg-gray-700/60 rounded-3xl animate-pulse" />
+          )}
 
           {/* Tabbed content */}
-          <MarketTabs 
-            market={marketInfo} 
-            apyVariations={apyVariations} 
-            cardStyles={CARD_STYLES}
-            healthFactor={healthFactorData?.healthFactor ?? "0"}
-            currentCollateral={currentCollateral}
-            currentLoan={currentLoan}
-            positionData={positionData}
-            caller={userAddress}
-          />
+          {marketInfo ? (
+            <MarketTabs 
+              market={marketInfo} 
+              apyVariations={apyVariations} 
+              cardStyles={CARD_STYLES}
+              healthFactor={healthFactorData?.healthFactor ?? "0"}
+              currentCollateral={currentCollateral}
+              currentLoan={currentLoan}
+              positionData={positionData}
+              caller={userAddress}
+            />
+          ) : (
+            <div className="h-128 bg-gray-700/60 rounded-3xl animate-pulse" />
+          )}
         </div>
 
         {/* Right side - tabbed interface */}
-        <SidePanel
-          tab={tab}
-          setTabAction={setTab}
-          market={marketInfo}
-          supplyValue={100}
-          borrowValue={100}
-          healthFactor={healthFactorData?.healthFactor ?? "0"}
-          currentCollateral={currentCollateral}
-          currentLoan={currentLoan}
-          ltv={marketInfo.lltv}
-          collateralTokenDecimals={marketInfo.collateralTokenDecimals}
-          loanTokenDecimals={marketInfo.loanTokenDecimals}
-          positionData={positionData}
-        />
+        {marketInfo ? (
+          <SidePanel
+            tab={tab}
+            setTabAction={setTab}
+            market={marketInfo}
+            supplyValue={100}
+            borrowValue={100}
+            healthFactor={healthFactorData?.healthFactor ?? "0"}
+            currentCollateral={currentCollateral}
+            currentLoan={currentLoan}
+            ltv={marketInfo.lltv}
+            collateralTokenDecimals={marketInfo.collateralTokenDecimals}
+            loanTokenDecimals={marketInfo.loanTokenDecimals}
+            positionData={positionData}
+          />
+        ) : (
+          <div className="lg:col-span-3 h-174 bg-gray-700/60 rounded-3xl animate-pulse" />
+        )}
       </div>
     </div>
   )
