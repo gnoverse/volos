@@ -1,13 +1,11 @@
-import { apiGetHealthFactor, apiGetLoanAmount, apiGetMarketInfo, apiGetPosition, apiGetUserLoans, apiListMarketsInfo } from "@/app/services/abci";
+import { apiGetHealthFactor, apiGetMarketInfo, apiGetPosition, apiListMarketsInfo } from "@/app/services/abci";
 import { TxService } from "@/app/services/tx.service";
-import { HealthFactor, LoanAmount, MarketInfo, Position, UserLoans } from "@/app/types";
+import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
 export const marketHistoryQueryKey = (marketId: string) => ["marketHistory", marketId];
-export const loanAmountQueryKey = (marketId: string, user: string) => ["loanAmount", marketId, user];
-export const userLoansQueryKey = (user: string) => ["userLoans", user];
 export const healthFactorQueryKey = (marketId: string, user: string) => ["healthFactor", marketId, user];
 export const positionQueryKey = (marketId: string, user: string) => ["position", marketId, user];
 
@@ -41,26 +39,6 @@ export function useMarketQuery(marketId: string) {
       return marketInfo;
     },
     enabled: !!marketId,
-  });
-}
-
-export function useLoanAmountQuery(marketId: string, user: string) {
-  return useQuery({
-    queryKey: loanAmountQueryKey(marketId, user),
-    queryFn: async (): Promise<LoanAmount> => {
-      return apiGetLoanAmount(marketId, user);
-    },
-    enabled: !!marketId && !!user,
-  });
-}
-
-export function useUserLoansQuery(user: string) {
-  return useQuery({
-    queryKey: userLoansQueryKey(user),
-    queryFn: async (): Promise<UserLoans> => {
-      return apiGetUserLoans(user);
-    },
-    enabled: !!user,
   });
 }
 

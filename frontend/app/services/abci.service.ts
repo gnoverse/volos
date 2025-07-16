@@ -103,7 +103,7 @@ export class GnoService {
       const result = await this.provider.evaluateExpression(packagePath, expression)
       return result
     } catch (error) {
-      console.error('Error evaluating expression:', error)
+      console.error('Error evaluating expression:', error, packagePath, expression)
       throw error
     }
   }
