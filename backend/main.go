@@ -8,7 +8,7 @@ import (
 	"volos-backend/firebase"
 	"volos-backend/routes"
 	"volos-backend/services"
-	//"time"
+	"time"
 	"cloud.google.com/go/firestore"
 
 	// Firestore
@@ -16,19 +16,6 @@ import (
 )
 
 var FirestoreClient *firestore.Client
-
-func withCORS(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		handler(w, r)
-	}
-}
 
 func init() {
 	ctx := context.Background()
@@ -40,14 +27,14 @@ func init() {
 	}
 	FirestoreClient = client
 
+	// Initialize the Firestore database with the initial data
 	if err := firebase.UpdateFirestoreData(FirestoreClient, services.BlockHeightOnDeploy, true); err != nil {
 		log.Printf("Warning: Failed to initialize Firestore data: %v", err)
 	}
 
 	// Start the Firestore updater in a background thread (after initial fill)
-	// Currently the updater is bringing new data to the database but it's calculating as the state is reset
-	//updater := firebase.NewUpdater(FirestoreClient)
-	//updater.Start(time.Second)
+	updater := firebase.NewUpdater(FirestoreClient)
+	updater.Start(time.Second)
 }
 
 func main() {
@@ -62,4 +49,17 @@ func main() {
 
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
+}
+
+func withCORS(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		handler(w, r)
+	}
 }

@@ -8,8 +8,8 @@ import (
 
 // GetUtilizationHistory fetches all supply, withdraw, borrow, and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running utilization rate over time with real block timestamps.
-// Optionally, you can provide minBlockHeight to only fetch events after a certain block.
-func GetUtilizationHistory(marketId string, minBlockHeight *int) ([]services.Data, error) {
+// Optionally, you can provide minBlockHeight to only fetch events after a certain block, and startingValue to continue the running supply.
+func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue float64) ([]services.Data, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
 	whereSupply := supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(services.VolosPkgPath)
 	if minBlockHeight != nil {
@@ -128,6 +128,7 @@ func GetUtilizationHistory(marketId string, minBlockHeight *int) ([]services.Dat
 
 	var result []services.Data
 	var runningSupply, runningBorrow float64
+	runningSupply = startingValue
 	sortedHeights := heights
 	for i := 0; i < len(sortedHeights)-1; i++ {
 		for j := i + 1; j < len(sortedHeights); j++ {

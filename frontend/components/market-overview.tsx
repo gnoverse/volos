@@ -84,44 +84,44 @@ export function MarketOverview({
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6">
         {supplyHistory && (
-          <Chart
-            data={supplyHistory}
-            title="Total Supply"
-            description="Total assets supplied to the market"
-            dataKey="value"
-            color="rgba(34, 197, 94, 0.95)"
-            className={cardStyles}
-          />
+        <Chart
+          data={supplyHistory}
+          title="Total Supply"
+          description="Total assets supplied to the market"
+          dataKey="value"
+          color="rgba(34, 197, 94, 0.95)"
+          className={cardStyles}
+        />
         )}
         {borrowHistory && (
-          <Chart
-            data={borrowHistory}
-            title="Net Borrow"
-            description="Net borrow (borrow - repay) over time"
-            dataKey="value"
-            color="rgba(239, 68, 68, 0.95)"
-            className={cardStyles}
-          />
+        <Chart
+          data={borrowHistory}
+          title="Net Borrow"
+          description="Net borrow (borrow - repay) over time"
+          dataKey="value"
+          color="rgba(239, 68, 68, 0.95)"
+          className={cardStyles}
+        />
         )}
         {utilizationHistoryMapped && (
-          <Chart
-            data={utilizationHistoryMapped}
-            title="Utilization Rate"
-            description="Percentage of supplied assets being borrowed"
-            dataKey="value"
-            color="rgba(99, 102, 241, 0.95)"
-            className={cardStyles}
-          />
+        <Chart
+          data={utilizationHistoryMapped}
+          title="Utilization Rate"
+          description="Percentage of supplied assets being borrowed"
+          dataKey="value"
+          color="rgba(99, 102, 241, 0.95)"
+          className={cardStyles}
+        />
         )}
         {aprHistoryMapped && (
-          <Chart
-            data={aprHistoryMapped}
-            title="APR"
-            description="Annual Percentage Rate"
-            dataKey="value"
-            color="rgba(245, 158, 11, 0.95)"
-            className={cardStyles}
-          />
+        <Chart
+          data={aprHistoryMapped}
+          title="APR"
+          description="Annual Percentage Rate"
+          dataKey="value"
+          color="rgba(245, 158, 11, 0.95)"
+          className={cardStyles}
+        />
         )}
       </div>
 

@@ -8,8 +8,8 @@ import (
 
 // GetTotalBorrowHistory fetches all borrow and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running total borrow over time with real block timestamps.
-// Optionally, you can provide minBlockHeight to only fetch events after a certain block.
-func GetTotalBorrowHistory(marketId string, minBlockHeight *int) ([]services.Data, error) {
+// Optionally, you can provide minBlockHeight to only fetch events after a certain block, and startingValue to continue the running total.
+func GetTotalBorrowHistory(marketId string, minBlockHeight *int, startingValue float64) ([]services.Data, error) {
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEvents", indexer.SupplyBorrowFields)
 	whereBorrows := borrowsQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(services.VolosPkgPath)
 	if minBlockHeight != nil {
@@ -57,7 +57,7 @@ func GetTotalBorrowHistory(marketId string, minBlockHeight *int) ([]services.Dat
 	}
 
 	var result []services.Data
-	runningTotal := 0.0
+	runningTotal := startingValue
 	for _, ev := range events {
 		runningTotal += ev.Value
 		result = append(result, services.Data{

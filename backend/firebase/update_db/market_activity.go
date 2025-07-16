@@ -8,8 +8,8 @@ import (
 )
 
 // GetMarketActivity fetches all activity transactions for a given marketId from the indexer.
-// Optionally, you can provide minBlockHeight to only fetch events after a certain block.
-func GetMarketActivity(marketId string, minBlockHeight *int) ([]services.MarketActivity, error) {
+// Optionally, you can provide minBlockHeight to only fetch events after a certain block, and startingValue to continue the running total.
+func GetMarketActivity(marketId string, minBlockHeight *int, startingValue float64) ([]services.MarketActivity, error) {
 	qb := indexer.NewQueryBuilder("getMarketActivity", indexer.MarketActivityFields)
 	where := qb.Where().MarketId(marketId).PkgPath(services.VolosPkgPath)
 	if minBlockHeight != nil {

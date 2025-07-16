@@ -44,7 +44,7 @@ export async function getAPRHistory(marketId: string): Promise<ChartData[]> {
 export async function getUserLoanHistory(caller: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/user-loans`, { params: { caller } });
   return res.data;
-}
+} 
 
 export async function getUserCollateralHistory(caller: string, marketId: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/user-collateral`, { params: { caller, marketId } });

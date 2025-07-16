@@ -17,7 +17,7 @@ import (
 //   - The borrow rate from events is per-second and WAD-scaled (1e18)
 //   - APR = borrow_rate * seconds_per_year / WAD
 //   - seconds_per_year = 365 * 24 * 60 * 60 = 31,536,000
-func GetAPRHistory(marketId string, minBlockHeight *int) ([]services.Data, error) {
+func GetAPRHistory(marketId string, minBlockHeight *int, startingValue float64) ([]services.Data, error) {
 	qb := indexer.NewQueryBuilder("getAPREvents", indexer.SupplyBorrowFields)
 	where := qb.Where().Success(true).EventType("AccrueInterest").MarketId(marketId).PkgPath(services.VolosPkgPath)
 	if minBlockHeight != nil {
