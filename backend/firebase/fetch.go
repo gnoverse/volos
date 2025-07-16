@@ -11,6 +11,7 @@ import (
 )
 
 // FetchMarketData retrieves data from Firestore for a given marketId and path
+// It's used to fetch data from Firestore for the frontend.
 func FetchMarketData(client *firestore.Client, marketId, path string) (string, error) {
 	ctx := context.Background()
 	safeMarketId := strings.ReplaceAll(marketId, "/", "_")
