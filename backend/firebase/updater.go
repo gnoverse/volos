@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"volos-backend/services"
+	"volos-backend/model"
 
 	"cloud.google.com/go/firestore"
 )
@@ -37,7 +37,7 @@ type Updater struct {
 func NewUpdater(client *firestore.Client) *Updater {
 	return &Updater{
 		FirestoreClient:   client,
-		LatestBlockHeight: services.BlockHeightOnDeploy,
+		LatestBlockHeight: model.BlockHeightOnDeploy,
 		JobQueue:          make(chan BlockRange, 100), // buffered channel for jobs
 		NumWorkers:        2,                          // default, can be changed
 		MaxChunkSize:      100,                        // default, can be changed
@@ -71,7 +71,7 @@ func (u *Updater) worker() {
 
 // checkAndEnqueue queries the node for the latest block height and enqueues jobs as needed.
 func (u *Updater) checkAndEnqueue() {
-	resp, err := http.Get(services.Rpc + "/abci_info")
+	resp, err := http.Get(model.Rpc + "/abci_info")
 	if err != nil {
 		log.Printf("Error querying abci_info: %v", err)
 		return

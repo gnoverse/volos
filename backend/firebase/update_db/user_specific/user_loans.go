@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"volos-backend/indexer"
+	"volos-backend/model"
 	"volos-backend/services"
 
 	"cloud.google.com/go/firestore"
@@ -19,7 +20,7 @@ import (
 // parses each event to determine its type (Borrow/Repay) and amount, and updates the running total starting from the last known value.
 // Each new event is stored in Firestore, and the metadata is updated with the new latest block height and running total.
 // The function always returns the full loan history (existing + new), sorted by timestamp, with each entry representing the user's total loan value in fiat at that point in time.
-func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]services.Data, error) {
+func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]model.Data, error) {
 	ctx := context.Background()
 	userDoc := client.Collection("users").Doc(caller)
 	loanHistoryCol := userDoc.Collection("loan_history")
@@ -43,12 +44,12 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 	if err != nil {
 		return nil, err
 	}
-	var existing []services.Data
+	var existing []model.Data
 	for _, doc := range docs {
 		if doc.Ref.ID == "metadata" {
 			continue
 		}
-		var d services.Data
+		var d model.Data
 		m := doc.Data()
 		b, _ := json.Marshal(m)
 		json.Unmarshal(b, &d)
@@ -62,7 +63,7 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 	}
 
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEventsByCaller", indexer.SupplyBorrowFields)
-	whereBorrows := borrowsQB.Where().Success(true).EventType("Borrow").Caller(caller).PkgPath(services.VolosPkgPath)
+	whereBorrows := borrowsQB.Where().Success(true).EventType("Borrow").Caller(caller).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereBorrows.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -78,7 +79,7 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 	json.Unmarshal(borrowsResp, &borrowsData)
 
 	repaysQB := indexer.NewQueryBuilder("getRepayEventsByCaller", indexer.SupplyBorrowFields)
-	whereRepays := repaysQB.Where().Success(true).EventType("Repay").Caller(caller).PkgPath(services.VolosPkgPath)
+	whereRepays := repaysQB.Where().Success(true).EventType("Repay").Caller(caller).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereRepays.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -97,7 +98,7 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 	repayEvents := parseUserEvents(repaysData.Data.GetTransactions, -1)
 	allEvents := append(borrowEvents, repayEvents...)
 
-	var newEvents []services.Data
+	var newEvents []model.Data
 	runningTotal := latestLoanValue
 	maxBlock := latestBlockHeight
 	bulkWriter := client.BulkWriter(ctx)
@@ -113,7 +114,7 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 		}
 		fiatDelta := ev.Value * services.GetTokenPrice(ev.MarketId)
 		runningTotal += fiatDelta
-		newEvent := services.Data{
+		newEvent := model.Data{
 			Value:     runningTotal,
 			Timestamp: timestamp,
 		}
@@ -144,9 +145,9 @@ func GetOrUpdateUserLoanHistory(client *firestore.Client, caller string) ([]serv
 // This function queries the indexer directly (bypassing Firestore cache),
 // parses all Borrow and Repay events for the user, and computes the running total loan value in fiat using token prices.
 // The result is a slice of Data, each entry containing the user's total loan value in fiat at a given block timestamp.
-func GetUserLoanHistory(caller string, minBlockHeight *int) ([]services.Data, error) {
+func GetUserLoanHistory(caller string, minBlockHeight *int) ([]model.Data, error) {
 	borrowsQB := indexer.NewQueryBuilder("getBorrowEventsByCaller", indexer.SupplyBorrowFields)
-	whereBorrows := borrowsQB.Where().Success(true).EventType("Borrow").Caller(caller).PkgPath(services.VolosPkgPath)
+	whereBorrows := borrowsQB.Where().Success(true).EventType("Borrow").Caller(caller).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereBorrows.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -162,7 +163,7 @@ func GetUserLoanHistory(caller string, minBlockHeight *int) ([]services.Data, er
 	json.Unmarshal(borrowsResp, &borrowsData)
 
 	repaysQB := indexer.NewQueryBuilder("getRepayEventsByCaller", indexer.SupplyBorrowFields)
-	whereRepays := repaysQB.Where().Success(true).EventType("Repay").Caller(caller).PkgPath(services.VolosPkgPath)
+	whereRepays := repaysQB.Where().Success(true).EventType("Repay").Caller(caller).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereRepays.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -192,7 +193,7 @@ func GetUserLoanHistory(caller string, minBlockHeight *int) ([]services.Data, er
 	}
 
 	runningTotals := make(map[string]float64)
-	var result []services.Data
+	var result []model.Data
 
 	for _, ev := range allEvents {
 		runningTotals[ev.MarketId] += ev.Value
@@ -200,7 +201,7 @@ func GetUserLoanHistory(caller string, minBlockHeight *int) ([]services.Data, er
 		for marketId := range runningTotals {
 			totalFiat += runningTotals[marketId] * services.GetTokenPrice(marketId)
 		}
-		result = append(result, services.Data{
+		result = append(result, model.Data{
 			Value:     totalFiat,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})
@@ -213,7 +214,7 @@ func parseUserEvents(
 	transactions []map[string]interface{},
 	sign float64,
 ) []struct {
-	services.TransactionData
+	model.TransactionData
 	MarketId string
 } {
 	defer func() {
@@ -223,7 +224,7 @@ func parseUserEvents(
 	}()
 
 	var events []struct {
-		services.TransactionData
+		model.TransactionData
 		MarketId string
 	}
 	for _, tx := range transactions {
@@ -252,10 +253,10 @@ func parseUserEvents(
 			}
 			if marketId != "" && amount != 0 {
 				events = append(events, struct {
-					services.TransactionData
+					model.TransactionData
 					MarketId string
 				}{
-					TransactionData: services.TransactionData{
+					TransactionData: model.TransactionData{
 						Value:       sign * amount,
 						BlockHeight: timestamp,
 					},

@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"volos-backend/model"
 	"volos-backend/indexer"
 )
 
@@ -9,7 +10,7 @@ import (
 func GetAllMarketIDs() ([]string, error) {
 	qb := indexer.NewQueryBuilder("getEvents", indexer.CreateMarketFields)
 	qb.Where().Success(true).
-		PkgPath(VolosPkgPath).
+		PkgPath(model.VolosPkgPath).
 		EventType("CreateMarket")
 
 	resp, err := qb.Execute()

@@ -6,40 +6,18 @@ import (
 	"strconv"
 	"strings"
 	"volos-backend/indexer"
+	"volos-backend/model"
 )
 
-const VolosPkgPath = "gno.land/r/gnolend"
-const Rpc = "http://localhost:26657"
-const BlockHeightOnDeploy = 0
-
-type Data struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
-type TransactionData struct {
-	Value       float64
-	BlockHeight int64
-}
-
-type MarketActivity struct {
-	Type             string  `json:"type"`
-	Amount           float64 `json:"amount"`
-	Caller           string  `json:"caller"`
-	Hash             string  `json:"hash"`
-	Timestamp        string  `json:"timestamp"`
-	IsAmountInShares bool    `json:"isAmountInShares"`
-}
-
 // Helper to process events from transactions and collect unique block heights used in total_borrow_service, total_supply_service, total_utilization_service
-func ParseEvents(transactions []map[string]interface{}, sign float64) []TransactionData {
+func ParseEvents(transactions []map[string]interface{}, sign float64) []model.TransactionData {
 	defer func() {
 		if r := recover(); r != nil {
 			// return default values if panic occurs
 		}
 	}()
 
-	var events []TransactionData
+	var events []model.TransactionData
 	for _, tx := range transactions {
 		timestamp := int64(tx["block_height"].(float64))
 
@@ -54,7 +32,7 @@ func ParseEvents(transactions []map[string]interface{}, sign float64) []Transact
 					amountStr := attrMap["value"].(string)
 					if amountStr != "" {
 						if val, err := strconv.ParseFloat(amountStr, 64); err == nil {
-							events = append(events, TransactionData{Value: sign * val, BlockHeight: timestamp})
+							events = append(events, model.TransactionData{Value: sign * val, BlockHeight: timestamp})
 						}
 					}
 				}

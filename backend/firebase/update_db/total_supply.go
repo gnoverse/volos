@@ -3,15 +3,16 @@ package update
 import (
 	"encoding/json"
 	"volos-backend/indexer"
+	"volos-backend/model"
 	"volos-backend/services"
 )
 
 // GetTotalSupplyHistory fetches all deposit and withdraw events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running total supply over time with real block timestamps.
 // Optionally, you can provide minBlockHeight to only fetch events after a certain block, and startingValue to continue the running total.
-func GetTotalSupplyHistory(marketId string, minBlockHeight *int, startingValue float64) ([]services.Data, error) {
+func GetTotalSupplyHistory(marketId string, minBlockHeight *int, startingValue float64) ([]model.Data, error) {
 	depositsQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
-	whereDeposits := depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereDeposits := depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereDeposits.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -27,7 +28,7 @@ func GetTotalSupplyHistory(marketId string, minBlockHeight *int, startingValue f
 	json.Unmarshal(depositsResp, &depositsData)
 
 	withdrawsQB := indexer.NewQueryBuilder("getWithdrawEvents", indexer.SupplyBorrowFields)
-	whereWithdraws := withdrawsQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereWithdraws := withdrawsQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereWithdraws.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -49,7 +50,7 @@ func GetTotalSupplyHistory(marketId string, minBlockHeight *int, startingValue f
 	events := append(depositEvents, withdrawEvents...)
 
 	var heights []int64
-	for _, ev := range events {
+	for _, ev := range events {	
 		heights = append(heights, ev.BlockHeight)
 	}
 
@@ -58,11 +59,11 @@ func GetTotalSupplyHistory(marketId string, minBlockHeight *int, startingValue f
 		return nil, err
 	}
 
-	var result []services.Data
+	var result []model.Data
 	runningTotal := startingValue
 	for _, ev := range events {
 		runningTotal += ev.Value
-		result = append(result, services.Data{
+		result = append(result, model.Data{
 			Value:     runningTotal,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})

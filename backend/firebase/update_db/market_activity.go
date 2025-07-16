@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"strconv"
 	"volos-backend/indexer"
+	"volos-backend/model"
 	"volos-backend/services"
 )
 
 // GetMarketActivity fetches all activity transactions for a given marketId from the indexer.
 // Optionally, you can provide minBlockHeight to only fetch events after a certain block, and startingValue to continue the running total.
-func GetMarketActivity(marketId string, minBlockHeight *int, startingValue float64) ([]services.MarketActivity, error) {
+func GetMarketActivity(marketId string, minBlockHeight *int, startingValue float64) ([]model.MarketActivity, error) {
 	qb := indexer.NewQueryBuilder("getMarketActivity", indexer.MarketActivityFields)
-	where := qb.Where().MarketId(marketId).PkgPath(services.VolosPkgPath)
+	where := qb.Where().MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		where.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -49,9 +50,9 @@ func GetMarketActivity(marketId string, minBlockHeight *int, startingValue float
 		return nil, err
 	}
 
-	var result []services.MarketActivity
+	var result []model.MarketActivity
 	for _, tx := range raw {
-		result = append(result, services.MarketActivity{
+		result = append(result, model.MarketActivity{
 			Type:             tx.Type,
 			Amount:           tx.Amount,
 			Caller:           tx.Caller,

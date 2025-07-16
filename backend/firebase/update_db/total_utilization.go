@@ -3,15 +3,16 @@ package update
 import (
 	"encoding/json"
 	"volos-backend/indexer"
+	"volos-backend/model"
 	"volos-backend/services"
 )
 
 // GetUtilizationHistory fetches all supply, withdraw, borrow, and repay events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running utilization rate over time with real block timestamps.
 // Optionally, you can provide minBlockHeight to only fetch events after a certain block, and startingValue to continue the running supply.
-func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue float64) ([]services.Data, error) {
+func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue float64) ([]model.Data, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
-	whereSupply := supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereSupply := supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereSupply.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -29,7 +30,7 @@ func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue f
 	json.Unmarshal(supplyResp, &supplyData)
 
 	withdrawQB := indexer.NewQueryBuilder("getWithdrawEvents", indexer.SupplyBorrowFields)
-	whereWithdraw := withdrawQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereWithdraw := withdrawQB.Where().Success(true).EventType("Withdraw").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereWithdraw.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -47,7 +48,7 @@ func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue f
 	json.Unmarshal(withdrawResp, &withdrawData)
 
 	borrowQB := indexer.NewQueryBuilder("getBorrowEvents", indexer.SupplyBorrowFields)
-	whereBorrow := borrowQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereBorrow := borrowQB.Where().Success(true).EventType("Borrow").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereBorrow.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -65,7 +66,7 @@ func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue f
 	json.Unmarshal(borrowResp, &borrowData)
 
 	repayQB := indexer.NewQueryBuilder("getRepayEvents", indexer.SupplyBorrowFields)
-	whereRepay := repayQB.Where().Success(true).EventType("Repay").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereRepay := repayQB.Where().Success(true).EventType("Repay").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereRepay.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -126,7 +127,7 @@ func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue f
 		return nil, err
 	}
 
-	var result []services.Data
+	var result []model.Data
 	var runningSupply, runningBorrow float64
 	runningSupply = startingValue
 	sortedHeights := heights
@@ -147,7 +148,7 @@ func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue f
 		if runningSupply > 0 {
 			utilization = (runningBorrow / runningSupply) * 100
 		}
-		result = append(result, services.Data{
+		result = append(result, model.Data{
 			Value:     utilization,
 			Timestamp: heightToTime[h],
 		})

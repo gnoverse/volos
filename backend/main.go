@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"volos-backend/firebase"
 	"volos-backend/routes"
-	"volos-backend/services"
+	"volos-backend/model"
 	"time"
 	"cloud.google.com/go/firestore"
 
@@ -28,7 +28,7 @@ func init() {
 	FirestoreClient = client
 
 	// Initialize the Firestore database with the initial data
-	if err := firebase.UpdateFirestoreData(FirestoreClient, services.BlockHeightOnDeploy, true); err != nil {
+	if err := firebase.UpdateFirestoreData(FirestoreClient, model.BlockHeightOnDeploy, true); err != nil {
 		log.Printf("Warning: Failed to initialize Firestore data: %v", err)
 	}
 

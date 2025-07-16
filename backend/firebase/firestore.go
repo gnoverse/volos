@@ -10,6 +10,7 @@ import (
 	"log"
 	"strings"
 	update "volos-backend/firebase/update_db"
+	"volos-backend/model"
 	"volos-backend/services"
 
 	"encoding/json"
@@ -61,15 +62,15 @@ func fillMarketSubcollections(ctx context.Context, client *firestore.Client, mar
 	return nil
 }
 
-type dataFetcher func(string, *int, float64) ([]services.Data, error)
-type marketActivityFetcher func(string, *int, float64) ([]services.MarketActivity, error)
+type dataFetcher func(string, *int, float64) ([]model.Data, error)
+type marketActivityFetcher func(string, *int, float64) ([]model.MarketActivity, error)
 
 // fillSubcollection updates a single subcollection with incremental logic.
 // If override is true or minBlockHeight == BlockHeightOnDeploy, it starts from zero (used on initial db population).
 // Otherwise, it reads the last value from Firestore and continues the running total from there, appending only new data.
 func fillSubcollection(ctx context.Context, client *firestore.Client, marketId, subcollectionName string, fetcher dataFetcher, fetchId string, minBlockHeight *int, override bool) error {
 	var startingValue float64 = 0
-	if !override && minBlockHeight != nil && *minBlockHeight > services.BlockHeightOnDeploy {
+	if !override && minBlockHeight != nil && *minBlockHeight > model.BlockHeightOnDeploy {
 		marketDoc := client.Collection("markets").Doc(marketId)
 		subcollection := marketDoc.Collection(subcollectionName)
 		q := subcollection.OrderBy("timestamp", firestore.Desc).Limit(1)
@@ -126,7 +127,7 @@ func fillSubcollection(ctx context.Context, client *firestore.Client, marketId, 
 // Otherwise, it appends only new activity events since the last block.
 func fillMarketActivitySubcollection(ctx context.Context, client *firestore.Client, safeMarketId string, marketId string, fetcher marketActivityFetcher, minBlockHeight *int, override bool) error {
 	var startingValue float64 = 0
-	if !override && minBlockHeight != nil && *minBlockHeight > services.BlockHeightOnDeploy {
+	if !override && minBlockHeight != nil && *minBlockHeight > model.BlockHeightOnDeploy {
 		marketDoc := client.Collection("markets").Doc(safeMarketId)
 		subcollection := marketDoc.Collection("market_activity")
 		q := subcollection.OrderBy("timestamp", firestore.Desc).Limit(1)

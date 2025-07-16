@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"volos-backend/indexer"
-
+	"volos-backend/model"
 	"volos-backend/services"
 )
 
@@ -17,9 +17,9 @@ import (
 //   - The borrow rate from events is per-second and WAD-scaled (1e18)
 //   - APR = borrow_rate * seconds_per_year / WAD
 //   - seconds_per_year = 365 * 24 * 60 * 60 = 31,536,000
-func GetAPRHistory(marketId string, minBlockHeight *int, startingValue float64) ([]services.Data, error) {
+func GetAPRHistory(marketId string, minBlockHeight *int, startingValue float64) ([]model.Data, error) {
 	qb := indexer.NewQueryBuilder("getAPREvents", indexer.SupplyBorrowFields)
-	where := qb.Where().Success(true).EventType("AccrueInterest").MarketId(marketId).PkgPath(services.VolosPkgPath)
+	where := qb.Where().Success(true).EventType("AccrueInterest").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		where.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -56,7 +56,7 @@ func GetAPRHistory(marketId string, minBlockHeight *int, startingValue float64) 
 		return nil, err
 	}
 
-	var result []services.Data
+	var result []model.Data
 	for _, event := range rawEvents {
 		// Calculate APR: borrow_rate * seconds_per_year / WAD
 		// borrow_rate is WAD-scaled (1e18), so we divide by WAD to get the actual rate
@@ -66,7 +66,7 @@ func GetAPRHistory(marketId string, minBlockHeight *int, startingValue float64) 
 		wad := 1e18
 		apr := (event.BorrowRate * secondsPerYear) / wad
 
-		result = append(result, services.Data{
+		result = append(result, model.Data{
 			Value:     apr,
 			Timestamp: heightToTime[event.BlockHeight],
 		})

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"sort"
 	"volos-backend/indexer"
+	"volos-backend/model"
 	"volos-backend/services"
 
 	"cloud.google.com/go/firestore"
@@ -17,7 +18,7 @@ import (
 // updating the running total and metadata. If not, all events are fetched and stored.
 //
 // Returns the full, cumulative collateral history sorted by timestamp.
-func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, marketId string) ([]services.Data, error) {
+func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, marketId string) ([]model.Data, error) {
 	ctx := context.Background()
 	userDoc := client.Collection("users").Doc(caller)
 	collateralHistoryCol := userDoc.Collection("collateral_history")
@@ -42,12 +43,12 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 		return nil, err
 	}
 
-	var existing []services.Data
+	var existing []model.Data
 	for _, doc := range docs {
 		if doc.Ref.ID == "metadata" {
 			continue
 		}
-		var d services.Data
+		var d model.Data
 		m := doc.Data()
 		b, _ := json.Marshal(m)
 		json.Unmarshal(b, &d)
@@ -61,7 +62,7 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 	}
 
 	supplyQB := indexer.NewQueryBuilder("getSupplyCollateralEvents", indexer.SupplyBorrowFields)
-	whereSupply := supplyQB.Where().Success(true).EventType("SupplyCollateral").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereSupply := supplyQB.Where().Success(true).EventType("SupplyCollateral").Caller(caller).MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereSupply.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -79,7 +80,7 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 	json.Unmarshal(supplyResp, &supplyData)
 
 	withdrawQB := indexer.NewQueryBuilder("getWithdrawCollateralEvents", indexer.SupplyBorrowFields)
-	whereWithdraw := withdrawQB.Where().Success(true).EventType("WithdrawCollateral").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereWithdraw := withdrawQB.Where().Success(true).EventType("WithdrawCollateral").Caller(caller).MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereWithdraw.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -110,7 +111,7 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 	maxBlock := latestBlockHeight
 	runningTotal := latestCollateralValue
 
-	var newEvents []services.Data
+	var newEvents []model.Data
 	for _, ev := range allEvents {
 		timestamp := heightToTime[ev.BlockHeight]
 		if timestamp == "" {
@@ -118,7 +119,7 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 		}
 
 		runningTotal += ev.Value
-		newEvent := services.Data{
+		newEvent := model.Data{
 			Value:     runningTotal,
 			Timestamp: timestamp,
 		}
@@ -152,9 +153,9 @@ func GetOrUpdateUserCollateralHistory(client *firestore.Client, caller string, m
 // This function always fetches all relevant events from the indexer (optionally after a given minBlockHeight),
 // parses them, and computes the running total by summing supply and subtracting withdraw events.
 // The result is a slice of Data, each entry containing the user's total collateral at a given block timestamp.
-func GetUserCollateralHistory(caller string, marketId string, minBlockHeight *int) ([]services.Data, error) {
+func GetUserCollateralHistory(caller string, marketId string, minBlockHeight *int) ([]model.Data, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyCollateralEvents", indexer.SupplyBorrowFields)
-	whereSupply := supplyQB.Where().Success(true).EventType("SupplyCollateral").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereSupply := supplyQB.Where().Success(true).EventType("SupplyCollateral").Caller(caller).MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereSupply.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -172,7 +173,7 @@ func GetUserCollateralHistory(caller string, marketId string, minBlockHeight *in
 	json.Unmarshal(supplyResp, &supplyData)
 
 	withdrawQB := indexer.NewQueryBuilder("getWithdrawCollateralEvents", indexer.SupplyBorrowFields)
-	whereWithdraw := withdrawQB.Where().Success(true).EventType("WithdrawCollateral").Caller(caller).MarketId(marketId).PkgPath(services.VolosPkgPath)
+	whereWithdraw := withdrawQB.Where().Success(true).EventType("WithdrawCollateral").Caller(caller).MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereWithdraw.BlockHeightRange(minBlockHeight, nil)
 	}
@@ -202,11 +203,11 @@ func GetUserCollateralHistory(caller string, marketId string, minBlockHeight *in
 		return nil, err
 	}
 
-	var result []services.Data
+	var result []model.Data
 	runningTotal := 0.0
 	for _, ev := range events {
 		runningTotal += ev.Value
-		result = append(result, services.Data{
+		result = append(result, model.Data{
 			Value:     runningTotal,
 			Timestamp: heightToTime[ev.BlockHeight],
 		})
