@@ -6,21 +6,19 @@ import { formatCurrency } from "@/app/utils/format.utils"
 import { Chart } from "@/components/chart"
 import { MyLoanSidePanel } from "@/components/my-loan-side-panel"
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { columns } from "./columns"
 import { useMarketsQuery } from "./queries-mutations"
 
-const queryClient = new QueryClient()
-
-function BorrowPageContent() {
+export default function BorrowPage() {
   const router = useRouter()
   const [userAddress, setUserAddress] = useState<string>("")
   const [totalLoanAmount, setTotalLoanAmount] = useState("0.00")
@@ -124,13 +122,5 @@ function BorrowPageContent() {
         />
       )}
     </div>
-  )
-}
-
-export default function BorrowPage() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BorrowPageContent />
-    </QueryClientProvider>
   )
 }

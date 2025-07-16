@@ -121,7 +121,7 @@ export default function Navbar() {
       <div className="flex items-center">
         {/* Logo */}
           <Logo />
-        
+          <span className="text-3xl mr-4 text-[#FA6914]">Volos</span>
         {/* Navigation Menu */}
         <NavigationMenu>
           <NavigationMenuList className="bg-customGray-800/70 rounded-full px-1 py-1">
