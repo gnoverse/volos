@@ -16,13 +16,13 @@ interface PositionChartTabsProps {
 }
 
 export function PositionChartTabs({ caller, marketId, market, cardStyles }: PositionChartTabsProps) {
-  const { data: collateralHistory = [] } = useQuery({
+  const { data: collateralHistory = [], isLoading: isCollateralLoading } = useQuery({
     queryKey: ['userCollateralHistory', caller, marketId],
     queryFn: () => getUserCollateralHistory(caller, marketId),
     enabled: !!caller && !!marketId
   });
 
-  const { data: borrowHistory = [] } = useQuery({
+  const { data: borrowHistory = [], isLoading: isBorrowLoading } = useQuery({
     queryKey: ['userBorrowHistory', caller, marketId],
     queryFn: () => getUserBorrowHistory(caller, marketId),
     enabled: !!caller && !!marketId
@@ -30,7 +30,7 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
 
   // todo: fix collateral token decimals in the contract (it is 0)
   const mappedCollateral = collateralHistory.map(d => ({
-    value: d.value / Math.pow(10, market.collateralTokenDecimals),
+    value: d.value / Math.pow(10, market.loanTokenDecimals), //this should be collateralTokenDecimals but since it doesn't work we use this
     timestamp: d.timestamp
   }));
 
@@ -40,6 +40,18 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
   }));
 
   const noPositionHistory = (!mappedCollateral || mappedCollateral.length === 0) && (!mappedBorrow || mappedBorrow.length === 0);
+  const isLoading = isCollateralLoading || isBorrowLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[200px] flex flex-col items-center justify-center text-gray-400 p-8">
+        <div className="text-2xl mb-4">Loading Position History...</div>
+        <p className="text-center max-w-md">
+          Fetching your position data from the blockchain.
+        </p>
+      </div>
+    );
+  }
 
   if (noPositionHistory) {
     return (
@@ -51,8 +63,6 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
       </div>
     );
   }
-
-  // Health factor logic can be added here if needed
 
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", cardStyles)}>
@@ -116,8 +126,8 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
           <Chart
             title=""
             description=""
-            data={[]}
-            dataKey="healthFactor"
+            data={mappedCollateral}
+            dataKey="value"
             color="rgba(99, 102, 241, 0.95)"
             className="pt-6"
           />
