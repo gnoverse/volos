@@ -6,12 +6,12 @@ import (
 )
 
 // ExpectedMarketBalances returns the expected market balances after interest accrual
-func ExpectedMarketBalances(marketId string) (*u256.Uint, *u256.Uint, *u256.Uint, *u256.Uint) {
+func ExpectedMarketBalances(cur realm, marketId string) (*u256.Uint, *u256.Uint, *u256.Uint, *u256.Uint) {
 	// Call the existing AccrueInterest function to perform interest accrual
-	AccrueInterest(marketId)
+	AccrueInterest(cur, marketId)
 
 	// Get the updated market state
-	market, _ := GetMarket(marketId)
+	market, _ := GetMarket(cur, marketId)
 
 	// Return the current market balances
 	return market.TotalSupplyAssets, market.TotalSupplyShares,
@@ -19,64 +19,64 @@ func ExpectedMarketBalances(marketId string) (*u256.Uint, *u256.Uint, *u256.Uint
 }
 
 // ExpectedTotalSupplyAssets returns the expected total supply assets after interest accrual
-func ExpectedTotalSupplyAssets(marketId string) *u256.Uint {
+func ExpectedTotalSupplyAssets(cur realm, marketId string) *u256.Uint {
 	// Call AccrueInterest first and get the updated value
-	AccrueInterest(marketId)
-	market, _ := GetMarket(marketId)
+	AccrueInterest(cur, marketId)
+	market, _ := GetMarket(cur, marketId)
 	return market.TotalSupplyAssets
 }
 
 // ExpectedTotalBorrowAssets returns the expected total borrow assets after interest accrual
-func ExpectedTotalBorrowAssets(marketId string) *u256.Uint {
+func ExpectedTotalBorrowAssets(cur realm, marketId string) *u256.Uint {
 	// Call AccrueInterest first and get the updated value
-	AccrueInterest(marketId)
-	market, _ := GetMarket(marketId)
+	AccrueInterest(cur, marketId)
+	market, _ := GetMarket(cur, marketId)
 	return market.TotalBorrowAssets
 }
 
 // ExpectedTotalSupplyShares returns the expected total supply shares after interest accrual
-func ExpectedTotalSupplyShares(marketId string) *u256.Uint {
+func ExpectedTotalSupplyShares(cur realm, marketId string) *u256.Uint {
 	// Call AccrueInterest first and get the updated value
-	AccrueInterest(marketId)
-	market, _ := GetMarket(marketId)
+	AccrueInterest(cur, marketId)
+	market, _ := GetMarket(cur, marketId)
 	return market.TotalSupplyShares
 }
 
 // ExpectedSupplyAssets returns the expected supply assets balance of a user after interest accrual
 // Warning: This may be slightly inaccurate for fee recipients due to share increases
-func ExpectedSupplyAssets(marketId string, user string) *u256.Uint {
+func ExpectedSupplyAssets(cur realm, marketId string, user string) *u256.Uint {
 	// Call AccrueInterest first
-	AccrueInterest(marketId)
+	AccrueInterest(cur, marketId)
 
 	// Get updated position and market data
-	position := GetPosition(marketId, user)
-	market, _ := GetMarket(marketId)
+	position := GetPosition(cur, marketId, user)
+	market, _ := GetMarket(cur, marketId)
 
 	return ToAssetsDown(position.SupplyShares, market.TotalSupplyAssets, market.TotalSupplyShares)
 }
 
 // ExpectedBorrowAssets returns the expected borrow assets balance of a user after interest accrual
 // Warning: The expected balance is rounded up, so it may be greater than the market's expected total borrow assets
-func ExpectedBorrowAssets(marketId string, user string) *u256.Uint {
+func ExpectedBorrowAssets(cur realm, marketId string, user string) *u256.Uint {
 	// Call AccrueInterest first
-	AccrueInterest(marketId)
+	AccrueInterest(cur, marketId)
 
 	// Get updated position and market data
-	position := GetPosition(marketId, user)
-	market, _ := GetMarket(marketId)
+	position := GetPosition(cur, marketId, user)
+	market, _ := GetMarket(cur, marketId)
 
 	return ToAssetsUp(position.BorrowShares, market.TotalBorrowAssets, market.TotalBorrowShares)
 }
 
 // CalculateBorrowRate returns the current borrow rate per second
 // The returned value is WAD-scaled (1e18)
-func CalculateBorrowRate(marketId string) *u256.Uint {
+func CalculateBorrowRate(cur realm, marketId string) *u256.Uint {
 	// Check if market exists
 	if _, exists := markets.Get(marketId); !exists {
 		panic(ErrMarketNotCreated)
 	}
 
-	market, params := GetMarket(marketId)
+	market, params := GetMarket(cur, marketId)
 
 	// If no borrows or no IRM, rate is zero
 	if market.TotalBorrowAssets.IsZero() || params.IRM == "" {
@@ -84,19 +84,19 @@ func CalculateBorrowRate(marketId string) *u256.Uint {
 	}
 
 	// Get IRM and calculate current borrow rate
-	irm := GetIRM(params.IRM)
+	irm := GetIRM(cur, params.IRM)
 	return irm.BorrowRate(market.TotalSupplyAssets, market.TotalBorrowAssets)
 }
 
 // CalculateSupplyRate returns the current supply rate per second
 // The returned value is WAD-scaled (1e18)
-func CalculateSupplyRate(marketId string) *u256.Uint {
+func CalculateSupplyRate(cur realm, marketId string) *u256.Uint {
 	// Check if market exists
 	if _, exists := markets.Get(marketId); !exists {
 		panic(ErrMarketNotCreated)
 	}
 
-	market, params := GetMarket(marketId)
+	market, params := GetMarket(cur, marketId)
 
 	// If no borrows or no supply or no IRM, rate is zero
 	if market.TotalBorrowAssets.IsZero() || market.TotalSupplyAssets.IsZero() || params.IRM == "" {
@@ -104,7 +104,7 @@ func CalculateSupplyRate(marketId string) *u256.Uint {
 	}
 
 	// Get borrow rate
-	irm := GetIRM(params.IRM)
+	irm := GetIRM(cur, params.IRM)
 	borrowRate := irm.BorrowRate(market.TotalSupplyAssets, market.TotalBorrowAssets)
 
 	// Calculate utilization rate: totalBorrow / totalSupply
@@ -122,9 +122,9 @@ func CalculateSupplyRate(marketId string) *u256.Uint {
 
 // CalculateBorrowAPR returns the current borrow APR (scaled by WAD)
 // This converts the per-second rate to an annual rate
-func CalculateBorrowAPR(marketId string) *u256.Uint {
+func CalculateBorrowAPR(cur realm, marketId string) *u256.Uint {
 	// Get the per-second borrow rate
-	borrowRatePerSecond := CalculateBorrowRate(marketId)
+	borrowRatePerSecond := CalculateBorrowRate(cur, marketId)
 	if borrowRatePerSecond.IsZero() {
 		return u256.Zero()
 	}
@@ -136,9 +136,9 @@ func CalculateBorrowAPR(marketId string) *u256.Uint {
 
 // CalculateSupplyAPR returns the current supply APR (scaled by WAD)
 // This converts the per-second rate to an annual rate
-func CalculateSupplyAPR(marketId string) *u256.Uint {
+func CalculateSupplyAPR(cur realm, marketId string) *u256.Uint {
 	// Get the per-second supply rate
-	supplyRatePerSecond := CalculateSupplyRate(marketId)
+	supplyRatePerSecond := CalculateSupplyRate(cur, marketId)
 	if supplyRatePerSecond.IsZero() {
 		return u256.Zero()
 	}
@@ -150,13 +150,13 @@ func CalculateSupplyAPR(marketId string) *u256.Uint {
 
 // CalculateLoanAmount returns the current loan amount for a user in a market
 // This is the amount of assets the user has borrowed, including accrued interest
-func CalculateLoanAmount(marketId string, user string) *u256.Uint {
+func CalculateLoanAmount(cur realm, marketId string, user string) *u256.Uint {
 	// Call AccrueInterest first to ensure we have the latest state
-	AccrueInterest(marketId)
+	AccrueInterest(cur, marketId)
 
 	// Get updated position and market data
-	position := GetPosition(marketId, user)
-	market, _ := GetMarket(marketId)
+	position := GetPosition(cur, marketId, user)
+	market, _ := GetMarket(cur, marketId)
 
 	// Calculate current borrowed value using ToAssetsUp for safety
 	return ToAssetsUp(
@@ -169,21 +169,22 @@ func CalculateLoanAmount(marketId string, user string) *u256.Uint {
 // CalculateAllLoans returns a tree of all loans for a user
 // The tree maps token addresses to total borrowed amounts
 // Loans in different markets but with the same token are summed up
-func CalculateUserLoans(user string) *avl.Tree {
+func CalculateUserLoans(cur realm, user string) *avl.Tree {
 	// Create a new tree to store token -> amount mapping
 	loans := avl.NewTree()
 
-	// Iterate through all markets
-	markets.Iterate("", "", func(key string, value interface{}) bool {
-		marketId := key
+	// Get all market IDs
+	marketIds := GetMarketList(cur)
 
+	// Iterate through all markets using a regular for loop
+	for _, marketId := range marketIds {
 		// Calculate loan amount for this market
-		loanAmount := CalculateLoanAmount(marketId, user)
+		loanAmount := CalculateLoanAmount(cur, marketId, user)
 
 		// If user has a loan in this market
 		if !loanAmount.IsZero() {
 			// Get the borrow token from market parameters
-			_, params := GetMarket(marketId)
+			_, params := GetMarket(cur, marketId)
 			borrowToken := params.GetLoanToken()
 
 			// Get existing amount for this token if any
@@ -197,8 +198,7 @@ func CalculateUserLoans(user string) *avl.Tree {
 				loans.Set(borrowToken, loanAmount)
 			}
 		}
-		return false // continue iteration
-	})
+	}
 
 	return loans
 }
@@ -207,15 +207,15 @@ func CalculateUserLoans(user string) *avl.Tree {
 // - A health factor > 1 means the position is healthy
 // - A health factor < 1 means the position is eligible for liquidation
 // - The lower the health factor, the higher the risk of liquidation
-func CalculateHealthFactor(marketId string, userAddr string) *u256.Uint {
-	position := GetPosition(marketId, userAddr)
+func CalculateHealthFactor(cur realm, marketId string, userAddr string) *u256.Uint {
+	position := GetPosition(cur, marketId, userAddr)
 
 	// If no borrows, position is maximally healthy (return a very large number)
 	if position.BorrowShares.IsZero() {
 		return new(u256.Uint).Mul(WAD, u256.NewUint(100)) // 100 * WAD
 	}
 
-	market, params := GetMarket(marketId)
+	market, params := GetMarket(cur, marketId)
 
 	// Calculate current borrowed value
 	borrowed := ToAssetsUp(
