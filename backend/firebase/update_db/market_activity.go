@@ -125,4 +125,4 @@ func parseMarketActivity(tx map[string]interface{}) struct {
 		BlockHeight:      blockHeight,
 		IsAmountInShares: isAmountInShares,
 	}
-} 
+}

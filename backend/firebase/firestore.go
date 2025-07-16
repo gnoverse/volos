@@ -17,7 +17,8 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-func InitFirestoreData(client *firestore.Client) error {
+// UpdateFirestoreData updates Firestore with the latest market data, starting from a minimum block height.
+func UpdateFirestoreData(client *firestore.Client, minBlockHeight int, override bool) error {
 	ctx := context.Background()
 
 	marketIds, err := services.GetAllMarketIDs()
@@ -30,7 +31,7 @@ func InitFirestoreData(client *firestore.Client) error {
 
 	for _, marketId := range marketIds {
 		log.Printf("Filling subcollections for marketId: %s", marketId)
-		if err := fillMarketSubcollections(ctx, client, marketId); err != nil {
+		if err := fillMarketSubcollections(ctx, client, marketId, minBlockHeight, override); err != nil {
 			log.Printf("Error filling subcollections for marketId %s: %v", marketId, err)
 		}
 	}
@@ -39,21 +40,22 @@ func InitFirestoreData(client *firestore.Client) error {
 	return nil
 }
 
-func fillMarketSubcollections(ctx context.Context, client *firestore.Client, marketId string) error {
+func fillMarketSubcollections(ctx context.Context, client *firestore.Client, marketId string, minBlockHeight int, override bool) error {
 	safeMarketId := strings.ReplaceAll(marketId, "/", "_")
-	if err := fillSubcollection(ctx, client, safeMarketId, "total_borrow", update.GetTotalBorrowHistory, marketId, nil); err != nil {
+	mbh := &minBlockHeight
+	if err := fillSubcollection(ctx, client, safeMarketId, "total_borrow", update.GetTotalBorrowHistory, marketId, mbh, override); err != nil {
 		return err
 	}
-	if err := fillSubcollection(ctx, client, safeMarketId, "total_supply", update.GetTotalSupplyHistory, marketId, nil); err != nil {
+	if err := fillSubcollection(ctx, client, safeMarketId, "total_supply", update.GetTotalSupplyHistory, marketId, mbh, override); err != nil {
 		return err
 	}
-	if err := fillSubcollection(ctx, client, safeMarketId, "apr", update.GetAPRHistory, marketId, nil); err != nil {
+	if err := fillSubcollection(ctx, client, safeMarketId, "apr", update.GetAPRHistory, marketId, mbh, override); err != nil {
 		return err
 	}
-	if err := fillMarketActivitySubcollection(ctx, client, safeMarketId, marketId, update.GetMarketActivity, nil); err != nil {
+	if err := fillMarketActivitySubcollection(ctx, client, safeMarketId, marketId, update.GetMarketActivity, mbh, override); err != nil {
 		return err
 	}
-	if err := fillSubcollection(ctx, client, safeMarketId, "total_utilization", update.GetUtilizationHistory, marketId, nil); err != nil {
+	if err := fillSubcollection(ctx, client, safeMarketId, "total_utilization", update.GetUtilizationHistory, marketId, mbh, override); err != nil {
 		return err
 	}
 	return nil
@@ -61,26 +63,27 @@ func fillMarketSubcollections(ctx context.Context, client *firestore.Client, mar
 
 type dataFetcher func(string, *int) ([]services.Data, error)
 
-func fillSubcollection(ctx context.Context, client *firestore.Client, marketId, subcollectionName string, fetcher dataFetcher, fetchId string, minBlockHeight *int) error {
+func fillSubcollection(ctx context.Context, client *firestore.Client, marketId, subcollectionName string, fetcher dataFetcher, fetchId string, minBlockHeight *int, override bool) error {
 	data, err := fetcher(fetchId, minBlockHeight)
 	if err != nil {
 		log.Printf("Error fetching data for %s/%s: %v", marketId, subcollectionName, err)
 		return err
 	}
 	if data == nil {
-		log.Printf("No data returned for %s/%s", marketId, subcollectionName)
 		return nil
 	}
 
 	marketDoc := client.Collection("markets").Doc(marketId)
 	subcollection := marketDoc.Collection(subcollectionName)
 
-	docs, err := subcollection.Documents(ctx).GetAll()
-	if err != nil {
-		return err
-	}
-	for _, doc := range docs {
-		doc.Ref.Delete(ctx)
+	if override {
+		docs, err := subcollection.Documents(ctx).GetAll()
+		if err != nil {
+			return err
+		}
+		for _, doc := range docs {
+			doc.Ref.Delete(ctx)
+		}
 	}
 
 	for _, item := range data {
@@ -91,32 +94,34 @@ func fillSubcollection(ctx context.Context, client *firestore.Client, marketId, 
 		}
 	}
 
+
 	log.Printf("Filled markets/%s/%s subcollection with %d documents", marketId, subcollectionName, len(data))
 	return nil
 }
 
 type marketActivityFetcher func(string, *int) ([]services.MarketActivity, error)
 
-func fillMarketActivitySubcollection(ctx context.Context, client *firestore.Client, safeMarketId string, marketId string, fetcher marketActivityFetcher, minBlockHeight *int) error {
+func fillMarketActivitySubcollection(ctx context.Context, client *firestore.Client, safeMarketId string, marketId string, fetcher marketActivityFetcher, minBlockHeight *int, override bool) error {
 	data, err := fetcher(marketId, minBlockHeight)
 	if err != nil {
 		log.Printf("Error fetching data for %s/market_activity: %v", marketId, err)
 		return err
 	}
 	if data == nil {
-		log.Printf("No data returned for %s/market_activity", marketId)
 		return nil
 	}
 
 	marketDoc := client.Collection("markets").Doc(safeMarketId)
 	subcollection := marketDoc.Collection("market_activity")
 
-	docs, err := subcollection.Documents(ctx).GetAll()
-	if err != nil {
-		return err
-	}
-	for _, doc := range docs {
-		doc.Ref.Delete(ctx)
+	if override {
+		docs, err := subcollection.Documents(ctx).GetAll()
+		if err != nil {
+			return err
+		}
+		for _, doc := range docs {
+			doc.Ref.Delete(ctx)
+		}
 	}
 
 	for _, item := range data {

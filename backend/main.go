@@ -6,8 +6,9 @@ import (
 	"log"
 	"net/http"
 	"volos-backend/firebase"
-	routes "volos-backend/routes"
-
+	"volos-backend/routes"
+	"volos-backend/services"
+	//"time"
 	"cloud.google.com/go/firestore"
 
 	// Firestore
@@ -39,17 +40,17 @@ func init() {
 	}
 	FirestoreClient = client
 
-	// Fill the database with data from services
-	if err := firebase.InitFirestoreData(FirestoreClient); err != nil {
+	if err := firebase.UpdateFirestoreData(FirestoreClient, services.BlockHeightOnDeploy, true); err != nil {
 		log.Printf("Warning: Failed to initialize Firestore data: %v", err)
 	}
+
+	// Start the Firestore updater in a background thread (after initial fill)
+	// Currently the updater is bringing new data to the database but it's calculating as the state is reset
+	//updater := firebase.NewUpdater(FirestoreClient)
+	//updater.Start(time.Second)
 }
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello from Volos backend!")
-	})
-
 	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/total-borrow-history", withCORS(routes.TotalBorrowHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/total-utilization-history", withCORS(routes.TotalUtilizationHistoryHandler(FirestoreClient)))

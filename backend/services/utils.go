@@ -9,6 +9,8 @@ import (
 )
 
 const VolosPkgPath = "gno.land/r/gnolend"
+const Rpc = "http://localhost:26657"
+const BlockHeightOnDeploy = 0
 
 type Data struct {
 	Value     float64 `json:"value"`

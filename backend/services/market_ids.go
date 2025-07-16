@@ -49,4 +49,4 @@ func GetAllMarketIDs() ([]string, error) {
 		marketIds = append(marketIds, id)
 	}
 	return marketIds, nil
-} 
+}
