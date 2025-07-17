@@ -21,7 +21,7 @@ export function MyLoanSidePanel({ netRate, className, userLoans }: MyLoanSidePan
         <Tabs defaultValue="apy" className="w-full">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-            <div className="text-sm font-medium text-muted-foreground">Net Rate</div>
+            <div className="text-sm font-medium text-logo-600">Net Rate</div>
             <div className="text-2xl font-bold text-gray-200">{netRate}</div>
             </div>
             <TabsList className="bg-customGray-800 rounded-md h-7 w-auto px-0.5">

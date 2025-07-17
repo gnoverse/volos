@@ -3,7 +3,6 @@
 import { apiGetMarketInfo } from '@/app/services/abci'
 import { AdenaService } from "@/app/services/adena.service"
 import { getUserLoanHistory } from '@/app/services/api.service'
-import "@/app/theme.css"
 import { MarketInfo } from "@/app/types"
 import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"

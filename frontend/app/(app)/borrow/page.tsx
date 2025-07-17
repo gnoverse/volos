@@ -66,11 +66,11 @@ export default function BorrowPage() {
 
   return (
     <div className="">
-      <Card className="mb-6 bg-customGray-800/60 backdrop-blur-sm rounded-3xl">
+      <Card className="mb-6 bg-customGray-800/60 backdrop-blur-lg rounded-3xl border-logo-700">
         <div className="flex flex-col md:flex-row">
           <div className="flex-grow">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">My Loan</CardTitle>
+              <CardTitle className="text-sm font-medium text-logo-600">My Loan</CardTitle>
               <div className="text-4xl font-bold text-gray-200">
                 {isUserLoanLoading
                   ? <span className="animate-pulse bg-gray-700 rounded w-24 h-10 inline-block" />
@@ -90,7 +90,7 @@ export default function BorrowPage() {
                       title="My Loan History"
                       description="Your total borrowed amount over time"
                       dataKey="value"
-                      color="#5B21B6"
+                      color="#D95C12"
                       className="bg-transparent border-none p-0 shadow-none"
                     />
                   )

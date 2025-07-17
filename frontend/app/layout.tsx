@@ -1,9 +1,8 @@
-import Navbar from "@/components/navbar"
-import { cn } from "@/lib/utils"
-import type { Metadata } from "next"
-import { Outfit } from "next/font/google"
-import "./globals.css"
-import './theme.css'
+import Navbar from "@/components/navbar";
+import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
+import { Outfit } from "next/font/google";
+import "./globals.css";
 
 const outfit = Outfit({ 
   subsets: ["latin"],
