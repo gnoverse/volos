@@ -29,13 +29,15 @@ func init() {
 	FirestoreClient = client
 
 	// Initialize the Firestore database with the initial data
+	// BlockHeightOnDeploy is passed as we don't care about the data before the deployment of the Volos contract
+	// True is passed as we want to override the existing data (dev purposes only)
 	if err := polling.UpdateFirestoreData(FirestoreClient, model.BlockHeightOnDeploy, true); err != nil {
 		log.Printf("Warning: Failed to initialize Firestore data: %v", err)
 	}
 
-	// Start the Firestore updater in a background thread (after initial fill)
-	//updater := firebase.NewUpdater(FirestoreClient)
-	//updater.Start(time.Second)
+	// Start the Firestore polling updater in a background thread (after initial fill)
+	//pollingUpdater := polling.NewUpdater(FirestoreClient)
+	//pollingUpdater.Start(time.Second) 
 }
 
 func main() {
