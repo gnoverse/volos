@@ -25,7 +25,7 @@ export function InfoCard({
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-gray-200 text-base font-medium">{title}</CardTitle>
+          <CardTitle className="text-logo-600 text-base font-medium">{title}</CardTitle>
           {description && (
             <CardDescription className="text-gray-400">{description}</CardDescription>
           )}

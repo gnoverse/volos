@@ -128,7 +128,7 @@ export default function Navbar() {
                   <NavigationMenuLink
                     href={item.href}
                     className={`block rounded-full px-4 py-2 text-gray-200 text-lg ${
-                      isActive ? 'bg-customGray-700/60 text-logo-400 hover:bg-customGray-700/60 hover:text-logo-400' : 'hover:bg-customGray-700 hover:text-gray-200'
+                      isActive ? 'bg-customGray-700/60 text-logo-500 hover:bg-customGray-700/60 hover:text-logo-500' : 'hover:bg-customGray-700 hover:text-gray-400'
                     }`}
                   >
                     {item.name}
@@ -145,10 +145,10 @@ export default function Navbar() {
         <Button 
           variant="ghost" 
           className={cn(
-            "bg-customGray-800 text-gray-200 rounded-full text-lg",
+            "bg-customGray-800 text-gray-400 rounded-full text-lg",
             isConnected 
-              ? "mr-2 hover:bg-customGray-800 hover:text-gray-200"
-              : "mr-5 hover:bg-customGray-700 hover:text-gray-200"
+              ? "mr-2 hover:bg-customGray-800 hover:text-logo-500"
+              : "mr-5 hover:bg-customGray-800 hover:text-logo-500"
           )}
           onClick={isConnected ? handleCopyAddress : handleWalletConnection}
           title={isConnected ? (copied ? "Copied!" : walletAddress) : "Connect Wallet"}
@@ -161,7 +161,7 @@ export default function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="bg-transparent text-gray-200 rounded-full hover:bg-customGray-700 hover:text-red-600 mr-5"
+            className="bg-transparent text-gray-300 rounded-full hover:bg-customGray-700 hover:text-red-600 mr-5"
             onClick={handleWalletConnection}
             title="Disconnect wallet"
           >

@@ -86,7 +86,7 @@ function MarketPageContent() {
         <span className="text-sm text-gray-200 font-medium">Refetch Data</span>
       </Button>
 
-      <h1 className="text-[36px] font-bold mb-6 text-gray-200">
+      <h1 className="text-[36px] font-bold mb-6 text-gray-300">
         {marketInfo
           ? `${marketInfo.loanTokenSymbol} / ${marketInfo.collateralTokenSymbol.toUpperCase()} Market`
           : <span className="animate-pulse bg-gray-700 rounded-xl w-96 h-15 inline-block mt-4" />}

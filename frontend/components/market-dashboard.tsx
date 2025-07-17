@@ -16,7 +16,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
       {/* Market Overview Card */}
       <Card className={cardStyles}>
         <CardHeader className="pb-2">
-          <CardTitle className="text-gray-200 flex items-center">
+          <CardTitle className="text-logo-600 flex items-center">
             <span>Market Overview</span>
           </CardTitle>
           <CardDescription className="text-gray-400">Basic information about the market</CardDescription>
@@ -70,7 +70,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
       {/* Market Size Card */}
       <Card className={cardStyles}>
         <CardHeader className="pb-2">
-          <CardTitle className="text-gray-200 flex items-center">
+          <CardTitle className="text-logo-600 flex items-center">
             <span>Market Size</span>
           </CardTitle>
           <CardDescription className="text-gray-400">Supply and borrow information</CardDescription>
@@ -113,7 +113,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
       {/* Parameters Card */}
       <Card className={cardStyles}>
         <CardHeader className="pb-2">
-          <CardTitle className="text-gray-200 flex items-center">
+          <CardTitle className="text-logo-600 flex items-center">
             <span>Parameters</span>
           </CardTitle>
           <CardDescription className="text-gray-400">Market parameters and rates</CardDescription>

@@ -28,7 +28,7 @@ export function Chart({
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
       {(title || description) && (
         <CardHeader className="pb-4">
-          {title && <CardTitle className="text-gray-200">{title}</CardTitle>}
+          {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
           {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
         </CardHeader>
       )}

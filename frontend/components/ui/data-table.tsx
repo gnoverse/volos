@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
   getRowId?: (row: TData) => string
   onRowClick?: (id: string) => void
   centered?: boolean
+  clickable?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -43,6 +44,7 @@ export function DataTable<TData, TValue>({
   getRowId,
   onRowClick,
   centered = true,
+  clickable = false,
 }: DataTableProps<TData, TValue>) {
   const [sortingState, setSortingState] = useState<SortingState>([])
   const [paginationState, setPaginationState] = useState<PaginationState>({
@@ -76,7 +78,7 @@ export function DataTable<TData, TValue>({
                   <TableHead 
                     key={header.id} 
                     className={cn(
-                      "text-gray-200 h-12",
+                      "text-gray-400 h-12",
                       centered ? "text-center" : "text-left",
                       index === 0 && "rounded-l-xl",
                       index === headerGroup.headers.length - 1 && "rounded-r-xl"
@@ -100,20 +102,26 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="bg-gray-700/40 hover:bg-gray-600/60 my-1 border-none transition-colors rounded-3xl cursor-pointer"
+                className={cn(
+                  "bg-gray-700/40 my-1 border-none transition-colors rounded-3xl hover:bg-logo-600/20 cursor-default",
+                  clickable && "group",
+                  centered ? undefined : undefined
+                )}
                 onClick={() => onRowClick?.(row.id)}
               >
                 {row.getVisibleCells().map((cell, index) => (
-                  <TableCell 
-                    key={cell.id} 
+                  <TableCell
+                    key={cell.id}
                     className={cn(
-                      "text-gray-200 h-18",
+                      "text-gray-300 h-12 text-base",
                       centered ? "text-center" : "text-left",
                       index === 0 && "rounded-l-xl",
                       index === row.getVisibleCells().length - 1 && "rounded-r-xl"
                     )}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <span className={clickable ? "group-hover:text-logo-400 transition-colors cursor-pointer" : undefined}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </span>
                   </TableCell>
                 ))}
               </TableRow>

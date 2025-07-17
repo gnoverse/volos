@@ -43,6 +43,7 @@ function TabsTrigger({
       data-slot="tabs-trigger"
       className={cn(
         "text-gray-400 flex items-center justify-center gap-1.5 rounded-lg px-3 py-0.5 text-base font-medium whitespace-nowrap transition-all duration-200 disabled:pointer-events-none disabled:opacity-50",
+        "border-b-2 border-transparent", 
         "data-[state=active]:bg-customGray-700/60 data-[state=active]:font-medium",
         "hover:bg-customGray-700/30 hover:text-gray-300",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

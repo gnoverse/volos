@@ -53,7 +53,7 @@ export function MyPosition({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className={cardStyles}>
           <CardHeader className="">
-            <CardTitle className="text-gray-200">Borrowed</CardTitle>
+            <CardTitle className="text-logo-600">Borrowed</CardTitle>
             <CardDescription className="text-gray-400">Your borrowed assets</CardDescription>
           </CardHeader>
           <CardContent>
@@ -69,7 +69,7 @@ export function MyPosition({
 
         <Card className={cardStyles}>
           <CardHeader className="">
-            <CardTitle className="text-gray-200">Collateral</CardTitle>
+            <CardTitle className="text-logo-600">Collateral</CardTitle>
             <CardDescription className="text-gray-400">Your supplied collateral</CardDescription>
           </CardHeader>
           <CardContent className="items-center">
@@ -87,7 +87,7 @@ export function MyPosition({
 
         <Card className={cardStyles}>
           <CardHeader className="">
-            <CardTitle className="text-gray-200">Health</CardTitle>
+            <CardTitle className="text-logo-600">Health</CardTitle>
             <CardDescription className="text-gray-400">Position health metrics</CardDescription>
           </CardHeader>
           <CardContent>

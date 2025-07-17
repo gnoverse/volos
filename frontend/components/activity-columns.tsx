@@ -13,7 +13,7 @@ export const activityColumns: ColumnDef<MarketActivity>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="text-gray-400 hover:text-white"
+          className="text-gray-400 hover:text-logo-400"
         >
           Date
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -38,7 +38,7 @@ export const activityColumns: ColumnDef<MarketActivity>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="text-gray-400 hover:text-white"
+          className="text-gray-400 hover:text-logo-400"
         >
           Amount
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -86,7 +86,7 @@ const CopyableCell = ({ value, display, maxWidth }: { value: string | null, disp
   return (
     <button
       onClick={handleClick}
-      className={`text-left truncate cursor-pointer transition-colors text-white hover:text-gray-300 ${
+      className={`text-left truncate cursor-pointer transition-colors text-white hover:text-logo-400 ${
         copied ? 'text-green-500' : ''
       }`}
       style={{ 

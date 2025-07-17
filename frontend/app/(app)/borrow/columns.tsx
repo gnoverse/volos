@@ -49,6 +49,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:text-logo-400"
           >
             Total Supply
             <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -68,6 +69,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:text-logo-400"
           >
             Total Borrow
             <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -87,6 +89,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:text-logo-400"
           >
             APR
             <ArrowUpDown className="ml-2 h-4 w-4" />

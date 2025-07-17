@@ -110,7 +110,7 @@ export default function BorrowPage() {
         </div>
       </Card>
       
-      <h1 className="text-2xl font-bold mb-6 text-gray-200">Borrow Assets</h1>
+      <h1 className="text-2xl font-bold mb-6 text-logo-600">Borrow Assets</h1>
       {isLoading ? (
         <div className="flex justify-center items-center h-32 text-muted-foreground">Loading markets data...</div>
       ) : (
@@ -119,6 +119,7 @@ export default function BorrowPage() {
           data={markets || []} 
           getRowId={(row) => row.poolPath}
           onRowClick={handleRowClick}
+          clickable={true}
         />
       )}
     </div>
