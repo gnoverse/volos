@@ -3,7 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
-	"volos-backend/firebase/update_db/user_specific"
+	"volos-backend/firebase/polling/user_specific"
 
 	"cloud.google.com/go/firestore"
 )

@@ -1,17 +1,23 @@
 // This file is responsible for updating Firestore with the latest market data.
-// It does so by calling the functions in the update_db package (e.g., update_db/total_borrow.go, etc.),
+// It does so by calling the functions in the generic package (e.g., total_borrow.go, etc.),
 // which query the indexer for the latest blockchain data and return results.
 // The results are then written to the appropriate Firestore collections and subcollections for each market.
 // This enables fast, precomputed API responses for the frontend, without recalculating on every request.
-package firebase
+//
+// The difference between the generic package and the user_specific package is in the polling itself.
+// The generic package polls the indexer on a fixed time interval which triggers the UpdateFirestoreData function.
+// On the other hand, the user_specific package polls the indexer upon users request and updates the Firestore data accordingly.
+// This allows for a better performance since the backend doesn't have to worry about updating each users information constantly,
+// and also insures that the fresh data is available even if no user connects the wallet and requests it.
+package polling
 
 import (
 	"context"
 	"log"
 	"strings"
-	update "volos-backend/firebase/update_db"
 	"volos-backend/model"
 	"volos-backend/services"
+	"volos-backend/firebase/polling/generic"
 
 	"encoding/json"
 
@@ -44,19 +50,19 @@ func UpdateFirestoreData(client *firestore.Client, minBlockHeight int, override 
 func fillMarketSubcollections(ctx context.Context, client *firestore.Client, marketId string, minBlockHeight int, override bool) error {
 	safeMarketId := strings.ReplaceAll(marketId, "/", "_") // necessary to avoid invalid firestore collection names
 	mbh := &minBlockHeight
-	if err := fillSubcollection(ctx, client, safeMarketId, "total_borrow", update.GetTotalBorrowHistory, marketId, mbh, override); err != nil {
+	if err := fillSubcollection(ctx, client, safeMarketId, "total_borrow", generic.GetTotalBorrowHistory, marketId, mbh, override); err != nil {
 		return err
 	}
-	if err := fillSubcollection(ctx, client, safeMarketId, "total_supply", update.GetTotalSupplyHistory, marketId, mbh, override); err != nil {
+	if err := fillSubcollection(ctx, client, safeMarketId, "total_supply", generic.GetTotalSupplyHistory, marketId, mbh, override); err != nil {
 		return err
 	}
-	if err := fillSubcollection(ctx, client, safeMarketId, "apr", update.GetAPRHistory, marketId, mbh, override); err != nil {
+	if err := fillSubcollection(ctx, client, safeMarketId, "apr", generic.GetAPRHistory, marketId, mbh, override); err != nil {
 		return err
 	}
-	if err := fillMarketActivitySubcollection(ctx, client, safeMarketId, marketId, update.GetMarketActivity, mbh, override); err != nil {
+	if err := fillMarketActivitySubcollection(ctx, client, safeMarketId, marketId, generic.GetMarketActivity, mbh, override); err != nil {
 		return err
 	}
-	if err := fillSubcollection(ctx, client, safeMarketId, "total_utilization", update.GetUtilizationHistory, marketId, mbh, override); err != nil {
+	if err := fillSubcollection(ctx, client, safeMarketId, "total_utilization", generic.GetUtilizationHistory, marketId, mbh, override); err != nil {
 		return err
 	}
 	return nil

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"volos-backend/firebase"
-	"volos-backend/routes"
+	"volos-backend/firebase/polling"
 	"volos-backend/model"
-	"time"
+	"volos-backend/routes"
+
+	//"time"
 	"cloud.google.com/go/firestore"
 
 	// Firestore
@@ -28,13 +29,13 @@ func init() {
 	FirestoreClient = client
 
 	// Initialize the Firestore database with the initial data
-	if err := firebase.UpdateFirestoreData(FirestoreClient, model.BlockHeightOnDeploy, true); err != nil {
+	if err := polling.UpdateFirestoreData(FirestoreClient, model.BlockHeightOnDeploy, true); err != nil {
 		log.Printf("Warning: Failed to initialize Firestore data: %v", err)
 	}
 
 	// Start the Firestore updater in a background thread (after initial fill)
-	updater := firebase.NewUpdater(FirestoreClient)
-	updater.Start(time.Second)
+	//updater := firebase.NewUpdater(FirestoreClient)
+	//updater.Start(time.Second)
 }
 
 func main() {

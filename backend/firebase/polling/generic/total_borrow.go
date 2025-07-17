@@ -1,4 +1,4 @@
-package update
+package generic
 
 import (
 	"encoding/json"

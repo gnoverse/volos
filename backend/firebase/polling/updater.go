@@ -1,7 +1,7 @@
 // This file is part of the firebase package and implements a dynamic, concurrent Firestore updater.
 // It uses ABCI to query the last block height from the chain, but processes new transactions from the indexer
 // to update Firestore in parallel chunks, in the same way the indexer updates itself.
-package firebase
+package polling
 
 import (
 	"encoding/json"
@@ -22,7 +22,7 @@ type BlockRange struct {
 	End   int
 }
 
-// Updater periodically checks the blockchain for new blocks and enqueues Firestore update jobs.
+// Updater periodically checks the blockchain for new blocks and enqueues Firestore polling jobs.
 type Updater struct {
 	FirestoreClient   *firestore.Client
 	LatestBlockHeight int
@@ -126,7 +126,7 @@ func (u *Updater) checkAndEnqueue() {
 			start = end + 1
 			maxChunks--
 		}
-		log.Printf("Enqueued Firestore update jobs for blocks %d to %d in chunks of %d (max %d workers)", minHeight+1, lastBlockHeight, u.MaxChunkSize, u.MaxSlots)
+		log.Printf("Enqueued Firestore polling jobs for blocks %d to %d in chunks of %d (max %d workers)", minHeight+1, lastBlockHeight, u.MaxChunkSize, u.MaxSlots)
 	} else {
 		u.Mutex.Unlock()
 	}

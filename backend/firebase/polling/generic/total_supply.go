@@ -1,4 +1,4 @@
-package update
+package generic
 
 import (
 	"encoding/json"
@@ -50,7 +50,7 @@ func GetTotalSupplyHistory(marketId string, minBlockHeight *int, startingValue f
 	events := append(depositEvents, withdrawEvents...)
 
 	var heights []int64
-	for _, ev := range events {	
+	for _, ev := range events {
 		heights = append(heights, ev.BlockHeight)
 	}
 
