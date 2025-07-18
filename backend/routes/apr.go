@@ -2,7 +2,7 @@ package routes
 
 import (
 	"net/http"
-	"volos-backend/firebase"
+	"volos-backend/services"
 
 	"cloud.google.com/go/firestore"
 )
@@ -16,7 +16,7 @@ func APRHistoryHandler(client *firestore.Client) http.HandlerFunc {
 			return
 		}
 
-		jsonData, err := firebase.FetchMarketData(client, marketId, "apr")
+		jsonData, err := services.FetchMarketData(client, marketId, "apr")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

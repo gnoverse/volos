@@ -1,4 +1,4 @@
-package firebase
+package services
 
 import (
 	"context"

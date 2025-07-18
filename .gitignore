@@ -1,5 +1,5 @@
 # Ignore firebase.json config file
-backend/firebase/firebase.json
+backend/firebase.json
 
 # Ignore indexer README.md
 indexer-README.md

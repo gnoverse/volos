@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"volos-backend/firebase/polling"
 	"volos-backend/model"
 	"volos-backend/routes"
+	"volos-backend/services/polling"
 
 	//"time"
 	"cloud.google.com/go/firestore"
@@ -37,7 +37,7 @@ func init() {
 
 	// Start the Firestore polling updater in a background thread (after initial fill)
 	//pollingUpdater := polling.NewUpdater(FirestoreClient)
-	//pollingUpdater.Start(time.Second) 
+	//pollingUpdater.Start(time.Second)
 }
 
 func main() {

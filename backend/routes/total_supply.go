@@ -2,10 +2,10 @@ package routes
 
 import (
 	"net/http"
-	"volos-backend/firebase"
+	"volos-backend/services"
 
 	"cloud.google.com/go/firestore"
-)
+)	
 
 func TotalSupplyHistoryHandler(client *firestore.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +16,7 @@ func TotalSupplyHistoryHandler(client *firestore.Client) http.HandlerFunc {
 			return
 		}
 
-		jsonData, err := firebase.FetchMarketData(client, marketId, "total_supply")
+		jsonData, err := services.FetchMarketData(client, marketId, "total_supply")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

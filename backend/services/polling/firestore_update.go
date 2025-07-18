@@ -17,7 +17,7 @@ import (
 	"strings"
 	"volos-backend/model"
 	"volos-backend/services"
-	"volos-backend/firebase/polling/generic"
+	"volos-backend/services/polling/generic"
 
 	"encoding/json"
 
