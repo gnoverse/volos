@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"volos-backend/model"
 	"volos-backend/routes"
+	"volos-backend/services"
 	"volos-backend/services/polling"
 
 	//"time"
@@ -21,7 +22,7 @@ var FirestoreClient *firestore.Client
 func init() {
 	ctx := context.Background()
 	projectID := "volos-f06d9"
-	serviceAccountPath := "firebase/firebase.json"
+	serviceAccountPath := "firebase.json"
 	client, err := firestore.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountPath))
 	if err != nil {
 		log.Fatalf("Failed to create Firestore client: %v", err)
@@ -41,6 +42,10 @@ func init() {
 }
 
 func main() {
+	// Start the websocket listener in a goroutine
+	go services.StartWSListener(context.Background())
+	fmt.Println("Started indexer websocket listener in background.")
+
 	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/total-borrow-history", withCORS(routes.TotalBorrowHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/total-utilization-history", withCORS(routes.TotalUtilizationHistoryHandler(FirestoreClient)))
