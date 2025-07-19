@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"volos-backend/model"
 	"volos-backend/routes"
-	"volos-backend/services"
 	"volos-backend/services/polling"
+	"volos-backend/services/websocket"
 
 	//"time"
 	"cloud.google.com/go/firestore"
@@ -43,7 +43,7 @@ func init() {
 
 func main() {
 	// Start the websocket listener in a goroutine
-	go services.StartWSListener(context.Background())
+	go websocket.StartWSListener(context.Background())
 	fmt.Println("Started indexer websocket listener in background.")
 
 	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler(FirestoreClient)))
