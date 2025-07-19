@@ -13,16 +13,18 @@ const txIndexerUrl = "http://localhost:3100"
 
 // QueryBuilder helps build and execute GraphQL queries for the indexer
 type QueryBuilder struct {
-	OperationName string
-	Fields        string
-	WhereBuilder  *WhereClauseBuilder
+	OperationName  string
+	Fields         string
+	WhereBuilder   *WhereClauseBuilder
+	IsSubscription bool
 }
 
 func NewQueryBuilder(operationName, fields string) *QueryBuilder {
 	return &QueryBuilder{
-		OperationName: operationName,
-		Fields:        fields,
-		WhereBuilder:  NewWhereClauseBuilder(),
+		OperationName:  operationName,
+		Fields:         fields,
+		WhereBuilder:   NewWhereClauseBuilder(),
+		IsSubscription: false,
 	}
 }
 
@@ -40,10 +42,21 @@ func (qb *QueryBuilder) AddFields(fields string) *QueryBuilder {
 	return qb
 }
 
+func (qb *QueryBuilder) Subscription() *QueryBuilder {
+	qb.IsSubscription = true
+	return qb
+}
+
 func (qb *QueryBuilder) Build() string {
 	whereClause := qb.WhereBuilder.Build()
-	return fmt.Sprintf(`
-		query %s {
+	operationType := "query"
+	if qb.IsSubscription {
+		operationType = "subscription"
+	}
+
+	if qb.IsSubscription {
+		return fmt.Sprintf(`
+		%s {
 			getTransactions(
 				where: {
 					%s
@@ -52,7 +65,20 @@ func (qb *QueryBuilder) Build() string {
 				%s
 			}
 		}
-	`, qb.OperationName, whereClause, qb.Fields)
+	`, operationType, whereClause, qb.Fields)
+	}
+
+	return fmt.Sprintf(`
+		%s %s {
+			getTransactions(
+				where: {
+					%s
+				}
+			) {
+				%s
+			}
+		}
+	`, operationType, qb.OperationName, whereClause, qb.Fields)
 }
 
 // Execute sends the query to the indexer and returns the raw response
