@@ -2,31 +2,77 @@ package websocket
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 
+	"volos-backend/indexer"
+	"volos-backend/model"
+
 	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 )
 
-const indexerWSURL = "ws://localhost:3100/ws"
+const (
+	wsURL    = "ws://localhost:3100/graphql/query"
+	protocol = "graphql-transport-ws"
+)
 
-// StartWSListener connects to the indexer websocket and prints received messages.
-func StartWSListener(ctx context.Context) {
-	c, _, err := websocket.Dial(ctx, indexerWSURL, nil)
+func StartVolosTxListener(ctx context.Context) error {
+	opts := &websocket.DialOptions{
+		Subprotocols: []string{protocol},
+	}
+
+	conn, _, err := websocket.Dial(ctx, wsURL, opts)
 	if err != nil {
-		log.Fatalf("failed to connect to indexer websocket: %v", err)
+		return fmt.Errorf("failed to connect: %w", err)
 	}
-	defer c.Close(websocket.StatusInternalError, "closing")
+	defer conn.Close(websocket.StatusNormalClosure, "done")
 
-	log.Println("Connected to indexer websocket at", indexerWSURL)
+	initMsg := map[string]interface{}{
+		"type": "connection_init",
+	}
+	if err := wsjson.Write(ctx, conn, initMsg); err != nil {
+		return fmt.Errorf("failed to send connection_init: %w", err)
+	}
 
-	for {
-		_, msg, err := c.Read(ctx)
-		if err != nil {
-			log.Printf("websocket read error: %v", err)
-			break
+	var ack map[string]interface{}
+	if err := wsjson.Read(ctx, conn, &ack); err != nil {
+		return fmt.Errorf("failed to read connection_ack: %w", err)
+	}
+	if ack["type"] != "connection_ack" {
+		return fmt.Errorf("expected connection_ack, got: %v", ack)
+	}
+
+	qb := indexer.NewQueryBuilder("VolosTxSub", indexer.UniversalTransactionFields)
+	qb.Subscription()
+	qb.Where().PkgPath(model.VolosPkgPath)
+	query := qb.Build()
+
+	subMsg := map[string]interface{}{
+		"id":   "1",
+		"type": "subscribe",
+		"payload": map[string]interface{}{
+			"query": query,
+		},
+	}
+	if err := wsjson.Write(ctx, conn, subMsg); err != nil {
+		return fmt.Errorf("failed to send subscribe: %w", err)
+	}
+
+	go func() {
+		for {
+			var msg map[string]interface{}
+			err := wsjson.Read(ctx, conn, &msg)
+			if err != nil {
+				log.Printf("read error: %v", err)
+				return
+			}
+			jsonData, _ := json.MarshalIndent(msg, "", "  ")
+			log.Printf("Received: %s", jsonData)
 		}
-		log.Printf("Received message: %s", string(msg))
-	}
+	}()
 
-	c.Close(websocket.StatusNormalClosure, "done")
+	<-ctx.Done()
+	return nil
 }
