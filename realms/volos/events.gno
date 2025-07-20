@@ -1,4 +1,4 @@
-package gnolend
+package volos
 
 import (
 	"std"
@@ -10,7 +10,7 @@ import (
 const (
 	// Market events
 	CreateMarketEvent       = "CreateMarket"
-	DepositEvent            = "Deposit"
+	SupplyEvent             = "Supply"
 	WithdrawEvent           = "Withdraw"
 	BorrowEvent             = "Borrow"
 	RepayEvent              = "Repay"
@@ -58,6 +58,8 @@ const (
 	EventSharesKey   = "shares"
 	EventSeizedKey   = "seized"
 	EventFeeKey      = "fee"
+	EventPkgPathKey  = "pkgpath"
+	EventNameKey     = "name"
 )
 
 // Event emission helper functions
@@ -70,9 +72,9 @@ func emitCreateMarket(marketId string, loanToken string, collateralToken string)
 	)
 }
 
-func emitDeposit(marketId string, user std.Address, amount *u256.Uint) {
+func emitSupply(marketId string, user std.Address, amount *u256.Uint) {
 	std.Emit(
-		DepositEvent,
+		SupplyEvent,
 		EventMarketIDKey, marketId,
 		EventUserKey, user.String(),
 		EventAmountKey, amount.ToString(),
@@ -103,7 +105,7 @@ func emitRepay(marketId string, caller std.Address, assets, shares *u256.Uint) {
 		EventMarketIDKey, marketId,
 		EventUserKey, caller.String(),
 		EventAmountKey, assets.ToString(),
-		"shares", shares.ToString(),
+		EventSharesKey, shares.ToString(),
 	)
 }
 
@@ -131,8 +133,8 @@ func emitAccrueInterest(marketId string, borrowRate, interest *u256.Uint) {
 func emitRegisterIRM(pkgPath, name string) {
 	std.Emit(
 		RegisterIRMEvent,
-		"pkgpath", pkgPath,
-		"name", name,
+		EventPkgPathKey, pkgPath,
+		EventNameKey, name,
 	)
 }
 
