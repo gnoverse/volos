@@ -8,7 +8,7 @@ import (
 
 	//"volos-backend/model"
 	"volos-backend/routes"
-	//"volos-backend/services/polling"
+	"volos-backend/services/polling"
 	"volos-backend/services/websocket"
 
 	//"time"
@@ -29,17 +29,6 @@ func init() {
 		log.Fatalf("Failed to create Firestore client: %v", err)
 	}
 	FirestoreClient = client
-
-	// Initialize the Firestore database with the initial data
-	// BlockHeightOnDeploy is passed as we don't care about the data before the deployment of the Volos contract
-	// True is passed as we want to override the existing data (dev purposes only)
-	// if err := polling.UpdateFirestoreData(FirestoreClient, model.BlockHeightOnDeploy, true); err != nil {
-	// 	log.Printf("Warning: Failed to initialize Firestore data: %v", err)
-	// }
-
-	// Start the Firestore polling updater in a background thread (after initial fill)
-	//pollingUpdater := polling.NewUpdater(FirestoreClient)
-	//pollingUpdater.Start(time.Second)
 }
 
 func main() {
@@ -53,6 +42,14 @@ func main() {
 	http.HandleFunc("/api/user-collateral", withCORS(routes.UserCollateralHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-borrow", withCORS(routes.UserBorrowHandler(FirestoreClient)))
 
+	// Start the poller
+	go func() {
+		ctx := context.Background()
+		poller := polling.NewPoller()
+		poller.Start(ctx)
+	}()
+
+	// Start the websocket listener
 	go func() {
 		ctx := context.Background()
 		if err := websocket.StartVolosTxListener(ctx); err != nil {
