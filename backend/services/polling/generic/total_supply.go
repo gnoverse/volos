@@ -7,12 +7,12 @@ import (
 	"volos-backend/services"
 )
 
-// GetTotalSupplyHistory fetches all deposit and withdraw events for a given marketId from the indexer,
+// GetTotalSupplyHistory fetches all Supply and withdraw events for a given marketId from the indexer,
 // aggregates them by block height, and returns the running total supply over time with real block timestamps.
 // Optionally, you can provide minBlockHeight to only fetch events after a certain block, and startingValue to continue the running total.
 func GetTotalSupplyHistory(marketId string, minBlockHeight *int, startingValue float64) ([]model.Data, error) {
 	depositsQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
-	whereDeposits := depositsQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(model.VolosPkgPath)
+	whereDeposits := depositsQB.Where().Success(true).EventType("Supply").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereDeposits.BlockHeightRange(minBlockHeight, nil)
 	}

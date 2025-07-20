@@ -12,7 +12,7 @@ import (
 // Optionally, you can provide minBlockHeight to only fetch events after a certain block, and startingValue to continue the running supply.
 func GetUtilizationHistory(marketId string, minBlockHeight *int, startingValue float64) ([]model.Data, error) {
 	supplyQB := indexer.NewQueryBuilder("getSupplyEvents", indexer.SupplyBorrowFields)
-	whereSupply := supplyQB.Where().Success(true).EventType("Deposit").MarketId(marketId).PkgPath(model.VolosPkgPath)
+	whereSupply := supplyQB.Where().Success(true).EventType("Supply").MarketId(marketId).PkgPath(model.VolosPkgPath)
 	if minBlockHeight != nil {
 		whereSupply.BlockHeightRange(minBlockHeight, nil)
 	}

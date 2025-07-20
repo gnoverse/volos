@@ -17,7 +17,7 @@ import {
 import { parseValidatedJsonResult } from "../utils/parsing.utils"
 import { GnoService } from "./abci.service"
 
-const REALM_PATH = "gno.land/r/gnolend"
+const REALM_PATH = "gno.land/r/volos"
 const gnoService = GnoService.getInstance()
 
 // GNO LEND API QUERIES
