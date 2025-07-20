@@ -12,7 +12,7 @@ func GetAllMarketIDs() ([]string, error) {
 	qb.Where().Success(true).
 		PkgPath(model.VolosPkgPath).
 		EventType("CreateMarket")
-
+		
 	resp, err := qb.Execute()
 	if err != nil {
 		return nil, err

@@ -17,7 +17,7 @@ import {
 import { parseValidatedJsonResult } from "../utils/parsing.utils"
 import { GnoService } from "./abci.service"
 
-const REALM_PATH = "gno.land/r/gnolend"
+const REALM_PATH = "gno.land/r/volos"
 const gnoService = GnoService.getInstance()
 
 // GNO LEND API QUERIES
@@ -26,7 +26,7 @@ export async function apiGetMarket(marketId: string): Promise<Market> {
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
-      `ApiGetMarket("cross, ${marketId}")`,
+      `ApiGetMarket("${marketId}")`,
     )
     return parseValidatedJsonResult(result, MarketSchema)
   } catch (error) {
@@ -39,7 +39,7 @@ export async function apiGetMarketParams(marketId: string): Promise<MarketParams
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
-      `ApiGetMarketParams(cross, "${marketId}")`,
+      `ApiGetMarketParams("${marketId}")`,
     )
     return parseValidatedJsonResult(result, MarketParamsSchema)
   } catch (error) {
@@ -52,7 +52,7 @@ export async function apiGetPosition(marketId: string, userAddr: string): Promis
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
-      `ApiGetPosition(cross, "${marketId}", "${userAddr}")`,
+      `ApiGetPosition("${marketId}", "${userAddr}")`,
     )
     return parseValidatedJsonResult(result, PositionSchema)
   } catch (error) {
@@ -78,7 +78,7 @@ export async function apiGetMarketInfo(marketId: string): Promise<MarketInfo> {
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
-      `ApiGetMarketInfo(cross, "${marketId}")`,
+      `ApiGetMarketInfo("${marketId}")`,
     )
     return parseValidatedJsonResult(result, MarketInfoSchema)
   } catch (error) {
@@ -91,7 +91,7 @@ export async function apiListMarketsInfo(): Promise<ApiListMarketsInfoResponse> 
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
-      `ApiListMarketsInfo(cross)`,
+      `ApiListMarketsInfo()`,
     )
     return parseValidatedJsonResult(result, ApiListMarketsInfoResponseSchema)
   } catch (error) {
@@ -104,7 +104,7 @@ export async function apiGetHealthFactor(marketId: string, userAddr: string): Pr
   try {
     const result = await gnoService.evaluateExpression(
       REALM_PATH,
-      `ApiGetHealthFactor(cross, "${marketId}", "${userAddr}")`,
+      `ApiGetHealthFactor("${marketId}", "${userAddr}")`,
     )
     return parseValidatedJsonResult(result, HealthFactorSchema)
   } catch (error) {

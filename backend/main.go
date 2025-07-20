@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"volos-backend/model"
+
+	//"volos-backend/model"
 	"volos-backend/routes"
 	"volos-backend/services/polling"
+	"volos-backend/services/websocket"
 
 	//"time"
 	"cloud.google.com/go/firestore"
@@ -21,26 +23,16 @@ var FirestoreClient *firestore.Client
 func init() {
 	ctx := context.Background()
 	projectID := "volos-f06d9"
-	serviceAccountPath := "firebase/firebase.json"
+	serviceAccountPath := "firebase.json"
 	client, err := firestore.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountPath))
 	if err != nil {
 		log.Fatalf("Failed to create Firestore client: %v", err)
 	}
 	FirestoreClient = client
-
-	// Initialize the Firestore database with the initial data
-	// BlockHeightOnDeploy is passed as we don't care about the data before the deployment of the Volos contract
-	// True is passed as we want to override the existing data (dev purposes only)
-	if err := polling.UpdateFirestoreData(FirestoreClient, model.BlockHeightOnDeploy, true); err != nil {
-		log.Printf("Warning: Failed to initialize Firestore data: %v", err)
-	}
-
-	// Start the Firestore polling updater in a background thread (after initial fill)
-	//pollingUpdater := polling.NewUpdater(FirestoreClient)
-	//pollingUpdater.Start(time.Second)
 }
 
 func main() {
+
 	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/total-borrow-history", withCORS(routes.TotalBorrowHistoryHandler(FirestoreClient)))
 	http.HandleFunc("/api/total-utilization-history", withCORS(routes.TotalUtilizationHistoryHandler(FirestoreClient)))
@@ -49,6 +41,21 @@ func main() {
 	http.HandleFunc("/api/user-loans", withCORS(routes.UserLoansHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-collateral", withCORS(routes.UserCollateralHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-borrow", withCORS(routes.UserBorrowHandler(FirestoreClient)))
+
+	// Start the poller
+	go func() {
+		ctx := context.Background()
+		poller := polling.NewPoller()
+		poller.Start(ctx)
+	}()
+
+	// Start the websocket listener
+	go func() {
+		ctx := context.Background()
+		if err := websocket.StartVolosTxListener(ctx); err != nil {
+			log.Printf("WebSocket listener error: %v", err)
+		}
+	}()
 
 	fmt.Println("Server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)

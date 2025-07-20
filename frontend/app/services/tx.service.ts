@@ -5,7 +5,7 @@ const GAS_WANTED = 50000000;
 
 export class TxService {
   private static instance: TxService;
-  private readonly GNOLEND_PKG_PATH = 'gno.land/r/gnolend';
+  private readonly GNOLEND_PKG_PATH = 'gno.land/r/volos';
 
   private constructor() {}
 

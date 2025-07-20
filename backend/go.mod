@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	cloud.google.com/go/firestore v1.18.0
+	github.com/coder/websocket v1.8.13
 	google.golang.org/api v0.241.0
 )
 
