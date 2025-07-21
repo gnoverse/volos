@@ -6,12 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	//"volos-backend/model"
 	"volos-backend/routes"
-	"volos-backend/services/polling"
-	"volos-backend/services/websocket"
+	"volos-backend/services/txfetching"
 
-	//"time"
 	"cloud.google.com/go/firestore"
 
 	// Firestore
@@ -41,19 +38,10 @@ func main() {
 	http.HandleFunc("/api/user-collateral", withCORS(routes.UserCollateralHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-borrow", withCORS(routes.UserBorrowHandler(FirestoreClient)))
 
-	// Start the poller
 	go func() {
 		ctx := context.Background()
-		poller := polling.NewPoller()
-		poller.Start(ctx)
-	}()
-
-	// Start the websocket listener
-	go func() {
-		ctx := context.Background()
-		if err := websocket.StartVolosTxListener(ctx); err != nil {
-			log.Printf("WebSocket listener error: %v", err)
-		}
+		listener := txfetching.NewTransactionListener()
+		listener.Start(ctx)
 	}()
 
 	fmt.Println("Server running on http://localhost:8080")

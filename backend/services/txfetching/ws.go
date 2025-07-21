@@ -1,4 +1,14 @@
-package websocket
+// Package txfetching provides transaction fetching utilities for the backend.
+//
+// This file implements a WebSocket-based transaction listener for the Volos protocol.
+// It establishes a WebSocket connection to a GraphQL endpoint and uses a GraphQL
+// subscription-type query to receive real-time transaction events. The listener
+// automatically handles connection initialization, subscription setup, and incoming
+// messages, logging all received transaction data as JSON.
+//
+// todo: process transactions instead of just logging
+//
+package txfetching
 
 import (
 	"context"
@@ -18,7 +28,7 @@ const (
 	protocol = "graphql-transport-ws"
 )
 
-func StartVolosTxListener(ctx context.Context) error {
+func StartVolosTransactionListener(ctx context.Context) error {
 	opts := &websocket.DialOptions{
 		Subprotocols: []string{protocol},
 	}
