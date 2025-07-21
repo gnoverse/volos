@@ -1,4 +1,4 @@
-// Package txfetching provides transaction fetching utilities for the backend.
+// Package txlistener provides transaction fetching utilities for the backend.
 //
 // This file implements a WebSocket-based transaction listener for the Volos protocol.
 // It establishes a WebSocket connection to a GraphQL endpoint and uses a GraphQL
@@ -7,17 +7,16 @@
 // messages, logging all received transaction data as JSON.
 //
 // todo: process transactions instead of just logging
-//
-package txfetching
+package txlistener
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
 	"volos-backend/indexer"
 	"volos-backend/model"
+	"volos-backend/services/processor"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -28,7 +27,7 @@ const (
 	protocol = "graphql-transport-ws"
 )
 
-func StartVolosTransactionListener(ctx context.Context) error {
+func StartVolosTransactionListener(ctx context.Context, pool *processor.TransactionProcessorPool) error {
 	opts := &websocket.DialOptions{
 		Subprotocols: []string{protocol},
 	}
@@ -78,8 +77,15 @@ func StartVolosTransactionListener(ctx context.Context) error {
 				log.Printf("read error: %v", err)
 				return
 			}
-			jsonData, _ := json.MarshalIndent(msg, "", "  ")
-			log.Printf("Received: %s", jsonData)
+
+			if payload, ok := msg["payload"].(map[string]interface{}); ok {
+				if data, ok := payload["data"].(map[string]interface{}); ok {
+					if tx, ok := data["getTransactions"].(map[string]interface{}); ok {
+						pool.Submit(tx)
+						continue
+					}
+				}
+			}
 		}
 	}()
 

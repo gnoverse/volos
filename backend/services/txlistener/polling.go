@@ -1,4 +1,4 @@
-// Package txfetching provides transaction fetching utilities for the backend.
+// Package txlistener provides transaction fetching utilities for the backend.
 //
 // This file contains the polling fallback mechanism for transaction monitoring.
 // When the WebSocket connection fails, the TransactionListener falls back to
@@ -9,7 +9,7 @@
 // - Updates the LastBlockHeight to avoid duplicate processing
 // - Logs all received transaction data for debugging
 // - Only activates when WebSocket is inactive (checked every 5 seconds)
-package txfetching
+package txlistener
 
 import (
 	"encoding/json"
@@ -27,9 +27,6 @@ func (tl *TransactionListener) pollNewTransactions() {
 		qb.Where().BlockHeightRange(&tl.LastBlockHeight, nil)
 	}
 
-	query := qb.Build()
-	log.Printf("Polling query: %s", query)
-
 	response, err := qb.Execute()
 	if err != nil {
 		log.Printf("Error executing query: %v", err)
@@ -42,14 +39,12 @@ func (tl *TransactionListener) pollNewTransactions() {
 		return
 	}
 
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	log.Printf("Received transactions (polling): %s", jsonData)
-
 	if data, ok := result["data"].(map[string]interface{}); ok {
 		if transactions, ok := data["getTransactions"].([]interface{}); ok {
 			if len(transactions) > 0 {
 				for _, tx := range transactions {
 					if txMap, ok := tx.(map[string]interface{}); ok {
+						tl.pool.Submit(txMap)
 						if blockHeight, ok := txMap["block_height"].(float64); ok {
 							if int(blockHeight) > tl.LastBlockHeight {
 								tl.LastBlockHeight = int(blockHeight)

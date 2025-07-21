@@ -470,8 +470,7 @@ import (
 
 func main() {
     gnolendAddr := std.DerivePkgAddr("${this.GNOLEND_PKG_PATH}")
-    tokenGetter := grc20reg.Get("${tokenPath}")
-    token := tokenGetter()
+    token := grc20reg.MustGet("${tokenPath}")
     teller := token.CallerTeller()
     teller.Approve(gnolendAddr, ${amount})
 }`

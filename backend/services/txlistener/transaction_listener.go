@@ -1,4 +1,4 @@
-// Package txfetching provides transaction fetching utilities for the backend.
+// Package txlistener provides transaction fetching utilities for the backend.
 //
 // TransactionListener implements a hybrid approach to monitoring Volos transactions:
 // 1. Primary: WebSocket-based real-time listening using GraphQL subscriptions
@@ -10,7 +10,7 @@
 //
 // The listener automatically switches between real-time (WebSocket) and batch (polling)
 // modes based on connection health, ensuring continuous transaction monitoring.
-package txfetching
+package txlistener
 
 import (
 	"context"
@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"volos-backend/model"
+	"volos-backend/services/processor"
 )
 
 type TransactionListener struct {
@@ -26,9 +27,10 @@ type TransactionListener struct {
 	RetryInterval   time.Duration
 	wsCtx           context.Context
 	wsCancel        context.CancelFunc
+	pool            *processor.TransactionProcessorPool
 }
 
-func NewTransactionListener() *TransactionListener {
+func NewTransactionListener(pool *processor.TransactionProcessorPool) *TransactionListener {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &TransactionListener{
 		LastBlockHeight: model.BlockHeightOnDeploy,
@@ -36,6 +38,7 @@ func NewTransactionListener() *TransactionListener {
 		RetryInterval:   1 * time.Hour,
 		wsCtx:           ctx,
 		wsCancel:        cancel,
+		pool:            pool,
 	}
 }
 
@@ -57,10 +60,12 @@ func (tl *TransactionListener) startWebSocketListener(ctx context.Context) {
 			tl.wsCtx = wsCtx
 			tl.wsCancel = wsCancel
 
-			err := StartVolosTransactionListener(wsCtx)
+			err := StartVolosTransactionListener(wsCtx, tl.pool)
 			if err != nil {
 				log.Printf("WebSocket listener failed: %v", err)
 				log.Println("Falling back to polling mode...")
+
+				tl.wsCancel()
 
 				select {
 				case <-ctx.Done():

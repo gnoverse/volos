@@ -7,7 +7,8 @@ import (
 	"net/http"
 
 	"volos-backend/routes"
-	"volos-backend/services/txfetching"
+	"volos-backend/services/processor"
+	"volos-backend/services/txlistener"
 
 	"cloud.google.com/go/firestore"
 
@@ -40,7 +41,7 @@ func main() {
 
 	go func() {
 		ctx := context.Background()
-		listener := txfetching.NewTransactionListener()
+		listener := txlistener.NewTransactionListener(processor.NewTransactionProcessorPool(8))
 		listener.Start(ctx)
 	}()
 
