@@ -3,7 +3,6 @@ package routes
 import (
 	"encoding/json"
 	"net/http"
-	"volos-backend/services/polling/user_specific"
 
 	"cloud.google.com/go/firestore"
 )
@@ -17,13 +16,9 @@ func UserLoansHandler(client *firestore.Client) http.HandlerFunc {
 			return
 		}
 
-		result, err := user_specific.GetOrUpdateUserLoanHistory(client, caller)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		// implement db fetch
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
+		json.NewEncoder(w).Encode("not yet implemented")
 	}
 }

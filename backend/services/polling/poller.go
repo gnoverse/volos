@@ -44,9 +44,6 @@ func (poll *Poller) pollNewTransactions() {
 		qb.Where().BlockHeightRange(&poll.LastBlockHeight, nil)
 	}
 
-	query := qb.Build()
-	log.Printf("Polling query: %s", query)
-
 	response, err := qb.Execute()
 	if err != nil {
 		log.Printf("Error executing query: %v", err)

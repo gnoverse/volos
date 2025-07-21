@@ -2,8 +2,8 @@ package services
 
 import (
 	"encoding/json"
-	"volos-backend/model"
 	"volos-backend/indexer"
+	"volos-backend/model"
 )
 
 // GetAllMarketIDs queries the indexer for all CreateMarket events and returns a slice of unique market IDs
@@ -12,7 +12,7 @@ func GetAllMarketIDs() ([]string, error) {
 	qb.Where().Success(true).
 		PkgPath(model.VolosPkgPath).
 		EventType("CreateMarket")
-		
+
 	resp, err := qb.Execute()
 	if err != nil {
 		return nil, err

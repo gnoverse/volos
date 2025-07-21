@@ -5,7 +5,7 @@ import (
 	"volos-backend/services"
 
 	"cloud.google.com/go/firestore"
-)	
+)
 
 func TotalSupplyHistoryHandler(client *firestore.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
