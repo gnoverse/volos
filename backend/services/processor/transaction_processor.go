@@ -13,10 +13,11 @@
 // handling logic for each transaction type.
 //
 // Usage:
-//   pool := processor.NewTransactionProcessorPool(8)
-//   pool.Start()
-//   ...
-//   pool.Submit(tx)
+//
+//	pool := processor.NewTransactionProcessorPool(8)
+//	pool.Start()
+//	...
+//	pool.Submit(tx)
 //
 // Both WebSocket and polling ingestion should submit transactions to the same pool for unified processing.
 package processor
@@ -63,7 +64,7 @@ func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 	}
 }
 
-// ProcessTransaction processes a single transaction JSON object (already unwrapped from 'data' and 'getTransactions').
+// ProcessTransaction processes a single transaction JSON object.
 func ProcessTransaction(tx map[string]interface{}) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {

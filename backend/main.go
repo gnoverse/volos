@@ -41,7 +41,9 @@ func main() {
 
 	go func() {
 		ctx := context.Background()
-		listener := txlistener.NewTransactionListener(processor.NewTransactionProcessorPool(8))
+		pool := processor.NewTransactionProcessorPool(8)
+		pool.Start()
+		listener := txlistener.NewTransactionListener(pool)
 		listener.Start(ctx)
 	}()
 
