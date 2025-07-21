@@ -1,4 +1,4 @@
-# Volos
+# Volos (ex GnoLend)
 
 Volos is the first lending protocol built using Gnolang, implementing financial primitives for decentralized lending and borrowing. The protocol features lending markets with configurable parameters, variable interest rate models, collateralized borrowing with health monitoring, and liquidation mechanisms for undercollateralized positions. It employs a shares-based accounting system to track user positions, calculates interest based on utilization metrics, and maintains system solvency through real-time risk assessment.
 
