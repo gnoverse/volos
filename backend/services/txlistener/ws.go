@@ -5,8 +5,6 @@
 // subscription-type query to receive real-time transaction events. The listener
 // automatically handles connection initialization, subscription setup, and incoming
 // messages, logging all received transaction data as JSON.
-//
-// todo: process transactions instead of just logging
 package txlistener
 
 import (

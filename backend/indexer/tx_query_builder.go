@@ -17,9 +17,6 @@ type QueryBuilder struct {
 	Fields               string
 	WhereBuilder         *WhereClauseBuilder
 	IsSubscription       bool
-	UseTransactionsQuery bool
-	FilterClauseStr      string
-	FilterBuilder        *FilterClauseBuilder
 }
 
 func NewQueryBuilder(operationName, fields string) *QueryBuilder {
@@ -28,9 +25,6 @@ func NewQueryBuilder(operationName, fields string) *QueryBuilder {
 		Fields:               fields,
 		WhereBuilder:         NewWhereClauseBuilder(),
 		IsSubscription:       false,
-		UseTransactionsQuery: false,
-		FilterClauseStr:      "",
-		FilterBuilder:        NewFilterClauseBuilder(),
 	}
 }
 
@@ -53,38 +47,7 @@ func (qb *QueryBuilder) Subscription() *QueryBuilder {
 	return qb
 }
 
-func (qb *QueryBuilder) OriginalTransactionsQuery() *QueryBuilder {
-	qb.UseTransactionsQuery = true
-	return qb
-}
-
-func (qb *QueryBuilder) FilterClause(clause string) *QueryBuilder {
-	qb.FilterClauseStr = clause
-	return qb
-}
-
-func (qb *QueryBuilder) Filter() *FilterClauseBuilder {
-	return qb.FilterBuilder
-}
-
 func (qb *QueryBuilder) Build() string {
-	if qb.UseTransactionsQuery {
-		operationType := "query"
-		if qb.IsSubscription {
-			operationType = "subscription"
-		}
-		filterClause := qb.FilterBuilder.Build()
-		return fmt.Sprintf(`
-		%s {
-			transactions(
-				filter: %s
-			) {
-				%s
-			}
-		}
-	`, operationType, filterClause, qb.Fields)
-	}
-
 	whereClause := qb.WhereBuilder.Build()
 	operationType := "query"
 	if qb.IsSubscription {
@@ -229,97 +192,4 @@ func (w *WhereClauseBuilder) Reset() *WhereClauseBuilder {
 	w.eventConditions = []string{}
 	w.msgCallConditions = []string{}
 	return w
-}
-
-// FilterClauseBuilder helps build the filter clause for transactions queries
-type FilterClauseBuilder struct {
-	conditions        []string
-	eventConditions   []string
-	msgCallConditions []string
-}
-
-func NewFilterClauseBuilder() *FilterClauseBuilder {
-	return &FilterClauseBuilder{
-		conditions:        []string{},
-		eventConditions:   []string{},
-		msgCallConditions: []string{},
-	}
-}
-
-func (f *FilterClauseBuilder) Success(success bool) *FilterClauseBuilder {
-	f.conditions = append(f.conditions, fmt.Sprintf("success: %v", success))
-	return f
-}
-
-func (f *FilterClauseBuilder) BlockHeightRange(min, max *int) *FilterClauseBuilder {
-	parts := []string{}
-	if min != nil {
-		parts = append(parts, fmt.Sprintf("from_block_height: %d", *min))
-	}
-	if max != nil {
-		parts = append(parts, fmt.Sprintf("to_block_height: %d", *max))
-	}
-	if len(parts) > 0 {
-		f.conditions = append(f.conditions, strings.Join(parts, ", "))
-	}
-	return f
-}
-
-func (f *FilterClauseBuilder) EventType(eventType string) *FilterClauseBuilder {
-	f.eventConditions = append(f.eventConditions, fmt.Sprintf(`{ type: "%s" }`, eventType))
-	return f
-}
-
-func (f *FilterClauseBuilder) MarketId(marketId string) *FilterClauseBuilder {
-	f.eventConditions = append(f.eventConditions, fmt.Sprintf(`{ attrs: [{ key: "market_id", value: "%s" }] }`, marketId))
-	return f
-}
-
-func (f *FilterClauseBuilder) Caller(caller string) *FilterClauseBuilder {
-	f.msgCallConditions = append(f.msgCallConditions, fmt.Sprintf(`caller: "%s"`, caller))
-	return f
-}
-
-func (f *FilterClauseBuilder) PkgPath(pkgPath string) *FilterClauseBuilder {
-	f.msgCallConditions = append(f.msgCallConditions, fmt.Sprintf(`pkg_path: "%s"`, pkgPath))
-	return f
-}
-
-func (f *FilterClauseBuilder) Add(condition string) *FilterClauseBuilder {
-	f.conditions = append(f.conditions, condition)
-	return f
-}
-
-func (f *FilterClauseBuilder) Build() string {
-	allConditions := append([]string{}, f.conditions...)
-
-	if len(f.msgCallConditions) > 0 {
-		msgCallCondition := fmt.Sprintf(`
-			message: [{
-				type_url: exec,
-				route: vm,
-				vm_param: {
-					exec: {
-						%s
-					}
-				}
-			}]
-		`, strings.Join(f.msgCallConditions, ", "))
-		allConditions = append(allConditions, msgCallCondition)
-	}
-
-	if len(f.eventConditions) > 0 {
-		eventCondition := fmt.Sprintf(`
-			events: [%s]
-		`, strings.Join(f.eventConditions, ", "))
-		allConditions = append(allConditions, eventCondition)
-	}
-	return fmt.Sprintf("{ %s }", strings.Join(allConditions, ", "))
-}
-
-func (f *FilterClauseBuilder) Reset() *FilterClauseBuilder {
-	f.conditions = []string{}
-	f.eventConditions = []string{}
-	f.msgCallConditions = []string{}
-	return f
 }
