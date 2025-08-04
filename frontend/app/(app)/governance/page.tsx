@@ -1,15 +1,11 @@
 "use client"
 
 import { AdenaService } from "@/app/services/adena.service"
+import { GovMemberCards } from "@/components/gov-member-cards"
+import { ProposalsCard } from "@/components/proposals-card"
 import { Button } from "@/components/ui/button"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { Info, RefreshCw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -88,116 +84,23 @@ function GovernancePageContent() {
         Governance
       </h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 relative">
-        {/* Left side - governance information */}
-        <div className="col-span-1 lg:col-span-9 space-y-6">
-          {/* Governance info cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* DAO Membership Card */}
-            <div className={`${CARD_STYLES} p-6 border-l-4 border-logo-500`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-logo-500">DAO Membership</h3>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info size={20} className="text-gray-400 hover:text-gray-300 hover:bg-gray-700/60 rounded-full p-1 cursor-default transition-colors" />
-                    </TooltipTrigger>
-                    <TooltipContent className="bg-gray-900 text-gray-300 border-none shadow-lg">
-                      <p className="max-w-xs">
-                        You are a member of the DAO if you hold xVLS tokens. 
-                        xVLS tokens represent your governance power and voting rights.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              
-              {isLoading ? (
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-600 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-600 rounded w-1/2"></div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Status:</span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      daoMembership.isMember 
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                    }`}>
-                      {daoMembership.isMember ? 'Member' : 'Not a Member'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">xVLS Balance:</span>
-                    <span className="text-gray-200 font-mono font-semibold">
-                      {daoMembership.xVLSBalance} xVLS
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Voting Power Card */}
-            <div className={`${CARD_STYLES} p-6 border-l-4 border-logo-500`}>
-              <h3 className="text-xl font-semibold text-logo-500 mb-4">Voting Power</h3>
-              
-              {isLoading ? (
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-600 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-600 rounded w-1/2"></div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Voting Power:</span>
-                    <span className="text-logo-500 font-mono font-semibold">
-                      {votingPower.power} xVLS
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Can Propose:</span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      votingPower.canPropose 
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                    }`}>
-                      {votingPower.canPropose ? 'Eligible' : 'Not Eligible'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Proposal Threshold:</span>
-                    <span className="text-gray-200 font-mono">
-                      {votingPower.proposalThreshold} xVLS
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Placeholder for future governance features */}
-          <div className={`${CARD_STYLES} p-6 border-l-4 border-logo-500`}>
-            <h3 className="text-xl font-semibold text-logo-500 mb-4">Active Proposals</h3>
-            <div className="text-gray-400 text-center py-8">
-              <p>No active proposals at the moment.</p>
-              <p className="text-sm mt-2">Check back later for governance proposals.</p>
-            </div>
-          </div>
+      {userAddress && (
+        <div className="space-y-6">
+          {/* Governance member cards */}
+          <GovMemberCards
+            daoMembership={daoMembership}
+            votingPower={votingPower}
+            isLoading={isLoading}
+            cardStyles={CARD_STYLES}
+          />
         </div>
+      )}
 
-        {/* Right side - placeholder for future features */}
-        <div className="lg:col-span-3">
-          <div className={`${CARD_STYLES} p-6 h-full border-l-4 border-logo-500`}>
-            <h3 className="text-xl font-semibold text-logo-500 mb-4">Governance Actions</h3>
-            <div className="text-gray-400 text-center py-8">
-              <p>Governance actions will appear here.</p>
-              <p className="text-sm mt-2">Create proposals, vote, and more.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* Proposals Card */}
+        <ProposalsCard
+            eligible={votingPower.canPropose}
+            cardStyles={CARD_STYLES}
+          />
     </div>
   )
 }
