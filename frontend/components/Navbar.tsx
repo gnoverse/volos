@@ -16,7 +16,9 @@ import Logo from "./logo";
 
 const menuItems = [
   { name: "Borrow", href: "/borrow" },
-  { name: "Explore", href: "/explore" },
+  { name: "Governance", href: "/governance" },
+  { name: "Docs", href: "/documentation" },
+  { name: "About Us", href: "/about-us" },
 ]
 
 export default function Navbar() {
