@@ -3,8 +3,8 @@
 GNOLAND_RPC_URL=http://localhost:26657
 CHAINID=dev
 
-ADMIN := 
+ADMIN := g1tzl3sgre0c2zgxfpws9xhq0c069wf7zqh6aqqy
 
-ADDR_VOLOS := g1c3cs922man2fz7msgwxr3etca5nnjm96k6nhq4
+ADDR_VOLOS := g1aaqgmqg85mksser0c5q8mez3nc3ssd93rme8f3
 
 MAX_APPROVE := 9223372036854775806

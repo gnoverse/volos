@@ -20,6 +20,8 @@ const (
 	AccrueInterestEvent     = "AccrueInterest"
 	SupplyCollateralEvent   = "SupplyCollateral"
 	WithdrawCollateralEvent = "WithdrawCollateral"
+	FlashLoanEvent          = "FlashLoan"
+	SetFeeEvent             = "SetFee"
 
 	// Event names
 	EventAccrueInterest     = "accrue_interest"
@@ -40,6 +42,8 @@ const (
 	EventMarketIDKey = "market_id"
 	EventAmountKey   = "amount"
 	EventUserKey     = "user"
+	EventOnBehalfKey = "on_behalf"
+	EventReceiverKey = "receiver"
 
 	// Market keys
 	EventLoanTokenKey       = "loan_token"
@@ -65,6 +69,7 @@ const (
     EventAuthorizerKey    = "authorizer"
     EventAuthorizedKey    = "authorized"
     EventIsAuthorizedKey  = "is_authorized"
+    EventTokenKey = "token"
 )
 
 // Event emission helper functions
@@ -77,38 +82,44 @@ func emitCreateMarket(marketId string, loanToken string, collateralToken string)
 	)
 }
 
-func emitSupply(marketId string, user std.Address, amount *u256.Uint) {
+func emitSupply(marketId string, caller std.Address, onBehalf std.Address, amount *u256.Uint) {
 	std.Emit(
 		SupplyEvent,
 		EventMarketIDKey, marketId,
-		EventUserKey, user.String(),
+		EventUserKey, caller.String(),
+		EventOnBehalfKey, onBehalf.String(),
 		EventAmountKey, amount.ToString(),
 	)
 }
 
-func emitWithdraw(marketId string, caller std.Address, amount *u256.Uint) {
+func emitWithdraw(marketId string, caller std.Address, onBehalf std.Address, receiver std.Address, amount *u256.Uint) {
 	std.Emit(
 		WithdrawEvent,
 		EventMarketIDKey, marketId,
 		EventUserKey, caller.String(),
+		EventOnBehalfKey, onBehalf.String(),
+		EventReceiverKey, receiver.String(),
 		EventAmountKey, amount.ToString(),
 	)
 }
 
-func emitBorrow(marketId string, user std.Address, amount *u256.Uint) {
+func emitBorrow(marketId string, caller std.Address, onBehalf std.Address, receiver std.Address, amount *u256.Uint) {
 	std.Emit(
 		BorrowEvent,
 		EventMarketIDKey, marketId,
-		EventUserKey, user.String(),
+		EventUserKey, caller.String(),
+		EventOnBehalfKey, onBehalf.String(),
+		EventReceiverKey, receiver.String(),
 		EventAmountKey, amount.ToString(),
 	)
 }
 
-func emitRepay(marketId string, caller std.Address, assets, shares *u256.Uint) {
+func emitRepay(marketId string, caller std.Address, onBehalf std.Address, assets, shares *u256.Uint) {
 	std.Emit(
 		RepayEvent,
 		EventMarketIDKey, marketId,
 		EventUserKey, caller.String(),
+		EventOnBehalfKey, onBehalf.String(),
 		EventAmountKey, assets.ToString(),
 		EventSharesKey, shares.ToString(),
 	)
@@ -143,20 +154,23 @@ func emitRegisterIRM(pkgPath, name string) {
 	)
 }
 
-func emitSupplyCollateral(marketId string, caller std.Address, amount uint64) {
+func emitSupplyCollateral(marketId string, caller std.Address, onBehalf std.Address, amount uint64) {
 	std.Emit(
 		SupplyCollateralEvent,
 		EventMarketIDKey, marketId,
 		EventUserKey, caller.String(),
+		EventOnBehalfKey, onBehalf.String(),
 		EventAmountKey, u256.NewUint(amount).ToString(),
 	)
 }
 
-func emitWithdrawCollateral(marketId string, caller std.Address, amount uint64) {
+func emitWithdrawCollateral(marketId string, caller std.Address, onBehalf std.Address, receiver std.Address, amount uint64) {
 	std.Emit(
 		WithdrawCollateralEvent,
 		EventMarketIDKey, marketId,
 		EventUserKey, caller.String(),
+		EventOnBehalfKey, onBehalf.String(),
+		EventReceiverKey, receiver.String(),
 		EventAmountKey, u256.NewUint(amount).ToString(),
 	)
 }
@@ -168,5 +182,24 @@ func emitAuthorizationSet(authorizer std.Address, authorized std.Address, isAuth
 		EventAuthorizerKey, authorizer.String(),
 		EventAuthorizedKey, authorized.String(),
 		EventIsAuthorizedKey, strconv.FormatBool(isAuthorized),
+	)
+}
+
+// emitFlashLoan emits an event when a flash loan occurs
+func emitFlashLoan(caller std.Address, token string, assets int64) {
+	std.Emit(
+		FlashLoanEvent,
+		EventUserKey, caller.String(),
+		EventTokenKey, token,
+		EventAmountKey, u256.NewUint(uint64(assets)).ToString(),
+	)
+}
+
+// emitSetFee emits an event when a market fee is set (following Morpho pattern)
+func emitSetFee(marketId string, fee string) {
+	std.Emit(
+		SetFeeEvent,
+		EventMarketIDKey, marketId,
+		EventFeeKey, fee,
 	)
 }

@@ -1,7 +1,9 @@
-package volos
+package volos_mocks
 
 import (
+	"gno.land/r/volos/core"
 	u256 "gno.land/p/gnoswap/uint256"
+
 )
 
 // LinearIRM is a simple interest rate model where utilization rate directly corresponds to APR
@@ -22,7 +24,7 @@ func (irm *LinearIRM) BorrowRate(totalSupplyAssets, totalBorrowAssets *u256.Uint
 
 	// Calculate utilization rate scaled by WAD
 	// utilization = (totalBorrow * WAD) / totalSupply
-	utilization := WDivDown(totalBorrowAssets, totalSupplyAssets)
+	utilization := core.WDivDown(totalBorrowAssets, totalSupplyAssets)
 
 	// Convert APR to per-second rate
 	// APR = utilization (e.g. 80% utilization = 80% APR)
@@ -32,5 +34,5 @@ func (irm *LinearIRM) BorrowRate(totalSupplyAssets, totalBorrowAssets *u256.Uint
 }
 
 func init() {
-	RegisterIRM(cross, &LinearIRM{})
+	core.RegisterIRM(cross, &LinearIRM{})
 }
