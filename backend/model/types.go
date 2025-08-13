@@ -1,8 +1,9 @@
 package model
 
-const VolosPkgPath = "gno.land/r/volos/core" // the package path of the Volos contract
-const Rpc = "http://localhost:26657"    // the RPC endpoint of the node
-const BlockHeightOnDeploy = 0           // the block height of the deployment of the Volos contract
+const VolosPkgPath = "gno.land/r/volos/core"              // the package path of the Volos contract
+const VolosGovPkgPath = "gno.land/r/volos/gov/governance" // the package path of the Volos governance contract
+const Rpc = "http://localhost:26657"                      // the RPC endpoint of the node
+const BlockHeightOnDeploy = 0                             // the block height of the deployment of the Volos contract
 
 // Data is a type to be used to extract the value and timestamp from a data point.
 // Since transactions only have block height, we need to fetch the timestamp from the block height.

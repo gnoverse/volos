@@ -2,9 +2,13 @@
 //
 // This file implements a WebSocket-based transaction listener for the Volos protocol.
 // It establishes a WebSocket connection to a GraphQL endpoint and uses a GraphQL
-// subscription-type query to receive real-time transaction events. The listener
-// automatically handles connection initialization, subscription setup, and incoming
-// messages, logging all received transaction data as JSON.
+// subscription-type query to receive real-time transaction events from both the core
+// and governance packages. The listener automatically handles connection initialization,
+// subscription setup, and incoming messages, logging all received transaction data as JSON.
+//
+// The WebSocket listener monitors transactions from:
+// - gno.land/r/volos/core: Core protocol transactions (supply, borrow, etc.)
+// - gno.land/r/volos/gov/governance: Governance transactions (proposals, voting, etc.)
 package txlistener
 
 import (
@@ -25,6 +29,10 @@ const (
 	protocol = "graphql-transport-ws"
 )
 
+// StartVolosTransactionListener establishes a WebSocket connection to the GraphQL endpoint
+// and subscribes to real-time transactions from both core and governance packages.
+// It uses a logical OR condition to listen to transactions from either package path
+// and submits all received transactions to the provided processor pool.
 func StartVolosTransactionListener(ctx context.Context, pool *processor.TransactionProcessorPool) error {
 	opts := &websocket.DialOptions{
 		Subprotocols: []string{protocol},
@@ -53,7 +61,7 @@ func StartVolosTransactionListener(ctx context.Context, pool *processor.Transact
 
 	qb := indexer.NewQueryBuilder("VolosTxSub", indexer.UniversalTransactionFields)
 	qb.Subscription()
-	qb.Where().PkgPath(model.VolosPkgPath)
+	qb.Where().Success(true).Or().PkgPath(model.VolosPkgPath).PkgPath(model.VolosGovPkgPath)
 	query := qb.Build()
 
 	subMsg := map[string]interface{}{

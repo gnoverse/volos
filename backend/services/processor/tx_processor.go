@@ -2,15 +2,17 @@
 //
 // This package defines a TransactionProcessorPool, which enables high-throughput, thread-safe
 // processing of Volos protocol transactions received from both WebSocket and polling sources.
+// The processor handles transactions from both core and governance packages, routing them
+// to appropriate handlers based on their package path.
 //
 // The TransactionProcessorPool uses a buffered channel as a job queue and a configurable
 // number of worker goroutines to process transactions in parallel. Transactions are submitted
 // to the pool via the Submit method, and each worker calls ProcessTransaction to handle the
-// transaction logic based on its event type.
+// transaction logic based on its package path and event type.
 //
 // This design ensures that transaction processing keeps up with real-time data ingestion,
 // prevents bottlenecks, and provides a scalable foundation for implementing custom event
-// handling logic for each transaction type.
+// handling logic for each transaction type from both core and governance packages.
 //
 // Usage:
 //
@@ -20,14 +22,16 @@
 //	pool.Submit(tx)
 //
 // Both WebSocket and polling ingestion should submit transactions to the same pool for unified processing.
+// The processor automatically routes transactions to core or governance handlers based on package path.
 package processor
 
 import (
 	"log"
-	"volos-backend/services/dbupdater"
 )
 
 // TransactionProcessorPool processes transactions concurrently using a worker pool.
+// It handles transactions from both core and governance packages, routing them to
+// appropriate processing functions based on their package path.
 type TransactionProcessorPool struct {
 	jobs    chan map[string]interface{}
 	workers int
@@ -44,7 +48,7 @@ func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
 	}
 }
 
-// Start launches the worker goroutines.
+// Start launches the worker goroutines that process transactions from both core and governance packages.
 func (p *TransactionProcessorPool) Start() {
 	for i := 0; i < p.workers; i++ {
 		go func() {
@@ -55,7 +59,8 @@ func (p *TransactionProcessorPool) Start() {
 	}
 }
 
-// Submit adds a transaction to the processing queue.
+// Submit adds a transaction to the processing queue. The transaction will be routed
+// to either core or governance processing based on its package path.
 func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 	select {
 	case p.jobs <- tx:
@@ -65,54 +70,48 @@ func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 	}
 }
 
-// ProcessTransaction processes a single transaction JSON object.
+// ProcessTransaction processes a single transaction JSON object by determining its package path
+// and routing it to the appropriate processor (core or governance).
 func ProcessTransaction(tx map[string]interface{}) {
-	response, ok := tx["response"].(map[string]interface{})
-	if !ok {
-		log.Println("Transaction missing 'response' field")
-		return
-	}
-	events, ok := response["events"].([]interface{})
-	if !ok || len(events) == 0 {
-		log.Println("Transaction missing or empty 'events' array")
-		return
-	}
+	pkgPath := getPackagePath(tx)
 
-	lastEvent, ok := events[len(events)-1].(map[string]interface{})
-	if !ok {
-		log.Println("Last event is not a map")
-		return
-	}
-	eventType, ok := lastEvent["type"].(string)
-	if !ok {
-		log.Println("Event type is not a string")
-		return
-	}
-
-	switch eventType {
-	case "CreateMarket":
-		dbupdater.ProcessCreateMarket(tx)
-	case "Supply":
-		dbupdater.ProcessSupply(tx)
-	case "Withdraw":
-		dbupdater.ProcessWithdraw(tx)
-	case "Borrow":
-		dbupdater.ProcessBorrow(tx)
-	case "Repay":
-		dbupdater.ProcessRepay(tx)
-	case "Liquidate":
-		dbupdater.ProcessLiquidate(tx)
-	case "RegisterIRM":
-		dbupdater.ProcessRegisterIRM(tx)
-	case "AccrueInterest":
-		dbupdater.ProcessAccrueInterest(tx)
-	case "SupplyCollateral":
-		dbupdater.ProcessSupplyCollateral(tx)
-	case "WithdrawCollateral":
-		dbupdater.ProcessWithdrawCollateral(tx)
-	case "authorization_set":
-		dbupdater.ProcessAuthorizationSet(tx)
+	switch pkgPath {
+	case "gno.land/r/volos/core":
+		processCoreTransaction(tx)
+	case "gno.land/r/volos/gov/governance":
+		processGovernanceTransaction(tx)
 	default:
-		log.Printf("Unknown event type: %s", eventType)
+		log.Printf("Unknown package path: %s", pkgPath)
 	}
+}
+
+// getPackagePath extracts the package path from the transaction structure by navigating
+// through the messages array and MsgCall object to find the pkg_path field.
+func getPackagePath(tx map[string]interface{}) string {
+	messages, ok := tx["messages"].([]interface{})
+	if !ok || len(messages) == 0 {
+		return ""
+	}
+
+	firstMsg, ok := messages[0].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	value, ok := firstMsg["value"].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	msgCall, ok := value["MsgCall"].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	pkgPath, ok := msgCall["pkg_path"].(string)
+	if !ok {
+		return ""
+	}
+
+	return pkgPath
 }

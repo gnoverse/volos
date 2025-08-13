@@ -2,13 +2,19 @@
 //
 // This file contains the polling fallback mechanism for transaction monitoring.
 // When the WebSocket connection fails, the TransactionListener falls back to
-// periodic polling of the GraphQL endpoint to fetch new transactions.
+// periodic polling of the GraphQL endpoint to fetch new transactions from both
+// core and governance packages.
 //
 // The polling service:
 // - Queries for transactions after the last known block height
+// - Uses logical OR conditions to monitor both core and governance transactions
 // - Updates the LastBlockHeight to avoid duplicate processing
 // - Logs all received transaction data for debugging
 // - Only activates when WebSocket is inactive (checked every 5 seconds)
+//
+// The polling mechanism monitors transactions from:
+// - gno.land/r/volos/core: Core protocol transactions (supply, borrow, liquidate, etc.)
+// - gno.land/r/volos/gov/governance: Governance transactions (proposals, voting, etc.)
 package txlistener
 
 import (
@@ -19,9 +25,13 @@ import (
 	"volos-backend/model"
 )
 
+// pollNewTransactions executes a GraphQL query to fetch new transactions from both
+// core and governance packages that occurred after the last known block height.
+// It uses a logical OR condition to include transactions from either package path
+// and submits all found transactions to the processor pool.
 func (tl *TransactionListener) pollNewTransactions() {
 	qb := indexer.NewQueryBuilder("VolosTxQuery", indexer.UniversalTransactionFields)
-	qb.Where().PkgPath(model.VolosPkgPath)
+	qb.Where().Success(true).Or().PkgPath(model.VolosPkgPath).PkgPath(model.VolosGovPkgPath)
 
 	if tl.LastBlockHeight > 0 {
 		qb.Where().BlockHeightRange(&tl.LastBlockHeight, nil)

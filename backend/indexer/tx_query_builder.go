@@ -13,18 +13,18 @@ const txIndexerUrl = "http://localhost:3100"
 
 // QueryBuilder helps build and execute GraphQL queries for the indexer
 type QueryBuilder struct {
-	OperationName        string
-	Fields               string
-	WhereBuilder         *WhereClauseBuilder
-	IsSubscription       bool
+	OperationName  string
+	Fields         string
+	WhereBuilder   *WhereClauseBuilder
+	IsSubscription bool
 }
 
 func NewQueryBuilder(operationName, fields string) *QueryBuilder {
 	return &QueryBuilder{
-		OperationName:        operationName,
-		Fields:               fields,
-		WhereBuilder:         NewWhereClauseBuilder(),
-		IsSubscription:       false,
+		OperationName:  operationName,
+		Fields:         fields,
+		WhereBuilder:   NewWhereClauseBuilder(),
+		IsSubscription: false,
 	}
 }
 
@@ -102,6 +102,7 @@ type WhereClauseBuilder struct {
 	conditions        []string
 	eventConditions   []string
 	msgCallConditions []string
+	logicalOperator   string // "_or" or "_and"
 }
 
 func NewWhereClauseBuilder() *WhereClauseBuilder {
@@ -109,6 +110,7 @@ func NewWhereClauseBuilder() *WhereClauseBuilder {
 		conditions:        []string{},
 		eventConditions:   []string{},
 		msgCallConditions: []string{},
+		logicalOperator:   "",
 	}
 }
 
@@ -151,6 +153,16 @@ func (w *WhereClauseBuilder) PkgPath(pkgPath string) *WhereClauseBuilder {
 	return w
 }
 
+func (w *WhereClauseBuilder) Or() *WhereClauseBuilder {
+	w.logicalOperator = "_or"
+	return w
+}
+
+func (w *WhereClauseBuilder) And() *WhereClauseBuilder {
+	w.logicalOperator = "_and"
+	return w
+}
+
 func (w *WhereClauseBuilder) Add(condition string) *WhereClauseBuilder {
 	w.conditions = append(w.conditions, condition)
 	return w
@@ -160,29 +172,67 @@ func (w *WhereClauseBuilder) Build() string {
 	allConditions := append([]string{}, w.conditions...)
 
 	if len(w.msgCallConditions) > 0 {
-		msgCallCondition := fmt.Sprintf(`
-			messages: {
-				value: {
-					MsgCall: {
-						%s
+		if w.logicalOperator != "" {
+			wrappedConditions := make([]string, len(w.msgCallConditions))
+			for i, condition := range w.msgCallConditions {
+				wrappedConditions[i] = fmt.Sprintf("{%s}", condition)
+			}
+			msgCallCondition := fmt.Sprintf(`
+				messages: {
+					value: {
+						MsgCall: {
+							%s: [
+								%s
+							]
+						}
 					}
 				}
-			}
-		`, strings.Join(w.msgCallConditions, "\n"))
-		allConditions = append(allConditions, msgCallCondition)
+			`, w.logicalOperator, strings.Join(wrappedConditions, ",\n"))
+			allConditions = append(allConditions, msgCallCondition)
+		} else {
+			msgCallCondition := fmt.Sprintf(`
+				messages: {
+					value: {
+						MsgCall: {
+							%s
+						}
+					}
+				}
+			`, strings.Join(w.msgCallConditions, "\n"))
+			allConditions = append(allConditions, msgCallCondition)
+		}
 	}
 
 	if len(w.eventConditions) > 0 {
-		eventCondition := fmt.Sprintf(`
-			response: {
-				events: {
-					GnoEvent: {
-						%s
+		if w.logicalOperator != "" {
+			wrappedConditions := make([]string, len(w.eventConditions))
+			for i, condition := range w.eventConditions {
+				wrappedConditions[i] = fmt.Sprintf("{%s}", condition)
+			}
+			eventCondition := fmt.Sprintf(`
+				response: {
+					events: {
+						GnoEvent: {
+							%s: [
+								%s
+							]
+						}
 					}
 				}
-			}
-		`, strings.Join(w.eventConditions, "\n"))
-		allConditions = append(allConditions, eventCondition)
+			`, w.logicalOperator, strings.Join(wrappedConditions, ",\n"))
+			allConditions = append(allConditions, eventCondition)
+		} else {
+			eventCondition := fmt.Sprintf(`
+				response: {
+					events: {
+						GnoEvent: {
+							%s
+						}
+					}
+				}
+			`, strings.Join(w.eventConditions, "\n"))
+			allConditions = append(allConditions, eventCondition)
+		}
 	}
 	return strings.Join(allConditions, "\n")
 }
@@ -191,5 +241,6 @@ func (w *WhereClauseBuilder) Reset() *WhereClauseBuilder {
 	w.conditions = []string{}
 	w.eventConditions = []string{}
 	w.msgCallConditions = []string{}
+	w.logicalOperator = ""
 	return w
 }
