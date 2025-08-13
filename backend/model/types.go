@@ -1,6 +1,6 @@
 package model
 
-const VolosPkgPath = "gno.land/r/volos" // the package path of the Volos contract
+const VolosPkgPath = "gno.land/r/volos/core" // the package path of the Volos contract
 const Rpc = "http://localhost:26657"    // the RPC endpoint of the node
 const BlockHeightOnDeploy = 0           // the block height of the deployment of the Volos contract
 

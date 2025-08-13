@@ -24,6 +24,7 @@ package processor
 
 import (
 	"log"
+	"volos-backend/services/dbupdater"
 )
 
 // TransactionProcessorPool processes transactions concurrently using a worker pool.
@@ -90,27 +91,27 @@ func ProcessTransaction(tx map[string]interface{}) {
 
 	switch eventType {
 	case "CreateMarket":
-		// TODO: handle CreateMarket
+		dbupdater.ProcessCreateMarket(tx)
 	case "Supply":
-		log.Println("RECEIVED SUPPLY")
+		dbupdater.ProcessSupply(tx)
 	case "Withdraw":
-		// TODO: handle Withdraw
+		dbupdater.ProcessWithdraw(tx)
 	case "Borrow":
-		// TODO: handle Borrow
+		dbupdater.ProcessBorrow(tx)
 	case "Repay":
-		// TODO: handle Repay
+		dbupdater.ProcessRepay(tx)
 	case "Liquidate":
-		// TODO: handle Liquidate
+		dbupdater.ProcessLiquidate(tx)
 	case "RegisterIRM":
-		// TODO: handle RegisterIRM
+		dbupdater.ProcessRegisterIRM(tx)
 	case "AccrueInterest":
-		// TODO: handle AccrueInterest
+		dbupdater.ProcessAccrueInterest(tx)
 	case "SupplyCollateral":
-		// TODO: handle SupplyCollateral
+		dbupdater.ProcessSupplyCollateral(tx)
 	case "WithdrawCollateral":
-		// TODO: handle WithdrawCollateral
+		dbupdater.ProcessWithdrawCollateral(tx)
 	case "authorization_set":
-		// TODO: handle AuthorizationSet
+		dbupdater.ProcessAuthorizationSet(tx)
 	default:
 		log.Printf("Unknown event type: %s", eventType)
 	}
