@@ -103,12 +103,7 @@ func getPackagePath(tx map[string]interface{}) string {
 		return ""
 	}
 
-	msgCall, ok := value["MsgCall"].(map[string]interface{})
-	if !ok {
-		return ""
-	}
-
-	pkgPath, ok := msgCall["pkg_path"].(string)
+	pkgPath, ok := value["pkg_path"].(string)
 	if !ok {
 		return ""
 	}
