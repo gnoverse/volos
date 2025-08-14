@@ -27,6 +27,8 @@ package processor
 
 import (
 	"log"
+
+	"cloud.google.com/go/firestore"
 )
 
 // TransactionProcessorPool processes transactions concurrently using a worker pool.
@@ -49,11 +51,11 @@ func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
 }
 
 // Start launches the worker goroutines that process transactions from both core and governance packages.
-func (p *TransactionProcessorPool) Start() {
+func (p *TransactionProcessorPool) Start(client *firestore.Client) {
 	for i := 0; i < p.workers; i++ {
 		go func() {
 			for tx := range p.jobs {
-				ProcessTransaction(tx)
+				ProcessTransaction(tx, client)
 			}
 		}()
 	}
@@ -72,17 +74,66 @@ func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 
 // ProcessTransaction processes a single transaction JSON object by determining its package path
 // and routing it to the appropriate processor (core or governance).
-func ProcessTransaction(tx map[string]interface{}) {
+func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 	pkgPath := getPackagePath(tx)
 
 	switch pkgPath {
 	case "gno.land/r/volos/core":
 		processCoreTransaction(tx)
+		return
 	case "gno.land/r/volos/gov/governance":
-		processGovernanceTransaction(tx)
-	default:
-		log.Printf("Unknown package path: %s", pkgPath)
+		processGovernanceTransaction(tx, client)
+		return
 	}
+
+	// If no package path found, check if this is a MsgRun transaction with governance events
+	if isMsgRunGovernanceTransaction(tx) {
+		processGovernanceTransaction(tx, client)
+		return
+	}
+
+	log.Printf("Unknown package path: %s", pkgPath)
+}
+
+// isMsgRunGovernanceTransaction checks if the transaction is a MsgRun transaction containing governance events.
+// MsgRun transactions don't have a clear package path in the MsgCall structure, so we need to manually
+// inspect the events to determine which processor should handle them. This function checks for known
+// governance event types and routes them to the governance processor.
+func isMsgRunGovernanceTransaction(tx map[string]interface{}) bool {
+	governanceEvents := []string{
+		"ProposalCreated",
+		// Add more governance events here if needed
+	}
+
+	response, ok := tx["response"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	events, ok := response["events"].([]interface{})
+	if !ok || len(events) == 0 {
+		return false
+	}
+
+	for _, eventInterface := range events {
+		event, ok := eventInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		eventType, ok := event["type"].(string)
+		if !ok {
+			continue
+		}
+
+		for _, govEvent := range governanceEvents {
+			if eventType == govEvent {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // getPackagePath extracts the package path from the transaction structure by navigating

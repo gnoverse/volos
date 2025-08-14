@@ -1,3 +1,5 @@
+// note: this file is used to build the GraphQL queries for the indexer. currently not used since the queries' complexity is too dynamic in the development.
+// in the future i plan to develop a query builder in a separate repo.
 package indexer
 
 import (

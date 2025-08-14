@@ -19,6 +19,7 @@ package txlistener
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"volos-backend/indexer"
@@ -30,14 +31,8 @@ import (
 // It uses a logical OR condition to include transactions from either package path
 // and submits all found transactions to the processor pool.
 func (tl *TransactionListener) pollNewTransactions() {
-	qb := indexer.NewQueryBuilder("VolosTxQuery", indexer.UniversalTransactionFields)
-	qb.Where().Success(true).Or().PkgPath(model.VolosPkgPath).PkgPath(model.VolosGovPkgPath)
-
-	if tl.LastBlockHeight > 0 {
-		qb.Where().BlockHeightRange(&tl.LastBlockHeight, nil)
-	}
-
-	response, err := qb.Execute()
+	query := buildPollingQuery(tl.LastBlockHeight)
+	response, err := indexer.FetchIndexerData(query, "VolosTxQuery")
 	if err != nil {
 		log.Printf("Error executing query: %v", err)
 		return
@@ -66,4 +61,84 @@ func (tl *TransactionListener) pollNewTransactions() {
 			}
 		}
 	}
+}
+
+// buildPollingQuery constructs the GraphQL query for polling transactions
+func buildPollingQuery(lastBlockHeight int) string {
+	baseQuery := fmt.Sprintf(`
+		query VolosTxQuery {
+			getTransactions(
+				where: {
+					_or: [
+						{
+							response: {
+								events: {
+									GnoEvent: {
+										type: { eq: "ProposalCreated" }
+									}
+								}
+							}
+						},
+						{
+							messages: {
+								value: {
+									MsgCall: {
+										_or: [
+											{ pkg_path: { eq: "%s" } },
+											{ pkg_path: { eq: "%s" } }
+										]
+									}
+								}
+							}
+						}
+					]
+				}
+			) {
+				%s
+			}
+		}`, model.VolosPkgPath, model.VolosGovPkgPath, indexer.UniversalTransactionFields)
+
+	if lastBlockHeight > 0 {
+		return fmt.Sprintf(`
+		query VolosTxQuery {
+			getTransactions(
+				where: {
+					_and: [
+						{
+							block_height: { gt: %d }
+						},
+						{
+							_or: [
+								{
+									response: {
+										events: {
+											GnoEvent: {
+												type: { eq: "ProposalCreated" }
+											}
+										}
+									}
+								},
+								{
+									messages: {
+										value: {
+											MsgCall: {
+												_or: [
+													{ pkg_path: { eq: "%s" } },
+													{ pkg_path: { eq: "%s" } }
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			) {
+				%s
+			}
+		}`, lastBlockHeight, model.VolosPkgPath, model.VolosGovPkgPath, indexer.UniversalTransactionFields)
+	}
+
+	return baseQuery
 }

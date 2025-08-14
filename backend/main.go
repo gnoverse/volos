@@ -42,7 +42,7 @@ func main() {
 	go func() {
 		ctx := context.Background()
 		pool := processor.NewTransactionProcessorPool(8)
-		pool.Start()
+		pool.Start(FirestoreClient)
 		listener := txlistener.NewTransactionListener(pool)
 		listener.Start(ctx)
 	}()

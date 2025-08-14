@@ -59,10 +59,7 @@ func StartVolosTransactionListener(ctx context.Context, pool *processor.Transact
 		return fmt.Errorf("expected connection_ack, got: %v", ack)
 	}
 
-	qb := indexer.NewQueryBuilder("VolosTxSub", indexer.UniversalTransactionFields)
-	qb.Subscription()
-	qb.Where().Success(true).Or().PkgPath(model.VolosPkgPath).PkgPath(model.VolosGovPkgPath)
-	query := qb.Build()
+	query := buildWebSocketQuery()
 
 	subMsg := map[string]interface{}{
 		"id":   "1",
@@ -97,4 +94,40 @@ func StartVolosTransactionListener(ctx context.Context, pool *processor.Transact
 
 	<-ctx.Done()
 	return nil
+}
+
+// buildWebSocketQuery constructs the GraphQL subscription query for WebSocket
+func buildWebSocketQuery() string {
+	return fmt.Sprintf(`
+		subscription {
+			getTransactions(
+				where: {
+					_or: [
+						{
+							response: {
+								events: {
+									GnoEvent: {
+										type: { eq: "ProposalCreated" }
+									}
+								}
+							}
+						},
+						{
+							messages: {
+								value: {
+									MsgCall: {
+										_or: [
+											{ pkg_path: { eq: "%s" } },
+											{ pkg_path: { eq: "%s" } }
+										]
+									}
+								}
+							}
+						}
+					]
+				}
+			) {
+				%s
+			}
+		}`, model.VolosPkgPath, model.VolosGovPkgPath, indexer.UniversalTransactionFields)
 }
