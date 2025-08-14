@@ -69,34 +69,21 @@ func buildPollingQuery(lastBlockHeight int) string {
 		query VolosTxQuery {
 			getTransactions(
 				where: {
-					_or: [
-						{
-							response: {
-								events: {
-									GnoEvent: {
-										type: { eq: "ProposalCreated" }
-									}
-								}
-							}
-						},
-						{
-							messages: {
-								value: {
-									MsgCall: {
-										_or: [
-											{ pkg_path: { eq: "%s" } },
-											{ pkg_path: { eq: "%s" } }
-										]
-									}
-								}
+						response: {
+							events: {
+								GnoEvent: {
+									_or: [
+										{ pkg_path: { eq: "%s" } },
+										{ pkg_path: { eq: "%s" } }
+									]
 							}
 						}
-					]
+					}
 				}
 			) {
 				%s
 			}
-		}`, model.VolosPkgPath, model.VolosGovPkgPath, indexer.UniversalTransactionFields)
+		}`, indexer.UniversalTransactionFields, model.VolosPkgPath, model.VolosGovPkgPath)
 
 	if lastBlockHeight > 0 {
 		return fmt.Sprintf(`
@@ -108,29 +95,16 @@ func buildPollingQuery(lastBlockHeight int) string {
 							block_height: { gt: %d }
 						},
 						{
-							_or: [
-								{
-									response: {
-										events: {
-											GnoEvent: {
-												type: { eq: "ProposalCreated" }
-											}
-										}
-									}
-								},
-								{
-									messages: {
-										value: {
-											MsgCall: {
-												_or: [
-													{ pkg_path: { eq: "%s" } },
-													{ pkg_path: { eq: "%s" } }
-												]
-											}
-										}
+							response: {
+								events: {
+									GnoEvent: {
+										_or: [
+											{ pkg_path: { eq: "%s" } },
+											{ pkg_path: { eq: "%s" } }
+										]
 									}
 								}
-							]
+							}
 						}
 					]
 				}

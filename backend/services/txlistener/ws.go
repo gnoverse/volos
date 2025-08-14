@@ -102,32 +102,19 @@ func buildWebSocketQuery() string {
 		subscription {
 			getTransactions(
 				where: {
-					_or: [
-						{
-							response: {
-								events: {
-									GnoEvent: {
-										type: { eq: "ProposalCreated" }
-									}
-								}
-							}
-						},
-						{
-							messages: {
-								value: {
-									MsgCall: {
-										_or: [
-											{ pkg_path: { eq: "%s" } },
-											{ pkg_path: { eq: "%s" } }
-										]
-									}
-								}
+					response: {
+						events: {
+							GnoEvent: {
+								_or: [
+									{ pkg_path: { eq: "%s" } },
+									{ pkg_path: { eq: "%s" } }
+								]
 							}
 						}
-					]
+					}
 				}
 			) {
 				%s
 			}
-		}`, model.VolosPkgPath, model.VolosGovPkgPath, indexer.UniversalTransactionFields)
+		}`, model.VolosGovPkgPath, model.VolosPkgPath, indexer.UniversalTransactionFields)
 }
