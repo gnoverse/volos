@@ -43,7 +43,7 @@ type ProposalData struct {
 	Deadline     time.Time `firestore:"deadline"`      // Unix timestamp when voting period ends
 	Status       string    `firestore:"status"`        // Current status: "active", "passed", "failed", "executed"
 	CreatedAt    time.Time `firestore:"created_at"`    // Timestamp when proposal was created in database
-	UpdatedAt    time.Time `firestore:"updated_at"`    // Timestamp of last database update
+	LastVote     time.Time `firestore:"last_vote"`     // Timestamp of the last vote cast on this proposal
 	YesVotes     int64     `firestore:"yes_votes"`     // Total voting power of "YES" votes cast
 	NoVotes      int64     `firestore:"no_votes"`      // Total voting power of "NO" votes cast
 	AbstainVotes int64     `firestore:"abstain_votes"` // Total voting power of "ABSTAIN" votes cast
