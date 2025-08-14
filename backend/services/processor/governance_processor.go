@@ -71,11 +71,21 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 				}
 			}
 		case "MemberAdded":
-			//todo
+			member := extractMemberAddress(event)
+			if member != "" {
+				err := dbupdater.AddDAOMember(client, member)
+				if err != nil {
+					log.Printf("Error adding DAO member to database: %v", err)
+				}
+			}
 		case "MemberRemoved":
-			//todo
-		case "GovernanceUpdated":
-			//todo
+			member := extractMemberAddress(event)
+			if member != "" {
+				err := dbupdater.RemoveDAOMember(client, member)
+				if err != nil {
+					log.Printf("Error removing DAO member from database: %v", err)
+				}
+			}
 		}
 	}
 }
@@ -196,4 +206,30 @@ func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, r
 	}
 
 	return proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmount, true
+}
+
+// extractMemberAddress extracts the member address from MemberAdded/MemberRemoved events
+func extractMemberAddress(event map[string]interface{}) string {
+	attributes, ok := event["attrs"].([]interface{})
+	if !ok {
+		log.Println("Member event missing attributes")
+		return ""
+	}
+
+	for _, attr := range attributes {
+		attrMap, ok := attr.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		key, _ := attrMap["key"].(string)
+		value, _ := attrMap["value"].(string)
+
+		if key == "member" {
+			return value
+		}
+	}
+
+	log.Println("Member address not found in MemberAdded/MemberRemoved event")
+	return ""
 }

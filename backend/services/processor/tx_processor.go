@@ -81,13 +81,7 @@ func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 	case "gno.land/r/volos/core":
 		processCoreTransaction(tx)
 		return
-	case "gno.land/r/volos/gov/governance":
-		processGovernanceTransaction(tx, client)
-		return
-	}
-
-	// If no package path found, check if this is a MsgRun transaction with governance events
-	if isMsgRunGovernanceTransaction(tx) {
+	case "gno.land/r/volos/gov/governance", "gno.land/r/volos/gov/staker", "gno.land/r/volos/gov/vls", "gno.land/r/volos/gov/xvls":
 		processGovernanceTransaction(tx, client)
 		return
 	}
@@ -95,28 +89,21 @@ func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 	log.Printf("Unknown package path: %s", pkgPath)
 }
 
-// isMsgRunGovernanceTransaction checks if the transaction is a MsgRun transaction containing governance events.
-// MsgRun transactions don't have a clear package path in the MsgCall structure, so we need to manually
-// inspect the events to determine which processor should handle them. This function checks for known
-// governance event types and routes them to the governance processor.
-func isMsgRunGovernanceTransaction(tx map[string]interface{}) bool {
-	governanceEvents := []string{
-		"ProposalCreated",
-		// Add more governance events here if needed
-	}
-
+// getPackagePath extracts the package path from the transaction structure by navigating
+// through the events array to find the pkg_path field in GnoEvent, ignoring StorageDeposit events.
+func getPackagePath(tx map[string]interface{}) string {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		return false
+		return ""
 	}
 
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		return false
+		return ""
 	}
 
-	for _, eventInterface := range events {
-		event, ok := eventInterface.(map[string]interface{})
+	for i := len(events) - 1; i >= 0; i-- {
+		event, ok := events[i].(map[string]interface{})
 		if !ok {
 			continue
 		}
@@ -126,38 +113,17 @@ func isMsgRunGovernanceTransaction(tx map[string]interface{}) bool {
 			continue
 		}
 
-		for _, govEvent := range governanceEvents {
-			if eventType == govEvent {
-				return true
-			}
+		if eventType == "StorageDeposit" {
+			continue
 		}
+
+		pkgPath, ok := event["pkg_path"].(string)
+		if !ok {
+			continue
+		}
+
+		return pkgPath
 	}
 
-	return false
-}
-
-// getPackagePath extracts the package path from the transaction structure by navigating
-// through the messages array and MsgCall object to find the pkg_path field.
-func getPackagePath(tx map[string]interface{}) string {
-	messages, ok := tx["messages"].([]interface{})
-	if !ok || len(messages) == 0 {
-		return ""
-	}
-
-	firstMsg, ok := messages[0].(map[string]interface{})
-	if !ok {
-		return ""
-	}
-
-	value, ok := firstMsg["value"].(map[string]interface{})
-	if !ok {
-		return ""
-	}
-
-	pkgPath, ok := value["pkg_path"].(string)
-	if !ok {
-		return ""
-	}
-
-	return pkgPath
+	return ""
 }

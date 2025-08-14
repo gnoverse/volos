@@ -24,6 +24,7 @@ const UniversalTransactionFields = `
       ... on GnoEvent {
         type
         func
+        pkg_path
         attrs {
           key
           value
