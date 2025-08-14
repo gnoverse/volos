@@ -11,7 +11,7 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-func CreateProposal(client *firestore.Client, proposalID, title, body, caller, deadlineStr string) error {
+func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr string) error {
 	ctx := context.Background()
 
 	deadlineUnix, err := strconv.ParseInt(deadlineStr, 10, 64)
@@ -27,7 +27,7 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, caller, d
 		ID:           proposalID,
 		Title:        title,
 		Body:         body,
-		Caller:       caller,
+		Proposer:     proposer,
 		Deadline:     deadline,
 		Status:       "active",
 		CreatedAt:    now,
@@ -75,7 +75,6 @@ func UpdateProposal(client *firestore.Client, proposalID string, updates map[str
 func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason string, xvlsAmount int64) error {
 	ctx := context.Background()
 
-	// First, get the current proposal to update vote counts
 	doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
 	if err != nil {
 		log.Printf("Error fetching proposal %s: %v", proposalID, err)
@@ -88,7 +87,6 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason str
 		return err
 	}
 
-	// Update vote counts based on the vote choice
 	switch voteChoice {
 	case "YES":
 		proposal.YesVotes += xvlsAmount
@@ -104,7 +102,6 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason str
 	proposal.TotalVotes = proposal.YesVotes + proposal.NoVotes + proposal.AbstainVotes
 	proposal.LastVote = time.Now()
 
-	// Update the proposal in Firestore
 	_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
 	if err != nil {
 		log.Printf("Error updating proposal with vote: %v", err)

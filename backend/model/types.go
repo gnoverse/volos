@@ -39,7 +39,7 @@ type ProposalData struct {
 	ID           string    `firestore:"id"`            // Unique proposal identifier from the governance contract
 	Title        string    `firestore:"title"`         // Human-readable title of the proposal
 	Body         string    `firestore:"body"`          // Detailed description and content of the proposal
-	Caller       string    `firestore:"caller"`        // Address of the user who created the proposal
+	Proposer     string    `firestore:"proposer"`      // Address of the user who created the proposal
 	Deadline     time.Time `firestore:"deadline"`      // Unix timestamp when voting period ends
 	Status       string    `firestore:"status"`        // Current status: "active", "passed", "failed", "executed"
 	CreatedAt    time.Time `firestore:"created_at"`    // Timestamp when proposal was created in database
@@ -58,6 +58,6 @@ type ProposalFields struct {
 	ID       string `json:"id"`       // Unique proposal identifier from the governance contract
 	Title    string `json:"title"`    // Human-readable title of the proposal
 	Body     string `json:"body"`     // Detailed description and content of the proposal
-	Caller   string `json:"caller"`   // Address of the user who created the proposal
+	Proposer string `json:"proposer"` // Address of the user who created the proposal
 	Deadline string `json:"deadline"` // Unix timestamp string when voting period ends
 }

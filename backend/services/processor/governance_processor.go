@@ -46,7 +46,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			proposalData := extractProposalFields(event)
 			if proposalData != nil {
 				err := dbupdater.CreateProposal(client, proposalData.ID, proposalData.Title,
-					proposalData.Body, proposalData.Caller, proposalData.Deadline)
+					proposalData.Body, proposalData.Proposer, proposalData.Deadline)
 				if err != nil {
 					log.Printf("Error creating proposal in database: %v", err)
 				}
@@ -98,7 +98,7 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 		return nil
 	}
 
-	var proposalID, title, body, deadline, caller string
+	var proposalID, title, body, deadline, proposer string
 	for _, attr := range attributes {
 		attrMap, ok := attr.(map[string]interface{})
 		if !ok {
@@ -118,11 +118,11 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 		case "deadline":
 			deadline = value
 		case "caller":
-			caller = value
+			proposer = value
 		}
 	}
 
-	if proposalID == "" || title == "" || caller == "" || deadline == "" {
+	if proposalID == "" || title == "" || proposer == "" || deadline == "" {
 		log.Println("Missing required proposal fields")
 		return nil
 	}
@@ -131,7 +131,7 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 		ID:       proposalID,
 		Title:    title,
 		Body:     body,
-		Caller:   caller,
+		Proposer: proposer,
 		Deadline: deadline,
 	}
 }
