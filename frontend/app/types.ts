@@ -140,6 +140,7 @@ export interface Proposal {
   no_votes: number
   abstain_votes: number
   total_votes: number
+  quorum: number
 }
 
 export interface ProposalsResponse {

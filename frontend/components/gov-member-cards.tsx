@@ -43,7 +43,7 @@ export function GovMemberCards({
               </TooltipTrigger>
               <TooltipContent className="bg-gray-900 text-gray-300 border-none shadow-lg">
                 <p className="max-w-xs">
-                  You are a member of the DAO if you hold xVLS tokens. 
+                  You are a member of the DAO if you hold xVLS tokens. To obtain xVLS you need to stake VLS tokens.
                   xVLS tokens represent your governance power and voting rights.
                 </p>
               </TooltipContent>

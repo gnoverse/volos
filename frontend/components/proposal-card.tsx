@@ -32,15 +32,27 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
           <span>
             Proposed by: {proposal.proposer.slice(0, 8)}...{proposal.proposer.slice(-6)}
           </span>
+          <span>
+            Quorum: {proposal.quorum} xVLS
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-4">
             <span>Yes: {proposal.yes_votes}</span>
             <span>No: {proposal.no_votes}</span>
             <span>Abstain: {proposal.abstain_votes}</span>
           </div>
+          <span className={`font-medium ${
+            proposal.total_votes >= proposal.quorum 
+              ? 'text-green-400' 
+              : 'text-yellow-400'
+          }`}>
+            {proposal.total_votes >= proposal.quorum ? 'Quorum Met' : 'Quorum Needed'}
+          </span>
         </div>
       </CardContent>
     </Card>

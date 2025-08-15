@@ -11,7 +11,7 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr string) error {
+func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr, thresholdStr string) error {
 	ctx := context.Background()
 
 	deadlineUnix, err := strconv.ParseInt(deadlineStr, 10, 64)
@@ -20,6 +20,12 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 		return err
 	}
 	deadline := time.Unix(deadlineUnix, 0)
+
+	threshold, err := strconv.ParseInt(thresholdStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing threshold: %v", err)
+		return err
+	}
 
 	now := time.Now()
 
@@ -36,6 +42,7 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 		NoVotes:      0,
 		AbstainVotes: 0,
 		TotalVotes:   0,
+		Threshold:    threshold,
 	}
 
 	_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)

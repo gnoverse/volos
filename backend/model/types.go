@@ -48,6 +48,7 @@ type ProposalData struct {
 	NoVotes      int64     `firestore:"no_votes"`      // Total voting power of "NO" votes cast
 	AbstainVotes int64     `firestore:"abstain_votes"` // Total voting power of "ABSTAIN" votes cast
 	TotalVotes   int64     `firestore:"total_votes"`   // Sum of all voting power cast (yes + no + abstain)
+	Threshold    int64     `firestore:"threshold"`     // Threshold for the proposal
 }
 
 // ProposalFields represents the extracted fields from a governance proposal creation event.
@@ -55,11 +56,12 @@ type ProposalData struct {
 // from the blockchain before storing them in the database. It contains only the essential
 // fields that are emitted by the governance contract during proposal creation.
 type ProposalFields struct {
-	ID       string `json:"id"`       // Unique proposal identifier from the governance contract
-	Title    string `json:"title"`    // Human-readable title of the proposal
-	Body     string `json:"body"`     // Detailed description and content of the proposal
-	Proposer string `json:"proposer"` // Address of the user who created the proposal
-	Deadline string `json:"deadline"` // Unix timestamp string when voting period ends
+	ID        string `json:"id"`        // Unique proposal identifier from the governance contract
+	Title     string `json:"title"`     // Human-readable title of the proposal
+	Body      string `json:"body"`      // Detailed description and content of the proposal
+	Proposer  string `json:"proposer"`  // Address of the user who created the proposal
+	Deadline  string `json:"deadline"`  // Unix timestamp string when voting period ends
+	Threshold string `json:"threshold"` // Threshold for the proposal
 }
 
 // UserData represents the complete structure of a user document stored in Firestore.

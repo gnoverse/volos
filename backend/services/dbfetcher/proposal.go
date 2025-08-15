@@ -58,6 +58,7 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (string
 			"no_votes":      proposal.NoVotes,
 			"abstain_votes": proposal.AbstainVotes,
 			"total_votes":   proposal.TotalVotes,
+			"threshold":     proposal.Threshold,
 		}
 
 		proposals = append(proposals, proposalMap)
@@ -129,6 +130,7 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 			"no_votes":      proposal.NoVotes,
 			"abstain_votes": proposal.AbstainVotes,
 			"total_votes":   proposal.TotalVotes,
+			"threshold":     proposal.Threshold,
 		}
 
 		proposals = append(proposals, proposalMap)
