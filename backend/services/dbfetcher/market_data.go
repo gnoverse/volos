@@ -1,4 +1,4 @@
-package services
+package dbfetcher
 
 import (
 	"context"
@@ -9,6 +9,10 @@ import (
 
 	"cloud.google.com/go/firestore"
 )
+
+// todo : when markets are populated in the db, they will be converted with maps in the db instead of collectiions
+// key:value -> timestamp:value
+// this will change this function
 
 // FetchMarketData retrieves data from Firestore for a given marketId and path
 // It's used to fetch data from Firestore for the frontend.

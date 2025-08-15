@@ -2,7 +2,7 @@ package routes
 
 import (
 	"net/http"
-	"volos-backend/services"
+	"volos-backend/services/dbfetcher"
 
 	"cloud.google.com/go/firestore"
 )
@@ -16,7 +16,7 @@ func TotalUtilizationHistoryHandler(client *firestore.Client) http.HandlerFunc {
 			return
 		}
 
-		jsonData, err := services.FetchMarketData(client, marketId, "total_utilization")
+		jsonData, err := dbfetcher.FetchMarketData(client, marketId, "total_utilization")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

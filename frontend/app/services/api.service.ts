@@ -14,6 +14,27 @@ export type MarketActivity = {
   isAmountInShares: boolean;
 };
 
+export type Proposal = {
+  id: string;
+  title: string;
+  body: string;
+  proposer: string;
+  deadline: string;
+  status: string;
+  created_at: string;
+  last_vote: string;
+  yes_votes: number;
+  no_votes: number;
+  abstain_votes: number;
+  total_votes: number;
+};
+
+export type ProposalsResponse = {
+  proposals: Proposal[];
+  has_more: boolean;
+  last_id: string;
+};
+
 const API_BASE = 'http://localhost:8080/api';
 
 export async function getTotalSupplyHistory(marketId: string): Promise<ChartData[]> {
@@ -55,3 +76,21 @@ export async function getUserBorrowHistory(caller: string, marketId: string): Pr
   const res = await axios.get(`${API_BASE}/user-borrow`, { params: { caller, marketId } });
   return res.data;
 } 
+
+export async function getProposals(limit?: number, lastId?: string): Promise<ProposalsResponse> {
+  const params: Record<string, string | number> = {};
+  if (limit) params.limit = limit;
+  if (lastId) params.last_id = lastId;
+  
+  const res = await axios.get(`${API_BASE}/proposals`, { params });
+  return res.data;
+}
+
+export async function getActiveProposals(limit?: number, lastId?: string): Promise<ProposalsResponse> {
+  const params: Record<string, string | number> = {};
+  if (limit) params.limit = limit;
+  if (lastId) params.last_id = lastId;
+  
+  const res = await axios.get(`${API_BASE}/proposals/active`, { params });
+  return res.data;
+}

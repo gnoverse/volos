@@ -57,8 +57,6 @@ func processCoreTransaction(tx map[string]interface{}) {
 		dbupdater.ProcessSupplyCollateral(tx)
 	case "WithdrawCollateral":
 		dbupdater.ProcessWithdrawCollateral(tx)
-	case "authorization_set":
-		dbupdater.ProcessAuthorizationSet(tx)
 	default:
 		log.Printf("Unknown core event type: %s", eventType)
 	}
