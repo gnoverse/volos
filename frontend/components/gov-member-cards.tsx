@@ -1,10 +1,14 @@
+import { AdenaService } from "@/app/services/adena.service"
+import { Button } from "@/components/ui/button"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Info } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Info, WalletIcon } from "lucide-react"
+import { useEffect, useState } from "react"
 
 interface DaoMembership {
   isMember: boolean
@@ -18,20 +22,115 @@ interface VotingPower {
 }
 
 interface GovMemberCardsProps {
-  daoMembership: DaoMembership
-  votingPower: VotingPower
-  isLoading: boolean
   cardStyles: string
 }
 
 export function GovMemberCards({ 
-  daoMembership, 
-  votingPower, 
-  isLoading, 
   cardStyles 
 }: GovMemberCardsProps) {
+  const [userAddress, setUserAddress] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [isConnected, setIsConnected] = useState(false)
+  
+  // mock data - will be replaced with actual contract calls
+  // replace with ABCI to xvls realm, only check the balance of the user
+  const [daoMembership, setDaoMembership] = useState<DaoMembership>({
+    isMember: false,
+    xVLSBalance: "0"
+  })
+  const [votingPower, setVotingPower] = useState<VotingPower>({
+    power: "0",
+    canPropose: false,
+    proposalThreshold: "1000"
+  })
+
+  useEffect(() => {
+    const adena = AdenaService.getInstance()
+    const address = adena.getAddress()
+    const connected = adena.isConnected()
+    
+    setUserAddress(address)
+    setIsConnected(connected)
+
+    const handleAddressChange = (event: CustomEvent) => {
+      const newAddress = event.detail?.newAddress || ""
+      setUserAddress(newAddress)
+      setIsConnected(!!newAddress)
+    }
+    window.addEventListener("adenaAddressChanged", handleAddressChange as EventListener)
+
+    return () => {
+      window.removeEventListener("adenaAddressChanged", handleAddressChange as EventListener)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (userAddress) {
+      // simulate API calls
+      setTimeout(() => {
+        setDaoMembership({
+          isMember: true, // mock: user is a member
+          xVLSBalance: "1500"
+        })
+        setVotingPower({
+          power: "1500",
+          canPropose: true,
+          proposalThreshold: "1000"
+        })
+        setIsLoading(false)
+      }, 1000)
+    } else {
+      setIsLoading(false)
+    }
+  }, [userAddress])
+
+  const handleWalletConnection = async () => {
+    const adenaService = AdenaService.getInstance()
+    
+    if (isConnected) {
+      adenaService.disconnectWallet()
+      setIsConnected(false)
+      setUserAddress("")
+    } else {
+      try {
+        await adenaService.connectWallet()
+        const address = adenaService.getAddress()
+        if (address) {
+          setUserAddress(address)
+        }
+        setIsConnected(true)
+      } catch (error) {
+        console.error("Failed to connect wallet:", error)
+      }
+    }
+  }
+
+  if (!userAddress) {
+    return (
+      <div className="grid grid-cols-1 gap-6">
+        <div className={`${cardStyles} p-6 border-l-4 border-gray-500`}>
+          <div className="text-center space-y-4">
+            <h3 className="text-xl font-semibold text-logo-500">User Info</h3>
+            <p className="text-gray-500 text-sm mb-4">
+              Connect your wallet to view your DAO membership status, voting power, and governance participation details.
+            </p>
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "bg-gray-800 text-gray-400 rounded-full text-lg hover:bg-gray-800 hover:text-logo-500"
+              )}
+              onClick={handleWalletConnection}
+            >
+              <WalletIcon className="w-4 h-4 mr-2" />
+              Connect Wallet
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 gap-6">
       {/* DAO Membership Card */}
       <div className={`${cardStyles} p-6 border-l-4 border-logo-500`}>
         <div className="flex items-center justify-between mb-4">
