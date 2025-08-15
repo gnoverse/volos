@@ -77,7 +77,7 @@ export function ProposalsOverview({
 
           {isLoadingProposals ? (
             <div className="text-gray-400 py-6">Loading proposals...</div>
-          ) : proposalsPage && proposalsPage.proposals.length > 0 ? (
+          ) : proposalsPage && proposalsPage.proposals && proposalsPage.proposals.length > 0 ? (
             <div className="space-y-4">
               {proposalsPage.proposals.map((proposal: Proposal) => (
                 <ProposalCard key={proposal.id} proposal={proposal} />
