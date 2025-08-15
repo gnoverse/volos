@@ -35,6 +35,12 @@ export type ProposalsResponse = {
   last_id: string;
 };
 
+export type User = {
+  address: string;
+  dao_member: boolean;
+  created_at: string | null;
+};
+
 const API_BASE = 'http://localhost:8080/api';
 
 export async function getTotalSupplyHistory(marketId: string): Promise<ChartData[]> {
@@ -92,5 +98,10 @@ export async function getActiveProposals(limit?: number, lastId?: string): Promi
   if (lastId) params.last_id = lastId;
   
   const res = await axios.get(`${API_BASE}/proposals/active`, { params });
+  return res.data;
+}
+
+export async function getUser(address: string): Promise<User> {
+  const res = await axios.get(`${API_BASE}/user`, { params: { address } });
   return res.data;
 }

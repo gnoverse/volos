@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"time"
+	"volos-backend/model"
 
 	"cloud.google.com/go/firestore"
 )
@@ -15,15 +16,21 @@ func SetDAOMemberStatus(client *firestore.Client, userAddress string, isMember b
 	_, err := client.Collection("users").Doc(userAddress).Get(ctx)
 	userExists := err == nil
 
-	userData := map[string]interface{}{
-		"dao_member": isMember,
+	now := time.Now()
+	user := model.UserData{
+		Address:   userAddress,
+		DAOMember: isMember,
+		CreatedAt: now,
 	}
 
-	if !userExists {
-		userData["created_at"] = time.Now()
+	if userExists {
+		updates := []firestore.Update{
+			{Path: "dao_member", Value: isMember},
+		}
+		_, err = client.Collection("users").Doc(userAddress).Update(ctx, updates)
+	} else {
+		_, err = client.Collection("users").Doc(userAddress).Set(ctx, user)
 	}
-
-	_, err = client.Collection("users").Doc(userAddress).Set(ctx, userData, firestore.MergeAll)
 	if err != nil {
 		log.Printf("Error updating DAO member status for user %s: %v", userAddress, err)
 		return err

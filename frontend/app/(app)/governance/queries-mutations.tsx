@@ -1,9 +1,10 @@
+import { getActiveProposals, getProposals, getUser, type ProposalsResponse, type User } from '@/app/services/api.service';
 import { useQuery } from '@tanstack/react-query';
-import { getProposals, getActiveProposals, type ProposalsResponse } from '@/app/services/api.service';
 
 // Query key constants
 export const PROPOSALS_QUERY_KEY = 'proposals';
 export const ACTIVE_PROPOSALS_QUERY_KEY = 'active-proposals';
+export const USER_QUERY_KEY = 'user';
 
 // Hook to fetch all proposals with pagination
 export function useProposals(limit?: number, lastId?: string) {
@@ -42,5 +43,18 @@ export function useAllActiveProposals() {
     queryFn: () => getActiveProposals(20), // Default limit of 20
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+  });
+}
+
+// Hook to fetch user data
+export function useUser(address?: string) {
+  return useQuery<User>({
+    queryKey: [USER_QUERY_KEY, address],
+    queryFn: () => getUser(address!),
+    enabled: !!address, // Only run query if address is provided
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 }

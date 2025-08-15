@@ -61,3 +61,13 @@ type ProposalFields struct {
 	Proposer string `json:"proposer"` // Address of the user who created the proposal
 	Deadline string `json:"deadline"` // Unix timestamp string when voting period ends
 }
+
+// UserData represents the complete structure of a user document stored in Firestore.
+// This struct contains all user-related fields that are tracked by the system,
+// including governance membership and other user-specific data.
+// TODO: add more fields
+type UserData struct {
+	Address   string    `firestore:"address"`    // User's blockchain address (used as document ID)
+	DAOMember bool      `firestore:"dao_member"` // Whether the user is a member of the DAO
+	CreatedAt time.Time `firestore:"created_at"` // Timestamp when the user document was first created
+}

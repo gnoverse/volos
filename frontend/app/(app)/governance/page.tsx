@@ -5,7 +5,6 @@ import { GovMemberCards } from "@/components/gov-member-cards"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useActiveProposals, useProposals } from "./queries-mutations"
 
@@ -27,6 +26,7 @@ function GovernancePageContent() {
   useEffect(() => { setCursorStack([]) }, [showAll])
 
   // mock data - will be replaced with actual contract calls
+  // replace with ABCI to xvls realm, only check the balance of the user
   const [daoMembership, setDaoMembership] = useState({
     isMember: false,
     xVLSBalance: "0"
@@ -71,26 +71,8 @@ function GovernancePageContent() {
     }
   }, [userAddress])
 
-  const handleRefetch = () => {
-    setIsLoading(true)
-    // add actual refetch logic here
-    setTimeout(() => setIsLoading(false), 500)
-  }
-
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
-      {/* Refetch button  */}
-      <Button 
-        onClick={handleRefetch}
-        className="absolute top-0 right-0 mt-2 mr-2 p-3 bg-gray-700/60 rounded-lg hover:bg-gray-600/80 transition-colors flex items-center gap-2 z-10"
-        title="Refetch data"
-        variant="outline"
-        disabled={isLoading}
-      >
-        <RefreshCw size={20} className="text-gray-200" />
-        <span className="text-sm text-gray-200 font-medium">Refetch Data</span>
-      </Button>
-
       <h1 className="text-[36px] font-bold mb-6 text-gray-300">
         Governance
       </h1>

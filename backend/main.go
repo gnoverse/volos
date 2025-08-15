@@ -54,6 +54,7 @@ func setupRoutes() {
 	http.HandleFunc("/api/user-borrow", withCORS(routes.UserBorrowHandler(FirestoreClient)))
 	http.HandleFunc("/api/proposals", withCORS(routes.GetProposalsHandler(FirestoreClient)))
 	http.HandleFunc("/api/proposals/active", withCORS(routes.GetActiveProposalsHandler(FirestoreClient)))
+	http.HandleFunc("/api/user", withCORS(routes.GetUserHandler(FirestoreClient)))
 }
 
 func withCORS(handler http.HandlerFunc) http.HandlerFunc {
