@@ -3,6 +3,7 @@
 import { AdenaService } from "@/app/services/adena.service"
 import { GovMemberCards } from "@/components/gov-member-cards"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { RefreshCw } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -118,11 +119,10 @@ function GovernancePageContent() {
               />
               <label className="flex items-center gap-2">
                 <span className="text-gray-300 text-sm">Show all proposals</span>
-                <input
-                  type="checkbox"
-                  className="toggle before:bg-gray-300 checked:bg-logo-500 checked:border-logo-500"
+                <Switch
                   checked={showAll}
-                  onChange={(e) => setShowAll(e.target.checked)}
+                  onCheckedChange={setShowAll}
+                  className="bg-transparent data-[state=checked]:border-logo-500 data-[state=unchecked]:border-gray-500 [&>span]:data-[state=checked]:bg-logo-500 [&>span]:data-[state=unchecked]:bg-gray-400"
                   aria-label="Show all proposals"
                 />
               </label>
@@ -130,6 +130,7 @@ function GovernancePageContent() {
                 variant="outline"
                 onClick={() => setCursorStack(prev => (prev.length > 0 ? prev.slice(0, -1) : prev))}
                 disabled={cursorStack.length === 0 || isLoadingProposals}
+                className="bg-transparent border-gray-500 text-gray-300 hover:border-logo-500 hover:text-logo-500 disabled:border-gray-600 disabled:text-gray-500 disabled:hover:border-gray-600 disabled:hover:text-gray-500"
               >
                 Previous
               </Button>
@@ -141,6 +142,7 @@ function GovernancePageContent() {
                   }
                 }}
                 disabled={!proposalsPage?.has_more || isLoadingProposals}
+                className="bg-transparent border-gray-500 text-gray-300 hover:border-logo-500 hover:text-logo-500 disabled:border-gray-600 disabled:text-gray-500 disabled:hover:border-gray-600 disabled:hover:text-gray-500"
               >
                 Next
               </Button>
