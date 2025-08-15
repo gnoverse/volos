@@ -1,23 +1,26 @@
 import {
-    ApiListMarketsInfoResponse,
-    ApiListMarketsInfoResponseSchema,
-    ApiListMarketsResponse,
-    ApiListMarketsResponseSchema,
-    HealthFactor,
-    HealthFactorSchema,
-    Market,
-    MarketInfo,
-    MarketInfoSchema,
-    MarketParams,
-    MarketParamsSchema,
-    MarketSchema,
-    Position,
-    PositionSchema,
+  ApiListMarketsInfoResponse,
+  ApiListMarketsInfoResponseSchema,
+  ApiListMarketsResponse,
+  ApiListMarketsResponseSchema,
+  GovernanceUserInfoSchema,
+  HealthFactor,
+  HealthFactorSchema,
+  Market,
+  MarketInfo,
+  MarketInfoSchema,
+  MarketParams,
+  MarketParamsSchema,
+  MarketSchema,
+  Position,
+  PositionSchema,
 } from "../types"
+import { GovernanceUserInfo } from "@/app/services/api.service"
 import { parseValidatedJsonResult } from "../utils/parsing.utils"
 import { GnoService } from "./abci.service"
 
 const REALM_PATH = "gno.land/r/volos/core"
+const GOVERNANCE_REALM_PATH = "gno.land/r/volos/gov/governance"
 const gnoService = GnoService.getInstance()
 
 // GNO LEND API QUERIES
@@ -109,6 +112,21 @@ export async function apiGetHealthFactor(marketId: string, userAddr: string): Pr
     return parseValidatedJsonResult(result, HealthFactorSchema)
   } catch (error) {
     console.error('Error fetching health factor:', error)
+    throw error
+  }
+}
+
+// GOVERNANCE API QUERIES
+
+export async function apiGetUserInfo(userAddr: string): Promise<GovernanceUserInfo> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      GOVERNANCE_REALM_PATH,
+      `ApiGetUserInfo("${userAddr}")`,
+    )
+    return parseValidatedJsonResult(result, GovernanceUserInfoSchema)
+  } catch (error) {
+    console.error('Error fetching user governance info:', error)
     throw error
   }
 }

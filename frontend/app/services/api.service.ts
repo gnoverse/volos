@@ -1,4 +1,3 @@
-import { ProposalsResponse } from '@/app/types';
 import axios from 'axios';
 
 export type ChartData = {
@@ -20,6 +19,36 @@ export type User = {
   dao_member: boolean;
   created_at: string | null;
 };
+export interface Proposal {
+  id: string
+  title: string
+  body: string
+  proposer: string
+  deadline: string
+  status: string
+  created_at: string
+  last_vote: string
+  yes_votes: number
+  no_votes: number
+  abstain_votes: number
+  total_votes: number
+  quorum: number
+}
+
+export interface ProposalsResponse {
+  proposals: Proposal[]
+  has_more: boolean
+  last_id: string
+}
+
+export interface GovernanceUserInfo {
+  address: string
+  vlsBalance: number
+  xvlsBalance: number
+  proposalThreshold: number
+  isMember: boolean
+}
+
 
 const API_BASE = 'http://localhost:8080/api';
 

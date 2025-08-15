@@ -1,3 +1,4 @@
+import { useGovernanceUserInfo } from "@/app/(app)/governance/queries-mutations"
 import { AdenaService } from "@/app/services/adena.service"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,17 +11,6 @@ import { cn } from "@/lib/utils"
 import { Info, WalletIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 
-interface DaoMembership {
-  isMember: boolean
-  xVLSBalance: string
-}
-
-interface VotingPower {
-  power: string
-  canPropose: boolean
-  proposalThreshold: string
-}
-
 interface GovMemberCardsProps {
   cardStyles: string
 }
@@ -29,20 +19,10 @@ export function GovMemberCards({
   cardStyles 
 }: GovMemberCardsProps) {
   const [userAddress, setUserAddress] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(true)
   const [isConnected, setIsConnected] = useState(false)
   
-  // mock data - will be replaced with actual contract calls
-  // replace with ABCI to xvls realm, only check the balance of the user
-  const [daoMembership, setDaoMembership] = useState<DaoMembership>({
-    isMember: false,
-    xVLSBalance: "0"
-  })
-  const [votingPower, setVotingPower] = useState<VotingPower>({
-    power: "0",
-    canPropose: false,
-    proposalThreshold: "1000"
-  })
+  // Fetch real governance user info from on-chain
+  const { data: userInfo, isLoading, error } = useGovernanceUserInfo(userAddress)
 
   useEffect(() => {
     const adena = AdenaService.getInstance()
@@ -64,25 +44,7 @@ export function GovMemberCards({
     }
   }, [])
 
-  useEffect(() => {
-    if (userAddress) {
-      // simulate API calls
-      setTimeout(() => {
-        setDaoMembership({
-          isMember: true, // mock: user is a member
-          xVLSBalance: "1500"
-        })
-        setVotingPower({
-          power: "1500",
-          canPropose: true,
-          proposalThreshold: "1000"
-        })
-        setIsLoading(false)
-      }, 1000)
-    } else {
-      setIsLoading(false)
-    }
-  }, [userAddress])
+
 
   const handleWalletConnection = async () => {
     const adenaService = AdenaService.getInstance()
@@ -155,22 +117,26 @@ export function GovMemberCards({
             <div className="h-4 bg-gray-600 rounded w-3/4 mb-2"></div>
             <div className="h-4 bg-gray-600 rounded w-1/2"></div>
           </div>
+        ) : error ? (
+          <div className="text-red-400 text-sm">
+            Error loading DAO membership data
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Status:</span>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                daoMembership.isMember 
+                userInfo?.isMember 
                   ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
-                {daoMembership.isMember ? 'Member' : 'Not a Member'}
+                {userInfo?.isMember ? 'Member' : 'Not a Member'}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">xVLS Balance:</span>
               <span className="text-gray-200 font-mono font-semibold">
-                {daoMembership.xVLSBalance} xVLS
+                {userInfo?.xvlsBalance || 0} xVLS
               </span>
             </div>
           </div>
@@ -186,28 +152,32 @@ export function GovMemberCards({
             <div className="h-4 bg-gray-600 rounded w-3/4 mb-2"></div>
             <div className="h-4 bg-gray-600 rounded w-1/2"></div>
           </div>
+        ) : error ? (
+          <div className="text-red-400 text-sm">
+            Error loading voting power data
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Voting Power:</span>
               <span className="text-logo-500 font-mono font-semibold">
-                {votingPower.power} xVLS
+                {userInfo?.xvlsBalance || 0} xVLS
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Can Propose:</span>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                votingPower.canPropose 
+                (userInfo?.xvlsBalance || 0) >= (userInfo?.proposalThreshold || 0)
                   ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
-                {votingPower.canPropose ? 'Eligible' : 'Not Eligible'}
+                {(userInfo?.xvlsBalance || 0) >= (userInfo?.proposalThreshold || 0) ? 'Eligible' : 'Not Eligible'}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Proposal Threshold:</span>
               <span className="text-gray-200 font-mono">
-                {votingPower.proposalThreshold} xVLS
+                {userInfo?.proposalThreshold || 0} xVLS
               </span>
             </div>
           </div>

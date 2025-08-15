@@ -1,6 +1,6 @@
 "use client"
 
-import { Proposal } from "@/app/types"
+import { Proposal } from "@/app/services/api.service"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ProposalCardProps {

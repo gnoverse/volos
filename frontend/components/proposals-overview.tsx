@@ -1,7 +1,7 @@
 "use client"
 
 import { useActiveProposals, useProposals } from "@/app/(app)/governance/queries-mutations"
-import { Proposal } from "@/app/types"
+import { Proposal } from "@/app/services/api.service"
 import { GovMemberCards } from "@/components/gov-member-cards"
 import { ProposalCard } from "@/components/proposal-card"
 import { Button } from "@/components/ui/button"

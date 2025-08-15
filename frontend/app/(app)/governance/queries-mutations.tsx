@@ -1,10 +1,11 @@
-import { getActiveProposals, getProposals, getUser, type User } from '@/app/services/api.service';
-import { ProposalsResponse } from '@/app/types';
+import { apiGetUserInfo } from '@/app/services/abci';
+import { getActiveProposals, getProposals, getUser, GovernanceUserInfo, ProposalsResponse, type User } from '@/app/services/api.service';
 import { useQuery } from '@tanstack/react-query';
 
 export const PROPOSALS_QUERY_KEY = 'proposals';
 export const ACTIVE_PROPOSALS_QUERY_KEY = 'active-proposals';
 export const USER_QUERY_KEY = 'user';
+export const GOVERNANCE_USER_INFO_QUERY_KEY = 'governance-user-info';
 
 // Hook to fetch all proposals with pagination
 export function useProposals(limit?: number, lastId?: string) {
@@ -56,5 +57,18 @@ export function useUser(address?: string) {
     gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
     retry: 2,
+  });
+}
+
+// Hook to fetch governance user info from on-chain
+export function useGovernanceUserInfo(address?: string) {
+  return useQuery<GovernanceUserInfo>({
+    queryKey: [GOVERNANCE_USER_INFO_QUERY_KEY, address],
+    queryFn: () => apiGetUserInfo(address!),
+    enabled: !!address,
+    staleTime: 30 * 1000, // 30 seconds (more frequent updates for on-chain data)
+    gcTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    retry: 3,
   });
 }

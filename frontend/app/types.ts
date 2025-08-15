@@ -68,6 +68,16 @@ export const MarketInfoSchema = z.object({
   marketId: z.string().optional(), //todo when implemented
 });
 
+// Governance User Info
+export const GovernanceUserInfoSchema = z.object({
+  address: z.string(),
+  vlsBalance: z.number(),
+  xvlsBalance: z.number(),
+  proposalThreshold: z.number(),
+  isMember: z.boolean(),
+})
+
+
 export type MarketInfo = z.infer<typeof MarketInfoSchema>;
 
 // -------------- listing responses & parsing functions for them
@@ -124,27 +134,4 @@ export function parseValidatedMarketsList(jsonString: string): ApiListMarketsRes
 
 export function parseValidatedMarketsInfoList(jsonString: string): ApiListMarketsInfoResponse {
   return parseAndValidateJson(jsonString, ApiListMarketsInfoResponseSchema);
-}
-
-// Governance types
-export interface Proposal {
-  id: string
-  title: string
-  body: string
-  proposer: string
-  deadline: string
-  status: string
-  created_at: string
-  last_vote: string
-  yes_votes: number
-  no_votes: number
-  abstain_votes: number
-  total_votes: number
-  quorum: number
-}
-
-export interface ProposalsResponse {
-  proposals: Proposal[]
-  has_more: boolean
-  last_id: string
 }
