@@ -1,3 +1,4 @@
+import { ProposalsResponse } from '@/app/types';
 import axios from 'axios';
 
 export type ChartData = {
@@ -12,27 +13,6 @@ export type MarketActivity = {
   hash: string;
   timestamp: string;
   isAmountInShares: boolean;
-};
-
-export type Proposal = {
-  id: string;
-  title: string;
-  body: string;
-  proposer: string;
-  deadline: string;
-  status: string;
-  created_at: string;
-  last_vote: string;
-  yes_votes: number;
-  no_votes: number;
-  abstain_votes: number;
-  total_votes: number;
-};
-
-export type ProposalsResponse = {
-  proposals: Proposal[];
-  has_more: boolean;
-  last_id: string;
 };
 
 export type User = {

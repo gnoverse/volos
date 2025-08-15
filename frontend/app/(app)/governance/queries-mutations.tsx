@@ -1,7 +1,7 @@
-import { getActiveProposals, getProposals, getUser, type ProposalsResponse, type User } from '@/app/services/api.service';
+import { getActiveProposals, getProposals, getUser, type User } from '@/app/services/api.service';
+import { ProposalsResponse } from '@/app/types';
 import { useQuery } from '@tanstack/react-query';
 
-// Query key constants
 export const PROPOSALS_QUERY_KEY = 'proposals';
 export const ACTIVE_PROPOSALS_QUERY_KEY = 'active-proposals';
 export const USER_QUERY_KEY = 'user';
@@ -51,7 +51,7 @@ export function useUser(address?: string) {
   return useQuery<User>({
     queryKey: [USER_QUERY_KEY, address],
     queryFn: () => getUser(address!),
-    enabled: !!address, // Only run query if address is provided
+    enabled: !!address, 
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,

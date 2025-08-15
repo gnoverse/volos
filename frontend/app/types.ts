@@ -125,3 +125,25 @@ export function parseValidatedMarketsList(jsonString: string): ApiListMarketsRes
 export function parseValidatedMarketsInfoList(jsonString: string): ApiListMarketsInfoResponse {
   return parseAndValidateJson(jsonString, ApiListMarketsInfoResponseSchema);
 }
+
+// Governance types
+export interface Proposal {
+  id: string
+  title: string
+  body: string
+  proposer: string
+  deadline: string
+  status: string
+  created_at: string
+  last_vote: string
+  yes_votes: number
+  no_votes: number
+  abstain_votes: number
+  total_votes: number
+}
+
+export interface ProposalsResponse {
+  proposals: Proposal[]
+  has_more: boolean
+  last_id: string
+}
