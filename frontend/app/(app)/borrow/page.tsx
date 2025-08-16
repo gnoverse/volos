@@ -1,15 +1,15 @@
 "use client"
 
-import { AdenaService } from "@/app/services/adena.service"
 import { getUserLoanHistory } from "@/app/services/api.service"
 import { formatCurrency } from "@/app/utils/format.utils"
+import { useUserAddress } from "@/app/utils/address.utils"
 import { Chart } from "@/components/chart"
 import { MyLoanSidePanel } from "@/components/my-loan-side-panel"
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
 import { useQuery } from "@tanstack/react-query"
@@ -20,7 +20,7 @@ import { useMarketsQuery } from "./queries-mutations"
 
 export default function BorrowPage() {
   const router = useRouter()
-  const [userAddress, setUserAddress] = useState<string>("")
+  const { userAddress } = useUserAddress()
   const [totalLoanAmount, setTotalLoanAmount] = useState("0.00")
   const { data: markets, isLoading, error } = useMarketsQuery()
 
@@ -29,21 +29,6 @@ export default function BorrowPage() {
     queryFn: () => getUserLoanHistory(userAddress!),
     enabled: !!userAddress
   });
-
-  // track user address
-  useEffect(() => {
-    const adena = AdenaService.getInstance()
-    setUserAddress(adena.getAddress())
-
-    const handleAddressChange = (event: CustomEvent) => {
-      setUserAddress(event.detail?.newAddress || "")
-    }
-    window.addEventListener("adenaAddressChanged", handleAddressChange as EventListener)
-
-    return () => {
-      window.removeEventListener("adenaAddressChanged", handleAddressChange as EventListener)
-    }
-  }, [])
   
   useEffect(() => {
     if (userLoanHistory && userLoanHistory.length > 0) {
@@ -58,7 +43,6 @@ export default function BorrowPage() {
   const handleRowClick = (id: string) => {
     router.push(`/borrow/${encodeURIComponent(id)}`)
   }
-
 
   if (error) {
     return <div className="text-red-500">Error loading markets: {error.message}</div>

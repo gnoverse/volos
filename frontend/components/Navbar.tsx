@@ -1,6 +1,7 @@
 "use client"
 
 import { AdenaService } from "@/app/services/adena.service";
+import { useUserAddress } from "@/app/utils/address.utils";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -11,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { LogOutIcon, WalletIcon } from "lucide-react";
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Logo from "./logo";
 
 const menuItems = [
@@ -23,8 +24,7 @@ const menuItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [isConnected, setIsConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
+  const { userAddress: walletAddress, isConnected } = useUserAddress({ validateConnection: true });
   const [copied, setCopied] = useState(false);
   
   const formatAddress = (address: string) => {
@@ -32,70 +32,14 @@ export default function Navbar() {
     return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`;
   };
   
-  useEffect(() => {
-    const adenaService = AdenaService.getInstance();
-    
-    const checkWalletConnection = async () => {
-      let connected = adenaService.isConnected();
-      
-      if (connected) {
-        try {
-          const account = await adenaService.getSdk().getAccount();
-          if (!account?.data?.address) {
-            adenaService.disconnectWallet();
-            connected = false;
-          }
-        } catch {
-          adenaService.disconnectWallet();
-          connected = false;
-        }
-      }
-      
-      setIsConnected(connected);
-      
-      if (connected) {
-        const address = adenaService.getAddress();
-        if (address) {
-          setWalletAddress(address);
-        }
-      }
-    };
-    
-    const handleAddressChanged = (event: CustomEvent) => {
-      const { newAddress } = event.detail;
-      if (newAddress) {
-        setIsConnected(true);
-        setWalletAddress(newAddress);
-      } else {
-        setIsConnected(false);
-        setWalletAddress("");
-      }
-    };
-    
-    checkWalletConnection();
-    
-    window.addEventListener('adenaAddressChanged', handleAddressChanged as EventListener);
-    
-    return () => {
-      window.removeEventListener('adenaAddressChanged', handleAddressChanged as EventListener);
-    };
-  }, []);
-  
   const handleWalletConnection = async () => {
     const adenaService = AdenaService.getInstance();
     
     if (isConnected) {
       adenaService.disconnectWallet();
-      setIsConnected(false);
-      setWalletAddress("");
     } else {
       try {
         await adenaService.connectWallet();
-        const address = adenaService.getAddress();
-        if (address) {
-          setWalletAddress(address);
-        }
-        setIsConnected(true);
       } catch (error) {
         console.error("Failed to connect wallet:", error);
       }

@@ -1,9 +1,9 @@
 "use client"
 
 import { apiGetMarketInfo } from '@/app/services/abci'
-import { AdenaService } from "@/app/services/adena.service"
 import { getUserLoanHistory } from '@/app/services/api.service'
 import { MarketInfo } from "@/app/types"
+import { useUserAddress } from "@/app/utils/address.utils"
 import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
@@ -25,7 +25,7 @@ function MarketPageContent() {
   const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null)
   const [apyVariations, setApyVariations] = useState({ sevenDay: 0, ninetyDay: 0 })
   const [tab, setTab] = useState("add-borrow")
-  const [userAddress, setUserAddress] = useState<string>("")
+  const { userAddress } = useUserAddress()
 
   // Fetch all data on mount
   useEffect(() => {
@@ -52,20 +52,7 @@ function MarketPageContent() {
 
   const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
 
-  // track user address
-  useEffect(() => {
-    const adena = AdenaService.getInstance()
-    setUserAddress(adena.getAddress())
 
-    const handleAddressChange = (event: CustomEvent) => {
-      setUserAddress(event.detail?.newAddress || "")
-    }
-    window.addEventListener("adenaAddressChanged", handleAddressChange as EventListener)
-
-    return () => {
-      window.removeEventListener("adenaAddressChanged", handleAddressChange as EventListener)
-    }
-  }, [])
 
   const handleRefetch = () => {
     refetchPosition();

@@ -1,5 +1,6 @@
 import { useGovernanceUserInfo } from "@/app/(app)/governance/queries-mutations"
 import { AdenaService } from "@/app/services/adena.service"
+import { useUserAddress } from "@/app/utils/address.utils"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -9,7 +10,6 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { Info, WalletIcon } from "lucide-react"
-import { useEffect, useState } from "react"
 
 interface GovMemberCardsProps {
   cardStyles: string
@@ -18,49 +18,19 @@ interface GovMemberCardsProps {
 export function GovMemberCards({ 
   cardStyles 
 }: GovMemberCardsProps) {
-  const [userAddress, setUserAddress] = useState<string>("")
-  const [isConnected, setIsConnected] = useState(false)
+  const { userAddress, isConnected } = useUserAddress()
   
   // Fetch real governance user info from on-chain
   const { data: userInfo, isLoading, error } = useGovernanceUserInfo(userAddress)
-
-  useEffect(() => {
-    const adena = AdenaService.getInstance()
-    const address = adena.getAddress()
-    const connected = adena.isConnected()
-    
-    setUserAddress(address)
-    setIsConnected(connected)
-
-    const handleAddressChange = (event: CustomEvent) => {
-      const newAddress = event.detail?.newAddress || ""
-      setUserAddress(newAddress)
-      setIsConnected(!!newAddress)
-    }
-    window.addEventListener("adenaAddressChanged", handleAddressChange as EventListener)
-
-    return () => {
-      window.removeEventListener("adenaAddressChanged", handleAddressChange as EventListener)
-    }
-  }, [])
-
-
 
   const handleWalletConnection = async () => {
     const adenaService = AdenaService.getInstance()
     
     if (isConnected) {
       adenaService.disconnectWallet()
-      setIsConnected(false)
-      setUserAddress("")
     } else {
       try {
         await adenaService.connectWallet()
-        const address = adenaService.getAddress()
-        if (address) {
-          setUserAddress(address)
-        }
-        setIsConnected(true)
       } catch (error) {
         console.error("Failed to connect wallet:", error)
       }
