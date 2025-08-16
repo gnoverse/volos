@@ -6,6 +6,7 @@ const GAS_WANTED = 50000000;
 export class TxService {
   private static instance: TxService;
   private readonly GNOLEND_PKG_PATH = 'gno.land/r/volos';
+  private readonly STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
 
   private constructor() {}
 
@@ -501,6 +502,47 @@ func main() {
       return response;
     } catch (error) {
       console.error("Error approving token:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stake VLS tokens to mint xVLS for a delegatee
+   * @param amount Amount of VLS tokens to stake
+   * @param delegatee Address to delegate voting power to (receives xVLS)
+   */
+  public async stakeVLS(amount: number, delegatee: string) {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: this.STAKER_PKG_PATH,
+            func: "Stake",
+            args: [amount.toString(), delegatee]
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error staking VLS:", error);
       throw error;
     }
   }

@@ -1,7 +1,9 @@
 import { useGovernanceUserInfo } from "@/app/(app)/governance/queries-mutations"
 import { AdenaService } from "@/app/services/adena.service"
+import { TxService } from "@/app/services/tx.service"
 import { useUserAddress } from "@/app/utils/address.utils"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Tooltip,
   TooltipContent,
@@ -9,7 +11,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { Info, WalletIcon } from "lucide-react"
+import { ChevronDown, ChevronUp, Info, Plus, WalletIcon } from "lucide-react"
+import { useState } from "react"
 
 interface GovMemberCardsProps {
   cardStyles: string
@@ -19,9 +22,11 @@ export function GovMemberCards({
   cardStyles 
 }: GovMemberCardsProps) {
   const { userAddress, isConnected } = useUserAddress()
+  const [isStaking, setIsStaking] = useState(false)
+  const [isStakeExpanded, setIsStakeExpanded] = useState(false)
+  const [stakeAmount, setStakeAmount] = useState("")
   
-  // Fetch real governance user info from on-chain
-  const { data: userInfo, isLoading, error } = useGovernanceUserInfo(userAddress)
+  const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
 
   const handleWalletConnection = async () => {
     const adenaService = AdenaService.getInstance()
@@ -35,6 +40,59 @@ export function GovMemberCards({
         console.error("Failed to connect wallet:", error)
       }
     }
+  }
+
+  const handleStakeVLS = async () => {
+    if (!isConnected) {
+      console.error("Wallet not connected")
+      return
+    }
+
+    const amount = parseFloat(stakeAmount)
+    if (isNaN(amount) || amount <= 0) {
+      console.error("Invalid stake amount")
+      return
+    }
+
+    const currentVlsBalance = userInfo?.vlsBalance || 0
+
+    if (currentVlsBalance < amount) {
+      console.error(`Insufficient VLS balance. Required: ${amount}, Available: ${currentVlsBalance}`)
+      return
+    }
+
+    setIsStaking(true)
+    try {
+      const txService = TxService.getInstance()
+      const delegatee = userAddress
+      
+      const response = await txService.stakeVLS(amount, delegatee)
+      console.log("Stake transaction successful:", response)
+      
+      await refetchUserInfo()
+      
+      setStakeAmount("")
+      setIsStakeExpanded(false)
+      
+      console.log("User info refreshed after staking")
+      
+    } catch (error) {
+      console.error("Failed to stake VLS:", error)
+    } finally {
+      setIsStaking(false)
+    }
+  }
+
+  const toggleStakeSection = () => {
+    setIsStakeExpanded(!isStakeExpanded)
+    if (!isStakeExpanded) {
+      setStakeAmount("")
+    }
+  }
+
+  const isValidAmount = () => {
+    const amount = parseFloat(stakeAmount)
+    return !isNaN(amount) && amount > 0 && amount <= (userInfo?.vlsBalance || 0)
   }
 
   if (!userAddress) {
@@ -104,10 +162,88 @@ export function GovMemberCards({
               </span>
             </div>
             <div className="flex items-center justify-between">
+              <span className="text-gray-400">VLS Balance:</span>
+              <span className="text-gray-200 font-mono font-semibold">
+                {userInfo?.vlsBalance || 0} VLS
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
               <span className="text-gray-400">xVLS Balance:</span>
               <span className="text-gray-200 font-mono font-semibold">
                 {userInfo?.xvlsBalance || 0} xVLS
               </span>
+            </div>
+            
+            {/* Collapsible Stake VLS Section */}
+            <div className="mt-4 pt-3 border-t border-gray-600/30">
+              {/* Toggle Button */}
+              <Button
+                onClick={toggleStakeSection}
+                variant="ghost"
+                className="w-full justify-between p-3 h-auto bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white rounded-lg transition-colors"
+              >
+                <div className="flex items-center">
+                  <Plus className="w-4 h-4 mr-2" />
+                  <span>Stake VLS Tokens</span>
+                </div>
+                {isStakeExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </Button>
+
+              {/* Collapsible Content */}
+              {isStakeExpanded && (
+                <div className="mt-3 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                  <div className="space-y-2">
+                    <label htmlFor="stakeAmount" className="text-sm text-gray-400">
+                      Amount to stake
+                    </label>
+                    <Input
+                      id="stakeAmount"
+                      type="number"
+                      placeholder="Enter VLS amount"
+                      value={stakeAmount}
+                      onChange={(e) => setStakeAmount(e.target.value)}
+                      className="bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-500 focus:border-logo-500"
+                      min="0"
+                      step="0.01"
+                      max={userInfo?.vlsBalance || 0}
+                    />
+                    <p className="text-xs text-gray-500">
+                      Available balance: {userInfo?.vlsBalance || 0} VLS
+                    </p>
+                  </div>
+                  
+                  <Button
+                    onClick={handleStakeVLS}
+                    disabled={isStaking || !isConnected || !isValidAmount()}
+                    className={cn(
+                      "w-full rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      isValidAmount() 
+                        ? "bg-logo-600 hover:bg-logo-700 text-white" 
+                        : "bg-gray-600 text-gray-400"
+                    )}
+                  >
+                    {isStaking ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        Staking...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Stake VLS
+                      </>
+                    )}
+                  </Button>
+                  
+                  <p className="text-xs text-gray-500 text-center">
+                    Stake VLS tokens to mint xVLS and gain voting power
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
