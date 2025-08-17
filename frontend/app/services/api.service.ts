@@ -111,7 +111,7 @@ export async function getActiveProposals(limit?: number, lastId?: string): Promi
 }
 
 export async function getProposal(proposalId: string): Promise<Proposal> {
-  const res = await axios.get(`${API_BASE}/proposals/${proposalId}`);
+  const res = await axios.get(`${API_BASE}/proposal/${proposalId}`);
   return res.data;
 }
 

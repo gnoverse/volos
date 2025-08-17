@@ -52,8 +52,9 @@ func setupRoutes() {
 	http.HandleFunc("/api/user-loans", withCORS(routes.UserLoansHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-collateral", withCORS(routes.UserCollateralHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-borrow", withCORS(routes.UserBorrowHandler(FirestoreClient)))
-	http.HandleFunc("/api/proposals", withCORS(routes.GetProposalsHandler(FirestoreClient)))
 	http.HandleFunc("/api/proposals/active", withCORS(routes.GetActiveProposalsHandler(FirestoreClient)))
+	http.HandleFunc("/api/proposal/", withCORS(routes.GetProposalHandler(FirestoreClient)))
+	http.HandleFunc("/api/proposals", withCORS(routes.GetProposalsHandler(FirestoreClient)))
 	http.HandleFunc("/api/user", withCORS(routes.GetUserHandler(FirestoreClient)))
 }
 

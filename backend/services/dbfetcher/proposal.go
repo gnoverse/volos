@@ -154,3 +154,44 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 
 	return string(jsonData), nil
 }
+
+// GetProposal retrieves a single proposal by ID from Firestore
+func GetProposal(client *firestore.Client, proposalID string) (string, error) {
+	ctx := context.Background()
+
+	doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
+	if err != nil {
+		log.Printf("Error fetching proposal %s: %v", proposalID, err)
+		return "", err
+	}
+
+	var proposal model.ProposalData
+	if err := doc.DataTo(&proposal); err != nil {
+		log.Printf("Error parsing proposal data: %v", err)
+		return "", err
+	}
+
+	proposalMap := map[string]interface{}{
+		"id":            proposal.ID,
+		"title":         proposal.Title,
+		"body":          proposal.Body,
+		"proposer":      proposal.Proposer,
+		"deadline":      proposal.Deadline,
+		"status":        proposal.Status,
+		"created_at":    proposal.CreatedAt,
+		"last_vote":     proposal.LastVote,
+		"yes_votes":     proposal.YesVotes,
+		"no_votes":      proposal.NoVotes,
+		"abstain_votes": proposal.AbstainVotes,
+		"total_votes":   proposal.TotalVotes,
+		"quorum":        proposal.Quorum,
+	}
+
+	jsonData, err := json.Marshal(proposalMap)
+	if err != nil {
+		log.Printf("Error marshaling proposal to JSON: %v", err)
+		return "", err
+	}
+
+	return string(jsonData), nil
+}
