@@ -1,6 +1,7 @@
 "use client"
 
 import { Proposal } from "@/app/services/api.service"
+import { getProposalStatusColor } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 
@@ -22,13 +23,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
               {proposal.body}
             </CardDescription>
           </div>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ml-3 flex-shrink-0 ${
-            proposal.status === 'active'
-              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-              : proposal.status === 'executed'
-              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-              : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-          }`}>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ml-3 flex-shrink-0 border ${getProposalStatusColor(proposal.status)}`}>
             {proposal.status}
           </span>
         </div>

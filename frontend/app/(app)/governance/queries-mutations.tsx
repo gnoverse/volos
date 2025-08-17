@@ -17,8 +17,8 @@ export function useProposals(limit?: number, lastId?: string) {
   return useQuery<ProposalsResponse>({
     queryKey: [PROPOSALS_QUERY_KEY, limit, lastId],
     queryFn: () => getProposals(limit, lastId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -27,8 +27,8 @@ export function useActiveProposals(limit?: number, lastId?: string) {
   return useQuery<ProposalsResponse>({
     queryKey: [ACTIVE_PROPOSALS_QUERY_KEY, limit, lastId],
     queryFn: () => getActiveProposals(limit, lastId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -36,7 +36,7 @@ export function useActiveProposals(limit?: number, lastId?: string) {
 export function useAllProposals() {
   return useQuery<ProposalsResponse>({
     queryKey: [PROPOSALS_QUERY_KEY, 'all'],
-    queryFn: () => getProposals(20), // Default limit of 20
+    queryFn: () => getProposals(20),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -46,7 +46,7 @@ export function useAllProposals() {
 export function useAllActiveProposals() {
   return useQuery<ProposalsResponse>({
     queryKey: [ACTIVE_PROPOSALS_QUERY_KEY, 'all'],
-    queryFn: () => getActiveProposals(20), // Default limit of 20
+    queryFn: () => getActiveProposals(20),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -58,8 +58,8 @@ export function useProposal(proposalId?: string) {
     queryKey: [PROPOSAL_QUERY_KEY, proposalId],
     queryFn: () => getProposal(proposalId!),
     enabled: !!proposalId,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 1000,
+    gcTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
     retry: 3,
   });
@@ -71,8 +71,8 @@ export function useUser(address?: string) {
     queryKey: [USER_QUERY_KEY, address],
     queryFn: () => getUser(address!),
     enabled: !!address, 
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 2,
   });
@@ -84,9 +84,9 @@ export function useGovernanceUserInfo(address?: string) {
     queryKey: [GOVERNANCE_USER_INFO_QUERY_KEY, address],
     queryFn: () => apiGetUserInfo(address!),
     enabled: !!address,
-    staleTime: 30 * 1000, // 30 seconds (more frequent updates for on-chain data)
-    gcTime: 2 * 60 * 1000, // 2 minutes
-    refetchOnWindowFocus: true, // Refetch when window gains focus
+    staleTime: 30 * 1000,
+    gcTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
     retry: 3,
   });
 }
@@ -160,6 +160,7 @@ export function useStakeVLSMutation() {
   });
 }
 
+// Mutation to vote on a proposal
 export function useVoteMutation() {
   const txService = TxService.getInstance();
   const queryClient = useQueryClient();
@@ -179,16 +180,25 @@ export function useVoteMutation() {
     onError: (error) => {
       console.error("Vote failed:", error);
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       console.log("Vote successful:", data);
-      // Invalidate and refetch proposal data to show updated vote counts
-      queryClient.invalidateQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] });
-      queryClient.invalidateQueries({ queryKey: [PROPOSALS_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [ACTIVE_PROPOSALS_QUERY_KEY] });
-      // Also invalidate xVLS balance in case it changed
-      queryClient.invalidateQueries({ queryKey: [XVLS_BALANCE_QUERY_KEY] });
-      // Invalidate user vote query to show updated vote
-      queryClient.invalidateQueries({ queryKey: [USER_VOTE_QUERY_KEY] });
+      console.log("Invalidating queries for proposal:", variables.proposalId);
+      
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),
+        queryClient.invalidateQueries({ queryKey: [PROPOSALS_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [ACTIVE_PROPOSALS_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [XVLS_BALANCE_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [USER_VOTE_QUERY_KEY, variables.proposalId] })
+      ]);
+      
+     
+      setTimeout(async () => {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),
+          queryClient.refetchQueries({ queryKey: [USER_VOTE_QUERY_KEY, variables.proposalId] })
+        ]);
+      }, 500);
     }
   });
 }
@@ -199,8 +209,8 @@ export function useXVLSBalance(address?: string) {
     queryKey: [XVLS_BALANCE_QUERY_KEY, address],
     queryFn: () => apiGetXVLSBalance(address!),
     enabled: !!address,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 30 * 1000,
+    gcTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
     retry: 2,
   });
@@ -212,8 +222,8 @@ export function useUserVoteOnProposal(proposalId?: string, userAddress?: string)
     queryKey: [USER_VOTE_QUERY_KEY, proposalId, userAddress],
     queryFn: () => getUserVoteOnProposal(proposalId!, userAddress!),
     enabled: !!proposalId && !!userAddress,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 1000,
+    gcTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
     retry: 2,
   });

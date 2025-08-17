@@ -2,6 +2,7 @@
 
 import { useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
 import { useUserAddress } from "@/app/utils/address.utils"
+import { formatTimestamp, getProposalStatusColor } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -15,14 +16,14 @@ const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 export default function ProposalDetailPage() {
   const params = useParams()
   const proposalId = params.proposalId as string
-  const { data: proposal, isLoading, error } = useProposal(proposalId)
+  const { data: proposal, isLoading, error, refetch: refetchProposal } = useProposal(proposalId)
   const voteMutation = useVoteMutation()
   const [votingReason, setVotingReason] = useState("")
   const [isVoting, setIsVoting] = useState(false)
-  
+    
   const { userAddress, isConnected } = useUserAddress()
   const { data: xvlsBalance = { address: userAddress, balance: 0 } } = useXVLSBalance(userAddress)
-  const { data: userVote } = useUserVoteOnProposal(proposalId, userAddress)
+  const { data: userVote, refetch: refetchUserVote } = useUserVoteOnProposal(proposalId, userAddress)
 
   const handleVote = async (choice: 'YES' | 'NO' | 'ABSTAIN') => {
     if (!proposal) return
@@ -34,8 +35,15 @@ export default function ProposalDetailPage() {
         choice,
         reason: votingReason
       })
-      // Reset voting reason after successful vote
+
       setVotingReason("")
+      setTimeout(async () => {
+        await Promise.all([
+          refetchUserVote(),
+          refetchProposal()
+        ])
+      }, 1000) 
+      
     } catch (error) {
       console.error("Voting failed:", error)
     } finally {
@@ -43,28 +51,7 @@ export default function ProposalDetailPage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-500/20 text-green-400 border-green-500/30'
-      case 'executed':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-      case 'defeated':
-        return 'bg-red-500/20 text-red-400 border-red-500/30'
-      default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-    }
-  }
 
   const isQuorumMet = proposal && proposal.total_votes >= proposal.quorum
   const isActive = proposal?.status === 'active'
@@ -117,7 +104,7 @@ export default function ProposalDetailPage() {
                 <span className="text-sm text-gray-500 font-normal ml-2">[#{proposal.id}]</span>
               </CardTitle>
             </div>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ml-4 flex-shrink-0 border ${getStatusColor(proposal.status)}`}>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ml-4 flex-shrink-0 border ${getProposalStatusColor(proposal.status)}`}>
               {proposal.status.toUpperCase()}
             </span>
           </div>
@@ -131,11 +118,11 @@ export default function ProposalDetailPage() {
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                <span>Created: {formatDate(proposal.created_at)}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                <span>Deadline: {formatDate(proposal.deadline)}</span>
+                                  <span>Created: {formatTimestamp(new Date(proposal.created_at).getTime())}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  <span>Deadline: {formatTimestamp(new Date(proposal.deadline).getTime())}</span>
               </div>
             </div>
           </div>
@@ -217,7 +204,7 @@ export default function ProposalDetailPage() {
                       </span>
                     </div>
                     <span className="text-xs text-gray-500">
-                      {formatDate(userVote.timestamp)}
+                      {formatTimestamp(new Date(userVote.timestamp).getTime())}
                     </span>
                   </div>
                   {userVote.reason && (
