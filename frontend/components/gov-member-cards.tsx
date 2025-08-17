@@ -1,4 +1,4 @@
-import { useApproveTokenMutation, useGovernanceUserInfo, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
+import { useApproveVLSMutation, useGovernanceUserInfo, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
 import { AdenaService } from "@/app/services/adena.service"
 import { STAKER_PKG_PATH } from "@/app/services/tx.service"
 import { useUserAddress } from "@/app/utils/address.utils"
@@ -28,7 +28,7 @@ export function GovMemberCards({
   const [stakeAmount, setStakeAmount] = useState("")
   
   const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
-  const approveTokenMutation = useApproveTokenMutation()
+  const approveVLSMutation = useApproveVLSMutation()
   const stakeVLSMutation = useStakeVLSMutation()
 
   const handleWalletConnection = async () => {
@@ -68,10 +68,9 @@ export function GovMemberCards({
 
     setIsStaking(true)
     try {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: "gno.land/r/volos/gov/vls",
-        amount: amountInDenom,
-        pkgPath: STAKER_PKG_PATH
+      await approveVLSMutation.mutateAsync({
+        spender: STAKER_PKG_PATH,
+        amount: amountInDenom
       })
 
       await stakeVLSMutation.mutateAsync({
@@ -260,7 +259,7 @@ export function GovMemberCards({
                     {isStaking ? (
                       <>
                         <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                        {approveTokenMutation.isPending ? "Approving..." : stakeVLSMutation.isPending ? "Staking..." : "Processing..."}
+                        {approveVLSMutation.isPending ? "Approving..." : stakeVLSMutation.isPending ? "Staking..." : "Processing..."}
                       </>
                     ) : (
                       <>

@@ -98,6 +98,29 @@ export function useApproveTokenMutation() {
   });
 }
 
+// Mutation to approve VLS tokens directly via VLS contract
+export function useApproveVLSMutation() {
+  const txService = TxService.getInstance();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      spender, 
+      amount 
+    }: { 
+      spender: string; 
+      amount: number; 
+    }) => {
+      return txService.approveRealmVLS(spender, amount);
+    },
+    onError: (error) => {
+      console.error("VLS approval failed:", error);
+    },
+    onSuccess: (data) => {
+      console.log("VLS approval successful:", data);
+    }
+  });
+}
+
 export function useStakeVLSMutation() {
   const txService = TxService.getInstance();
   

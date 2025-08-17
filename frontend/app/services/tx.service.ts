@@ -5,6 +5,7 @@ const GAS_WANTED = 50000000;
 
 export const VOLOS_PKG_PATH = 'gno.land/r/volos';
 export const STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
+export const VLS_PKG_PATH = 'gno.land/r/volos/gov/vls';
 
 export class TxService {
   private static instance: TxService;
@@ -479,6 +480,8 @@ func main() {
       ]
     };
 
+    console.log(gnoPackage.files[0].body)
+
     try {
       const tx = TransactionBuilder.create()
         .messages(
@@ -502,6 +505,88 @@ func main() {
       return response;
     } catch (error) {
       console.error("Error approving token:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Approve VLS tokens for spending by calling the VLS contract directly
+   * @param spender Address that will be approved to spend tokens
+   * @param amount Amount of VLS tokens to approve
+   */
+  public async approveVLS(spender: string, amount: number) {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: VLS_PKG_PATH,
+            func: "Approve",
+            args: [spender, amount.toString()]
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error approving VLS:", error);
+      throw error;
+    }
+  }
+
+   /**
+   * Approve VLS tokens for spending by calling the VLS contract directly.
+   * @param spender Pkg path, that will be derived to address and approved to spend tokens
+   * @param amount Amount of VLS tokens to approve
+   */
+   public async approveRealmVLS(spender: string, amount: number) {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: VLS_PKG_PATH,
+            func: "ApproveRealm",
+            args: [spender, amount.toString()]
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error approving VLS:", error);
       throw error;
     }
   }
@@ -546,4 +631,6 @@ func main() {
       throw error;
     }
   }
+
+  
 }
