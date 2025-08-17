@@ -65,6 +65,18 @@ type ProposalFields struct {
 	Timestamp string `json:"timestamp"` // Unix timestamp string when the proposal was created
 }
 
+// VoteData represents an individual vote cast on a proposal, stored in a subcollection.
+// This struct contains all details about a specific user's vote, including their voting power
+// at the time of voting and any additional context provided with the vote.
+type VoteData struct {
+	ProposalID string    `firestore:"proposal_id"` // ID of the proposal this vote was cast on
+	Voter      string    `firestore:"voter"`       // Address of the user who cast the vote
+	VoteChoice string    `firestore:"vote_choice"` // Vote choice: "YES", "NO", or "ABSTAIN"
+	Reason     string    `firestore:"reason"`      // Optional reason provided by the voter
+	XVLSAmount int64     `firestore:"xvls_amount"` // Voting power (xVLS balance) at time of voting
+	Timestamp  time.Time `firestore:"timestamp"`   // When the vote was cast
+}
+
 // UserData represents the complete structure of a user document stored in Firestore.
 // This struct contains all user-related fields that are tracked by the system,
 // including governance membership and other user-specific data.
