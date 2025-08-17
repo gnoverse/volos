@@ -1,10 +1,11 @@
 import { apiGetUserInfo } from '@/app/services/abci';
-import { getActiveProposals, getProposals, getUser, GovernanceUserInfo, ProposalsResponse, type User } from '@/app/services/api.service';
+import { getActiveProposals, getProposal, getProposals, getUser, GovernanceUserInfo, Proposal, ProposalsResponse, type User } from '@/app/services/api.service';
 import { TxService } from '@/app/services/tx.service';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const PROPOSALS_QUERY_KEY = 'proposals';
 export const ACTIVE_PROPOSALS_QUERY_KEY = 'active-proposals';
+export const PROPOSAL_QUERY_KEY = 'proposal';
 export const USER_QUERY_KEY = 'user';
 export const GOVERNANCE_USER_INFO_QUERY_KEY = 'governance-user-info';
 
@@ -45,6 +46,19 @@ export function useAllActiveProposals() {
     queryFn: () => getActiveProposals(20), // Default limit of 20
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+  });
+}
+
+// Hook to fetch a single proposal by ID
+export function useProposal(proposalId?: string) {
+  return useQuery<Proposal>({
+    queryKey: [PROPOSAL_QUERY_KEY, proposalId],
+    queryFn: () => getProposal(proposalId!),
+    enabled: !!proposalId,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: true,
+    retry: 3,
   });
 }
 
@@ -139,6 +153,35 @@ export function useStakeVLSMutation() {
     },
     onSuccess: (data) => {
       console.log("VLS staking successful:", data);
+    }
+  });
+}
+
+export function useVoteMutation() {
+  const txService = TxService.getInstance();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      proposalId, 
+      choice, 
+      reason = '' 
+    }: { 
+      proposalId: string; 
+      choice: 'YES' | 'NO' | 'ABSTAIN'; 
+      reason?: string; 
+    }) => {
+      return txService.voteOnProposal(proposalId, choice, reason);
+    },
+    onError: (error) => {
+      console.error("Vote failed:", error);
+    },
+    onSuccess: (data, variables) => {
+      console.log("Vote successful:", data);
+      // Invalidate and refetch proposal data to show updated vote counts
+      queryClient.invalidateQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] });
+      queryClient.invalidateQueries({ queryKey: [PROPOSALS_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [ACTIVE_PROPOSALS_QUERY_KEY] });
     }
   });
 }

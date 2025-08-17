@@ -6,6 +6,7 @@ const GAS_WANTED = 50000000;
 export const VOLOS_PKG_PATH = 'gno.land/r/volos';
 export const STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
 export const VLS_PKG_PATH = 'gno.land/r/volos/gov/vls';
+export const GOVERNANCE_PKG_PATH = 'gno.land/r/volos/gov/governance';
 
 export class TxService {
   private static instance: TxService;
@@ -628,6 +629,43 @@ func main() {
       return response;
     } catch (error) {
       console.error("Error staking VLS:", error);
+      throw error;
+    }
+  }
+
+  // Voting functions for governance
+  public async voteOnProposal(proposalId: string, choice: 'YES' | 'NO' | 'ABSTAIN', reason: string = '') {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: GOVERNANCE_PKG_PATH,
+            func: "Vote",
+            args: [proposalId, choice, reason]
+          })
+        )
+        .fee(100000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Vote transaction failed:", error);
       throw error;
     }
   }

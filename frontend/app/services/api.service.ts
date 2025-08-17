@@ -110,6 +110,11 @@ export async function getActiveProposals(limit?: number, lastId?: string): Promi
   return res.data;
 }
 
+export async function getProposal(proposalId: string): Promise<Proposal> {
+  const res = await axios.get(`${API_BASE}/proposals/${proposalId}`);
+  return res.data;
+}
+
 export async function getUser(address: string): Promise<User> {
   const res = await axios.get(`${API_BASE}/user`, { params: { address } });
   return res.data;

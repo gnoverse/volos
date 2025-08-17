@@ -2,6 +2,7 @@
 
 import { Proposal } from "@/app/services/api.service"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
 
 interface ProposalCardProps {
   proposal: Proposal
@@ -9,7 +10,8 @@ interface ProposalCardProps {
 
 export function ProposalCard({ proposal }: ProposalCardProps) {
   return (
-    <Card className="bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60 transition-colors">
+    <Link href={`/governance/${proposal.id}`} className="block">
+      <Card className="bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60 transition-colors cursor-pointer">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -56,5 +58,6 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   )
 }
