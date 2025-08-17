@@ -46,7 +46,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			proposalData := extractProposalFields(event)
 			if proposalData != nil {
 				err := dbupdater.CreateProposal(client, proposalData.ID, proposalData.Title,
-					proposalData.Body, proposalData.Proposer, proposalData.Deadline, proposalData.Threshold)
+					proposalData.Body, proposalData.Proposer, proposalData.Deadline, proposalData.Quorum)
 				if err != nil {
 					log.Printf("Error creating proposal in database: %v", err)
 				}
@@ -98,7 +98,7 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 		return nil
 	}
 
-	var proposalID, title, body, deadline, proposer, threshold string
+	var proposalID, title, body, deadline, proposer, quorum string
 	for _, attr := range attributes {
 		attrMap, ok := attr.(map[string]interface{})
 		if !ok {
@@ -119,12 +119,12 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 			deadline = value
 		case "caller":
 			proposer = value
-		case "threshold":
-			threshold = value
+		case "quorum":
+			quorum = value
 		}
 	}
 
-	if proposalID == "" || title == "" || proposer == "" || deadline == "" || threshold == "" {
+	if proposalID == "" || title == "" || proposer == "" || deadline == "" || quorum == "" {
 		log.Println("Missing required proposal fields")
 		return nil
 	}
@@ -135,7 +135,7 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 		Body:      body,
 		Proposer:  proposer,
 		Deadline:  deadline,
-		Threshold: threshold,
+		Quorum:    quorum,
 	}
 }
 
