@@ -1,7 +1,7 @@
 import { apiGetUserInfo, apiGetXVLSBalance } from '@/app/services/abci';
-import { Balance } from '@/app/types';
-import { getActiveProposals, getProposal, getProposals, getUser, GovernanceUserInfo, Proposal, ProposalsResponse, type User } from '@/app/services/api.service';
+import { getActiveProposals, getProposal, getProposals, getUser, getUserVoteOnProposal, GovernanceUserInfo, Proposal, ProposalsResponse, type User, UserVote } from '@/app/services/api.service';
 import { TxService } from '@/app/services/tx.service';
+import { Balance } from '@/app/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const PROPOSALS_QUERY_KEY = 'proposals';
@@ -10,6 +10,7 @@ export const PROPOSAL_QUERY_KEY = 'proposal';
 export const USER_QUERY_KEY = 'user';
 export const GOVERNANCE_USER_INFO_QUERY_KEY = 'governance-user-info';
 export const XVLS_BALANCE_QUERY_KEY = 'xvls-balance';
+export const USER_VOTE_QUERY_KEY = 'user-vote';
 
 // Hook to fetch all proposals with pagination
 export function useProposals(limit?: number, lastId?: string) {
@@ -186,6 +187,8 @@ export function useVoteMutation() {
       queryClient.invalidateQueries({ queryKey: [ACTIVE_PROPOSALS_QUERY_KEY] });
       // Also invalidate xVLS balance in case it changed
       queryClient.invalidateQueries({ queryKey: [XVLS_BALANCE_QUERY_KEY] });
+      // Invalidate user vote query to show updated vote
+      queryClient.invalidateQueries({ queryKey: [USER_VOTE_QUERY_KEY] });
     }
   });
 }
@@ -196,6 +199,19 @@ export function useXVLSBalance(address?: string) {
     queryKey: [XVLS_BALANCE_QUERY_KEY, address],
     queryFn: () => apiGetXVLSBalance(address!),
     enabled: !!address,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: true,
+    retry: 2,
+  });
+}
+
+// Hook to fetch user's vote on a specific proposal
+export function useUserVoteOnProposal(proposalId?: string, userAddress?: string) {
+  return useQuery<UserVote | null>({
+    queryKey: [USER_VOTE_QUERY_KEY, proposalId, userAddress],
+    queryFn: () => getUserVoteOnProposal(proposalId!, userAddress!),
+    enabled: !!proposalId && !!userAddress,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 2 * 60 * 1000, // 2 minutes
     refetchOnWindowFocus: true,

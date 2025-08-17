@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,13 +25,14 @@ func GetProposalsHandler(client *firestore.Client) http.HandlerFunc {
 
 		lastID := r.URL.Query().Get("last_id")
 
-		jsonData, err := dbfetcher.GetProposals(client, limit, lastID)
+		proposals, err := dbfetcher.GetProposals(client, limit, lastID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Write([]byte(jsonData))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(proposals)
 	}
 }
 
@@ -49,13 +51,14 @@ func GetActiveProposalsHandler(client *firestore.Client) http.HandlerFunc {
 
 		lastID := r.URL.Query().Get("last_id")
 
-		jsonData, err := dbfetcher.GetActiveProposals(client, limit, lastID)
+		proposals, err := dbfetcher.GetActiveProposals(client, limit, lastID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Write([]byte(jsonData))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(proposals)
 	}
 }
 
@@ -78,12 +81,13 @@ func GetProposalHandler(client *firestore.Client) http.HandlerFunc {
 			return
 		}
 
-		jsonData, err := dbfetcher.GetProposal(client, proposalID)
+		proposal, err := dbfetcher.GetProposal(client, proposalID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Write([]byte(jsonData))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(proposal)
 	}
 }

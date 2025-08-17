@@ -36,19 +36,19 @@ type MarketActivity struct {
 // This struct contains all fields that are persisted to the database when a proposal is created,
 // including metadata, voting statistics, and timestamps for tracking proposal lifecycle.
 type ProposalData struct {
-	ID           string    `firestore:"id"`            // Unique proposal identifier from the governance contract
-	Title        string    `firestore:"title"`         // Human-readable title of the proposal
-	Body         string    `firestore:"body"`          // Detailed description and content of the proposal
-	Proposer     string    `firestore:"proposer"`      // Address of the user who created the proposal
-	Deadline     time.Time `firestore:"deadline"`      // Unix timestamp when voting period ends
-	Status       string    `firestore:"status"`        // Current status: "active", "passed", "failed", "executed"
-	CreatedAt    time.Time `firestore:"created_at"`    // Timestamp when proposal was created in database
-	LastVote     time.Time `firestore:"last_vote"`     // Timestamp of the last vote cast on this proposal
-	YesVotes     int64     `firestore:"yes_votes"`     // Total voting power of "YES" votes cast
-	NoVotes      int64     `firestore:"no_votes"`      // Total voting power of "NO" votes cast
-	AbstainVotes int64     `firestore:"abstain_votes"` // Total voting power of "ABSTAIN" votes cast
-	TotalVotes   int64     `firestore:"total_votes"`   // Sum of all voting power cast (yes + no + abstain)
-	Quorum       int64     `firestore:"quorum"`        // Quorum for the proposal
+	ID           string    `firestore:"id" json:"id"`            // Unique proposal identifier from the governance contract
+	Title        string    `firestore:"title" json:"title"`         // Human-readable title of the proposal
+	Body         string    `firestore:"body" json:"body"`          // Detailed description and content of the proposal
+	Proposer     string    `firestore:"proposer" json:"proposer"`      // Address of the user who created the proposal
+	Deadline     time.Time `firestore:"deadline" json:"deadline"`      // Unix timestamp when voting period ends
+	Status       string    `firestore:"status" json:"status"`        // Current status: "active", "passed", "failed", "executed"
+	CreatedAt    time.Time `firestore:"created_at" json:"created_at"`    // Timestamp when proposal was created in database
+	LastVote     time.Time `firestore:"last_vote" json:"last_vote"`     // Timestamp of the last vote cast on this proposal
+	YesVotes     int64     `firestore:"yes_votes" json:"yes_votes"`     // Total voting power of "YES" votes cast
+	NoVotes      int64     `firestore:"no_votes" json:"no_votes"`      // Total voting power of "NO" votes cast
+	AbstainVotes int64     `firestore:"abstain_votes" json:"abstain_votes"` // Total voting power of "ABSTAIN" votes cast
+	TotalVotes   int64     `firestore:"total_votes" json:"total_votes"`   // Sum of all voting power cast (yes + no + abstain)
+	Quorum       int64     `firestore:"quorum" json:"quorum"`        // Quorum for the proposal
 }
 
 // ProposalFields represents the extracted fields from a governance proposal creation event.
@@ -69,12 +69,12 @@ type ProposalFields struct {
 // This struct contains all details about a specific user's vote, including their voting power
 // at the time of voting and any additional context provided with the vote.
 type VoteData struct {
-	ProposalID string    `firestore:"proposal_id"` // ID of the proposal this vote was cast on
-	Voter      string    `firestore:"voter"`       // Address of the user who cast the vote
-	VoteChoice string    `firestore:"vote_choice"` // Vote choice: "YES", "NO", or "ABSTAIN"
-	Reason     string    `firestore:"reason"`      // Optional reason provided by the voter
-	XVLSAmount int64     `firestore:"xvls_amount"` // Voting power (xVLS balance) at time of voting
-	Timestamp  time.Time `firestore:"timestamp"`   // When the vote was cast
+	ProposalID string    `firestore:"proposal_id" json:"proposal_id"` // ID of the proposal this vote was cast on
+	Voter      string    `firestore:"voter" json:"voter"`       // Address of the user who cast the vote
+	VoteChoice string    `firestore:"vote_choice" json:"vote_choice"` // Vote choice: "YES", "NO", or "ABSTAIN"
+	Reason     string    `firestore:"reason" json:"reason"`      // Optional reason provided by the voter
+	XVLSAmount int64     `firestore:"xvls_amount" json:"xvls_amount"` // Voting power (xVLS balance) at time of voting
+	Timestamp  time.Time `firestore:"timestamp" json:"timestamp"`   // When the vote was cast
 }
 
 // UserData represents the complete structure of a user document stored in Firestore.
@@ -82,7 +82,7 @@ type VoteData struct {
 // including governance membership and other user-specific data.
 // TODO: add more fields
 type UserData struct {
-	Address   string    `firestore:"address"`    // User's blockchain address (used as document ID)
-	DAOMember bool      `firestore:"dao_member"` // Whether the user is a member of the DAO
-	CreatedAt time.Time `firestore:"created_at"` // Timestamp when the user document was first created
+	Address   string    `firestore:"address" json:"address"`    // User's blockchain address (used as document ID)
+	DAOMember bool      `firestore:"dao_member" json:"dao_member"` // Whether the user is a member of the DAO
+	CreatedAt time.Time `firestore:"created_at" json:"created_at"` // Timestamp when the user document was first created
 }

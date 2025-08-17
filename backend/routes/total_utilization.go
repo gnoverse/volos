@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"net/http"
 	"volos-backend/services/dbfetcher"
 
@@ -16,12 +17,13 @@ func TotalUtilizationHistoryHandler(client *firestore.Client) http.HandlerFunc {
 			return
 		}
 
-		jsonData, err := dbfetcher.FetchMarketData(client, marketId, "total_utilization")
+		data, err := dbfetcher.FetchMarketData(client, marketId, "total_utilization")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Write([]byte(jsonData))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(data)
 	}
 }

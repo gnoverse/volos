@@ -1,6 +1,6 @@
 "use client"
 
-import { useProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
+import { useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
 import { useUserAddress } from "@/app/utils/address.utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,6 +22,7 @@ export default function ProposalDetailPage() {
   
   const { userAddress, isConnected } = useUserAddress()
   const { data: xvlsBalance = { address: userAddress, balance: 0 } } = useXVLSBalance(userAddress)
+  const { data: userVote } = useUserVoteOnProposal(proposalId, userAddress)
 
   const handleVote = async (choice: 'YES' | 'NO' | 'ABSTAIN') => {
     if (!proposal) return
@@ -193,6 +194,45 @@ export default function ProposalDetailPage() {
             </div>
           </div>
 
+          {/* Show user's previous vote if they have voted */}
+          {userVote && isConnected && (
+            <>
+              <Separator className="bg-gray-600/50" />
+              <div>
+                <h3 className="text-lg font-medium text-gray-200 mb-3">Your Vote</h3>
+                <div className="bg-gray-800/40 rounded-lg p-4 border border-gray-700/50">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        userVote.vote_choice === 'YES' 
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                          : userVote.vote_choice === 'NO'
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                          : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                      }`}>
+                        {userVote.vote_choice}
+                      </span>
+                      <span className="text-gray-300 text-sm">
+                        with {userVote.xvls_amount} xVLS
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {formatDate(userVote.timestamp)}
+                    </span>
+                  </div>
+                  {userVote.reason && (
+                    <div className="mt-2">
+                      <div className="text-sm text-gray-400 mb-1">Reason:</div>
+                      <div className="text-gray-300 text-sm italic">
+                        &ldquo;{userVote.reason}&rdquo;
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Voting section - only show if proposal is active */}
           {isActive && !isExpired && (
             <>
@@ -200,7 +240,7 @@ export default function ProposalDetailPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-200 mb-4 flex items-center gap-2">
                   <Vote className="w-5 h-5" />
-                  Cast Your Vote
+                  {userVote ? 'Change Your Vote' : 'Cast Your Vote'}
                 </h3>
                 
                 {/* Show voting requirements if user can't vote */}

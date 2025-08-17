@@ -49,6 +49,15 @@ export interface GovernanceUserInfo {
   isMember: boolean
 }
 
+export interface UserVote {
+  proposal_id: string
+  voter: string
+  vote_choice: string
+  reason: string
+  xvls_amount: number
+  timestamp: string
+}
+
 
 const API_BASE = 'http://localhost:8080/api';
 
@@ -117,5 +126,12 @@ export async function getProposal(proposalId: string): Promise<Proposal> {
 
 export async function getUser(address: string): Promise<User> {
   const res = await axios.get(`${API_BASE}/user`, { params: { address } });
+  return res.data;
+}
+
+export async function getUserVoteOnProposal(proposalId: string, userAddress: string): Promise<UserVote | null> {
+  const res = await axios.get(`${API_BASE}/user-vote`, { 
+    params: { proposalId, userAddress } 
+  });
   return res.data;
 }

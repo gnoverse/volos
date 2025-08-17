@@ -55,6 +55,7 @@ func setupRoutes() {
 	http.HandleFunc("/api/proposals/active", withCORS(routes.GetActiveProposalsHandler(FirestoreClient)))
 	http.HandleFunc("/api/proposal/", withCORS(routes.GetProposalHandler(FirestoreClient)))
 	http.HandleFunc("/api/proposals", withCORS(routes.GetProposalsHandler(FirestoreClient)))
+	http.HandleFunc("/api/user-vote", withCORS(routes.GetUserVoteHandler(FirestoreClient)))
 	http.HandleFunc("/api/user", withCORS(routes.GetUserHandler(FirestoreClient)))
 }
 

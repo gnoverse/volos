@@ -2,7 +2,6 @@ package dbfetcher
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 
 	"volos-backend/model"
@@ -10,8 +9,15 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
+// ProposalsResponse represents the response structure for proposal listings
+type ProposalsResponse struct {
+	Proposals []map[string]interface{} `json:"proposals"`
+	HasMore   bool                     `json:"has_more"`
+	LastID    string                   `json:"last_id"`
+}
+
 // GetProposals retrieves all proposals from Firestore with cursor-based pagination
-func GetProposals(client *firestore.Client, limit int, lastDocID string) (string, error) {
+func GetProposals(client *firestore.Client, limit int, lastDocID string) (*ProposalsResponse, error) {
 	ctx := context.Background()
 
 	query := client.Collection("proposals").OrderBy("created_at", firestore.Desc)
@@ -20,7 +26,7 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (string
 		lastDoc, err := client.Collection("proposals").Doc(lastDocID).Get(ctx)
 		if err != nil {
 			log.Printf("Error fetching last document for pagination: %v", err)
-			return "", err
+			return nil, err
 		}
 		query = query.StartAfter(lastDoc)
 	}
@@ -34,7 +40,7 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (string
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		log.Printf("Error fetching proposals: %v", err)
-		return "", err
+		return nil, err
 	}
 
 	var proposals []map[string]interface{}
@@ -64,27 +70,21 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (string
 		proposals = append(proposals, proposalMap)
 	}
 
-	response := map[string]interface{}{
-		"proposals": proposals,
-		"has_more":  len(docs) == limit,
-		"last_id":   "",
+	response := &ProposalsResponse{
+		Proposals: proposals,
+		HasMore:   len(docs) == limit,
+		LastID:    "",
 	}
 
 	if len(docs) > 0 {
-		response["last_id"] = docs[len(docs)-1].Ref.ID
+		response.LastID = docs[len(docs)-1].Ref.ID
 	}
 
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		log.Printf("Error marshaling proposals to JSON: %v", err)
-		return "", err
-	}
-
-	return string(jsonData), nil
+	return response, nil
 }
 
 // GetActiveProposals retrieves only active proposals from Firestore with cursor-based pagination
-func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (string, error) {
+func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (*ProposalsResponse, error) {
 	ctx := context.Background()
 	query := client.Collection("proposals").Where("status", "==", "active").OrderBy("created_at", firestore.Desc)
 
@@ -92,7 +92,7 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 		lastDoc, err := client.Collection("proposals").Doc(lastDocID).Get(ctx)
 		if err != nil {
 			log.Printf("Error fetching last document for pagination: %v", err)
-			return "", err
+			return nil, err
 		}
 		query = query.StartAfter(lastDoc)
 	}
@@ -106,7 +106,7 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		log.Printf("Error fetching active proposals: %v", err)
-		return "", err
+		return nil, err
 	}
 
 	var proposals []map[string]interface{}
@@ -136,39 +136,33 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 		proposals = append(proposals, proposalMap)
 	}
 
-	response := map[string]interface{}{
-		"proposals": proposals,
-		"has_more":  len(docs) == limit,
-		"last_id":   "",
+	response := &ProposalsResponse{
+		Proposals: proposals,
+		HasMore:   len(docs) == limit,
+		LastID:    "",
 	}
 
 	if len(docs) > 0 {
-		response["last_id"] = docs[len(docs)-1].Ref.ID
+		response.LastID = docs[len(docs)-1].Ref.ID
 	}
 
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		log.Printf("Error marshaling active proposals to JSON: %v", err)
-		return "", err
-	}
-
-	return string(jsonData), nil
+	return response, nil
 }
 
 // GetProposal retrieves a single proposal by ID from Firestore
-func GetProposal(client *firestore.Client, proposalID string) (string, error) {
+func GetProposal(client *firestore.Client, proposalID string) (map[string]interface{}, error) {
 	ctx := context.Background()
 
 	doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
 	if err != nil {
 		log.Printf("Error fetching proposal %s: %v", proposalID, err)
-		return "", err
+		return nil, err
 	}
 
 	var proposal model.ProposalData
 	if err := doc.DataTo(&proposal); err != nil {
 		log.Printf("Error parsing proposal data: %v", err)
-		return "", err
+		return nil, err
 	}
 
 	proposalMap := map[string]interface{}{
@@ -187,11 +181,52 @@ func GetProposal(client *firestore.Client, proposalID string) (string, error) {
 		"quorum":        proposal.Quorum,
 	}
 
-	jsonData, err := json.Marshal(proposalMap)
+	return proposalMap, nil
+}
+
+// GetProposalVotes retrieves all individual votes for a specific proposal from the votes subcollection
+func GetProposalVotes(client *firestore.Client, proposalID string) ([]model.VoteData, error) {
+	ctx := context.Background()
+
+	docs, err := client.Collection("proposals").Doc(proposalID).Collection("votes").Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Error marshaling proposal to JSON: %v", err)
-		return "", err
+		log.Printf("Error fetching votes for proposal %s: %v", proposalID, err)
+		return nil, err
 	}
 
-	return string(jsonData), nil
+	var votes []model.VoteData
+	for _, doc := range docs {
+		var vote model.VoteData
+		if err := doc.DataTo(&vote); err != nil {
+			log.Printf("Error parsing vote data: %v", err)
+			continue
+		}
+		votes = append(votes, vote)
+	}
+
+	log.Printf("Successfully fetched %d votes for proposal %s", len(votes), proposalID)
+	return votes, nil
+}
+
+// GetUserVoteOnProposal retrieves a specific user's vote on a proposal, returns nil if no vote exists
+func GetUserVoteOnProposal(client *firestore.Client, proposalID, userAddress string) (*model.VoteData, error) {
+	ctx := context.Background()
+
+	doc, err := client.Collection("proposals").Doc(proposalID).Collection("votes").Doc(userAddress).Get(ctx)
+	if err != nil {
+		if doc != nil && !doc.Exists() {
+			// User hasn't voted on this proposal
+			return nil, nil
+		}
+		log.Printf("Error fetching user vote for proposal %s, user %s: %v", proposalID, userAddress, err)
+		return nil, err
+	}
+
+	var vote model.VoteData
+	if err := doc.DataTo(&vote); err != nil {
+		log.Printf("Error parsing user vote data: %v", err)
+		return nil, err
+	}
+
+	return &vote, nil
 }
