@@ -1,7 +1,8 @@
-import { useGovernanceUserInfo } from "@/app/(app)/governance/queries-mutations"
+import { useApproveTokenMutation, useGovernanceUserInfo, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
 import { AdenaService } from "@/app/services/adena.service"
-import { TxService } from "@/app/services/tx.service"
+import { STAKER_PKG_PATH } from "@/app/services/tx.service"
 import { useUserAddress } from "@/app/utils/address.utils"
+import { formatTokenAmount } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -27,6 +28,8 @@ export function GovMemberCards({
   const [stakeAmount, setStakeAmount] = useState("")
   
   const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
+  const approveTokenMutation = useApproveTokenMutation()
+  const stakeVLSMutation = useStakeVLSMutation()
 
   const handleWalletConnection = async () => {
     const adenaService = AdenaService.getInstance()
@@ -48,26 +51,33 @@ export function GovMemberCards({
       return
     }
 
-    const amount = parseFloat(stakeAmount)
-    if (isNaN(amount) || amount <= 0) {
+    const wholeTokenAmount = parseFloat(stakeAmount)
+    if (isNaN(wholeTokenAmount) || wholeTokenAmount <= 0) {
       console.error("Invalid stake amount")
       return
     }
 
+    // Convert whole tokens to denom (multiply by 10^6)
+    const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
     const currentVlsBalance = userInfo?.vlsBalance || 0
 
-    if (currentVlsBalance < amount) {
-      console.error(`Insufficient VLS balance. Required: ${amount}, Available: ${currentVlsBalance}`)
+    if (amountInDenom > currentVlsBalance) {
+      console.error(`Insufficient VLS balance. Required: ${amountInDenom} denom, Available: ${currentVlsBalance} denom`)
       return
     }
 
     setIsStaking(true)
     try {
-      const txService = TxService.getInstance()
-      const delegatee = userAddress
-      
-      const response = await txService.stakeVLS(amount, delegatee)
-      console.log("Stake transaction successful:", response)
+      await approveTokenMutation.mutateAsync({
+        tokenPath: "gno.land/r/volos/gov/vls",
+        amount: amountInDenom,
+        pkgPath: STAKER_PKG_PATH
+      })
+
+      await stakeVLSMutation.mutateAsync({
+        amount: amountInDenom,
+        delegatee: userAddress
+      })
       
       await refetchUserInfo()
       
@@ -90,9 +100,19 @@ export function GovMemberCards({
     }
   }
 
+  const handleMaxAmount = () => {
+    if (userInfo?.vlsBalance) {
+      const maxAmount = parseFloat(formatTokenAmount(userInfo.vlsBalance.toString(), 6, 2, 6).replace(/,/g, ''))
+      setStakeAmount(maxAmount.toString())
+    }
+  }
+
   const isValidAmount = () => {
     const amount = parseFloat(stakeAmount)
-    return !isNaN(amount) && amount > 0 && amount <= (userInfo?.vlsBalance || 0)
+    if (isNaN(amount) || amount <= 0) return false
+    
+    const amountInDenom = Math.floor(amount * 1000000)
+    return amountInDenom <= (userInfo?.vlsBalance || 0)
   }
 
   if (!userAddress) {
@@ -164,13 +184,13 @@ export function GovMemberCards({
             <div className="flex items-center justify-between">
               <span className="text-gray-400">VLS Balance:</span>
               <span className="text-gray-200 font-mono font-semibold">
-                {userInfo?.vlsBalance || 0} VLS
+                {formatTokenAmount((userInfo?.vlsBalance || 0).toString(), 6, 2, 6)} VLS
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">xVLS Balance:</span>
               <span className="text-gray-200 font-mono font-semibold">
-                {userInfo?.xvlsBalance || 0} xVLS
+                {formatTokenAmount((userInfo?.xvlsBalance || 0).toString(), 6, 2, 6)} xVLS
               </span>
             </div>
             
@@ -200,19 +220,30 @@ export function GovMemberCards({
                     <label htmlFor="stakeAmount" className="text-sm text-gray-400">
                       Amount to stake
                     </label>
-                    <Input
-                      id="stakeAmount"
-                      type="number"
-                      placeholder="Enter VLS amount"
-                      value={stakeAmount}
-                      onChange={(e) => setStakeAmount(e.target.value)}
-                      className="bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-500 focus:border-logo-500"
-                      min="0"
-                      step="0.01"
-                      max={userInfo?.vlsBalance || 0}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="stakeAmount"
+                        type="number"
+                        placeholder="Enter VLS amount"
+                        value={stakeAmount}
+                        onChange={(e) => setStakeAmount(e.target.value)}
+                        className="bg-gray-800/50 border-gray-600 text-white placeholder:text-gray-500 focus:border-logo-500 pr-16"
+                        min="0"
+                        step="0.000001"
+                        max={parseFloat(formatTokenAmount((userInfo?.vlsBalance || 0).toString(), 6, 2, 6).replace(/,/g, ''))}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleMaxAmount}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-2 text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
+                      >
+                        Max
+                      </Button>
+                    </div>
                     <p className="text-xs text-gray-500">
-                      Available balance: {userInfo?.vlsBalance || 0} VLS
+                      Available balance: {formatTokenAmount((userInfo?.vlsBalance || 0).toString(), 6, 2, 6)} VLS
                     </p>
                   </div>
                   
@@ -229,7 +260,7 @@ export function GovMemberCards({
                     {isStaking ? (
                       <>
                         <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                        Staking...
+                        {approveTokenMutation.isPending ? "Approving..." : stakeVLSMutation.isPending ? "Staking..." : "Processing..."}
                       </>
                     ) : (
                       <>
@@ -240,7 +271,7 @@ export function GovMemberCards({
                   </Button>
                   
                   <p className="text-xs text-gray-500 text-center">
-                    Stake VLS tokens to mint xVLS and gain voting power
+                    Stake VLS tokens to mint xVLS and gain voting power. xVLS is non-transferable. Withdrawing staked VLS will take 7 days.
                   </p>
                 </div>
               )}
@@ -267,7 +298,7 @@ export function GovMemberCards({
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Voting Power:</span>
               <span className="text-logo-500 font-mono font-semibold">
-                {userInfo?.xvlsBalance || 0} xVLS
+                {userInfo?.xvlsBalance || 0} <span className="text-xs text-gray-500">(xVLS denom)</span>
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -283,7 +314,7 @@ export function GovMemberCards({
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Proposal Threshold:</span>
               <span className="text-gray-200 font-mono">
-                {userInfo?.proposalThreshold || 0} xVLS
+                {userInfo?.proposalThreshold || 0} <span className="text-xs text-gray-500">(xVLS denom)</span>
               </span>
             </div>
           </div>

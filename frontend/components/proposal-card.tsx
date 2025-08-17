@@ -51,7 +51,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
               ? 'text-green-400' 
               : 'text-yellow-400'
           }`}>
-            {proposal.total_votes >= proposal.quorum ? 'Quorum Met' : 'Quorum Needed'}
+            {proposal.total_votes >= proposal.quorum ? 'Quorum Met' : 'Quorum Required'}
           </span>
         </div>
       </CardContent>

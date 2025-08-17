@@ -1,6 +1,7 @@
 import { apiGetUserInfo } from '@/app/services/abci';
 import { getActiveProposals, getProposals, getUser, GovernanceUserInfo, ProposalsResponse, type User } from '@/app/services/api.service';
-import { useQuery } from '@tanstack/react-query';
+import { TxService } from '@/app/services/tx.service';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 export const PROPOSALS_QUERY_KEY = 'proposals';
 export const ACTIVE_PROPOSALS_QUERY_KEY = 'active-proposals';
@@ -70,5 +71,51 @@ export function useGovernanceUserInfo(address?: string) {
     gcTime: 2 * 60 * 1000, // 2 minutes
     refetchOnWindowFocus: true, // Refetch when window gains focus
     retry: 3,
+  });
+}
+
+export function useApproveTokenMutation() {
+  const txService = TxService.getInstance();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      tokenPath, 
+      amount,
+      pkgPath
+    }: { 
+      tokenPath: string; 
+      amount: number;
+      pkgPath: string;
+    }) => {
+      return txService.approveToken(tokenPath, amount, pkgPath);
+    },
+    onError: (error) => {
+      console.error("Token approval failed:", error);
+    },
+    onSuccess: (data) => {
+      console.log("Token approval successful:", data);
+    }
+  });
+}
+
+export function useStakeVLSMutation() {
+  const txService = TxService.getInstance();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      amount, 
+      delegatee 
+    }: { 
+      amount: number; 
+      delegatee: string; 
+    }) => {
+      return txService.stakeVLS(amount, delegatee);
+    },
+    onError: (error) => {
+      console.error("VLS staking failed:", error);
+    },
+    onSuccess: (data) => {
+      console.log("VLS staking successful:", data);
+    }
   });
 }

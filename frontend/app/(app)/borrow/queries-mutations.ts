@@ -1,5 +1,5 @@
 import { apiGetHealthFactor, apiGetMarketInfo, apiGetPosition, apiListMarketsInfo } from "@/app/services/abci";
-import { TxService } from "@/app/services/tx.service";
+import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -75,7 +75,7 @@ export function useApproveTokenMutation() {
       tokenPath: string; 
       amount: number;
     }) => {
-      return txService.approveToken(tokenPath, amount);
+      return txService.approveToken(tokenPath, amount, VOLOS_PKG_PATH);
     },
     onError: (error) => {
       console.error("Token approval failed:", error);

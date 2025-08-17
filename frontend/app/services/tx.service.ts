@@ -3,11 +3,11 @@ import { AdenaService } from './adena.service';
 
 const GAS_WANTED = 50000000;
 
+export const VOLOS_PKG_PATH = 'gno.land/r/volos';
+export const STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
+
 export class TxService {
   private static instance: TxService;
-  private readonly GNOLEND_PKG_PATH = 'gno.land/r/volos';
-  private readonly STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
-
   private constructor() {}
 
   public static getInstance(): TxService {
@@ -30,7 +30,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "1000000ugnot",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Supply",
             args: [marketId, assets.toString(), shares.toString()]
           })
@@ -66,7 +66,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Withdraw",
             args: [marketId, assets.toString(), shares.toString()]
           })
@@ -102,7 +102,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Borrow",
             args: [marketId, assets.toString(), shares.toString()]
           })
@@ -138,7 +138,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Repay",
             args: [marketId, assets.toString(), shares.toString()]
           })
@@ -174,7 +174,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "SupplyCollateral",
             args: [marketId, amount.toString()]
           })
@@ -210,7 +210,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "WithdrawCollateral",
             args: [marketId, amount.toString()]
           })
@@ -246,7 +246,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Liquidate",
             args: [marketId, borrower, seizedAssets.toString(), repaidShares.toString()]
           })
@@ -282,7 +282,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "AccrueInterest",
             args: [marketId]
           })
@@ -318,7 +318,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "CreateMarket",
             args: [poolPath, isToken0Loan.toString(), irm, lltv.toString()]
           })
@@ -354,7 +354,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "EnableIRM",
             args: [irm]
           })
@@ -390,7 +390,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "EnableLLTV",
             args: [lltv]
           })
@@ -426,7 +426,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "SetFeeRecipient",
             args: [address]
           })
@@ -449,7 +449,7 @@ export class TxService {
     }
   }
 
-  public async approveToken(tokenPath: string, amount: number) {
+  public async approveToken(tokenPath: string, amount: number, pkgPath: string) {
     const adenaService = AdenaService.getInstance();
     
     if (!adenaService.isConnected()) {
@@ -470,10 +470,10 @@ import (
 )
 
 func main() {
-    gnolendAddr := std.DerivePkgAddr("${this.GNOLEND_PKG_PATH}")
+    addr := std.DerivePkgAddr("${pkgPath}")
     token := grc20reg.MustGet("${tokenPath}")
     teller := token.CallerTeller()
-    teller.Approve(gnolendAddr, ${amount})
+    teller.Approve(addr, ${amount})
 }`
         }
       ]
@@ -524,7 +524,7 @@ func main() {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.STAKER_PKG_PATH,
+            pkg_path: STAKER_PKG_PATH,
             func: "Stake",
             args: [amount.toString(), delegatee]
           })
