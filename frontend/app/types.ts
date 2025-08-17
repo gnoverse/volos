@@ -96,6 +96,14 @@ export const ApiListMarketsInfoResponseSchema = z.array(
 
 export type ApiListMarketsInfoResponse = z.infer<typeof ApiListMarketsInfoResponseSchema>;
 
+// RPC Balance schema for xVLS balance queries
+export const BalanceSchema = z.object({
+  address: z.string(),
+  balance: z.number().int(),
+});
+
+export type Balance = z.infer<typeof BalanceSchema>;
+
 export const LoanAmountSchema = z.object({
   amount: z.string(),
 });

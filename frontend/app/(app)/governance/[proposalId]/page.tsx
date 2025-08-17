@@ -1,6 +1,7 @@
 "use client"
 
-import { useProposal, useVoteMutation } from "@/app/(app)/governance/queries-mutations"
+import { useProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
+import { useUserAddress } from "@/app/utils/address.utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -18,6 +19,9 @@ export default function ProposalDetailPage() {
   const voteMutation = useVoteMutation()
   const [votingReason, setVotingReason] = useState("")
   const [isVoting, setIsVoting] = useState(false)
+  
+  const { userAddress, isConnected } = useUserAddress()
+  const { data: xvlsBalance = { address: userAddress, balance: 0 } } = useXVLSBalance(userAddress)
 
   const handleVote = async (choice: 'YES' | 'NO' | 'ABSTAIN') => {
     if (!proposal) return
@@ -65,6 +69,7 @@ export default function ProposalDetailPage() {
   const isActive = proposal?.status === 'active'
   const deadlineDate = proposal ? new Date(proposal.deadline) : null
   const isExpired = deadlineDate ? new Date() > deadlineDate : false
+  const canVote = isConnected && xvlsBalance.balance > 0
 
   if (isLoading) {
     return (
@@ -92,45 +97,46 @@ export default function ProposalDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header with back button */}
-      <div className="flex items-center gap-4">
-        <Link href="/governance">
-          <Button variant="outline" className="bg-transparent border-gray-500 text-gray-300 hover:border-logo-500 hover:text-logo-500">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Governance
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-300">Proposal #{proposal.id}</h1>
-      </div>
-
       {/* Main proposal card */}
       <Card className={`${CARD_STYLES} border-l-4 border-logo-500`}>
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-gray-200 font-semibold text-xl leading-tight mb-2">
+            <div className="flex items-center gap-3 flex-1">
+              <Link href="/governance">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-gray-400 hover:text-logo-500 hover:bg-gray-800/40 p-2 h-auto"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+              </Link>
+              <CardTitle className="text-orange-500 font-semibold text-2xl leading-tight flex-1">
                 {proposal.title}
+                <span className="text-sm text-gray-500 font-normal ml-2">[#{proposal.id}]</span>
               </CardTitle>
-              <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
-                <div className="flex items-center gap-1">
-                  <User className="w-4 h-4" />
-                  <span>
-                    Proposed by: {proposal.proposer.slice(0, 8)}...{proposal.proposer.slice(-6)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>Created: {formatDate(proposal.created_at)}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>Deadline: {formatDate(proposal.deadline)}</span>
-                </div>
-              </div>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ml-4 flex-shrink-0 border ${getStatusColor(proposal.status)}`}>
               {proposal.status.toUpperCase()}
             </span>
+          </div>
+          <div className="ml-11">
+            <div className="flex items-center gap-4 text-sm text-gray-400 mt-2">
+              <div className="flex items-center gap-1">
+                <User className="w-4 h-4" />
+                <span>
+                  Proposed by: {proposal.proposer.slice(0, 8)}...{proposal.proposer.slice(-6)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <span>Created: {formatDate(proposal.created_at)}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                <span>Deadline: {formatDate(proposal.deadline)}</span>
+              </div>
+            </div>
           </div>
         </CardHeader>
         
@@ -197,6 +203,18 @@ export default function ProposalDetailPage() {
                   Cast Your Vote
                 </h3>
                 
+                {/* Show voting requirements if user can't vote */}
+                {!canVote && (
+                  <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-yellow-400 text-sm">
+                      {!isConnected 
+                        ? "Connect your wallet to vote on this proposal" 
+                        : "You need xVLS tokens to vote on this proposal"
+                      }
+                    </p>
+                  </div>
+                )}
+                
                 {/* Optional voting reason */}
                 <div className="mb-4">
                   <label className="block text-sm text-gray-400 mb-2">
@@ -206,9 +224,10 @@ export default function ProposalDetailPage() {
                     value={votingReason}
                     onChange={(e) => setVotingReason(e.target.value)}
                     placeholder="Share your reasoning for this vote..."
-                    className="w-full px-3 py-2 bg-gray-800/60 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 focus:outline-none focus:border-logo-500 focus:ring-1 focus:ring-logo-500 resize-none"
+                    className="w-full px-3 py-2 bg-gray-800/60 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-400 focus:outline-none focus:border-logo-500 focus:ring-1 focus:ring-logo-500 resize-none disabled:opacity-50"
                     rows={3}
                     maxLength={500}
+                    disabled={!canVote}
                   />
                   <div className="text-xs text-gray-500 mt-1">
                     {votingReason.length}/500 characters
@@ -219,21 +238,21 @@ export default function ProposalDetailPage() {
                 <div className="flex gap-3">
                   <Button
                     onClick={() => handleVote('YES')}
-                    disabled={isVoting}
+                    disabled={isVoting || !canVote}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white border-none disabled:bg-gray-600 disabled:text-gray-400"
                   >
                     {isVoting ? 'Voting...' : 'Vote Yes'}
                   </Button>
                   <Button
                     onClick={() => handleVote('NO')}
-                    disabled={isVoting}
+                    disabled={isVoting || !canVote}
                     className="flex-1 bg-red-600 hover:bg-red-700 text-white border-none disabled:bg-gray-600 disabled:text-gray-400"
                   >
                     {isVoting ? 'Voting...' : 'Vote No'}
                   </Button>
                   <Button
                     onClick={() => handleVote('ABSTAIN')}
-                    disabled={isVoting}
+                    disabled={isVoting || !canVote}
                     className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white border-none disabled:bg-gray-600 disabled:text-gray-400"
                   >
                     {isVoting ? 'Voting...' : 'Abstain'}

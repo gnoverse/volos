@@ -1,4 +1,5 @@
-import { apiGetUserInfo } from '@/app/services/abci';
+import { apiGetUserInfo, apiGetXVLSBalance } from '@/app/services/abci';
+import { Balance } from '@/app/types';
 import { getActiveProposals, getProposal, getProposals, getUser, GovernanceUserInfo, Proposal, ProposalsResponse, type User } from '@/app/services/api.service';
 import { TxService } from '@/app/services/tx.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +9,7 @@ export const ACTIVE_PROPOSALS_QUERY_KEY = 'active-proposals';
 export const PROPOSAL_QUERY_KEY = 'proposal';
 export const USER_QUERY_KEY = 'user';
 export const GOVERNANCE_USER_INFO_QUERY_KEY = 'governance-user-info';
+export const XVLS_BALANCE_QUERY_KEY = 'xvls-balance';
 
 // Hook to fetch all proposals with pagination
 export function useProposals(limit?: number, lastId?: string) {
@@ -182,6 +184,21 @@ export function useVoteMutation() {
       queryClient.invalidateQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] });
       queryClient.invalidateQueries({ queryKey: [PROPOSALS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [ACTIVE_PROPOSALS_QUERY_KEY] });
+      // Also invalidate xVLS balance in case it changed
+      queryClient.invalidateQueries({ queryKey: [XVLS_BALANCE_QUERY_KEY] });
     }
+  });
+}
+
+// Hook to fetch xVLS balance for a user
+export function useXVLSBalance(address?: string) {
+  return useQuery<Balance>({
+    queryKey: [XVLS_BALANCE_QUERY_KEY, address],
+    queryFn: () => apiGetXVLSBalance(address!),
+    enabled: !!address,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: true,
+    retry: 2,
   });
 }
