@@ -62,6 +62,7 @@ type ProposalFields struct {
 	Proposer  string `json:"proposer"`  // Address of the user who created the proposal
 	Deadline  string `json:"deadline"`  // Unix timestamp string when voting period ends
 	Quorum    string `json:"quorum"`    // Quorum for the proposal
+	Timestamp string `json:"timestamp"` // Unix timestamp string when the proposal was created
 }
 
 // UserData represents the complete structure of a user document stored in Firestore.

@@ -46,7 +46,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			proposalData := extractProposalFields(event)
 			if proposalData != nil {
 				err := dbupdater.CreateProposal(client, proposalData.ID, proposalData.Title,
-					proposalData.Body, proposalData.Proposer, proposalData.Deadline, proposalData.Quorum)
+					proposalData.Body, proposalData.Proposer, proposalData.Deadline, proposalData.Quorum, proposalData.Timestamp)
 				if err != nil {
 					log.Printf("Error creating proposal in database: %v", err)
 				}
@@ -63,9 +63,9 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 				}
 			}
 		case "VoteCast":
-			proposalID, voter, vote, reason, xvlsAmount, ok := extractVoteFields(event)
+			proposalID, voter, vote, reason, xvlsAmount, timestamp, ok := extractVoteFields(event)
 			if ok {
-				err := dbupdater.AddVote(client, proposalID, voter, vote, reason, xvlsAmount)
+				err := dbupdater.AddVote(client, proposalID, voter, vote, reason, timestamp, xvlsAmount)
 				if err != nil {
 					log.Printf("Error adding vote to database: %v", err)
 				}
@@ -98,7 +98,7 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 		return nil
 	}
 
-	var proposalID, title, body, deadline, proposer, quorum string
+	var proposalID, title, body, deadline, proposer, quorum, timestamp string
 	for _, attr := range attributes {
 		attrMap, ok := attr.(map[string]interface{})
 		if !ok {
@@ -121,10 +121,12 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 			proposer = value
 		case "quorum":
 			quorum = value
+		case "timestamp":
+			timestamp = value
 		}
 	}
 
-	if proposalID == "" || title == "" || proposer == "" || deadline == "" || quorum == "" {
+	if proposalID == "" || title == "" || proposer == "" || deadline == "" || quorum == "" || timestamp == "" {
 		log.Println("Missing required proposal fields")
 		return nil
 	}
@@ -136,6 +138,7 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 		Proposer:  proposer,
 		Deadline:  deadline,
 		Quorum:    quorum,
+		Timestamp: timestamp,
 	}
 }
 
@@ -166,14 +169,14 @@ func extractProposalID(event map[string]interface{}) string {
 }
 
 // extractVoteFields extracts vote fields from a VoteCast event
-func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, reason string, xvlsAmount int64, ok bool) {
+func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, reason string, xvlsAmount int64, timestamp string, ok bool) {
 	attributes, ok := event["attrs"].([]interface{})
 	if !ok {
 		log.Println("VoteCast event missing attributes")
-		return "", "", "", "", 0, false
+		return "", "", "", "", 0, "", false
 	}
 
-	var proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmountStr string
+	var proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmountStr, timestampStr string
 	for _, attr := range attributes {
 		attrMap, ok := attr.(map[string]interface{})
 		if !ok {
@@ -194,21 +197,23 @@ func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, r
 			reasonStr = value
 		case "xvls_amount":
 			xvlsAmountStr = value
+		case "timestamp":
+			timestampStr = value
 		}
 	}
 
-	if proposalIDStr == "" || voterStr == "" || voteStr == "" || xvlsAmountStr == "" {
+	if proposalIDStr == "" || voterStr == "" || voteStr == "" || xvlsAmountStr == "" || timestampStr == "" {
 		log.Println("Missing required vote fields")
-		return "", "", "", "", 0, false
+		return "", "", "", "", 0, "", false
 	}
 
 	xvlsAmount, err := strconv.ParseInt(xvlsAmountStr, 10, 64)
 	if err != nil {
 		log.Printf("Error parsing xVLS amount: %v", err)
-		return "", "", "", "", 0, false
+		return "", "", "", "", 0, "", false
 	}
 
-	return proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmount, true
+	return proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmount, timestampStr, true
 }
 
 // extractMemberAddress extracts the member address from MemberAdded/MemberRemoved events

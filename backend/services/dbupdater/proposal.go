@@ -11,7 +11,7 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr, quorumStr string) error {
+func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr, quorumStr, timestampStr string) error {
 	ctx := context.Background()
 
 	deadlineUnix, err := strconv.ParseInt(deadlineStr, 10, 64)
@@ -27,7 +27,12 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 		return err
 	}
 
-	now := time.Now()
+	createdAtUnix, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing created timestamp: %v", err)
+		return err
+	}
+	createdAt := time.Unix(createdAtUnix, 0)
 
 	proposal := model.ProposalData{
 		ID:           proposalID,
@@ -36,8 +41,8 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 		Proposer:     proposer,
 		Deadline:     deadline,
 		Status:       "active",
-		CreatedAt:    now,
-		LastVote:     now,
+		CreatedAt:    createdAt,
+		LastVote:     createdAt, // Initialize LastVote to creation time
 		YesVotes:     0,
 		NoVotes:      0,
 		AbstainVotes: 0,
@@ -79,7 +84,7 @@ func UpdateProposal(client *firestore.Client, proposalID string, updates map[str
 }
 
 // AddVote updates the proposal with a new vote and recalculates vote totals
-func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason string, xvlsAmount int64) error {
+func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, timestampStr string, xvlsAmount int64) error {
 	ctx := context.Background()
 
 	doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
@@ -107,7 +112,13 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason str
 	}
 
 	proposal.TotalVotes = proposal.YesVotes + proposal.NoVotes + proposal.AbstainVotes
-	proposal.LastVote = time.Now()
+
+	voteTimeUnix, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing vote timestamp: %v", err)
+		return err
+	}
+	proposal.LastVote = time.Unix(voteTimeUnix, 0)
 
 	_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
 	if err != nil {
