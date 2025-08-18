@@ -8,7 +8,6 @@ package processor
 import (
 	"log"
 	"strconv"
-	"volos-backend/model"
 	"volos-backend/services/dbupdater"
 
 	"cloud.google.com/go/firestore"
@@ -43,14 +42,14 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 
 		switch eventType {
 		case "ProposalCreated":
-			proposalData := extractProposalFields(event)
-			if proposalData != nil {
-				err := dbupdater.CreateProposal(client, proposalData.ID, proposalData.Title,
-					proposalData.Body, proposalData.Proposer, proposalData.Deadline, proposalData.Quorum, proposalData.Timestamp)
+			proposalID, title, body, proposer, deadline, quorum, timestamp, ok := extractProposalFields(event)
+			if ok {
+				err := dbupdater.CreateProposal(client, proposalID, title, body, proposer, deadline, quorum, timestamp)
 				if err != nil {
 					log.Printf("Error creating proposal in database: %v", err)
 				}
 			}
+
 		case "ProposalExecuted":
 			proposalID := extractProposalID(event)
 			if proposalID != "" {
@@ -62,6 +61,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error updating proposal status in database: %v", err)
 				}
 			}
+
 		case "VoteCast":
 			proposalID, voter, vote, reason, xvlsAmount, timestamp, ok := extractVoteFields(event)
 			if ok {
@@ -70,6 +70,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error adding vote to database: %v", err)
 				}
 			}
+
 		case "MemberAdded":
 			member := extractMemberAddress(event)
 			if member != "" {
@@ -78,6 +79,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error adding DAO member to database: %v", err)
 				}
 			}
+
 		case "MemberRemoved":
 			member := extractMemberAddress(event)
 			if member != "" {
@@ -86,19 +88,26 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error removing DAO member from database: %v", err)
 				}
 			}
+			
+		case "Stake":
+			staker, delegatee, amount, cooldownPeriod, _, ok := extractStakeFields(event)
+			if ok {
+				// TODO: Implement stake event handling in dbupdater
+				log.Printf("Stake event received: staker=%s, delegatee=%s, amount=%d, cooldown=%d",
+					staker, delegatee, amount, cooldownPeriod)
+			}
 		}
 	}
 }
 
-// extractProposalFields is a helper function that extracts proposal fields from a transaction event
-func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
-	attributes, ok := event["attrs"].([]interface{})
-	if !ok {
+// extractProposalFields extracts proposal fields from a transaction event
+func extractProposalFields(event map[string]interface{}) (proposalID, title, body, proposer, deadline, quorum, timestamp string, ok bool) {
+	attributes, attrsOk := event["attrs"].([]interface{})
+	if !attrsOk {
 		log.Println("ProposalCreated event missing attributes")
-		return nil
+		return "", "", "", "", "", "", "", false
 	}
 
-	var proposalID, title, body, deadline, proposer, quorum, timestamp string
 	for _, attr := range attributes {
 		attrMap, ok := attr.(map[string]interface{})
 		if !ok {
@@ -128,18 +137,10 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 
 	if proposalID == "" || title == "" || proposer == "" || deadline == "" || quorum == "" || timestamp == "" {
 		log.Println("Missing required proposal fields")
-		return nil
+		return "", "", "", "", "", "", "", false
 	}
 
-	return &model.ProposalFields{
-		ID:        proposalID,
-		Title:     title,
-		Body:      body,
-		Proposer:  proposer,
-		Deadline:  deadline,
-		Quorum:    quorum,
-		Timestamp: timestamp,
-	}
+	return proposalID, title, body, proposer, deadline, quorum, timestamp, true
 }
 
 // extractProposalID extracts the proposal ID from a ProposalExecuted event
@@ -240,4 +241,59 @@ func extractMemberAddress(event map[string]interface{}) string {
 
 	log.Println("Member address not found in MemberAdded/MemberRemoved event")
 	return ""
+}
+
+// extractStakeFields extracts stake fields from a Stake event
+func extractStakeFields(event map[string]interface{}) (staker, delegatee string, amount, cooldownPeriod int64, timestamp string, ok bool) {
+	attributes, attrsOk := event["attrs"].([]interface{})
+	if !attrsOk {
+		log.Println("Stake event missing attributes")
+		return "", "", 0, 0, "", false
+	}
+
+	var stakerStr, delegateeStr, amountStr, cooldownPeriodStr, timestampStr string
+	for _, attr := range attributes {
+		attrMap, ok := attr.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		key, _ := attrMap["key"].(string)
+		value, _ := attrMap["value"].(string)
+
+		switch key {
+		case "staker":
+			stakerStr = value
+		case "delegatee":
+			delegateeStr = value
+		case "amount":
+			amountStr = value
+		case "cooldown_period":
+			cooldownPeriodStr = value
+		case "timestamp":
+			timestampStr = value
+		}
+	}
+
+	if stakerStr == "" || delegateeStr == "" || amountStr == "" || timestampStr == "" {
+		log.Println("Missing required stake fields")
+		return "", "", 0, 0, "", false
+	}
+
+	amountInt, err := strconv.ParseInt(amountStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing stake amount: %v", err)
+		return "", "", 0, 0, "", false
+	}
+
+	cooldownInt := int64(0)
+	if cooldownPeriodStr != "" {
+		cooldownInt, err = strconv.ParseInt(cooldownPeriodStr, 10, 64)
+		if err != nil {
+			log.Printf("Error parsing cooldown period: %v", err)
+			return "", "", 0, 0, "", false
+		}
+	}
+
+	return stakerStr, delegateeStr, amountInt, cooldownInt, timestampStr, true
 }
