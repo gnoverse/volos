@@ -65,10 +65,10 @@ type VoteData struct {
 
 // UserData represents the complete structure of a user document stored in Firestore.
 // This struct contains all user-related fields that are tracked by the system,
-// including governance membership and other user-specific data.
-// TODO: add more fields
+// including governance membership and staking delegation data.
 type UserData struct {
-	Address   string    `firestore:"address" json:"address"`       // User's blockchain address (used as document ID)
-	DAOMember bool      `firestore:"dao_member" json:"dao_member"` // Whether the user is a member of the DAO
-	CreatedAt time.Time `firestore:"created_at" json:"created_at"` // Timestamp when the user document was first created
+	Address   string           `firestore:"address" json:"address"`       // User's blockchain address (used as document ID)
+	DAOMember bool             `firestore:"dao_member" json:"dao_member"` // Whether the user is a member of the DAO
+	StakedVLS map[string]int64 `firestore:"staked_vls" json:"staked_vls"` // Map of delegatee addresses to staked VLS amounts
+	CreatedAt time.Time        `firestore:"created_at" json:"created_at"` // Timestamp when the user document was first created
 }

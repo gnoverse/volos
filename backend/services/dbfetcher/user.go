@@ -21,6 +21,7 @@ func GetUser(client *firestore.Client, userAddress string) (*model.UserData, err
 			return &model.UserData{
 				Address:   userAddress,
 				DAOMember: false,
+				StakedVLS: make(map[string]int64),
 				CreatedAt: time.Time{},
 			}, nil
 		}

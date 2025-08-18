@@ -84,7 +84,7 @@ func FetchBlockTimestamps(heights []int64) (map[int64]string, error) {
 			} `json:"getBlocks"`
 		} `json:"data"`
 	}
-	
+
 	json.Unmarshal(blockResp, &blockData)
 	heightToTime := make(map[int64]string)
 	for _, b := range blockData.Data.GetBlocks {
@@ -139,6 +139,6 @@ func FetchBlockHeightsForTimestamps(timestamps []string) (map[string]int64, erro
 	for _, b := range data.Data.GetBlocks {
 		timeToHeight[b.Time] = int64(b.Height)
 	}
-	
+
 	return timeToHeight, nil
 }

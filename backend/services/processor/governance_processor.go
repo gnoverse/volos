@@ -88,13 +88,23 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error removing DAO member from database: %v", err)
 				}
 			}
-			
+
 		case "Stake":
-			staker, delegatee, amount, cooldownPeriod, _, ok := extractStakeFields(event)
+			staker, delegatee, amount, _, _, ok := extractStakeFields(event)
 			if ok {
-				// TODO: Implement stake event handling in dbupdater
-				log.Printf("Stake event received: staker=%s, delegatee=%s, amount=%d, cooldown=%d",
-					staker, delegatee, amount, cooldownPeriod)
+				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, amount)
+				if err != nil {
+					log.Printf("Error updating staked VLS for user %s: %v", staker, err)
+				}
+			}
+
+		case "BeginUnstake":
+			staker, delegatee, amount, _, _, ok := extractBeginUnstakeFields(event)
+			if ok {
+				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, -amount)
+				if err != nil {
+					log.Printf("Error updating unstaked VLS for user %s: %v", staker, err)
+				}
 			}
 		}
 	}
@@ -296,4 +306,59 @@ func extractStakeFields(event map[string]interface{}) (staker, delegatee string,
 	}
 
 	return stakerStr, delegateeStr, amountInt, cooldownInt, timestampStr, true
+}
+
+// extractBeginUnstakeFields extracts fields from a BeginUnstake event
+func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee string, amount, unlockAt int64, timestamp string, ok bool) {
+	attributes, attrsOk := event["attrs"].([]interface{})
+	if !attrsOk {
+		log.Println("BeginUnstake event missing attributes")
+		return "", "", 0, 0, "", false
+	}
+
+	var stakerStr, delegateeStr, amountStr, unlockAtStr, timestampStr string
+	for _, attr := range attributes {
+		attrMap, ok := attr.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		key, _ := attrMap["key"].(string)
+		value, _ := attrMap["value"].(string)
+
+		switch key {
+		case "staker":
+			stakerStr = value
+		case "delegatee":
+			delegateeStr = value
+		case "amount":
+			amountStr = value
+		case "unlock_at":
+			unlockAtStr = value
+		case "timestamp":
+			timestampStr = value
+		}
+	}
+
+	if stakerStr == "" || delegateeStr == "" || amountStr == "" || timestampStr == "" {
+		log.Println("Missing required BeginUnstake fields")
+		return "", "", 0, 0, "", false
+	}
+
+	amountInt, err := strconv.ParseInt(amountStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing unstake amount: %v", err)
+		return "", "", 0, 0, "", false
+	}
+
+	unlockAtInt := int64(0)
+	if unlockAtStr != "" {
+		unlockAtInt, err = strconv.ParseInt(unlockAtStr, 10, 64)
+		if err != nil {
+			log.Printf("Error parsing unlock_at timestamp: %v", err)
+			return "", "", 0, 0, "", false
+		}
+	}
+
+	return stakerStr, delegateeStr, amountInt, unlockAtInt, timestampStr, true
 }
