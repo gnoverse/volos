@@ -107,6 +107,7 @@ func buildWebSocketQuery() string {
 							GnoEvent: {
 								_or: [
 									{ pkg_path: { eq: "%s" } },
+									{ pkg_path: { eq: "%s" } },
 									{ pkg_path: { eq: "%s" } }
 								]
 							}
@@ -116,5 +117,5 @@ func buildWebSocketQuery() string {
 			) {
 				%s
 			}
-		}`, model.VolosGovPkgPath, model.VolosPkgPath, indexer.UniversalTransactionFields)
+		}`, model.VolosGovPkgPath, model.VolosPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
 }

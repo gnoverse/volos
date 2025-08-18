@@ -1,5 +1,5 @@
 import { apiGetUserInfo, apiGetXVLSBalance } from '@/app/services/abci';
-import { getActiveProposals, getProposal, getProposals, getUser, getUserVoteOnProposal, GovernanceUserInfo, Proposal, ProposalsResponse, type User, UserVote } from '@/app/services/api.service';
+import { getActiveProposals, getProposal, getProposals, getUser, getUserPendingUnstakes, getUserVoteOnProposal, GovernanceUserInfo, PendingUnstake, Proposal, ProposalsResponse, type User, UserVote } from '@/app/services/api.service';
 import { TxService } from '@/app/services/tx.service';
 import { Balance } from '@/app/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ export const USER_QUERY_KEY = 'user';
 export const GOVERNANCE_USER_INFO_QUERY_KEY = 'governance-user-info';
 export const XVLS_BALANCE_QUERY_KEY = 'xvls-balance';
 export const USER_VOTE_QUERY_KEY = 'user-vote';
+export const USER_PENDING_UNSTAKES_QUERY_KEY = 'user-pending-unstakes';
 
 // Hook to fetch all proposals with pagination
 export function useProposals(limit?: number, lastId?: string) {
@@ -140,6 +141,8 @@ export function useApproveVLSMutation() {
 
 export function useStakeVLSMutation() {
   const txService = TxService.getInstance();
+  const queryClient = useQueryClient();
+
   
   return useMutation({
     mutationFn: async ({ 
@@ -154,8 +157,61 @@ export function useStakeVLSMutation() {
     onError: (error) => {
       console.error("VLS staking failed:", error);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log("VLS staking successful:", data);
+
+      // Invalidate and refetch all related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [USER_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [GOVERNANCE_USER_INFO_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
+      ]);
+      
+      // Force refetch for immediate UI updates
+      setTimeout(async () => {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: [USER_QUERY_KEY] }),
+          queryClient.refetchQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
+        ]);
+      }, 500);
+    }
+  });
+}
+
+export function useBeginUnstakeVLSMutation() {
+  const txService = TxService.getInstance();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      amount, 
+      delegatee 
+    }: { 
+      amount: number; 
+      delegatee: string; 
+    }) => {
+      return txService.beginUnstakeVLS(amount, delegatee);
+    },
+    onError: (error) => {
+      console.error("VLS unstaking failed:", error);
+    },
+    onSuccess: async (data) => {
+      console.log("VLS unstaking successful:", data);
+      
+      // Invalidate and refetch all related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [USER_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [GOVERNANCE_USER_INFO_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
+      ]);
+      
+      // Force refetch for immediate UI updates
+      setTimeout(async () => {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: [USER_QUERY_KEY] }),
+          queryClient.refetchQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
+        ]);
+      }, 500);
     }
   });
 }
@@ -223,6 +279,19 @@ export function useUserVoteOnProposal(proposalId?: string, userAddress?: string)
     queryFn: () => getUserVoteOnProposal(proposalId!, userAddress!),
     enabled: !!proposalId && !!userAddress,
     staleTime: 5 * 1000,
+    gcTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    retry: 2,
+  });
+}
+
+// Hook to fetch user's pending unstakes
+export function useUserPendingUnstakes(userAddress?: string) {
+  return useQuery<PendingUnstake[]>({
+    queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY, userAddress],
+    queryFn: () => getUserPendingUnstakes(userAddress!),
+    enabled: !!userAddress,
+    staleTime: 30 * 1000,
     gcTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
     retry: 2,

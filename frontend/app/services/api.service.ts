@@ -17,6 +17,7 @@ export type MarketActivity = {
 export type User = {
   address: string;
   dao_member: boolean;
+  staked_vls: Record<string, number>;
   created_at: string | null;
 };
 export interface Proposal {
@@ -50,12 +51,18 @@ export interface GovernanceUserInfo {
 }
 
 export interface UserVote {
-  proposal_id: string
-  voter: string
-  vote_choice: string
-  reason: string
-  xvls_amount: number
-  timestamp: string
+	proposal_id: string
+	voter: string
+	vote_choice: string
+	reason: string
+	xvls_amount: number
+	timestamp: string
+}
+
+export interface PendingUnstake {
+	amount: number
+	delegatee: string
+	unlock_at: string
 }
 
 
@@ -130,8 +137,15 @@ export async function getUser(address: string): Promise<User> {
 }
 
 export async function getUserVoteOnProposal(proposalId: string, userAddress: string): Promise<UserVote | null> {
-  const res = await axios.get(`${API_BASE}/user-vote`, { 
-    params: { proposalId, userAddress } 
-  });
-  return res.data;
+	const res = await axios.get(`${API_BASE}/user-vote`, { 
+		params: { proposalId, userAddress } 
+	});
+	return res.data;
+}
+
+export async function getUserPendingUnstakes(userAddress: string): Promise<PendingUnstake[]> {
+	const res = await axios.get(`${API_BASE}/user-pending-unstakes`, { 
+		params: { userAddress } 
+	});
+	return res.data;
 }

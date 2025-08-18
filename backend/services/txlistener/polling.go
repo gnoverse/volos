@@ -74,6 +74,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 								GnoEvent: {
 									_or: [
 										{ pkg_path: { eq: "%s" } },
+										{ pkg_path: { eq: "%s" } },
 										{ pkg_path: { eq: "%s" } }
 									]
 							}
@@ -83,7 +84,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 			) {
 				%s
 			}
-		}`, indexer.UniversalTransactionFields, model.VolosPkgPath, model.VolosGovPkgPath)
+		}`, model.VolosPkgPath, model.VolosGovPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
 
 	if lastBlockHeight > 0 {
 		return fmt.Sprintf(`
@@ -98,10 +99,11 @@ func buildPollingQuery(lastBlockHeight int) string {
 							response: {
 								events: {
 									GnoEvent: {
-										_or: [
-											{ pkg_path: { eq: "%s" } },
-											{ pkg_path: { eq: "%s" } }
-										]
+																			_or: [
+										{ pkg_path: { eq: "%s" } },
+										{ pkg_path: { eq: "%s" } },
+										{ pkg_path: { eq: "%s" } }
+									]
 									}
 								}
 							}
@@ -111,7 +113,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 			) {
 				%s
 			}
-		}`, lastBlockHeight, model.VolosPkgPath, model.VolosGovPkgPath, indexer.UniversalTransactionFields)
+		}`, lastBlockHeight, model.VolosPkgPath, model.VolosGovPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
 	}
 
 	return baseQuery

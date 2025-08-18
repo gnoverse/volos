@@ -62,3 +62,24 @@ func GetUserVoteHandler(client *firestore.Client) http.HandlerFunc {
 		}
 	}
 }
+
+// GetUserPendingUnstakesHandler handles GET /user-pending-unstakes?userAddress=ADDRESS - returns user's pending unstakes
+func GetUserPendingUnstakesHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		userAddress := r.URL.Query().Get("userAddress")
+		if userAddress == "" {
+			http.Error(w, "userAddress parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		pendingUnstakes, err := dbfetcher.GetUserPendingUnstakes(client, userAddress)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(pendingUnstakes)
+	}
+}

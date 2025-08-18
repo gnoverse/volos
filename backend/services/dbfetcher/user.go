@@ -37,3 +37,30 @@ func GetUser(client *firestore.Client, userAddress string) (*model.UserData, err
 
 	return &user, nil
 }
+
+// GetUserPendingUnstakes retrieves all pending unstake documents from a user's pendingUnstakes subcollection
+func GetUserPendingUnstakes(client *firestore.Client, userAddress string) ([]model.PendingUnstakeData, error) {
+	ctx := context.Background()
+
+	var pendingUnstakes []model.PendingUnstakeData
+
+	iter := client.Collection("users").Doc(userAddress).Collection("pendingUnstakes").Documents(ctx)
+	defer iter.Stop()
+
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			break
+		}
+
+		var pendingUnstake model.PendingUnstakeData
+		if err := doc.DataTo(&pendingUnstake); err != nil {
+			log.Printf("Error parsing pending unstake data for user %s: %v", userAddress, err)
+			continue
+		}
+
+		pendingUnstakes = append(pendingUnstakes, pendingUnstake)
+	}
+
+	return pendingUnstakes, nil
+}

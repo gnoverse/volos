@@ -61,7 +61,7 @@ func RemoveDAOMember(client *firestore.Client, userAddress string) error {
 // The staked_vls field maps delegatee addresses to VLS token amounts. Positive amounts
 // represent staking operations while negative amounts represent unstaking. Delegatee
 // entries are removed when amounts reach zero or become negative.
-func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string, amount int64) error {
+func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string, amount int64, timestamp int64) error {
 	ctx := context.Background()
 
 	userRef := client.Collection("users").Doc(userAddress)
@@ -80,7 +80,7 @@ func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string
 			Address:   userAddress,
 			DAOMember: false,
 			StakedVLS: make(map[string]int64),
-			CreatedAt: time.Now(),
+			CreatedAt: time.Unix(timestamp, 0),
 		}
 	}
 
@@ -105,5 +105,27 @@ func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string
 		return err
 	}
 
+	return nil
+}
+
+// AddPendingUnstake creates a new pending unstake document in the user's pendingUnstakes subcollection.
+// This function is called when a BeginUnstake event is processed to track the unstaking operation
+// until it can be completed after the cooldown period.
+func AddPendingUnstake(client *firestore.Client, userAddress, delegatee string, amount, unlockAt int64) error {
+	ctx := context.Background()
+
+	pendingUnstake := model.PendingUnstakeData{
+		Amount:    amount,
+		Delegatee: delegatee,
+		UnlockAt:  time.Unix(unlockAt, 0),
+	}
+
+	_, _, err := client.Collection("users").Doc(userAddress).Collection("pendingUnstakes").Add(ctx, pendingUnstake)
+	if err != nil {
+		log.Printf("Error creating pending unstake for user %s: %v", userAddress, err)
+		return err
+	}
+
+	log.Printf("Created pending unstake for user %s: %d VLS from %s, unlocks at %d", userAddress, amount, delegatee, unlockAt)
 	return nil
 }

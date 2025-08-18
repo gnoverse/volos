@@ -4,6 +4,7 @@ import "time"
 
 const VolosPkgPath = "gno.land/r/volos/core"              // the package path of the Volos contract
 const VolosGovPkgPath = "gno.land/r/volos/gov/governance" // the package path of the Volos governance contract
+const VolosStakerPkgPath = "gno.land/r/volos/gov/staker"  // the package path of the Volos staker contract
 const Rpc = "http://localhost:26657"                      // the RPC endpoint of the node
 const BlockHeightOnDeploy = 0                             // the block height of the deployment of the Volos contract
 
@@ -61,6 +62,14 @@ type VoteData struct {
 	Reason     string    `firestore:"reason" json:"reason"`           // Optional reason provided by the voter
 	XVLSAmount int64     `firestore:"xvls_amount" json:"xvls_amount"` // Voting power (xVLS balance) at time of voting
 	Timestamp  time.Time `firestore:"timestamp" json:"timestamp"`     // When the vote was cast
+}
+
+// PendingUnstakeData represents a pending unstaking operation stored in a user's subcollection.
+// This struct tracks unstaking operations that are in the cooldown period before tokens can be withdrawn.
+type PendingUnstakeData struct {
+	Amount    int64     `firestore:"amount" json:"amount"`       // Amount of VLS tokens being unstaked (in denom units)
+	Delegatee string    `firestore:"delegatee" json:"delegatee"` // Address of the delegatee being unstaked from
+	UnlockAt  time.Time `firestore:"unlock_at" json:"unlock_at"` // Timestamp when the unstake can be completed
 }
 
 // UserData represents the complete structure of a user document stored in Firestore.

@@ -90,20 +90,27 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			}
 
 		case "Stake":
-			staker, delegatee, amount, _, _, ok := extractStakeFields(event)
+			staker, delegatee, amount, _, timestampStr, ok := extractStakeFields(event)
 			if ok {
-				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, amount)
+				timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, amount, timestamp)
 				if err != nil {
 					log.Printf("Error updating staked VLS for user %s: %v", staker, err)
 				}
 			}
 
 		case "BeginUnstake":
-			staker, delegatee, amount, _, _, ok := extractBeginUnstakeFields(event)
+			staker, delegatee, amount, unlockAt, timestampStr, ok := extractBeginUnstakeFields(event)
 			if ok {
-				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, -amount)
+				timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, -amount, timestamp)
 				if err != nil {
 					log.Printf("Error updating unstaked VLS for user %s: %v", staker, err)
+				}
+
+				err = dbupdater.AddPendingUnstake(client, staker, delegatee, amount, unlockAt)
+				if err != nil {
+					log.Printf("Error creating pending unstake for user %s: %v", staker, err)
 				}
 			}
 		}
