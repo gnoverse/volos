@@ -669,6 +669,46 @@ func main() {
     }
   }
 
+  /**
+   * Withdraw matured VLS unstakes from the staker contract
+   * This completes the unstaking process after the cooldown period
+   */
+  public async withdrawUnstakedVLS() {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: STAKER_PKG_PATH,
+            func: "WithdrawUnstaked",
+            args: []
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error withdrawing unstaked VLS:", error);
+      throw error;
+    }
+  }
+
   // Voting functions for governance
   public async voteOnProposal(proposalId: string, choice: 'YES' | 'NO' | 'ABSTAIN', reason: string = '') {
     const adenaService = AdenaService.getInstance();

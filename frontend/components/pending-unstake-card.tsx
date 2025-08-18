@@ -1,9 +1,11 @@
 "use client"
 
+import { useWithdrawUnstakedVLSMutation } from "@/app/(app)/governance/queries-mutations"
 import { PendingUnstake } from "@/app/services/api.service"
 import { formatTimestamp, formatTokenAmount } from "@/app/utils/format.utils"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Clock } from "lucide-react"
+import { Clock, Download } from "lucide-react"
 
 interface PendingUnstakeCardProps {
   pendingUnstake: PendingUnstake
@@ -12,6 +14,15 @@ interface PendingUnstakeCardProps {
 export function PendingUnstakeCard({ pendingUnstake }: PendingUnstakeCardProps) {
   const unlockDate = new Date(pendingUnstake.unlock_at)
   const isUnlocked = unlockDate.getTime() <= Date.now()
+  const withdrawMutation = useWithdrawUnstakedVLSMutation()
+
+  const handleWithdraw = async () => {
+    try {
+      await withdrawMutation.mutateAsync()
+    } catch (error) {
+      console.error("Failed to withdraw unstaked VLS:", error)
+    }
+  }
 
   return (
     <Card className={`bg-gray-800/40 border-gray-700/50 transition-colors ${
@@ -56,8 +67,28 @@ export function PendingUnstakeCard({ pendingUnstake }: PendingUnstakeCardProps) 
           </div>
           
           {isUnlocked && (
-            <div className="mt-3 p-2 bg-green-500/10 border border-green-500/30 rounded text-sm text-green-400">
-              This unstake is ready to be completed. You can now withdraw your VLS tokens.
+            <div className="space-y-3">
+              <div className="p-2 bg-green-500/10 border border-green-500/30 rounded text-sm text-green-400">
+                This unstake is ready to be completed. You can now withdraw your VLS tokens.
+              </div>
+              
+              <Button
+                onClick={handleWithdraw}
+                disabled={withdrawMutation.isPending}
+                className="w-full bg-green-600 hover:bg-green-700 text-white border-none disabled:bg-gray-600 disabled:text-gray-400"
+              >
+                {withdrawMutation.isPending ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Withdrawing...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Withdraw VLS
+                  </>
+                )}
+              </Button>
             </div>
           )}
         </div>

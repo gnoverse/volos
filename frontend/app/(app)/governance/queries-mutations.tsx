@@ -216,6 +216,38 @@ export function useBeginUnstakeVLSMutation() {
   });
 }
 
+export function useWithdrawUnstakedVLSMutation() {
+  const txService = TxService.getInstance();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async () => {
+      return txService.withdrawUnstakedVLS();
+    },
+    onError: (error) => {
+      console.error("VLS withdrawal failed:", error);
+    },
+    onSuccess: async (data) => {
+      console.log("VLS withdrawal successful:", data);
+      
+      // Invalidate and refetch all related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [USER_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [GOVERNANCE_USER_INFO_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
+      ]);
+      
+      // Force refetch for immediate UI updates
+      setTimeout(async () => {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: [USER_QUERY_KEY] }),
+          queryClient.refetchQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
+        ]);
+      }, 500);
+    }
+  });
+}
+
 // Mutation to vote on a proposal
 export function useVoteMutation() {
   const txService = TxService.getInstance();
