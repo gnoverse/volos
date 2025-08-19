@@ -131,7 +131,7 @@ export function DelegateeCard({ delegatee, amount }: DelegateeCardProps) {
           </Button>
           
           <p className="text-xs text-gray-500 text-center">
-            Unstaking requires a 7-day cooldown period before tokens can be withdrawn.
+            Withdrawing staked VLS will be available 7 days after the last proposal you have voted on expires.
           </p>
         </div>
       </CardContent>

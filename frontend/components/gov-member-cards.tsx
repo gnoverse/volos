@@ -270,7 +270,7 @@ export function GovMemberCards({
                   </Button>
                   
                   <p className="text-xs text-gray-500 text-center">
-                    Stake VLS tokens to mint xVLS and gain voting power. xVLS is non-transferable. Withdrawing staked VLS will take 7 days.
+                    Stake VLS tokens to mint xVLS and gain voting power. xVLS is non-transferable. Withdrawing staked VLS will be available 7 days after the last proposal you have voted on expires.
                   </p>
                 </div>
               )}
