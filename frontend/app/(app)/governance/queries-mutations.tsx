@@ -173,7 +173,7 @@ export function useStakeVLSMutation() {
           queryClient.refetchQueries({ queryKey: [USER_QUERY_KEY] }),
           queryClient.refetchQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
         ]);
-      }, 500);
+      }, 1000);
     }
   });
 }
@@ -211,7 +211,7 @@ export function useBeginUnstakeVLSMutation() {
           queryClient.refetchQueries({ queryKey: [USER_QUERY_KEY] }),
           queryClient.refetchQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
         ]);
-      }, 500);
+      }, 1000);
     }
   });
 }
@@ -243,7 +243,7 @@ export function useWithdrawUnstakedVLSMutation() {
           queryClient.refetchQueries({ queryKey: [USER_QUERY_KEY] }),
           queryClient.refetchQueries({ queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY] })
         ]);
-      }, 500);
+      }, 1000);
     }
   });
 }
@@ -286,7 +286,7 @@ export function useVoteMutation() {
           queryClient.refetchQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),
           queryClient.refetchQueries({ queryKey: [USER_VOTE_QUERY_KEY, variables.proposalId] })
         ]);
-      }, 500);
+      }, 1000);
     }
   });
 }

@@ -111,7 +111,7 @@ func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string
 // AddPendingUnstake creates a new pending unstake document in the user's pendingUnstakes subcollection.
 // This function is called when a BeginUnstake event is processed to track the unstaking operation
 // until it can be completed after the cooldown period.
-func AddPendingUnstake(client *firestore.Client, userAddress, delegatee string, amount, unlockAt int64) error {
+func AddPendingUnstake(client *firestore.Client, userAddress, delegatee, unstakeId string, amount, unlockAt int64) error {
 	ctx := context.Background()
 
 	pendingUnstake := model.PendingUnstakeData{
@@ -120,12 +120,38 @@ func AddPendingUnstake(client *firestore.Client, userAddress, delegatee string, 
 		UnlockAt:  time.Unix(unlockAt, 0),
 	}
 
-	_, _, err := client.Collection("users").Doc(userAddress).Collection("pendingUnstakes").Add(ctx, pendingUnstake)
+	_, err := client.Collection("users").Doc(userAddress).Collection("pendingUnstakes").Doc(unstakeId).Set(ctx, pendingUnstake)
 	if err != nil {
 		log.Printf("Error creating pending unstake for user %s: %v", userAddress, err)
 		return err
 	}
 
 	log.Printf("Created pending unstake for user %s: %d VLS from %s, unlocks at %d", userAddress, amount, delegatee, unlockAt)
+	return nil
+}
+
+// DeletePendingUnstakesByIDs deletes pending unstake documents by their IDs for a given user.
+// The IDs correspond to the deterministic Firestore document IDs stored for each pending unstake.
+func DeletePendingUnstakesByIDs(client *firestore.Client, userAddress string, unstakeIDs []string) error {
+	if len(unstakeIDs) == 0 {
+		return nil
+	}
+
+	ctx := context.Background()
+	batch := client.Batch()
+
+	sub := client.Collection("users").Doc(userAddress).Collection("pendingUnstakes")
+	for _, id := range unstakeIDs {
+		docRef := sub.Doc(id)
+		batch.Delete(docRef)
+	}
+
+	_, err := batch.Commit(ctx)
+	if err != nil {
+		log.Printf("Error deleting pending unstakes for user %s: %v", userAddress, err)
+		return err
+	}
+
+	log.Printf("Deleted %d pending unstakes for user %s", len(unstakeIDs), userAddress)
 	return nil
 }

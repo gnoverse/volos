@@ -1,10 +1,12 @@
 "use client"
 
-import { useUser, useUserPendingUnstakes } from "@/app/(app)/governance/queries-mutations"
+import { useUser, useUserPendingUnstakes, useWithdrawUnstakedVLSMutation } from "@/app/(app)/governance/queries-mutations"
 import { useUserAddress } from "@/app/utils/address.utils"
 import { DelegateForm } from "@/components/delegate-form"
 import { DelegateeCard } from "@/components/delegatee-card"
 import { PendingUnstakeCard } from "@/components/pending-unstake-card"
+import { Button } from "@/components/ui/button"
+import { Download } from "lucide-react"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
@@ -12,10 +14,21 @@ export default function DelegatesPage() {
   const { userAddress, isConnected } = useUserAddress()
   const { data: user } = useUser(userAddress)
   const { data: pendingUnstakes = [] } = useUserPendingUnstakes(userAddress)
+  const withdrawMutation = useWithdrawUnstakedVLSMutation()
+
+  const handleWithdraw = async () => {
+    try {
+      await withdrawMutation.mutateAsync()
+      // todo add toasts here
+    } catch (error) {
+      console.error("Failed to withdraw unstaked VLS:", error)
+    }
+  }
 
   const delegations = user?.staked_vls || {}
   const activeDelegations = Object.entries(delegations).filter(([, amount]) => amount > 0)
   const hasDelegations = activeDelegations.length > 0
+  const hasReadyToWithdraw = (pendingUnstakes || []).some(u => new Date(u.unlock_at).getTime() <= Date.now())
 
   return (
     <div className={`${CARD_STYLES} p-6 border-l-4 border-logo-500`}>
@@ -51,7 +64,26 @@ export default function DelegatesPage() {
       {/* Pending Unstakes */}
       {isConnected && pendingUnstakes && pendingUnstakes.length > 0 && (
         <div className="mt-8 space-y-4">
-          <h4 className="text-lg font-medium text-gray-200 mb-4">Pending Unstakes</h4>
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-lg font-medium text-gray-200">Pending Unstakes</h4>
+            <Button
+              onClick={handleWithdraw}
+              disabled={!hasReadyToWithdraw || withdrawMutation.isPending}
+              className="bg-green-600 hover:bg-green-700 text-white border-none disabled:bg-gray-600 disabled:text-gray-400"
+            >
+              {withdrawMutation.isPending ? (
+                <>
+                  <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Withdrawing...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Complete Withdrawals
+                </>
+              )}
+            </Button>
+          </div>
           {pendingUnstakes.map((pendingUnstake, index) => (
             <PendingUnstakeCard 
               key={`${pendingUnstake.delegatee}_${pendingUnstake.amount}_${index}`} 
