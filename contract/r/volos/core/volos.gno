@@ -1,4 +1,4 @@
-package volos
+package core
 
 import (
 	"std"
@@ -8,6 +8,8 @@ import (
 	"gno.land/p/demo/ownable"
 
 	u256 "gno.land/p/gnoswap/uint256"
+	"gno.land/p/volos/consts"
+	"gno.land/p/volos/math"
 	pl "gno.land/r/gnoswap/v1/pool"
 )
 
@@ -47,7 +49,7 @@ func init() {
 	authorizers = avl.NewTree()
 
 	// Set initial owner
-	Ownable = ownable.NewWithOrigin()
+	Ownable = ownable.NewWithAddress(std.Address(""))
 }
 
 // RegisterIRM registers a new interest rate model
@@ -70,9 +72,6 @@ func RegisterIRM(cur realm, irm IRM) {
 /* GOVERNANCE FUNCTIONS */
 
 func EnableIRM(cur realm, irm string) {
-	print("Current realm:", std.CurrentRealm().Address())
-	print("Previous realm:", std.PreviousRealm().Address())
-	print("Owner:", Ownable.Owner())
 	Ownable.AssertOwnedByPrevious()
 
 	// Check if IRM exists in registry
@@ -97,7 +96,7 @@ func EnableLLTV(cur realm, lltv int64) {
 
 	// Convert LLTV percentage to WAD-scaled value (e.g., 75% -> 0.75 * 1e18)
 	lltvUint := u256.NewUint(uint64(lltv))
-	lltvWad := MulDivDown(lltvUint, WAD, u256.NewUint(100)) // This will give us (lltv * 1e18) / 100
+	lltvWad := math.MulDivDown(lltvUint, consts.WAD, u256.NewUint(100)) // This will give us (lltv * 1e18) / 100
 
 	// Convert LLTV to string for use as key in tree
 	lltvStr := lltvWad.ToString()
@@ -132,7 +131,7 @@ func setFee(cur realm, marketId string, newFee *u256.Uint) {
 	}
 
 	// Check fee doesn't exceed maximum
-	if newFee.Cmp(MAX_FEE) > 0 {
+	if newFee.Cmp(consts.MAX_FEE) > 0 {
 		panic(ErrMaxFeeExceeded)
 	}
 
@@ -161,7 +160,7 @@ func CreateMarket(cur realm, poolPath string, isToken0Loan bool, irm string, llt
 
 	// Convert LLTV percentage to WAD-scaled value (e.g., 75% -> 0.75 * 1e18)
 	lltvUint := u256.NewUint(uint64(lltv))
-	lltvWad := MulDivDown(lltvUint, WAD, u256.NewUint(100)) // This will give us (lltv * 1e18) / 100
+	lltvWad := math.MulDivDown(lltvUint, consts.WAD, u256.NewUint(100)) // This will give us (lltv * 1e18) / 100
 
 	// Create market params
 	params := MarketParams{
@@ -182,7 +181,7 @@ func CreateMarket(cur realm, poolPath string, isToken0Loan bool, irm string, llt
 	// Check if IRM is whitelisted
 	IsIRMEnabled(irm)
 
-	// Check if LLTV is whitelisted 
+	// Check if LLTV is whitelisted
 	IsLLTVEnabled(lltvWad.ToString())
 
 	// Create market with initial values
@@ -213,7 +212,7 @@ func CreateMarket(cur realm, poolPath string, isToken0Loan bool, irm string, llt
 
 /* SUPPLY MANAGEMENT */
 
-// Supply tokens to a market (backward compatible version)
+// Supply tokens to a market
 // Either assets or shares must be non-zero (XOR)
 func Supply(cur realm, marketId string, assets, shares uint64) {
 	caller := std.PreviousRealm().Address()
@@ -247,21 +246,21 @@ func SupplyOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf 
 	// Calculate shares to mint
 	var sharesToMint *u256.Uint
 	if assets > 0 {
-		sharesToMint = ToSharesDown(
+		sharesToMint = math.ToSharesDown(
 			assetsU256,
 			market.TotalSupplyAssets,
 			market.TotalSupplyShares,
 		)
 	} else {
 		sharesToMint = sharesU256
-		assetsU256 = ToAssetsUp(
+		assetsU256 = math.ToAssetsUp(
 			sharesU256,
 			market.TotalSupplyAssets,
 			market.TotalSupplyShares,
 		)
 	}
 
-	// Get onBehalf's current position (not caller's)
+	// Get onBehalf's current position
 	position := GetPosition(marketId, onBehalf.String())
 
 	// Update position
@@ -277,13 +276,13 @@ func SupplyOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf 
 	market.TotalSupplyAssets = new(u256.Uint).Add(market.TotalSupplyAssets, assetsU256)
 	markets.Set(marketId, market)
 
-	// Handle token transfer using GRC20 interface (from caller, not onBehalf)
+	// Handle token transfer using GRC20 interface
 	safeTransferFrom(params.GetLoanToken(), caller, assetsU256.Int64())
 
-	emitSupply(marketId, caller, onBehalf, assetsU256)
+	emitSupply(marketId, caller, onBehalf, assetsU256, sharesToMint)
 }
 
-// Withdraw tokens from a market (backward compatible version)
+// Withdraw tokens from a market
 // Either assets or shares must be non-zero (XOR)
 func Withdraw(cur realm, marketId string, assets, shares uint64) {
 	caller := std.PreviousRealm().Address()
@@ -322,21 +321,21 @@ func WithdrawOnBehalf(cur realm, marketId string, assets, shares uint64, onBehal
 	// Calculate shares to burn
 	var sharesToBurn *u256.Uint
 	if assets > 0 {
-		sharesToBurn = ToSharesUp(
+		sharesToBurn = math.ToSharesUp(
 			assetsU256,
 			market.TotalSupplyAssets,
 			market.TotalSupplyShares,
 		)
 	} else {
 		sharesToBurn = sharesU256
-		assetsU256 = ToAssetsDown(
+		assetsU256 = math.ToAssetsDown(
 			sharesU256,
 			market.TotalSupplyAssets,
 			market.TotalSupplyShares,
 		)
 	}
 
-	// Get onBehalf's current position (not caller's)
+	// Get onBehalf's current position
 	position := GetPosition(marketId, onBehalf.String())
 
 	// Check if onBehalf has enough shares
@@ -365,12 +364,12 @@ func WithdrawOnBehalf(cur realm, marketId string, assets, shares uint64, onBehal
 	// Handle token transfer using GRC20 interface (to receiver, not caller)
 	safeTransferTo(params.GetLoanToken(), receiver, assetsU256.Int64())
 
-	emitWithdraw(marketId, caller, onBehalf, receiver, assetsU256)
+	emitWithdraw(marketId, caller, onBehalf, receiver, assetsU256, sharesToBurn)
 }
 
 /* BORROW MANAGEMENT */
 
-// Borrow assets from a market using collateral (backward compatible version)
+// Borrow assets from a market using collateral
 // Either assets or shares must be non-zero (not both)
 func Borrow(cur realm, marketId string, assets, shares uint64) {
 	caller := std.PreviousRealm().Address()
@@ -417,14 +416,14 @@ func BorrowOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf 
 	// Calculate shares to mint
 	var sharesToMint *u256.Uint
 	if assets > 0 {
-		sharesToMint = ToSharesUp(
+		sharesToMint = math.ToSharesUp(
 			assetsU256,
 			market.TotalBorrowAssets,
 			market.TotalBorrowShares,
 		)
 	} else {
 		sharesToMint = sharesU256
-		assetsU256 = ToAssetsDown(
+		assetsU256 = math.ToAssetsDown(
 			sharesU256,
 			market.TotalBorrowAssets,
 			market.TotalBorrowShares,
@@ -458,10 +457,10 @@ func BorrowOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf 
 	// Transfer borrowed tokens to receiver
 	safeTransferTo(params.GetLoanToken(), receiver, assetsU256.Int64())
 
-	emitBorrow(marketId, caller, onBehalf, receiver, assetsU256)
+	emitBorrow(marketId, caller, onBehalf, receiver, assetsU256, sharesToMint)
 }
 
-// Repay borrowed tokens to a market (backward compatible version)
+// Repay borrowed tokens to a market
 // Either assets or shares must be non-zero (XOR)
 func Repay(cur realm, marketId string, assets, shares uint64) {
 	caller := std.PreviousRealm().Address()
@@ -495,21 +494,21 @@ func RepayOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf s
 	// Calculate shares to burn
 	var sharesToBurn *u256.Uint
 	if assets > 0 {
-		sharesToBurn = ToSharesDown(
+		sharesToBurn = math.ToSharesDown(
 			assetsU256,
 			market.TotalBorrowAssets,
 			market.TotalBorrowShares,
 		)
 	} else {
 		sharesToBurn = sharesU256
-		assetsU256 = ToAssetsUp(
+		assetsU256 = math.ToAssetsUp(
 			sharesU256,
 			market.TotalBorrowAssets,
 			market.TotalBorrowShares,
 		)
 	}
 
-	// Get onBehalf's current position (not caller's)
+	// Get onBehalf's current position
 	position := GetPosition(marketId, onBehalf.String())
 
 	// Check if onBehalf has enough shares
@@ -530,7 +529,7 @@ func RepayOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf s
 	market.TotalBorrowAssets = new(u256.Uint).Sub(market.TotalBorrowAssets, assetsU256)
 	markets.Set(marketId, market)
 
-	// Handle token transfer using GRC20 interface (from caller, not onBehalf)
+	// Handle token transfer using GRC20 interface
 	safeTransferFrom(params.GetLoanToken(), caller, assetsU256.Int64())
 
 	emitRepay(marketId, caller, onBehalf, assetsU256, sharesToBurn)
@@ -538,7 +537,7 @@ func RepayOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf s
 
 /* COLLATERAL MANAGEMENT */
 
-// Supply collateral to a market (backward compatible version)
+// Supply collateral to a market
 func SupplyCollateral(cur realm, marketId string, amount uint64) {
 	caller := std.PreviousRealm().Address()
 	SupplyCollateralOnBehalf(cur, marketId, amount, caller)
@@ -556,7 +555,7 @@ func SupplyCollateralOnBehalf(cur realm, marketId string, amount uint64, onBehal
 
 	_, params := GetMarket(marketId)
 
-	// Get onBehalf's current position (not caller's)
+	// Get onBehalf's current position
 	position := GetPosition(marketId, onBehalf.String())
 
 	// Update position
@@ -567,13 +566,13 @@ func SupplyCollateralOnBehalf(cur realm, marketId string, amount uint64, onBehal
 	marketPositions := marketPositionsInterface.(*avl.Tree)
 	marketPositions.Set(onBehalf.String(), position)
 
-	// Handle token transfer using GRC20 interface (from caller, not onBehalf)
+	// Handle token transfer using GRC20 interface
 	safeTransferFrom(params.GetCollateralToken(), caller, int64(amount))
 
 	emitSupplyCollateral(marketId, caller, onBehalf, amount)
 }
 
-// Withdraw collateral from a market (backward compatible version)
+// Withdraw collateral from a market
 func WithdrawCollateral(cur realm, marketId string, amount uint64) {
 	caller := std.PreviousRealm().Address()
 	WithdrawCollateralOnBehalf(cur, marketId, amount, caller, caller)
@@ -599,7 +598,7 @@ func WithdrawCollateralOnBehalf(cur realm, marketId string, amount uint64, onBeh
 	// Accrue interest before any state changes
 	accrueInterest(marketId)
 
-	// Get onBehalf's current position (not caller's)
+	// Get onBehalf's current position
 	position := GetPosition(marketId, onBehalf.String())
 
 	// Convert amount to uint256
@@ -625,7 +624,7 @@ func WithdrawCollateralOnBehalf(cur realm, marketId string, amount uint64, onBeh
 		}
 	}
 
-	// Handle token transfer using GRC20 interface (to receiver, not caller)
+	// Handle token transfer using GRC20 interface
 	safeTransferTo(params.GetCollateralToken(), receiver, int64(amount))
 
 	emitWithdrawCollateral(marketId, caller, onBehalf, receiver, amount)
@@ -663,39 +662,39 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 	}
 
 	// Calculate the liquidation incentive factor: min(maxLiquidationIncentiveFactor, 1/(1 - cursor*(1 - lltv)))
-	incentiveFactor := WDivDown(
-		WAD,
-		new(u256.Uint).Sub(WAD, WMulDown(LIQUIDATION_CURSOR, new(u256.Uint).Sub(WAD, params.LLTV))),
+	incentiveFactor := math.WDivDown(
+		consts.WAD,
+		new(u256.Uint).Sub(consts.WAD, math.WMulDown(consts.LIQUIDATION_CURSOR, new(u256.Uint).Sub(consts.WAD, params.LLTV))),
 	)
-	incentiveFactor = Min(incentiveFactor, MAX_LIQUIDATION_INCENTIVE_FACTOR)
+	incentiveFactor = Min(incentiveFactor, consts.MAX_LIQUIDATION_INCENTIVE_FACTOR)
 
 	// Calculate seized assets or repaid shares based on input
 	if seizedAssets > 0 {
 		// Calculate repaid shares from seized assets
-		seizedAssetsQuoted := MulDivUp(seizedAssetsU256, collateralPrice, ORACLE_PRICE_SCALE)
-		repaidSharesU256 = ToSharesUp(
-			WDivUp(seizedAssetsQuoted, incentiveFactor),
+		seizedAssetsQuoted := math.MulDivUp(seizedAssetsU256, collateralPrice, consts.ORACLE_PRICE_SCALE)
+		repaidSharesU256 = math.ToSharesUp(
+			math.WDivUp(seizedAssetsQuoted, incentiveFactor),
 			market.TotalBorrowAssets,
 			market.TotalBorrowShares,
 		)
 	} else {
 		// Calculate seized assets from repaid shares
-		seizedAssetsU256 = MulDivDown(
-			WMulDown(
-				ToAssetsDown(
+		seizedAssetsU256 = math.MulDivDown(
+			math.WMulDown(
+				math.ToAssetsDown(
 					repaidSharesU256,
 					market.TotalBorrowAssets,
 					market.TotalBorrowShares,
 				),
 				incentiveFactor,
 			),
-			ORACLE_PRICE_SCALE,
+			consts.ORACLE_PRICE_SCALE,
 			collateralPrice,
 		)
 	}
 
 	// Calculate repaid assets
-	repaidAssets := ToAssetsUp(
+	repaidAssets := math.ToAssetsUp(
 		repaidSharesU256,
 		market.TotalBorrowAssets,
 		market.TotalBorrowShares,
@@ -713,7 +712,7 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 	// Handle bad debt if all collateral is seized
 	if borrowerPos.Collateral.IsZero() {
 		badDebtShares := borrowerPos.BorrowShares
-		badDebtAssets := ToAssetsUp(
+		badDebtAssets := math.ToAssetsUp(
 			badDebtShares,
 			market.TotalBorrowAssets,
 			market.TotalBorrowShares,
@@ -789,7 +788,6 @@ func isSenderAuthorized(onBehalf std.Address) bool {
 	return IsAuthorized(onBehalf, sender)
 }
 
-
 /* INTEREST ACCRUAL */
 
 func AccrueInterest(cur realm, marketId string) {
@@ -824,9 +822,9 @@ func accrueInterest(marketId string) {
 	// wTaylorCompounded returns the sum of first 3 terms: x*n + (x*n)^2/2 + (x*n)^3/6
 	// This approximates continuous compound interest more accurately than simple interest
 	elapsedUint := u256.NewUint(uint64(elapsed))
-	wtc := WTaylorCompounded(borrowRate, elapsedUint)
+	wtc := math.WTaylorCompounded(borrowRate, elapsedUint)
 
-	interest := WMulDown(market.TotalBorrowAssets, wtc)
+	interest := math.WMulDown(market.TotalBorrowAssets, wtc)
 
 	// Update market state
 	market.TotalBorrowAssets = new(u256.Uint).Add(market.TotalBorrowAssets, interest)
@@ -835,12 +833,12 @@ func accrueInterest(marketId string) {
 	// Handle fees if any
 	if !market.Fee.IsZero() && feeRecipient != "" {
 		// Calculate fee amount
-		feeAmount := WMulDown(interest, market.Fee)
+		feeAmount := math.WMulDown(interest, market.Fee)
 
 		// Calculate fee shares
 		// The fee amount is subtracted from total supply to compensate for already increased supply
 		totalSupplyMinusFee := new(u256.Uint).Sub(market.TotalSupplyAssets, feeAmount)
-		feeShares := ToSharesDown(
+		feeShares := math.ToSharesDown(
 			feeAmount,
 			totalSupplyMinusFee,
 			market.TotalSupplyShares,
@@ -879,16 +877,16 @@ func isHealthy(marketId string, userAddr string) bool {
 	market, params := GetMarket(marketId)
 
 	// Calculate current borrowed value
-	borrowed := ToAssetsUp(
+	borrowed := math.ToAssetsUp(
 		position.BorrowShares,
 		market.TotalBorrowAssets,
 		market.TotalBorrowShares,
 	)
 
-	collateralPrice := GetPrice(params.PoolPath)
+	collateralPrice := GetPrice(marketId)
 
 	// Calculate max borrow allowed
-	maxBorrow := WMulDown(MulDivDown(position.Collateral, collateralPrice, ORACLE_PRICE_SCALE), params.LLTV)
+	maxBorrow := math.WMulDown(math.MulDivDown(position.Collateral, collateralPrice, consts.ORACLE_PRICE_SCALE), params.LLTV)
 
 	// Position is healthy if borrowed <= maxBorrow
 	return borrowed.Cmp(maxBorrow) <= 0
@@ -897,13 +895,13 @@ func isHealthy(marketId string, userAddr string) bool {
 /* FLASH LOANS */
 
 // FlashLoan allows users to borrow assets without collateral, provided they are repaid within the same transaction
-func FlashLoan(cur realm, token string, assets int64, data []byte, callback FlashLoanCallback) {
+func FlashLoan(cur realm, token string, assets int64, data any, callback FlashLoanCallback) {
 	if assets == 0 {
 		panic(ErrZeroAssets)
 	}
 
 	caller := std.PreviousRealm().Address()
-	
+
 	// Emit flash loan event
 	emitFlashLoan(caller, token, assets)
 
@@ -916,4 +914,3 @@ func FlashLoan(cur realm, token string, assets int64, data []byte, callback Flas
 	// Transfer tokens back from borrower
 	safeTransferFrom(token, caller, assets)
 }
-
