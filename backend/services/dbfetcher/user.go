@@ -2,8 +2,8 @@ package dbfetcher
 
 import (
 	"context"
-	"encoding/json"
 	"log"
+	"time"
 
 	"volos-backend/model"
 
@@ -11,42 +11,56 @@ import (
 )
 
 // GetUser retrieves user data from Firestore by user address
-func GetUser(client *firestore.Client, userAddress string) (string, error) {
+func GetUser(client *firestore.Client, userAddress string) (*model.UserData, error) {
 	ctx := context.Background()
 
 	doc, err := client.Collection("users").Doc(userAddress).Get(ctx)
 	if err != nil {
 		// If user doesn't exist, return default user data - failsafe
 		if err.Error() == "not found" {
-			defaultUser := map[string]interface{}{
-				"address":    userAddress,
-				"dao_member": false,
-				"created_at": nil,
-			}
-			jsonData, _ := json.Marshal(defaultUser)
-			return string(jsonData), nil
+			return &model.UserData{
+				Address:   userAddress,
+				DAOMember: false,
+				StakedVLS: make(map[string]int64),
+				CreatedAt: time.Time{},
+			}, nil
 		}
 		log.Printf("Error fetching user %s: %v", userAddress, err)
-		return "", err
+		return nil, err
 	}
 
 	var user model.UserData
 	if err := doc.DataTo(&user); err != nil {
 		log.Printf("Error parsing user data: %v", err)
-		return "", err
+		return nil, err
 	}
 
-	userMap := map[string]interface{}{
-		"address":    user.Address,
-		"dao_member": user.DAOMember,
-		"created_at": user.CreatedAt,
+	return &user, nil
+}
+
+// GetUserPendingUnstakes retrieves all pending unstake documents from a user's pendingUnstakes subcollection
+func GetUserPendingUnstakes(client *firestore.Client, userAddress string) ([]model.PendingUnstakeData, error) {
+	ctx := context.Background()
+
+	var pendingUnstakes []model.PendingUnstakeData
+
+	iter := client.Collection("users").Doc(userAddress).Collection("pendingUnstakes").Documents(ctx)
+	defer iter.Stop()
+
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			break
+		}
+
+		var pendingUnstake model.PendingUnstakeData
+		if err := doc.DataTo(&pendingUnstake); err != nil {
+			log.Printf("Error parsing pending unstake data for user %s: %v", userAddress, err)
+			continue
+		}
+
+		pendingUnstakes = append(pendingUnstakes, pendingUnstake)
 	}
 
-	jsonData, err := json.Marshal(userMap)
-	if err != nil {
-		log.Printf("Error marshaling user to JSON: %v", err)
-		return "", err
-	}
-
-	return string(jsonData), nil
+	return pendingUnstakes, nil
 }

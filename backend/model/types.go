@@ -4,6 +4,7 @@ import "time"
 
 const VolosPkgPath = "gno.land/r/volos/core"              // the package path of the Volos contract
 const VolosGovPkgPath = "gno.land/r/volos/gov/governance" // the package path of the Volos governance contract
+const VolosStakerPkgPath = "gno.land/r/volos/gov/staker"  // the package path of the Volos staker contract
 const Rpc = "http://localhost:26657"                      // the RPC endpoint of the node
 const BlockHeightOnDeploy = 0                             // the block height of the deployment of the Volos contract
 
@@ -36,40 +37,47 @@ type MarketActivity struct {
 // This struct contains all fields that are persisted to the database when a proposal is created,
 // including metadata, voting statistics, and timestamps for tracking proposal lifecycle.
 type ProposalData struct {
-	ID           string    `firestore:"id"`            // Unique proposal identifier from the governance contract
-	Title        string    `firestore:"title"`         // Human-readable title of the proposal
-	Body         string    `firestore:"body"`          // Detailed description and content of the proposal
-	Proposer     string    `firestore:"proposer"`      // Address of the user who created the proposal
-	Deadline     time.Time `firestore:"deadline"`      // Unix timestamp when voting period ends
-	Status       string    `firestore:"status"`        // Current status: "active", "passed", "failed", "executed"
-	CreatedAt    time.Time `firestore:"created_at"`    // Timestamp when proposal was created in database
-	LastVote     time.Time `firestore:"last_vote"`     // Timestamp of the last vote cast on this proposal
-	YesVotes     int64     `firestore:"yes_votes"`     // Total voting power of "YES" votes cast
-	NoVotes      int64     `firestore:"no_votes"`      // Total voting power of "NO" votes cast
-	AbstainVotes int64     `firestore:"abstain_votes"` // Total voting power of "ABSTAIN" votes cast
-	TotalVotes   int64     `firestore:"total_votes"`   // Sum of all voting power cast (yes + no + abstain)
-	Threshold    int64     `firestore:"threshold"`     // Threshold for the proposal
+	ID           string    `firestore:"id" json:"id"`                       // Unique proposal identifier from the governance contract
+	Title        string    `firestore:"title" json:"title"`                 // Human-readable title of the proposal
+	Body         string    `firestore:"body" json:"body"`                   // Detailed description and content of the proposal
+	Proposer     string    `firestore:"proposer" json:"proposer"`           // Address of the user who created the proposal
+	Deadline     time.Time `firestore:"deadline" json:"deadline"`           // Unix timestamp when voting period ends
+	Status       string    `firestore:"status" json:"status"`               // Current status: "active", "passed", "failed", "executed"
+	CreatedAt    time.Time `firestore:"created_at" json:"created_at"`       // Timestamp when proposal was created in database
+	LastVote     time.Time `firestore:"last_vote" json:"last_vote"`         // Timestamp of the last vote cast on this proposal
+	YesVotes     int64     `firestore:"yes_votes" json:"yes_votes"`         // Total voting power of "YES" votes cast
+	NoVotes      int64     `firestore:"no_votes" json:"no_votes"`           // Total voting power of "NO" votes cast
+	AbstainVotes int64     `firestore:"abstain_votes" json:"abstain_votes"` // Total voting power of "ABSTAIN" votes cast
+	TotalVotes   int64     `firestore:"total_votes" json:"total_votes"`     // Sum of all voting power cast (yes + no + abstain)
+	Quorum       int64     `firestore:"quorum" json:"quorum"`               // Quorum for the proposal
 }
 
-// ProposalFields represents the extracted fields from a governance proposal creation event.
-// This struct is used as an intermediate data structure when parsing transaction events
-// from the blockchain before storing them in the database. It contains only the essential
-// fields that are emitted by the governance contract during proposal creation.
-type ProposalFields struct {
-	ID        string `json:"id"`        // Unique proposal identifier from the governance contract
-	Title     string `json:"title"`     // Human-readable title of the proposal
-	Body      string `json:"body"`      // Detailed description and content of the proposal
-	Proposer  string `json:"proposer"`  // Address of the user who created the proposal
-	Deadline  string `json:"deadline"`  // Unix timestamp string when voting period ends
-	Threshold string `json:"threshold"` // Threshold for the proposal
+// VoteData represents an individual vote cast on a proposal, stored in a subcollection.
+// This struct contains all details about a specific user's vote, including their voting power
+// at the time of voting and any additional context provided with the vote.
+type VoteData struct {
+	ProposalID string    `firestore:"proposal_id" json:"proposal_id"` // ID of the proposal this vote was cast on
+	Voter      string    `firestore:"voter" json:"voter"`             // Address of the user who cast the vote
+	VoteChoice string    `firestore:"vote_choice" json:"vote_choice"` // Vote choice: "YES", "NO", or "ABSTAIN"
+	Reason     string    `firestore:"reason" json:"reason"`           // Optional reason provided by the voter
+	XVLSAmount int64     `firestore:"xvls_amount" json:"xvls_amount"` // Voting power (xVLS balance) at time of voting
+	Timestamp  time.Time `firestore:"timestamp" json:"timestamp"`     // When the vote was cast
+}
+
+// PendingUnstakeData represents a pending unstaking operation stored in a user's subcollection.
+// This struct tracks unstaking operations that are in the cooldown period before tokens can be withdrawn.
+type PendingUnstakeData struct {
+	Amount    int64     `firestore:"amount" json:"amount"`       // Amount of VLS tokens being unstaked (in denom units)
+	Delegatee string    `firestore:"delegatee" json:"delegatee"` // Address of the delegatee being unstaked from
+	UnlockAt  time.Time `firestore:"unlock_at" json:"unlock_at"` // Timestamp when the unstake can be completed
 }
 
 // UserData represents the complete structure of a user document stored in Firestore.
 // This struct contains all user-related fields that are tracked by the system,
-// including governance membership and other user-specific data.
-// TODO: add more fields
+// including governance membership and staking delegation data.
 type UserData struct {
-	Address   string    `firestore:"address"`    // User's blockchain address (used as document ID)
-	DAOMember bool      `firestore:"dao_member"` // Whether the user is a member of the DAO
-	CreatedAt time.Time `firestore:"created_at"` // Timestamp when the user document was first created
+	Address   string           `firestore:"address" json:"address"`       // User's blockchain address (used as document ID)
+	DAOMember bool             `firestore:"dao_member" json:"dao_member"` // Whether the user is a member of the DAO
+	StakedVLS map[string]int64 `firestore:"staked_vls" json:"staked_vls"` // Map of delegatee addresses to staked VLS amounts
+	CreatedAt time.Time        `firestore:"created_at" json:"created_at"` // Timestamp when the user document was first created
 }

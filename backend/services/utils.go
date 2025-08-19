@@ -39,6 +39,7 @@ func ParseEvents(transactions []map[string]interface{}, sign float64) []model.Tr
 			}
 		}
 	}
+
 	return events
 }
 
@@ -49,11 +50,13 @@ func FetchBlockTimestamps(heights []int64) (map[int64]string, error) {
 	for _, h := range heights {
 		orClauses = append(orClauses, fmt.Sprintf("{ height: { eq: %d } }", h))
 	}
+
 	// Workaround: add dummy height to ensure last real block is included: https://github.com/gnolang/tx-indexer/issues/175
 	if len(heights) > 0 {
 		maxHeight := heights[len(heights)-1]
 		orClauses = append(orClauses, fmt.Sprintf("{ height: { eq: %d } }", maxHeight+1))
 	}
+
 	blockQuery := fmt.Sprintf(`
 		query getSpecificBlocksByHeight {
 			getBlocks(
@@ -81,11 +84,13 @@ func FetchBlockTimestamps(heights []int64) (map[int64]string, error) {
 			} `json:"getBlocks"`
 		} `json:"data"`
 	}
+
 	json.Unmarshal(blockResp, &blockData)
 	heightToTime := make(map[int64]string)
 	for _, b := range blockData.Data.GetBlocks {
 		heightToTime[int64(b.Height)] = b.Time
 	}
+
 	return heightToTime, nil
 }
 
@@ -94,10 +99,12 @@ func FetchBlockHeightsForTimestamps(timestamps []string) (map[string]int64, erro
 	if len(timestamps) == 0 {
 		return map[string]int64{}, nil
 	}
+
 	var orClauses []string
 	for _, t := range timestamps {
 		orClauses = append(orClauses, fmt.Sprintf("{ time: { eq: \"%s\" } }", t))
 	}
+
 	blockQuery := fmt.Sprintf(`
 		query getBlocksByTimestamps {
 			getBlocks(
@@ -126,10 +133,12 @@ func FetchBlockHeightsForTimestamps(timestamps []string) (map[string]int64, erro
 			} `json:"getBlocks"`
 		} `json:"data"`
 	}
+
 	json.Unmarshal(resp, &data)
 	timeToHeight := make(map[string]int64)
 	for _, b := range data.Data.GetBlocks {
 		timeToHeight[b.Time] = int64(b.Height)
 	}
+
 	return timeToHeight, nil
 }

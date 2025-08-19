@@ -2,7 +2,6 @@ package dbfetcher
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -16,7 +15,7 @@ import (
 
 // FetchMarketData retrieves data from Firestore for a given marketId and path
 // It's used to fetch data from Firestore for the frontend.
-func FetchMarketData(client *firestore.Client, marketId, path string) (string, error) {
+func FetchMarketData(client *firestore.Client, marketId, path string) ([]map[string]interface{}, error) {
 	ctx := context.Background()
 	safeMarketId := strings.ReplaceAll(marketId, "/", "_")
 	collectionPath := fmt.Sprintf("markets/%s/%s", safeMarketId, path)
@@ -24,7 +23,7 @@ func FetchMarketData(client *firestore.Client, marketId, path string) (string, e
 	docs, err := subcollection.Documents(ctx).GetAll()
 	if err != nil {
 		log.Printf("Error fetching documents from %s: %v", collectionPath, err)
-		return "", err
+		return nil, err
 	}
 
 	var dataArray []map[string]interface{}
@@ -39,11 +38,5 @@ func FetchMarketData(client *firestore.Client, marketId, path string) (string, e
 		dataArray = append(dataArray, data)
 	}
 
-	jsonData, err := json.Marshal(dataArray)
-	if err != nil {
-		log.Printf("Error marshaling JSON: %v", err)
-		return "", err
-	}
-
-	return string(jsonData), nil
+	return dataArray, nil
 }

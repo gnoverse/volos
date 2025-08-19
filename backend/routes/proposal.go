@@ -1,8 +1,10 @@
 package routes
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"volos-backend/services/dbfetcher"
 
 	"cloud.google.com/go/firestore"
@@ -23,13 +25,14 @@ func GetProposalsHandler(client *firestore.Client) http.HandlerFunc {
 
 		lastID := r.URL.Query().Get("last_id")
 
-		jsonData, err := dbfetcher.GetProposals(client, limit, lastID)
+		proposals, err := dbfetcher.GetProposals(client, limit, lastID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Write([]byte(jsonData))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(proposals)
 	}
 }
 
@@ -48,12 +51,43 @@ func GetActiveProposalsHandler(client *firestore.Client) http.HandlerFunc {
 
 		lastID := r.URL.Query().Get("last_id")
 
-		jsonData, err := dbfetcher.GetActiveProposals(client, limit, lastID)
+		proposals, err := dbfetcher.GetActiveProposals(client, limit, lastID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Write([]byte(jsonData))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(proposals)
+	}
+}
+
+// GetProposalHandler handles GET /proposals/{id} - returns a single proposal by ID
+func GetProposalHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		// Parse proposal ID from URL path
+		// Expected path: /api/proposals/{id}
+		pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(pathParts) < 3 || pathParts[0] != "api" || pathParts[1] != "proposal" {
+			http.Error(w, "Invalid URL path", http.StatusBadRequest)
+			return
+		}
+
+		proposalID := pathParts[2]
+		if proposalID == "" || proposalID == "active" {
+			http.Error(w, "Proposal ID is required", http.StatusBadRequest)
+			return
+		}
+
+		proposal, err := dbfetcher.GetProposal(client, proposalID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(proposal)
 	}
 }

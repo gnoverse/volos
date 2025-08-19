@@ -11,7 +11,7 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr, thresholdStr string) error {
+func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr, quorumStr, timestampStr string) error {
 	ctx := context.Background()
 
 	deadlineUnix, err := strconv.ParseInt(deadlineStr, 10, 64)
@@ -21,13 +21,18 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 	}
 	deadline := time.Unix(deadlineUnix, 0)
 
-	threshold, err := strconv.ParseInt(thresholdStr, 10, 64)
+	quorum, err := strconv.ParseInt(quorumStr, 10, 64)
 	if err != nil {
-		log.Printf("Error parsing threshold: %v", err)
+		log.Printf("Error parsing quorum: %v", err)
 		return err
 	}
 
-	now := time.Now()
+	createdAtUnix, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing created timestamp: %v", err)
+		return err
+	}
+	createdAt := time.Unix(createdAtUnix, 0)
 
 	proposal := model.ProposalData{
 		ID:           proposalID,
@@ -36,13 +41,13 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 		Proposer:     proposer,
 		Deadline:     deadline,
 		Status:       "active",
-		CreatedAt:    now,
-		LastVote:     now,
+		CreatedAt:    createdAt,
+		LastVote:     createdAt, // Initialize LastVote to creation time
 		YesVotes:     0,
 		NoVotes:      0,
 		AbstainVotes: 0,
 		TotalVotes:   0,
-		Threshold:    threshold,
+		Quorum:       quorum,
 	}
 
 	_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
@@ -78,9 +83,91 @@ func UpdateProposal(client *firestore.Client, proposalID string, updates map[str
 	return nil
 }
 
-// AddVote updates the proposal with a new vote and recalculates vote totals
-func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason string, xvlsAmount int64) error {
+// AddVote updates the proposal with a new vote, recalculates vote totals, and stores individual vote in subcollection
+func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, timestampStr string, xvlsAmount int64) error {
 	ctx := context.Background()
+
+	voteTimeUnix, err := strconv.ParseInt(timestampStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing vote timestamp: %v", err)
+		return err
+	}
+	voteTime := time.Unix(voteTimeUnix, 0)
+
+	voteData := model.VoteData{
+		ProposalID: proposalID,
+		Voter:      voter,
+		VoteChoice: voteChoice,
+		Reason:     reason,
+		XVLSAmount: xvlsAmount,
+		Timestamp:  voteTime,
+	}
+
+	// Use voter address as document ID to ensure one vote per user per proposal
+	voteDocRef := client.Collection("proposals").Doc(proposalID).Collection("votes").Doc(voter)
+
+	existingVote, err := voteDocRef.Get(ctx)
+	if err != nil && !existingVote.Exists() {
+		// No existing vote, proceed normally
+	} else if existingVote.Exists() {
+		// User has already voted, we need to subtract their previous vote from totals
+		var previousVote model.VoteData
+		if err := existingVote.DataTo(&previousVote); err != nil {
+			log.Printf("Error parsing previous vote data: %v", err)
+			return err
+		}
+
+		doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
+		if err != nil {
+			log.Printf("Error fetching proposal %s: %v", proposalID, err)
+			return err
+		}
+
+		var proposal model.ProposalData
+		if err := doc.DataTo(&proposal); err != nil {
+			log.Printf("Error parsing proposal data: %v", err)
+			return err
+		}
+
+		switch previousVote.VoteChoice {
+		case "YES":
+			proposal.YesVotes -= previousVote.XVLSAmount
+		case "NO":
+			proposal.NoVotes -= previousVote.XVLSAmount
+		case "ABSTAIN":
+			proposal.AbstainVotes -= previousVote.XVLSAmount
+		}
+
+		switch voteChoice {
+		case "YES":
+			proposal.YesVotes += xvlsAmount
+		case "NO":
+			proposal.NoVotes += xvlsAmount
+		case "ABSTAIN":
+			proposal.AbstainVotes += xvlsAmount
+		default:
+			log.Printf("Unknown vote choice: %s", voteChoice)
+			return fmt.Errorf("unknown vote choice: %s", voteChoice)
+		}
+
+		proposal.TotalVotes = proposal.YesVotes + proposal.NoVotes + proposal.AbstainVotes
+		proposal.LastVote = voteTime
+
+		_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
+		if err != nil {
+			log.Printf("Error updating proposal with vote: %v", err)
+			return err
+		}
+
+		_, err = voteDocRef.Set(ctx, voteData)
+		if err != nil {
+			log.Printf("Error updating vote document: %v", err)
+			return err
+		}
+
+		log.Printf("Successfully updated vote for proposal %s: %s changed vote to %s with %d xVLS", proposalID, voter, voteChoice, xvlsAmount)
+		return nil
+	}
 
 	doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
 	if err != nil {
@@ -107,11 +194,24 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason str
 	}
 
 	proposal.TotalVotes = proposal.YesVotes + proposal.NoVotes + proposal.AbstainVotes
-	proposal.LastVote = time.Now()
+	proposal.LastVote = voteTime
 
-	_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
+	// Use a transaction to ensure both proposal and vote are updated atomically
+	err = client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		proposalRef := client.Collection("proposals").Doc(proposalID)
+		if err := tx.Set(proposalRef, proposal); err != nil {
+			return fmt.Errorf("failed to update proposal: %v", err)
+		}
+
+		if err := tx.Set(voteDocRef, voteData); err != nil {
+			return fmt.Errorf("failed to create vote document: %v", err)
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		log.Printf("Error updating proposal with vote: %v", err)
+		log.Printf("Error in transaction for proposal %s: %v", proposalID, err)
 		return err
 	}
 

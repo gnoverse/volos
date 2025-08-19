@@ -8,7 +8,6 @@ package processor
 import (
 	"log"
 	"strconv"
-	"volos-backend/model"
 	"volos-backend/services/dbupdater"
 
 	"cloud.google.com/go/firestore"
@@ -43,14 +42,14 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 
 		switch eventType {
 		case "ProposalCreated":
-			proposalData := extractProposalFields(event)
-			if proposalData != nil {
-				err := dbupdater.CreateProposal(client, proposalData.ID, proposalData.Title,
-					proposalData.Body, proposalData.Proposer, proposalData.Deadline, proposalData.Threshold)
+			proposalID, title, body, proposer, deadline, quorum, timestamp, ok := extractProposalFields(event)
+			if ok {
+				err := dbupdater.CreateProposal(client, proposalID, title, body, proposer, deadline, quorum, timestamp)
 				if err != nil {
 					log.Printf("Error creating proposal in database: %v", err)
 				}
 			}
+
 		case "ProposalExecuted":
 			proposalID := extractProposalID(event)
 			if proposalID != "" {
@@ -62,14 +61,16 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error updating proposal status in database: %v", err)
 				}
 			}
+
 		case "VoteCast":
-			proposalID, voter, vote, reason, xvlsAmount, ok := extractVoteFields(event)
+			proposalID, voter, vote, reason, xvlsAmount, timestamp, ok := extractVoteFields(event)
 			if ok {
-				err := dbupdater.AddVote(client, proposalID, voter, vote, reason, xvlsAmount)
+				err := dbupdater.AddVote(client, proposalID, voter, vote, reason, timestamp, xvlsAmount)
 				if err != nil {
 					log.Printf("Error adding vote to database: %v", err)
 				}
 			}
+
 		case "MemberAdded":
 			member := extractMemberAddress(event)
 			if member != "" {
@@ -78,6 +79,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error adding DAO member to database: %v", err)
 				}
 			}
+
 		case "MemberRemoved":
 			member := extractMemberAddress(event)
 			if member != "" {
@@ -86,19 +88,43 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error removing DAO member from database: %v", err)
 				}
 			}
+
+		case "Stake":
+			staker, delegatee, amount, _, timestampStr, ok := extractStakeFields(event)
+			if ok {
+				timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, amount, timestamp)
+				if err != nil {
+					log.Printf("Error updating staked VLS for user %s: %v", staker, err)
+				}
+			}
+
+		case "BeginUnstake":
+			staker, delegatee, amount, unlockAt, timestampStr, ok := extractBeginUnstakeFields(event)
+			if ok {
+				timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, -amount, timestamp)
+				if err != nil {
+					log.Printf("Error updating unstaked VLS for user %s: %v", staker, err)
+				}
+
+				err = dbupdater.AddPendingUnstake(client, staker, delegatee, amount, unlockAt)
+				if err != nil {
+					log.Printf("Error creating pending unstake for user %s: %v", staker, err)
+				}
+			}
 		}
 	}
 }
 
-// extractProposalFields is a helper function that extracts proposal fields from a transaction event
-func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
-	attributes, ok := event["attrs"].([]interface{})
-	if !ok {
+// extractProposalFields extracts proposal fields from a transaction event
+func extractProposalFields(event map[string]interface{}) (proposalID, title, body, proposer, deadline, quorum, timestamp string, ok bool) {
+	attributes, attrsOk := event["attrs"].([]interface{})
+	if !attrsOk {
 		log.Println("ProposalCreated event missing attributes")
-		return nil
+		return "", "", "", "", "", "", "", false
 	}
 
-	var proposalID, title, body, deadline, proposer, threshold string
 	for _, attr := range attributes {
 		attrMap, ok := attr.(map[string]interface{})
 		if !ok {
@@ -119,24 +145,19 @@ func extractProposalFields(event map[string]interface{}) *model.ProposalFields {
 			deadline = value
 		case "caller":
 			proposer = value
-		case "threshold":
-			threshold = value
+		case "quorum":
+			quorum = value
+		case "timestamp":
+			timestamp = value
 		}
 	}
 
-	if proposalID == "" || title == "" || proposer == "" || deadline == "" || threshold == "" {
+	if proposalID == "" || title == "" || proposer == "" || deadline == "" || quorum == "" || timestamp == "" {
 		log.Println("Missing required proposal fields")
-		return nil
+		return "", "", "", "", "", "", "", false
 	}
 
-	return &model.ProposalFields{
-		ID:        proposalID,
-		Title:     title,
-		Body:      body,
-		Proposer:  proposer,
-		Deadline:  deadline,
-		Threshold: threshold,
-	}
+	return proposalID, title, body, proposer, deadline, quorum, timestamp, true
 }
 
 // extractProposalID extracts the proposal ID from a ProposalExecuted event
@@ -166,14 +187,14 @@ func extractProposalID(event map[string]interface{}) string {
 }
 
 // extractVoteFields extracts vote fields from a VoteCast event
-func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, reason string, xvlsAmount int64, ok bool) {
+func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, reason string, xvlsAmount int64, timestamp string, ok bool) {
 	attributes, ok := event["attrs"].([]interface{})
 	if !ok {
 		log.Println("VoteCast event missing attributes")
-		return "", "", "", "", 0, false
+		return "", "", "", "", 0, "", false
 	}
 
-	var proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmountStr string
+	var proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmountStr, timestampStr string
 	for _, attr := range attributes {
 		attrMap, ok := attr.(map[string]interface{})
 		if !ok {
@@ -194,21 +215,23 @@ func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, r
 			reasonStr = value
 		case "xvls_amount":
 			xvlsAmountStr = value
+		case "timestamp":
+			timestampStr = value
 		}
 	}
 
-	if proposalIDStr == "" || voterStr == "" || voteStr == "" || xvlsAmountStr == "" {
+	if proposalIDStr == "" || voterStr == "" || voteStr == "" || xvlsAmountStr == "" || timestampStr == "" {
 		log.Println("Missing required vote fields")
-		return "", "", "", "", 0, false
+		return "", "", "", "", 0, "", false
 	}
 
 	xvlsAmount, err := strconv.ParseInt(xvlsAmountStr, 10, 64)
 	if err != nil {
 		log.Printf("Error parsing xVLS amount: %v", err)
-		return "", "", "", "", 0, false
+		return "", "", "", "", 0, "", false
 	}
 
-	return proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmount, true
+	return proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmount, timestampStr, true
 }
 
 // extractMemberAddress extracts the member address from MemberAdded/MemberRemoved events
@@ -235,4 +258,114 @@ func extractMemberAddress(event map[string]interface{}) string {
 
 	log.Println("Member address not found in MemberAdded/MemberRemoved event")
 	return ""
+}
+
+// extractStakeFields extracts stake fields from a Stake event
+func extractStakeFields(event map[string]interface{}) (staker, delegatee string, amount, cooldownPeriod int64, timestamp string, ok bool) {
+	attributes, attrsOk := event["attrs"].([]interface{})
+	if !attrsOk {
+		log.Println("Stake event missing attributes")
+		return "", "", 0, 0, "", false
+	}
+
+	var stakerStr, delegateeStr, amountStr, cooldownPeriodStr, timestampStr string
+	for _, attr := range attributes {
+		attrMap, ok := attr.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		key, _ := attrMap["key"].(string)
+		value, _ := attrMap["value"].(string)
+
+		switch key {
+		case "staker":
+			stakerStr = value
+		case "delegatee":
+			delegateeStr = value
+		case "amount":
+			amountStr = value
+		case "cooldown_period":
+			cooldownPeriodStr = value
+		case "timestamp":
+			timestampStr = value
+		}
+	}
+
+	if stakerStr == "" || delegateeStr == "" || amountStr == "" || timestampStr == "" {
+		log.Println("Missing required stake fields")
+		return "", "", 0, 0, "", false
+	}
+
+	amountInt, err := strconv.ParseInt(amountStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing stake amount: %v", err)
+		return "", "", 0, 0, "", false
+	}
+
+	cooldownInt := int64(0)
+	if cooldownPeriodStr != "" {
+		cooldownInt, err = strconv.ParseInt(cooldownPeriodStr, 10, 64)
+		if err != nil {
+			log.Printf("Error parsing cooldown period: %v", err)
+			return "", "", 0, 0, "", false
+		}
+	}
+
+	return stakerStr, delegateeStr, amountInt, cooldownInt, timestampStr, true
+}
+
+// extractBeginUnstakeFields extracts fields from a BeginUnstake event
+func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee string, amount, unlockAt int64, timestamp string, ok bool) {
+	attributes, attrsOk := event["attrs"].([]interface{})
+	if !attrsOk {
+		log.Println("BeginUnstake event missing attributes")
+		return "", "", 0, 0, "", false
+	}
+
+	var stakerStr, delegateeStr, amountStr, unlockAtStr, timestampStr string
+	for _, attr := range attributes {
+		attrMap, ok := attr.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		key, _ := attrMap["key"].(string)
+		value, _ := attrMap["value"].(string)
+
+		switch key {
+		case "staker":
+			stakerStr = value
+		case "delegatee":
+			delegateeStr = value
+		case "amount":
+			amountStr = value
+		case "unlock_at":
+			unlockAtStr = value
+		case "timestamp":
+			timestampStr = value
+		}
+	}
+
+	if stakerStr == "" || delegateeStr == "" || amountStr == "" || timestampStr == "" {
+		log.Println("Missing required BeginUnstake fields")
+		return "", "", 0, 0, "", false
+	}
+
+	amountInt, err := strconv.ParseInt(amountStr, 10, 64)
+	if err != nil {
+		log.Printf("Error parsing unstake amount: %v", err)
+		return "", "", 0, 0, "", false
+	}
+
+	unlockAtInt := int64(0)
+	if unlockAtStr != "" {
+		unlockAtInt, err = strconv.ParseInt(unlockAtStr, 10, 64)
+		if err != nil {
+			log.Printf("Error parsing unlock_at timestamp: %v", err)
+			return "", "", 0, 0, "", false
+		}
+	}
+
+	return stakerStr, delegateeStr, amountInt, unlockAtInt, timestampStr, true
 }

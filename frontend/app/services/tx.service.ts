@@ -3,11 +3,13 @@ import { AdenaService } from './adena.service';
 
 const GAS_WANTED = 50000000;
 
+export const VOLOS_PKG_PATH = 'gno.land/r/volos';
+export const STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
+export const VLS_PKG_PATH = 'gno.land/r/volos/gov/vls';
+export const GOVERNANCE_PKG_PATH = 'gno.land/r/volos/gov/governance';
+
 export class TxService {
   private static instance: TxService;
-  private readonly GNOLEND_PKG_PATH = 'gno.land/r/volos';
-  private readonly STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
-
   private constructor() {}
 
   public static getInstance(): TxService {
@@ -30,7 +32,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "1000000ugnot",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Supply",
             args: [marketId, assets.toString(), shares.toString()]
           })
@@ -66,7 +68,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Withdraw",
             args: [marketId, assets.toString(), shares.toString()]
           })
@@ -102,7 +104,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Borrow",
             args: [marketId, assets.toString(), shares.toString()]
           })
@@ -138,7 +140,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Repay",
             args: [marketId, assets.toString(), shares.toString()]
           })
@@ -174,7 +176,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "SupplyCollateral",
             args: [marketId, amount.toString()]
           })
@@ -210,7 +212,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "WithdrawCollateral",
             args: [marketId, amount.toString()]
           })
@@ -246,7 +248,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "Liquidate",
             args: [marketId, borrower, seizedAssets.toString(), repaidShares.toString()]
           })
@@ -282,7 +284,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "AccrueInterest",
             args: [marketId]
           })
@@ -318,7 +320,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "CreateMarket",
             args: [poolPath, isToken0Loan.toString(), irm, lltv.toString()]
           })
@@ -354,7 +356,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "EnableIRM",
             args: [irm]
           })
@@ -390,7 +392,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "EnableLLTV",
             args: [lltv]
           })
@@ -426,7 +428,7 @@ export class TxService {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.GNOLEND_PKG_PATH,
+            pkg_path: VOLOS_PKG_PATH,
             func: "SetFeeRecipient",
             args: [address]
           })
@@ -449,7 +451,7 @@ export class TxService {
     }
   }
 
-  public async approveToken(tokenPath: string, amount: number) {
+  public async approveToken(tokenPath: string, amount: number, pkgPath: string) {
     const adenaService = AdenaService.getInstance();
     
     if (!adenaService.isConnected()) {
@@ -470,14 +472,16 @@ import (
 )
 
 func main() {
-    gnolendAddr := std.DerivePkgAddr("${this.GNOLEND_PKG_PATH}")
+    addr := std.DerivePkgAddr("${pkgPath}")
     token := grc20reg.MustGet("${tokenPath}")
     teller := token.CallerTeller()
-    teller.Approve(gnolendAddr, ${amount})
+    teller.Approve(addr, ${amount})
 }`
         }
       ]
     };
+
+    console.log(gnoPackage.files[0].body)
 
     try {
       const tx = TransactionBuilder.create()
@@ -485,7 +489,7 @@ func main() {
           makeMsgRunMessage({
             caller: adenaService.getAddress(),
             send: "",
-            package: gnoPackage
+            package: gnoPackage,
           })
         )
         .fee(1000000, 'ugnot')
@@ -502,6 +506,88 @@ func main() {
       return response;
     } catch (error) {
       console.error("Error approving token:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Approve VLS tokens for spending by calling the VLS contract directly
+   * @param spender Address that will be approved to spend tokens
+   * @param amount Amount of VLS tokens to approve
+   */
+  public async approveVLS(spender: string, amount: number) {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: VLS_PKG_PATH,
+            func: "Approve",
+            args: [spender, amount.toString()]
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error approving VLS:", error);
+      throw error;
+    }
+  }
+
+   /**
+   * Approve VLS tokens for spending by calling the VLS contract directly.
+   * @param spender Pkg path, that will be derived to address and approved to spend tokens
+   * @param amount Amount of VLS tokens to approve
+   */
+   public async approveRealmVLS(spender: string, amount: number) {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: VLS_PKG_PATH,
+            func: "ApproveRealm",
+            args: [spender, amount.toString()]
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error approving VLS:", error);
       throw error;
     }
   }
@@ -524,7 +610,7 @@ func main() {
           makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            pkg_path: this.STAKER_PKG_PATH,
+            pkg_path: STAKER_PKG_PATH,
             func: "Stake",
             args: [amount.toString(), delegatee]
           })
@@ -546,4 +632,119 @@ func main() {
       throw error;
     }
   }
+
+  public async beginUnstakeVLS(amount: number, delegatee: string) {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: STAKER_PKG_PATH,
+            func: "BeginUnstake",
+            args: [amount.toString(), delegatee]
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error beginning unstake VLS:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Withdraw matured VLS unstakes from the staker contract
+   * This completes the unstaking process after the cooldown period
+   */
+  public async withdrawUnstakedVLS() {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: STAKER_PKG_PATH,
+            func: "WithdrawUnstaked",
+            args: []
+          })
+        )
+        .fee(1000000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Error withdrawing unstaked VLS:", error);
+      throw error;
+    }
+  }
+
+  // Voting functions for governance
+  public async voteOnProposal(proposalId: string, choice: 'YES' | 'NO' | 'ABSTAIN', reason: string = '') {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: GOVERNANCE_PKG_PATH,
+            func: "Vote",
+              args: [proposalId, choice, reason]
+          })
+        )
+        .fee(100000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Vote transaction failed:", error);
+      throw error;
+    }
+  }
+
+  
 }

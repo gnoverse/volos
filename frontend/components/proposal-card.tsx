@@ -1,7 +1,9 @@
 "use client"
 
 import { Proposal } from "@/app/services/api.service"
+import { getProposalStatusColor } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
 
 interface ProposalCardProps {
   proposal: Proposal
@@ -9,7 +11,8 @@ interface ProposalCardProps {
 
 export function ProposalCard({ proposal }: ProposalCardProps) {
   return (
-    <Card className="bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60 transition-colors">
+    <Link href={`/governance/${proposal.id}`} className="block">
+      <Card className="bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60 transition-colors cursor-pointer">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -20,13 +23,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
               {proposal.body}
             </CardDescription>
           </div>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ml-3 flex-shrink-0 ${
-            proposal.status === 'active'
-              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-              : proposal.status === 'executed'
-              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-              : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-          }`}>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ml-3 flex-shrink-0 border ${getProposalStatusColor(proposal.status)}`}>
             {proposal.status}
           </span>
         </div>
@@ -51,10 +48,11 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
               ? 'text-green-400' 
               : 'text-yellow-400'
           }`}>
-            {proposal.total_votes >= proposal.quorum ? 'Quorum Met' : 'Quorum Needed'}
+            {proposal.total_votes >= proposal.quorum ? 'Quorum Met' : 'Quorum Required'}
           </span>
         </div>
       </CardContent>
     </Card>
+    </Link>
   )
 }
