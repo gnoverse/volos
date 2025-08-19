@@ -15,21 +15,44 @@ import (
 	"time"
 
 	"gno.land/p/demo/avl"
+	"gno.land/p/demo/avl/rotree"
+	"gno.land/p/demo/seqid"
+	"gno.land/p/moul/authz"
 	"gno.land/r/volos/gov/governance"
 	"gno.land/r/volos/gov/vls"
 	"gno.land/r/volos/gov/xvls"
 )
 
 type UnstakeInfo struct {
+	ID        seqid.ID    // Unique identifier for this unstake
 	Amount    int64       // Amount of VLS to be withdrawn after cooldown
 	UnlockAt  int64       // Unix timestamp when withdrawal is allowed
 	Delegatee std.Address // Address from which xVLS was burned
 }
 
 var (
-	UnstakeLockPeriod = int64(7 * 24 * 60 * 60) // 7 days cooldown for unstaking
+	unstakeLockPeriod = int64(7 * 24 * 60 * 60) // 7 days cooldown for unstakings
 	pendingUnstakes   = avl.NewTree()           // staker address (string) -> []UnstakeInfo
+	delegations       = avl.NewTree()           // staker address (string) -> avl.Tree(delegatee address (string) -> int64 amount)
+
+	authorizer    = authz.NewWithMembers(std.DerivePkgAddr("gno.land/r/volos/gov/governance"))
+	nextUnstakeID seqid.ID
 )
+
+func UnstakeLockPeriod() int64 {
+	return unstakeLockPeriod
+}
+
+// Delegations returns a read-only view of all delegations.
+// The tree structure is: staker address (string) -> *rotree.ReadOnlyTree(delegatee address (string) -> int64 amount)
+func Delegations() *rotree.ReadOnlyTree {
+	makeEntrySafeFn := func(v any) any {
+		delegationTree := v.(*avl.Tree)
+		return rotree.Wrap(delegationTree, nil)
+	}
+
+	return rotree.Wrap(delegations, makeEntrySafeFn)
+}
 
 // Stake locks VLS tokens from the caller and mints an equal amount of xVLS to the specified delegatee.
 // The delegatee can be the caller or any other address, allowing flexible delegation of voting power.
@@ -46,13 +69,17 @@ func Stake(cur realm, amount int64, delegatee std.Address) {
 	vls.TransferFrom(cross, caller, std.CurrentRealm().Address(), amount)
 	xvls.Mint(cross, delegatee, amount)
 	governance.AddMember(cross, delegatee)
-	
+
+	updateDelegation(caller, delegatee, amount)
+
 	emitStake(caller, caller, delegatee, amount)
 	emitMemberAdded(caller, delegatee)
 }
 
 // BeginUnstake burns xVLS from the delegatee and starts a cooldown period for the original staker.
 // The staker can have multiple pending unstakes, each with its own amount and unlock time.
+// If the user has voted on active proposals, the unlock time is extended until the last proposal
+// expires plus the standard cooldown period to prevent vote-and-exit scenarios.
 // After the cooldown, the staker can withdraw the corresponding amount of VLS.
 func BeginUnstake(cur realm, amount int64, delegatee std.Address) {
 	caller := std.PreviousRealm().Address()
@@ -68,27 +95,39 @@ func BeginUnstake(cur realm, amount int64, delegatee std.Address) {
 		panic(ErrInsufficientBalance)
 	}
 
+	delegatedAmount := GetDelegatedAmount(caller, delegatee)
+	if delegatedAmount < amount {
+		panic(ErrInsufficientDelegation)
+	}
+
 	xvls.Burn(cross, delegatee, amount)
 	if xvls.BalanceOf(delegatee) == 0 {
 		governance.RemoveMember(cross, delegatee)
 		emitMemberRemoved(caller, delegatee)
 	}
+
+	updateDelegation(caller, delegatee, -amount)
+
 	key := caller.String()
 	var list []UnstakeInfo
 	if existing, ok := pendingUnstakes.Get(key); ok {
 		list = existing.([]UnstakeInfo)
 	}
 
-	unlockAt := time.Now().Unix() + UnstakeLockPeriod
+	baseUnlockAt := time.Now().Unix() + unstakeLockPeriod
+	unlockAt := calculateUnlockTime(delegatee, baseUnlockAt)
+
+	newID := nextUnstakeID.Next()
 	list = append(list, UnstakeInfo{
+		ID:        newID,
 		Amount:    amount,
 		UnlockAt:  unlockAt,
 		Delegatee: delegatee,
 	})
 
 	pendingUnstakes.Set(key, list)
-	
-	emitBeginUnstake(caller, caller, delegatee, amount, unlockAt)
+
+	emitBeginUnstake(caller, caller, delegatee, amount, unlockAt, newID)
 }
 
 // WithdrawUnstaked allows the original staker to withdraw all matured VLS unstakes.
@@ -99,19 +138,21 @@ func WithdrawUnstaked(cur realm) {
 	key := caller.String()
 	infoAny, ok := pendingUnstakes.Get(key)
 	if !ok {
-		panic(ErrCooldownNotFinished)
+		panic(ErrNoReadyUnstake)
 	}
 
 	list := infoAny.([]UnstakeInfo)
 	var (
 		remaining       []UnstakeInfo
 		totalToWithdraw int64 = 0
+		withdrawnIDs    []string
 	)
 
 	now := time.Now().Unix()
 	for _, info := range list {
 		if now >= info.UnlockAt {
 			totalToWithdraw += info.Amount
+			withdrawnIDs = append(withdrawnIDs, info.ID.String())
 		} else {
 			remaining = append(remaining, info)
 		}
@@ -128,6 +169,35 @@ func WithdrawUnstaked(cur realm) {
 	} else {
 		pendingUnstakes.Set(key, remaining)
 	}
-	
-	emitWithdraw(caller, caller, totalToWithdraw, len(remaining))
+
+	emitWithdraw(caller, caller, totalToWithdraw, len(remaining), withdrawnIDs)
+}
+
+// SetUnstakeLockPeriod allows governance to change the unstake lock period.
+func SetUnstakeLockPeriod(cur realm, newPeriod int64) {
+	if err := authorizer.DoByPrevious("set_unstake_lock_period", func() error {
+		unstakeLockPeriod = newPeriod
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+}
+
+// GetDelegatedAmount returns how much a staker has delegated to a specific delegatee.
+func GetDelegatedAmount(staker, delegatee std.Address) int64 {
+	stakerKey := staker.String()
+	delegateeKey := delegatee.String()
+
+	stakerDelegationsAny, ok := delegations.Get(stakerKey)
+	if !ok {
+		return 0
+	}
+
+	stakerDelegations := stakerDelegationsAny.(*avl.Tree)
+	amountAny, ok := stakerDelegations.Get(delegateeKey)
+	if !ok {
+		return 0
+	}
+
+	return amountAny.(int64)
 }

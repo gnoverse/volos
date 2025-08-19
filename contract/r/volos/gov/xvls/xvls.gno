@@ -14,6 +14,7 @@ import (
 
 	"gno.land/p/demo/grc/grc20"
 	"gno.land/p/moul/authz"
+	"gno.land/r/demo/grc20reg"
 )
 
 var (
@@ -27,22 +28,22 @@ var (
 	Launchpad = std.Address("") // set if/when needed
 )
 
-// Name returns the token name.
+func init() {
+	grc20reg.Register(cross, token, "")
+}
+
 func Name() string {
 	return token.GetName()
 }
 
-// Symbol returns the token symbol.
 func Symbol() string {
 	return token.GetSymbol()
 }
 
-// Decimals returns the token decimals.
 func Decimals() int {
 	return token.GetDecimals()
 }
 
-// TotalSupply returns the total supply of xVLS.
 func TotalSupply() int64 {
 	return token.TotalSupply()
 }
@@ -57,12 +58,10 @@ func VotingSupply() int64 {
 	return total
 }
 
-// BalanceOf returns the xVLS balance of an address.
 func BalanceOf(addr std.Address) int64 {
 	return token.BalanceOf(addr)
 }
 
-// Mint mints xVLS to the specified address. Only callable by the staker contract.
 func Mint(cur realm, to std.Address, amount int64) {
 	if err := Auth.DoByPrevious("mint", func() error {
 		if err := ledger.Mint(to, amount); err != nil {
@@ -77,7 +76,6 @@ func Mint(cur realm, to std.Address, amount int64) {
 	emitMint(caller, to, amount)
 }
 
-// Burn burns xVLS from the specified address. Only callable by the staker contract.
 func Burn(cur realm, from std.Address, amount int64) {
 	if err := Auth.DoByPrevious("burn", func() error {
 		if err := ledger.Burn(from, amount); err != nil {
@@ -87,7 +85,7 @@ func Burn(cur realm, from std.Address, amount int64) {
 	}); err != nil {
 		panic(err)
 	}
-	
+
 	caller := std.PreviousRealm().Address()
 	emitBurn(caller, from, amount)
 }
@@ -102,7 +100,6 @@ func TransferFrom(cur realm, from, to std.Address, amount int64) {
 	panic(ErrNonTransferable)
 }
 
-// Optionally, add a Render function for explorer integration.
 func Render(path string) string {
 	return token.RenderHome()
 }

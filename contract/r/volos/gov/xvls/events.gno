@@ -3,28 +3,30 @@ package xvls
 import (
 	"std"
 	"strconv"
+	"time"
 )
 
+// Events
 const (
 	EventMint         = "Mint"
 	EventBurn         = "Burn"
 	EventVotingSupply = "VotingSupply"
 )
 
+// Attribute key names
 const (
-	EventToKey        = "to"
-	EventFromKey      = "from"
-	EventAmountKey    = "amount"
-	EventTotalSupplyKey = "total_supply"
+	EventToKey           = "to"
+	EventFromKey         = "from"
+	EventAmountKey       = "amount"
+	EventTotalSupplyKey  = "total_supply"
 	EventVotingSupplyKey = "voting_supply"
-	EventExcludedKey  = "excluded_balance"
-	EventCallerKey    = "caller"
-	EventTimestampKey = "timestamp"
-	EventBalanceKey   = "balance"
-	EventLaunchpadKey = "launchpad_address"
+	EventExcludedKey     = "excluded_balance"
+	EventCallerKey       = "caller"
+	EventTimestampKey    = "timestamp"
+	EventBalanceKey      = "balance"
+	EventLaunchpadKey    = "launchpad_address"
 )
 
-// emitMint emits an event when xVLS tokens are minted
 func emitMint(caller, to std.Address, amount int64) {
 	std.Emit(
 		EventMint,
@@ -33,10 +35,10 @@ func emitMint(caller, to std.Address, amount int64) {
 		EventAmountKey, strconv.FormatInt(amount, 10),
 		EventTotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
 		EventVotingSupplyKey, strconv.FormatInt(VotingSupply(), 10),
+		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
-// emitBurn emits an event when xVLS tokens are burned
 func emitBurn(caller, from std.Address, amount int64) {
 	std.Emit(
 		EventBurn,
@@ -46,10 +48,10 @@ func emitBurn(caller, from std.Address, amount int64) {
 		EventTotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
 		EventVotingSupplyKey, strconv.FormatInt(VotingSupply(), 10),
 		EventBalanceKey, strconv.FormatInt(BalanceOf(from), 10),
+		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
-// emitVotingSupply emits an event when voting supply changes
 func emitVotingSupply(caller std.Address, totalSupply, votingSupply int64, excludedBalance int64) {
 	std.Emit(
 		EventVotingSupply,
@@ -58,5 +60,6 @@ func emitVotingSupply(caller std.Address, totalSupply, votingSupply int64, exclu
 		EventVotingSupplyKey, strconv.FormatInt(votingSupply, 10),
 		EventExcludedKey, strconv.FormatInt(excludedBalance, 10),
 		EventLaunchpadKey, Launchpad.String(),
+		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
-} 
+}
