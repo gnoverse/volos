@@ -2,6 +2,7 @@
 
 import { Proposal } from "@/app/services/api.service"
 import { getProposalStatusColor } from "@/app/utils/format.utils"
+import CopiableAddress from "@/components/copiable-addess"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 
@@ -30,8 +31,14 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-          <span>
-            Proposed by: {proposal.proposer.slice(0, 8)}...{proposal.proposer.slice(-6)}
+          <span className="flex items-center gap-1">
+            <span>Proposed by:</span>
+            <span
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <CopiableAddress value={proposal.proposer} short className="text-gray-300" />
+            </span>
           </span>
           <span>
             Quorum: {proposal.quorum} xVLS

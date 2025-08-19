@@ -3,6 +3,7 @@
 import { useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
 import { useUserAddress } from "@/app/utils/address.utils"
 import { formatTimestamp, getProposalStatusColor } from "@/app/utils/format.utils"
+import CopiableAddress from "@/components/copiable-addess"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -112,8 +113,9 @@ export default function ProposalDetailPage() {
             <div className="flex items-center gap-4 text-sm text-gray-400 mt-2">
               <div className="flex items-center gap-1">
                 <User className="w-4 h-4" />
-                <span>
-                  Proposed by: {proposal.proposer.slice(0, 8)}...{proposal.proposer.slice(-6)}
+                <span className="flex items-center gap-1">
+                  <span>Proposed by:</span>
+                  <CopiableAddress value={proposal.proposer} short className="text-gray-300" />
                 </span>
               </div>
               <div className="flex items-center gap-1">

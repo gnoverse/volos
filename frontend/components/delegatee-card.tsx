@@ -2,6 +2,7 @@
 
 import { useBeginUnstakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
 import { formatTokenAmount } from "@/app/utils/format.utils"
+import CopiableAddress from "@/components/copiable-addess"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -70,7 +71,7 @@ export function DelegateeCard({ delegatee, amount }: DelegateeCardProps) {
               Delegatee
             </CardTitle>
             <div className="text-gray-400 text-sm mt-1 font-mono">
-              {delegatee.slice(0, 12)}...{delegatee.slice(-8)}
+              <CopiableAddress value={delegatee} short className="text-gray-400" />
             </div>
           </div>
           <div className="text-right">

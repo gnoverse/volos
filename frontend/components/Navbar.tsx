@@ -2,6 +2,7 @@
 
 import { AdenaService } from "@/app/services/adena.service";
 import { useUserAddress } from "@/app/utils/address.utils";
+import CopiableAddress from "@/components/copiable-addess";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -12,7 +13,6 @@ import {
 import { cn } from "@/lib/utils";
 import { LogOutIcon, WalletIcon } from "lucide-react";
 import { usePathname } from 'next/navigation';
-import { useState } from "react";
 import Logo from "./logo";
 
 const menuItems = [
@@ -25,12 +25,6 @@ const menuItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const { userAddress: walletAddress, isConnected } = useUserAddress({ validateConnection: true });
-  const [copied, setCopied] = useState(false);
-  
-  const formatAddress = (address: string) => {
-    if (!address) return "";
-    return `${address.substring(0, 6)}...${address.substring(address.length - 6)}`;
-  };
   
   const handleWalletConnection = async () => {
     const adenaService = AdenaService.getInstance();
@@ -46,14 +40,7 @@ export default function Navbar() {
     }
   };
 
-  // todo: replace this with a toast
-  const handleCopyAddress = async () => {
-    if (isConnected && walletAddress) {
-      await navigator.clipboard.writeText(walletAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1000);
-    }
-  };
+  // Copy handled by CopiableAddress component when connected
 
   return (
     <div className="flex justify-between items-center py-2 pl-40 pr-36">
@@ -96,11 +83,15 @@ export default function Navbar() {
               ? "mr-2 hover:bg-customGray-800 hover:text-logo-500"
               : "mr-5 hover:bg-customGray-800 hover:text-logo-500"
           )}
-          onClick={isConnected ? handleCopyAddress : handleWalletConnection}
-          title={isConnected ? (copied ? "Copied!" : walletAddress) : "Connect Wallet"}
+          onClick={isConnected ? undefined : handleWalletConnection}
+          title={isConnected ? undefined : "Connect Wallet"}
         >
           <WalletIcon className="w-4 h-4 mr-2" />
-          {isConnected ? (copied ? "Copied!" : formatAddress(walletAddress)) : "Connect Wallet"}
+          {isConnected ? (
+            <CopiableAddress value={walletAddress} short className="text-gray-200" />
+          ) : (
+            "Connect Wallet"
+          )}
         </Button>
         
         {isConnected && (

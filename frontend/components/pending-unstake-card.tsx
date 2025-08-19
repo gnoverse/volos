@@ -2,6 +2,7 @@
 
 import { PendingUnstake } from "@/app/services/api.service"
 import { formatTimestamp, formatTokenAmount } from "@/app/utils/format.utils"
+import CopiableAddress from "@/components/copiable-addess"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock } from "lucide-react"
 
@@ -25,7 +26,7 @@ export function PendingUnstakeCard({ pendingUnstake }: PendingUnstakeCardProps) 
               Pending Unstake
             </CardTitle>
             <div className="text-gray-400 text-sm mt-1 font-mono">
-              {pendingUnstake.delegatee.slice(0, 12)}...{pendingUnstake.delegatee.slice(-8)}
+              <CopiableAddress value={pendingUnstake.delegatee} short className="text-gray-400" />
             </div>
           </div>
           <div className="text-right">
