@@ -91,15 +91,7 @@ export default function ProposalDetailPage() {
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3 flex-1">
-              <Link href="/governance">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-gray-400 hover:text-logo-500 hover:bg-gray-800/40 p-2 h-auto"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-              </Link>
+              {/* Back button moved to layout header */}
               <CardTitle className="text-orange-500 font-semibold text-2xl leading-tight flex-1">
                 {proposal.title}
                 <span className="text-sm text-gray-500 font-normal ml-2">[#{proposal.id}]</span>
@@ -109,7 +101,7 @@ export default function ProposalDetailPage() {
               {proposal.status.toUpperCase()}
             </span>
           </div>
-          <div className="ml-11">
+          <div className="">
             <div className="flex items-center gap-4 text-sm text-gray-400 mt-2">
               <div className="flex items-center gap-1">
                 <User className="w-4 h-4" />
