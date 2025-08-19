@@ -52,10 +52,10 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			}
 
 		case "ProposalExecuted":
-			proposalID := extractProposalID(event)
+			proposalID, status := extractProposalIDAndStatus(event)
 			if proposalID != "" {
 				updates := map[string]interface{}{
-					"status": "executed",
+					"status": status,
 				}
 				err := dbupdater.UpdateProposal(client, proposalID, updates)
 				if err != nil {
@@ -170,12 +170,12 @@ func extractProposalFields(event map[string]interface{}) (proposalID, title, bod
 	return proposalID, title, body, proposer, deadline, quorum, timestamp, true
 }
 
-// extractProposalID extracts the proposal ID from a ProposalExecuted event
-func extractProposalID(event map[string]interface{}) string {
+// extractProposalIDAndStatus extracts the proposal ID and status from a ProposalExecuted event
+func extractProposalIDAndStatus(event map[string]interface{}) (proposalID, status string) {
 	attributes, ok := event["attrs"].([]interface{})
 	if !ok {
 		log.Println("ProposalExecuted event missing attributes")
-		return ""
+		return "", ""
 	}
 
 	for _, attr := range attributes {
@@ -187,13 +187,20 @@ func extractProposalID(event map[string]interface{}) string {
 		key, _ := attrMap["key"].(string)
 		value, _ := attrMap["value"].(string)
 
-		if key == "proposal_id" {
-			return value
+		switch key {
+		case "proposal_id":
+			proposalID = value
+		case "status":
+			status = value
 		}
 	}
 
-	log.Println("Proposal ID not found in ProposalExecuted event")
-	return ""
+	if proposalID == "" || status == "" {
+		log.Println("Missing required fields in ProposalExecuted event - proposal_id:", proposalID, "status:", status)
+		return "", ""
+	}
+
+	return proposalID, status
 }
 
 // extractVoteFields extracts vote fields from a VoteCast event
