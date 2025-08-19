@@ -52,8 +52,6 @@ export default function ProposalDetailPage() {
     }
   }
 
-
-
   const isQuorumMet = proposal && proposal.total_votes >= proposal.quorum
   const isActive = proposal?.status === 'active'
   const deadlineDate = proposal ? new Date(proposal.deadline) : null

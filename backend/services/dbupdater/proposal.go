@@ -2,7 +2,6 @@ package dbupdater
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -35,19 +34,15 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 	createdAt := time.Unix(createdAtUnix, 0)
 
 	proposal := model.ProposalData{
-		ID:           proposalID,
-		Title:        title,
-		Body:         body,
-		Proposer:     proposer,
-		Deadline:     deadline,
-		Status:       "active",
-		CreatedAt:    createdAt,
-		LastVote:     createdAt, // Initialize LastVote to creation time
-		YesVotes:     0,
-		NoVotes:      0,
-		AbstainVotes: 0,
-		TotalVotes:   0,
-		Quorum:       quorum,
+		ID:        proposalID,
+		Title:     title,
+		Body:      body,
+		Proposer:  proposer,
+		Deadline:  deadline,
+		Status:    "active",
+		CreatedAt: createdAt,
+		LastVote:  createdAt,
+		Quorum:    quorum,
 	}
 
 	_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
@@ -83,7 +78,8 @@ func UpdateProposal(client *firestore.Client, proposalID string, updates map[str
 	return nil
 }
 
-// AddVote updates the proposal with a new vote, recalculates vote totals, and stores individual vote in subcollection
+// AddVote stores an individual vote in the votes subcollection and updates the proposal's LastVote timestamp.
+// Vote totals are calculated on-demand from the votes subcollection to avoid write conflicts.
 func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, timestampStr string, xvlsAmount int64) error {
 	ctx := context.Background()
 
@@ -103,116 +99,28 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, ti
 		Timestamp:  voteTime,
 	}
 
-	// Use voter address as document ID to ensure one vote per user per proposal
 	voteDocRef := client.Collection("proposals").Doc(proposalID).Collection("votes").Doc(voter)
 
 	existingVote, err := voteDocRef.Get(ctx)
 	if err != nil && !existingVote.Exists() {
 		// No existing vote, proceed normally
 	} else if existingVote.Exists() {
-		// User has already voted, we need to subtract their previous vote from totals
-		var previousVote model.VoteData
-		if err := existingVote.DataTo(&previousVote); err != nil {
-			log.Printf("Error parsing previous vote data: %v", err)
-			return err
-		}
-
-		doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
-		if err != nil {
-			log.Printf("Error fetching proposal %s: %v", proposalID, err)
-			return err
-		}
-
-		var proposal model.ProposalData
-		if err := doc.DataTo(&proposal); err != nil {
-			log.Printf("Error parsing proposal data: %v", err)
-			return err
-		}
-
-		switch previousVote.VoteChoice {
-		case "YES":
-			proposal.YesVotes -= previousVote.XVLSAmount
-		case "NO":
-			proposal.NoVotes -= previousVote.XVLSAmount
-		case "ABSTAIN":
-			proposal.AbstainVotes -= previousVote.XVLSAmount
-		}
-
-		switch voteChoice {
-		case "YES":
-			proposal.YesVotes += xvlsAmount
-		case "NO":
-			proposal.NoVotes += xvlsAmount
-		case "ABSTAIN":
-			proposal.AbstainVotes += xvlsAmount
-		default:
-			log.Printf("Unknown vote choice: %s", voteChoice)
-			return fmt.Errorf("unknown vote choice: %s", voteChoice)
-		}
-
-		proposal.TotalVotes = proposal.YesVotes + proposal.NoVotes + proposal.AbstainVotes
-		proposal.LastVote = voteTime
-
-		_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
-		if err != nil {
-			log.Printf("Error updating proposal with vote: %v", err)
-			return err
-		}
-
-		_, err = voteDocRef.Set(ctx, voteData)
-		if err != nil {
-			log.Printf("Error updating vote document: %v", err)
-			return err
-		}
-
-		log.Printf("Successfully updated vote for proposal %s: %s changed vote to %s with %d xVLS", proposalID, voter, voteChoice, xvlsAmount)
-		return nil
+		log.Printf("User %s has already voted on proposal %s, updating their vote", voter, proposalID)
 	}
 
-	doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
+	_, err = voteDocRef.Set(ctx, voteData)
 	if err != nil {
-		log.Printf("Error fetching proposal %s: %v", proposalID, err)
+		log.Printf("Error updating vote document: %v", err)
 		return err
 	}
 
-	var proposal model.ProposalData
-	if err := doc.DataTo(&proposal); err != nil {
-		log.Printf("Error parsing proposal data: %v", err)
-		return err
-	}
-
-	switch voteChoice {
-	case "YES":
-		proposal.YesVotes += xvlsAmount
-	case "NO":
-		proposal.NoVotes += xvlsAmount
-	case "ABSTAIN":
-		proposal.AbstainVotes += xvlsAmount
-	default:
-		log.Printf("Unknown vote choice: %s", voteChoice)
-		return fmt.Errorf("unknown vote choice: %s", voteChoice)
-	}
-
-	proposal.TotalVotes = proposal.YesVotes + proposal.NoVotes + proposal.AbstainVotes
-	proposal.LastVote = voteTime
-
-	// Use a transaction to ensure both proposal and vote are updated atomically
-	err = client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
-		proposalRef := client.Collection("proposals").Doc(proposalID)
-		if err := tx.Set(proposalRef, proposal); err != nil {
-			return fmt.Errorf("failed to update proposal: %v", err)
-		}
-
-		if err := tx.Set(voteDocRef, voteData); err != nil {
-			return fmt.Errorf("failed to create vote document: %v", err)
-		}
-
-		return nil
+	proposalRef := client.Collection("proposals").Doc(proposalID)
+	_, err = proposalRef.Update(ctx, []firestore.Update{
+		{Path: "last_vote", Value: voteTime},
 	})
-
 	if err != nil {
-		log.Printf("Error in transaction for proposal %s: %v", proposalID, err)
-		return err
+		log.Printf("Error updating proposal last_vote timestamp: %v", err)
+		// Don't fail the entire operation if this update fails
 	}
 
 	log.Printf("Successfully added vote for proposal %s: %s voted %s with %d xVLS", proposalID, voter, voteChoice, xvlsAmount)

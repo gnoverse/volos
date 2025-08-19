@@ -51,6 +51,12 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (*Propo
 			continue
 		}
 
+		yesVotes, noVotes, abstainVotes, totalVotes, err := calculateVoteTotals(client, proposal.ID)
+		if err != nil {
+			log.Printf("Error calculating vote totals for proposal %s: %v", proposal.ID, err)
+			yesVotes, noVotes, abstainVotes, totalVotes = 0, 0, 0, 0
+		}
+
 		proposalMap := map[string]interface{}{
 			"id":            proposal.ID,
 			"title":         proposal.Title,
@@ -60,10 +66,10 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (*Propo
 			"status":        proposal.Status,
 			"created_at":    proposal.CreatedAt,
 			"last_vote":     proposal.LastVote,
-			"yes_votes":     proposal.YesVotes,
-			"no_votes":      proposal.NoVotes,
-			"abstain_votes": proposal.AbstainVotes,
-			"total_votes":   proposal.TotalVotes,
+			"yes_votes":     yesVotes,
+			"no_votes":      noVotes,
+			"abstain_votes": abstainVotes,
+			"total_votes":   totalVotes,
 			"quorum":        proposal.Quorum,
 		}
 
@@ -117,6 +123,12 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 			continue
 		}
 
+		yesVotes, noVotes, abstainVotes, totalVotes, err := calculateVoteTotals(client, proposal.ID)
+		if err != nil {
+			log.Printf("Error calculating vote totals for proposal %s: %v", proposal.ID, err)
+			yesVotes, noVotes, abstainVotes, totalVotes = 0, 0, 0, 0
+		}
+
 		proposalMap := map[string]interface{}{
 			"id":            proposal.ID,
 			"title":         proposal.Title,
@@ -126,10 +138,10 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 			"status":        proposal.Status,
 			"created_at":    proposal.CreatedAt,
 			"last_vote":     proposal.LastVote,
-			"yes_votes":     proposal.YesVotes,
-			"no_votes":      proposal.NoVotes,
-			"abstain_votes": proposal.AbstainVotes,
-			"total_votes":   proposal.TotalVotes,
+			"yes_votes":     yesVotes,
+			"no_votes":      noVotes,
+			"abstain_votes": abstainVotes,
+			"total_votes":   totalVotes,
 			"quorum":        proposal.Quorum,
 		}
 
@@ -165,6 +177,12 @@ func GetProposal(client *firestore.Client, proposalID string) (map[string]interf
 		return nil, err
 	}
 
+	yesVotes, noVotes, abstainVotes, totalVotes, err := calculateVoteTotals(client, proposal.ID)
+	if err != nil {
+		log.Printf("Error calculating vote totals for proposal %s: %v", proposal.ID, err)
+		yesVotes, noVotes, abstainVotes, totalVotes = 0, 0, 0, 0
+	}
+
 	proposalMap := map[string]interface{}{
 		"id":            proposal.ID,
 		"title":         proposal.Title,
@@ -174,10 +192,10 @@ func GetProposal(client *firestore.Client, proposalID string) (map[string]interf
 		"status":        proposal.Status,
 		"created_at":    proposal.CreatedAt,
 		"last_vote":     proposal.LastVote,
-		"yes_votes":     proposal.YesVotes,
-		"no_votes":      proposal.NoVotes,
-		"abstain_votes": proposal.AbstainVotes,
-		"total_votes":   proposal.TotalVotes,
+		"yes_votes":     yesVotes,
+		"no_votes":      noVotes,
+		"abstain_votes": abstainVotes,
+		"total_votes":   totalVotes,
 		"quorum":        proposal.Quorum,
 	}
 
@@ -229,4 +247,58 @@ func GetUserVoteOnProposal(client *firestore.Client, proposalID, userAddress str
 	}
 
 	return &vote, nil
+}
+
+// calculateVoteTotals calculates vote totals using filtered queries for efficiency
+// This approach fetches only the necessary fields instead of full documents
+//
+// todo: when firebase supports aggregation queries for go sdk, use those intead
+func calculateVoteTotals(client *firestore.Client, proposalID string) (int64, int64, int64, int64, error) {
+	ctx := context.Background()
+	votesRef := client.Collection("proposals").Doc(proposalID).Collection("votes")
+
+	yesQuery := votesRef.Where("vote_choice", "==", "YES").Select("xvls_amount")
+	yesDocs, err := yesQuery.Documents(ctx).GetAll()
+	if err != nil {
+		log.Printf("Error fetching YES votes for proposal %s: %v", proposalID, err)
+		return 0, 0, 0, 0, err
+	}
+
+	var yesVotes int64
+	for _, doc := range yesDocs {
+		if amount, ok := doc.Data()["xvls_amount"].(int64); ok {
+			yesVotes += amount
+		}
+	}
+
+	noQuery := votesRef.Where("vote_choice", "==", "NO").Select("xvls_amount")
+	noDocs, err := noQuery.Documents(ctx).GetAll()
+	if err != nil {
+		log.Printf("Error fetching NO votes for proposal %s: %v", proposalID, err)
+		return 0, 0, 0, 0, err
+	}
+
+	var noVotes int64
+	for _, doc := range noDocs {
+		if amount, ok := doc.Data()["xvls_amount"].(int64); ok {
+			noVotes += amount
+		}
+	}
+
+	abstainQuery := votesRef.Where("vote_choice", "==", "ABSTAIN").Select("xvls_amount")
+	abstainDocs, err := abstainQuery.Documents(ctx).GetAll()
+	if err != nil {
+		log.Printf("Error fetching ABSTAIN votes for proposal %s: %v", proposalID, err)
+		return 0, 0, 0, 0, err
+	}
+
+	var abstainVotes int64
+	for _, doc := range abstainDocs {
+		if amount, ok := doc.Data()["xvls_amount"].(int64); ok {
+			abstainVotes += amount
+		}
+	}
+
+	totalVotes := yesVotes + noVotes + abstainVotes
+	return yesVotes, noVotes, abstainVotes, totalVotes, nil
 }
