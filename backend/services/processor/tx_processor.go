@@ -26,7 +26,11 @@
 package processor
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"strconv"
+	"sync"
 
 	"cloud.google.com/go/firestore"
 )
@@ -37,6 +41,17 @@ import (
 type TransactionProcessorPool struct {
 	jobs    chan map[string]interface{}
 	workers int
+
+	// seenMu guards concurrent access to the de-duplication fields below.
+	seenMu sync.Mutex
+	// seen stores keys of recently submitted transactions to prevent re-processing.
+	// Keys prefer the transaction hash; if unavailable, they fall back to "block_height:index".
+	seen map[string]struct{}
+	// seenQueue tracks insertion order for FIFO eviction when capacity is exceeded.
+	seenQueue []string
+	// seenCap is the maximum number of recent transaction keys we retain for de-duplication.
+	// When this cap is exceeded, the oldest keys are evicted from both seenQueue and seen.
+	seenCap int
 }
 
 // NewTransactionProcessorPool creates a new pool with the given number of workers.
@@ -44,9 +59,21 @@ func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
 	if workers <= 0 {
 		workers = 8
 	}
+
+	// TODO: configure de-dup capacity via env (VOLOS_TX_DEDUP_SEEN_CAP), default to 1024
+	defaultCap := 1024
+	if env := os.Getenv("VOLOS_TX_DEDUP_SEEN_CAP"); env != "" {
+		if v, err := strconv.Atoi(env); err == nil && v > 0 {
+			defaultCap = v
+		}
+	}
+
 	return &TransactionProcessorPool{
-		jobs:    make(chan map[string]interface{}, 1000),
-		workers: workers,
+		jobs:      make(chan map[string]interface{}, 1000),
+		workers:   workers,
+		seen:      make(map[string]struct{}, defaultCap),
+		seenQueue: make([]string, 0, defaultCap),
+		seenCap:   defaultCap,
 	}
 }
 
@@ -63,7 +90,42 @@ func (p *TransactionProcessorPool) Start(client *firestore.Client) {
 
 // Submit adds a transaction to the processing queue. The transaction will be routed
 // to either core or governance processing based on its package path.
+//
+// De-duplication: WebSocket and polling can overlap (e.g., WS dies mid-block and polling
+// resumes slightly before). To avoid double-processing the same transaction, we keep a
+// bounded in-memory set of recently seen transaction keys (prefer hash; fallback to
+// block_height:index). If a key is already present, the submission is dropped.
 func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
+	var key string
+	if h, ok := tx["hash"].(string); ok && h != "" {
+		key = h
+	} else {
+		var heightPart, indexPart string
+		if bh, ok := tx["block_height"].(float64); ok {
+			heightPart = fmt.Sprintf("%d", int(bh))
+		}
+		if idx, ok := tx["index"].(float64); ok {
+			indexPart = fmt.Sprintf("%d", int(idx))
+		}
+		key = heightPart + ":" + indexPart
+	}
+
+	if key != ":" && key != "" {
+		p.seenMu.Lock()
+		if _, exists := p.seen[key]; exists {
+			p.seenMu.Unlock()
+			return
+		}
+		p.seen[key] = struct{}{}
+		p.seenQueue = append(p.seenQueue, key)
+		if len(p.seenQueue) > p.seenCap {
+			oldest := p.seenQueue[0]
+			p.seenQueue = p.seenQueue[1:]
+			delete(p.seen, oldest)
+		}
+		p.seenMu.Unlock()
+	}
+
 	select {
 	case p.jobs <- tx:
 		// submitted
