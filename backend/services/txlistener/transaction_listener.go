@@ -60,7 +60,20 @@ func (tl *TransactionListener) startWebSocketListener(ctx context.Context) {
 			tl.wsCtx = wsCtx
 			tl.wsCancel = wsCancel
 
-			err := StartVolosTransactionListener(wsCtx, tl.pool)
+			// Attempt to establish WebSocket connection and process transactions in real-time.
+			// If successful, updates LastBlockHeight with a safety lag of 1 block to avoid
+			// missing transactions if websocket connection is lost mid-block.
+			err := StartVolosTransactionListener(wsCtx, tl.pool, func(bh int) {
+				const safetyLag = 1
+				adjusted := bh - safetyLag
+				if adjusted < 0 {
+					adjusted = 0
+				}
+
+				if adjusted > tl.LastBlockHeight {
+					tl.LastBlockHeight = adjusted
+				}
+			})
 			if err != nil {
 				log.Printf("WebSocket listener failed: %v", err)
 				log.Println("Falling back to polling mode...")
