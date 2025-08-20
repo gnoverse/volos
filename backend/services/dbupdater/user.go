@@ -131,27 +131,21 @@ func AddPendingUnstake(client *firestore.Client, userAddress, delegatee, unstake
 }
 
 // DeletePendingUnstakesByIDs deletes pending unstake documents by their IDs for a given user.
-// The IDs correspond to the deterministic Firestore document IDs stored for each pending unstake.
+// Uses a transaction to delete all documents atomically.
 func DeletePendingUnstakesByIDs(client *firestore.Client, userAddress string, unstakeIDs []string) error {
 	if len(unstakeIDs) == 0 {
 		return nil
 	}
 
 	ctx := context.Background()
-	batch := client.Batch()
-
 	sub := client.Collection("users").Doc(userAddress).Collection("pendingUnstakes")
-	for _, id := range unstakeIDs {
-		docRef := sub.Doc(id)
-		batch.Delete(docRef)
-	}
 
-	_, err := batch.Commit(ctx)
-	if err != nil {
-		log.Printf("Error deleting pending unstakes for user %s: %v", userAddress, err)
-		return err
-	}
-
-	log.Printf("Deleted %d pending unstakes for user %s", len(unstakeIDs), userAddress)
-	return nil
+	return client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		for _, id := range unstakeIDs {
+			if err := tx.Delete(sub.Doc(id)); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
