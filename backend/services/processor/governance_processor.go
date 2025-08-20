@@ -123,309 +123,129 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 					log.Printf("Error deleting withdrawn pending unstakes for user %s: %v", staker, err)
 				}
 			}
+
+		case "StorageDeposit":
+			continue
 		}
 	}
 }
 
 // extractProposalFields extracts proposal fields from a transaction event
 func extractProposalFields(event map[string]interface{}) (proposalID, title, body, proposer, deadline, quorum, timestamp string, ok bool) {
-	attributes, attrsOk := event["attrs"].([]interface{})
-	if !attrsOk {
-		log.Println("ProposalCreated event missing attributes")
+	required := []string{"proposal_id", "title", "caller", "deadline", "quorum", "timestamp", "body"}
+	fields, ok := extractEventFields(event, required)
+	if !ok {
 		return "", "", "", "", "", "", "", false
 	}
 
-	for _, attr := range attributes {
-		attrMap, ok := attr.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		key, _ := attrMap["key"].(string)
-		value, _ := attrMap["value"].(string)
-
-		switch key {
-		case "proposal_id":
-			proposalID = value
-		case "title":
-			title = value
-		case "body":
-			body = value
-		case "deadline":
-			deadline = value
-		case "caller":
-			proposer = value
-		case "quorum":
-			quorum = value
-		case "timestamp":
-			timestamp = value
-		}
-	}
-
-	if proposalID == "" || title == "" || proposer == "" || deadline == "" || quorum == "" || timestamp == "" {
-		log.Println("Missing required proposal fields")
-		return "", "", "", "", "", "", "", false
-	}
-
-	return proposalID, title, body, proposer, deadline, quorum, timestamp, true
+	return fields["proposal_id"], fields["title"], fields["body"], fields["caller"], fields["deadline"], fields["quorum"], fields["timestamp"], true
 }
 
 // extractProposalIDAndStatus extracts the proposal ID and status from a ProposalExecuted event
 func extractProposalIDAndStatus(event map[string]interface{}) (proposalID, status string) {
-	attributes, ok := event["attrs"].([]interface{})
+	required := []string{"proposal_id", "status"}
+	fields, ok := extractEventFields(event, required)
 	if !ok {
-		log.Println("ProposalExecuted event missing attributes")
 		return "", ""
 	}
-
-	for _, attr := range attributes {
-		attrMap, ok := attr.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		key, _ := attrMap["key"].(string)
-		value, _ := attrMap["value"].(string)
-
-		switch key {
-		case "proposal_id":
-			proposalID = value
-		case "status":
-			status = value
-		}
-	}
-
-	if proposalID == "" || status == "" {
-		log.Println("Missing required fields in ProposalExecuted event - proposal_id:", proposalID, "status:", status)
-		return "", ""
-	}
-
-	return proposalID, status
+	return fields["proposal_id"], fields["status"]
 }
 
 // extractVoteFields extracts vote fields from a VoteCast event
 func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, reason string, xvlsAmount int64, timestamp string, ok bool) {
-	attributes, ok := event["attrs"].([]interface{})
+	required := []string{"proposal_id", "voter", "vote", "xvls_amount", "timestamp", "reason"}
+	fields, ok := extractEventFields(event, required)
 	if !ok {
-		log.Println("VoteCast event missing attributes")
 		return "", "", "", "", 0, "", false
 	}
 
-	var proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmountStr, timestampStr string
-	for _, attr := range attributes {
-		attrMap, ok := attr.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		key, _ := attrMap["key"].(string)
-		value, _ := attrMap["value"].(string)
-
-		switch key {
-		case "proposal_id":
-			proposalIDStr = value
-		case "voter":
-			voterStr = value
-		case "vote":
-			voteStr = value
-		case "reason":
-			reasonStr = value
-		case "xvls_amount":
-			xvlsAmountStr = value
-		case "timestamp":
-			timestampStr = value
-		}
-	}
-
-	if proposalIDStr == "" || voterStr == "" || voteStr == "" || xvlsAmountStr == "" || timestampStr == "" {
-		log.Println("Missing required vote fields")
-		return "", "", "", "", 0, "", false
-	}
-
-	xvlsAmount, err := strconv.ParseInt(xvlsAmountStr, 10, 64)
+	amountStr := fields["xvls_amount"]
+	amt, err := strconv.ParseInt(amountStr, 10, 64)
 	if err != nil {
 		log.Printf("Error parsing xVLS amount: %v", err)
 		return "", "", "", "", 0, "", false
 	}
-
-	return proposalIDStr, voterStr, voteStr, reasonStr, xvlsAmount, timestampStr, true
+	return fields["proposal_id"], fields["voter"], fields["vote"], fields["reason"], amt, fields["timestamp"], true
 }
 
 // extractMemberAddress extracts the member address from MemberAdded/MemberRemoved events
 func extractMemberAddress(event map[string]interface{}) string {
-	attributes, ok := event["attrs"].([]interface{})
+	required := []string{"member"}
+	fields, ok := extractEventFields(event, required)
 	if !ok {
 		log.Println("Member event missing attributes")
 		return ""
 	}
-
-	for _, attr := range attributes {
-		attrMap, ok := attr.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		key, _ := attrMap["key"].(string)
-		value, _ := attrMap["value"].(string)
-
-		if key == "member" {
-			return value
-		}
-	}
-
-	log.Println("Member address not found in MemberAdded/MemberRemoved event")
-	return ""
+	return fields["member"]
 }
 
 // extractStakeFields extracts stake fields from a Stake event
 func extractStakeFields(event map[string]interface{}) (staker, delegatee string, amount, cooldownPeriod int64, timestamp string, ok bool) {
-	attributes, attrsOk := event["attrs"].([]interface{})
-	if !attrsOk {
-		log.Println("Stake event missing attributes")
+	required := []string{"staker", "delegatee", "amount", "timestamp", "cooldown_period"}
+	fields, ok := extractEventFields(event, required)
+	if !ok {
 		return "", "", 0, 0, "", false
 	}
 
-	var stakerStr, delegateeStr, amountStr, cooldownPeriodStr, timestampStr string
-	for _, attr := range attributes {
-		attrMap, ok := attr.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		key, _ := attrMap["key"].(string)
-		value, _ := attrMap["value"].(string)
-
-		switch key {
-		case "staker":
-			stakerStr = value
-		case "delegatee":
-			delegateeStr = value
-		case "amount":
-			amountStr = value
-		case "cooldown_period":
-			cooldownPeriodStr = value
-		case "timestamp":
-			timestampStr = value
-		}
-	}
-
-	if stakerStr == "" || delegateeStr == "" || amountStr == "" || timestampStr == "" {
-		log.Println("Missing required stake fields")
-		return "", "", 0, 0, "", false
-	}
-
-	amountInt, err := strconv.ParseInt(amountStr, 10, 64)
+	amt, err := strconv.ParseInt(fields["amount"], 10, 64)
 	if err != nil {
 		log.Printf("Error parsing stake amount: %v", err)
 		return "", "", 0, 0, "", false
 	}
 
-	cooldownInt := int64(0)
-	if cooldownPeriodStr != "" {
-		cooldownInt, err = strconv.ParseInt(cooldownPeriodStr, 10, 64)
-		if err != nil {
+	cooldown := int64(0)
+	if cp := fields["cooldown_period"]; cp != "" {
+		if v, err := strconv.ParseInt(cp, 10, 64); err == nil {
+			cooldown = v
+		} else {
 			log.Printf("Error parsing cooldown period: %v", err)
 			return "", "", 0, 0, "", false
 		}
 	}
 
-	return stakerStr, delegateeStr, amountInt, cooldownInt, timestampStr, true
+	return fields["staker"], fields["delegatee"], amt, cooldown, fields["timestamp"], true
 }
 
 // extractBeginUnstakeFields extracts fields from a BeginUnstake event
 func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee string, amount, unlockAt int64, timestamp, unstake_id string, ok bool) {
-	attributes, attrsOk := event["attrs"].([]interface{})
-	if !attrsOk {
-		log.Println("BeginUnstake event missing attributes")
+	required := []string{"staker", "delegatee", "amount", "timestamp", "unstake_id"}
+	fields, ok := extractEventFields(event, required)
+	if !ok {
 		return "", "", 0, 0, "", "", false
 	}
 
-	var stakerStr, delegateeStr, amountStr, unlockAtStr, timestampStr, unstakeIdStr string
-	for _, attr := range attributes {
-		attrMap, ok := attr.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		key, _ := attrMap["key"].(string)
-		value, _ := attrMap["value"].(string)
-
-		switch key {
-		case "staker":
-			stakerStr = value
-		case "delegatee":
-			delegateeStr = value
-		case "amount":
-			amountStr = value
-		case "unlock_at":
-			unlockAtStr = value
-		case "timestamp":
-			timestampStr = value
-		case "unstake_id":
-			unstakeIdStr = value
-		}
-	}
-
-	if stakerStr == "" || delegateeStr == "" || amountStr == "" || timestampStr == "" || unstakeIdStr == "" {
-		log.Println("Missing required BeginUnstake fields")
-		return "", "", 0, 0, "", "", false
-	}
-
-	amountInt, err := strconv.ParseInt(amountStr, 10, 64)
+	amt, err := strconv.ParseInt(fields["amount"], 10, 64)
 	if err != nil {
 		log.Printf("Error parsing unstake amount: %v", err)
 		return "", "", 0, 0, "", "", false
 	}
 
-	unlockAtInt := int64(0)
-	if unlockAtStr != "" {
-		unlockAtInt, err = strconv.ParseInt(unlockAtStr, 10, 64)
-		if err != nil {
+	unlock := int64(0)
+	if ua := fields["unlock_at"]; ua != "" {
+		if v, err := strconv.ParseInt(ua, 10, 64); err == nil {
+			unlock = v
+		} else {
 			log.Printf("Error parsing unlock_at timestamp: %v", err)
 			return "", "", 0, 0, "", "", false
 		}
 	}
 
-	return stakerStr, delegateeStr, amountInt, unlockAtInt, timestampStr, unstakeIdStr, true
+	return fields["staker"], fields["delegatee"], amt, unlock, fields["timestamp"], fields["unstake_id"], true
 }
 
 // extractWithdrawnUnstakeIDs extracts the staker and the list of withdrawn unstake IDs from a Withdraw event
 func extractWithdrawnUnstakeIDs(event map[string]interface{}) (staker string, withdrawnIDs []string, ok bool) {
-	attributes, attrsOk := event["attrs"].([]interface{})
-	if !attrsOk {
-		log.Println("Withdraw event missing attributes")
+	required := []string{"staker", "withdrawn_unstake_ids"}
+	fields, ok := extractEventFields(event, required)
+	if !ok {
 		return "", nil, false
 	}
 
-	var stakerStr, idsStr string
-	for _, attr := range attributes {
-		attrMap, ok := attr.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		key, _ := attrMap["key"].(string)
-		value, _ := attrMap["value"].(string)
-
-		switch key {
-		case "staker":
-			stakerStr = value
-		case "withdrawn_unstake_ids":
-			idsStr = value
-		}
-	}
-
-	if stakerStr == "" {
-		log.Println("Missing required Withdraw fields: staker")
-		return "", nil, false
-	}
-
+	idsStr := fields["withdrawn_unstake_ids"]
 	if idsStr == "" {
-		// No IDs to process, but the event is valid
-		return stakerStr, nil, true
+		return fields["staker"], nil, true
 	}
 
-	// Split by comma and filter out empty entries
 	parts := strings.Split(idsStr, ",")
 	for _, p := range parts {
 		id := strings.TrimSpace(p)
@@ -433,6 +253,5 @@ func extractWithdrawnUnstakeIDs(event map[string]interface{}) (staker string, wi
 			withdrawnIDs = append(withdrawnIDs, id)
 		}
 	}
-
-	return stakerStr, withdrawnIDs, true
+	return fields["staker"], withdrawnIDs, true
 }

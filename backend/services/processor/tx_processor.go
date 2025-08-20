@@ -141,7 +141,7 @@ func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 
 	switch pkgPath {
 	case "gno.land/r/volos/core":
-		processCoreTransaction(tx)
+		processCoreTransaction(tx, client)
 		return
 	case "gno.land/r/volos/gov/governance", "gno.land/r/volos/gov/staker", "gno.land/r/volos/gov/vls", "gno.land/r/volos/gov/xvls":
 		processGovernanceTransaction(tx, client)

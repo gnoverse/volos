@@ -10,6 +10,7 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
+// CreateProposal creates a new proposal in the Firestore database
 func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr, quorumStr, timestampStr string) error {
 	ctx := context.Background()
 
