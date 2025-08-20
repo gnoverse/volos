@@ -81,7 +81,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 func extractCreateMarketFields(event map[string]interface{}) (marketID, loanToken, collateralToken, timestamp string, ok bool) {
 	requiredFields := []string{"market_id", "loan_token", "collateral_token", "currentTimestamp"}
 
-	fields, ok := extractEventFields(event, requiredFields)
+	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		return "", "", "", "", false
 	}
@@ -92,7 +92,7 @@ func extractCreateMarketFields(event map[string]interface{}) (marketID, loanToke
 // extractSupplyFields extracts fields from a Supply event
 func extractSupplyFields(event map[string]interface{}) (marketID, user, onBehalf, amount, shares, timestamp, supplyAPR, borrowAPR string, ok bool) {
 	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
-	fields, ok := extractEventFields(event, requiredFields)
+	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		return "", "", "", "", "", "", "", "", false
 	}
@@ -103,7 +103,7 @@ func extractSupplyFields(event map[string]interface{}) (marketID, user, onBehalf
 // extractWithdrawFields extracts all fields from a Withdraw event
 func extractWithdrawFields(event map[string]interface{}) (marketID, user, onBehalf, receiver, amount, shares, timestamp, supplyAPR, borrowAPR string, ok bool) {
 	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
-	fields, ok := extractEventFields(event, requiredFields)
+	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		return "", "", "", "", "", "", "", "", "", false
 	}

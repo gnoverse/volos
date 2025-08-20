@@ -15,6 +15,7 @@ import (
 
 // UpdateTotalSupply updates the total_supply for a market using a transactional read-modify-write
 // and appends a history sample for charting.
+//
 // Amounts are stored as strings (u256). Arithmetic is done with big.Int.
 // isSupply indicates whether this is a supply event (true) or withdraw event (false).
 // For supply events, the amount is added to the total supply.
@@ -36,7 +37,7 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		return
 	}
 
-	marketRef := client.Collection("markets_new").Doc(sanitizedMarketID)
+	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
 
 	var updatedTotalStr string
 	if err := client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {

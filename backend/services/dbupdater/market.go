@@ -27,7 +27,7 @@ func CreateMarket(client *firestore.Client, marketID, loanToken, collateralToken
 		"created_at":       time.Unix(timestampInt, 0),
 	}
 
-	_, err = client.Collection("markets_new").Doc(sanitizedMarketID).Set(context.Background(), marketData) // TODO: update name
+	_, err = client.Collection("markets").Doc(sanitizedMarketID).Set(context.Background(), marketData)
 	if err != nil {
 		log.Printf("Error creating market document %s: %v", marketID, err)
 		return

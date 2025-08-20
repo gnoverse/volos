@@ -133,7 +133,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 // extractProposalFields extracts proposal fields from a transaction event
 func extractProposalFields(event map[string]interface{}) (proposalID, title, body, proposer, deadline, quorum, timestamp string, ok bool) {
 	required := []string{"proposal_id", "title", "caller", "deadline", "quorum", "timestamp", "body"}
-	fields, ok := extractEventFields(event, required)
+	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		return "", "", "", "", "", "", "", false
 	}
@@ -144,7 +144,7 @@ func extractProposalFields(event map[string]interface{}) (proposalID, title, bod
 // extractProposalIDAndStatus extracts the proposal ID and status from a ProposalExecuted event
 func extractProposalIDAndStatus(event map[string]interface{}) (proposalID, status string) {
 	required := []string{"proposal_id", "status"}
-	fields, ok := extractEventFields(event, required)
+	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		return "", ""
 	}
@@ -153,8 +153,9 @@ func extractProposalIDAndStatus(event map[string]interface{}) (proposalID, statu
 
 // extractVoteFields extracts vote fields from a VoteCast event
 func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, reason string, xvlsAmount int64, timestamp string, ok bool) {
-	required := []string{"proposal_id", "voter", "vote", "xvls_amount", "timestamp", "reason"}
-	fields, ok := extractEventFields(event, required)
+	required := []string{"proposal_id", "voter", "vote", "xvls_amount", "timestamp"}
+	optional := []string{"reason"}
+	fields, ok := extractEventFields(event, required, optional)
 	if !ok {
 		return "", "", "", "", 0, "", false
 	}
@@ -171,7 +172,7 @@ func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, r
 // extractMemberAddress extracts the member address from MemberAdded/MemberRemoved events
 func extractMemberAddress(event map[string]interface{}) string {
 	required := []string{"member"}
-	fields, ok := extractEventFields(event, required)
+	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		log.Println("Member event missing attributes")
 		return ""
@@ -182,7 +183,7 @@ func extractMemberAddress(event map[string]interface{}) string {
 // extractStakeFields extracts stake fields from a Stake event
 func extractStakeFields(event map[string]interface{}) (staker, delegatee string, amount, cooldownPeriod int64, timestamp string, ok bool) {
 	required := []string{"staker", "delegatee", "amount", "timestamp", "cooldown_period"}
-	fields, ok := extractEventFields(event, required)
+	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		return "", "", 0, 0, "", false
 	}
@@ -209,7 +210,7 @@ func extractStakeFields(event map[string]interface{}) (staker, delegatee string,
 // extractBeginUnstakeFields extracts fields from a BeginUnstake event
 func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee string, amount, unlockAt int64, timestamp, unstake_id string, ok bool) {
 	required := []string{"staker", "delegatee", "amount", "timestamp", "unstake_id"}
-	fields, ok := extractEventFields(event, required)
+	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		return "", "", 0, 0, "", "", false
 	}
@@ -236,7 +237,7 @@ func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee 
 // extractWithdrawnUnstakeIDs extracts the staker and the list of withdrawn unstake IDs from a Withdraw event
 func extractWithdrawnUnstakeIDs(event map[string]interface{}) (staker string, withdrawnIDs []string, ok bool) {
 	required := []string{"staker", "withdrawn_unstake_ids"}
-	fields, ok := extractEventFields(event, required)
+	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		return "", nil, false
 	}

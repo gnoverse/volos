@@ -15,7 +15,7 @@ import (
 // Returns:
 //   - map[string]string: Field name to value mapping
 //   - bool: True if all required fields were found, false otherwise
-func extractEventFields(event map[string]interface{}, requiredFields []string) (map[string]string, bool) {
+func extractEventFields(event map[string]interface{}, requiredFields []string, optionalFields []string) (map[string]string, bool) {
 	attributes, ok := event["attrs"].([]interface{})
 	if !ok {
 		log.Println("Event missing attributes")
@@ -23,6 +23,10 @@ func extractEventFields(event map[string]interface{}, requiredFields []string) (
 	}
 
 	result := make(map[string]string)
+
+	for _, field := range optionalFields {
+		result[field] = ""
+	}
 
 	// Extract all attributes
 	for _, attr := range attributes {

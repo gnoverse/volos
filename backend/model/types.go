@@ -36,7 +36,7 @@ type MarketActivity struct {
 // ProposalData represents the complete structure of a governance proposal document stored in Firestore.
 // This struct contains all fields that are persisted to the database when a proposal is created,
 // including metadata and timestamps for tracking proposal lifecycle.
-// Vote totals are calculated on-demand from the votes subcollection.
+// Vote totals can be maintained transactionally on write and/or calculated on-demand from the votes subcollection.
 type ProposalData struct {
 	ID        string    `firestore:"id" json:"id"`                 // Unique proposal identifier from the governance contract
 	Title     string    `firestore:"title" json:"title"`           // Human-readable title of the proposal
@@ -47,6 +47,12 @@ type ProposalData struct {
 	CreatedAt time.Time `firestore:"created_at" json:"created_at"` // Timestamp when proposal was created in database
 	LastVote  time.Time `firestore:"last_vote" json:"last_vote"`   // Timestamp of the last vote cast on this proposal
 	Quorum    int64     `firestore:"quorum" json:"quorum"`         // Quorum for the proposal
+
+	// Transactional aggregates (xVLS power sums)
+	YesVotes     int64 `firestore:"yes_votes" json:"yes_votes"`
+	NoVotes      int64 `firestore:"no_votes" json:"no_votes"`
+	AbstainVotes int64 `firestore:"abstain_votes" json:"abstain_votes"`
+	TotalVotes   int64 `firestore:"total_votes" json:"total_votes"`
 }
 
 // VoteData represents an individual vote cast on a proposal, stored in a subcollection.
