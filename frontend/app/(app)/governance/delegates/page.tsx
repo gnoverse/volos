@@ -56,6 +56,7 @@ export default function DelegatesPage() {
               key={delegatee} 
               delegatee={delegatee} 
               amount={amount}
+              userAddress={userAddress}
             />
           ))}
         </div>

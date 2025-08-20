@@ -12,9 +12,10 @@ import { useState } from "react"
 interface DelegateeCardProps {
   delegatee: string
   amount: number
+  userAddress?: string
 }
 
-export function DelegateeCard({ delegatee, amount }: DelegateeCardProps) {
+export function DelegateeCard({ delegatee, amount, userAddress }: DelegateeCardProps) {
   const [unstakeAmount, setUnstakeAmount] = useState("")
   const beginUnstakeMutation = useBeginUnstakeVLSMutation()
 
@@ -72,6 +73,9 @@ export function DelegateeCard({ delegatee, amount }: DelegateeCardProps) {
             </CardTitle>
             <div className="text-gray-400 text-sm mt-1 font-mono">
               <CopiableAddress value={delegatee} short className="text-gray-400" />
+              {userAddress && delegatee === userAddress && (
+                <span className="text-logo-500 ml-1">(you)</span>
+              )}
             </div>
           </div>
           <div className="text-right">

@@ -61,7 +61,7 @@ export default function ProposalDetailPage() {
   const canVote = isConnected && xvlsBalance.balance > 0
   const isExecutable = !!(isExpired && isQuorumMet && isPassed)
   const isExecutedOrNonActive = !!proposal && !isActive
-  const isFailed = isExpired && (!isQuorumMet || !isPassed)
+  const willFail = isExpired && (!isQuorumMet || !isPassed)
 
   const handleExecute = async () => {
     if (!proposal) return
@@ -311,7 +311,7 @@ export default function ProposalDetailPage() {
                       <div className="text-gray-200 font-medium">
                         {isExecutedOrNonActive
                           ? 'Proposal executed'
-                          : (isExpired ? (isExecutable ? 'Ready to Execute' : (isFailed ? 'Proposal Failed' : 'Voting period has ended')) : 'Voting is not available')}
+                          : (isExpired ? (isExecutable ? 'Ready to Execute' : (willFail ? 'Proposal Failed' : 'Voting period has ended')) : 'Voting is not available')}
                       </div>
                       <div className="text-xs text-gray-400">
                         {isExecutedOrNonActive
@@ -319,7 +319,7 @@ export default function ProposalDetailPage() {
                           : (isExpired
                               ? (isExecutable
                                   ? 'Quorum met and majority voted YES'
-                                  : (isFailed
+                                  : (willFail
                                       ? (isQuorumMet
                                           ? 'Quorum met, but proposal did not pass'
                                           : 'Quorum not met')
@@ -339,14 +339,14 @@ export default function ProposalDetailPage() {
                       {executeMutation.isPending ? 'Executing...' : (
                         <>
                           <PlayCircle className="w-4 h-4" />
-                          {isFailed ? 'Clear Proposal' : 'Execute Proposal'}
+                          {willFail ? 'Clear Proposal' : 'Execute Proposal'}
                         </>
                       )}
                     </Button>
                   )}
                 </div>
-                {/* TODO: is this necessary? */}
-                {isFailed && (
+
+                {willFail && isActive && (
                   <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <p className="text-yellow-400 text-xs">
                       <strong>Note:</strong> This will update the proposal status by triggering Execute function, but will not actually execute the proposal since it did not pass.
