@@ -1,13 +1,13 @@
 "use client"
 
-import { useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
+import { useExecuteProposalMutation, useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
 import { useUserAddress } from "@/app/utils/address.utils"
 import { formatTimestamp, getProposalStatusColor } from "@/app/utils/format.utils"
 import CopiableAddress from "@/components/copiable-addess"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Calendar, Clock, User, Vote } from "lucide-react"
+import { ArrowLeft, Calendar, CheckCircle, Clock, PlayCircle, User, Vote, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useState } from "react"
@@ -25,6 +25,7 @@ export default function ProposalDetailPage() {
   const { userAddress, isConnected } = useUserAddress()
   const { data: xvlsBalance = { address: userAddress, balance: 0 } } = useXVLSBalance(userAddress)
   const { data: userVote, refetch: refetchUserVote } = useUserVoteOnProposal(proposalId, userAddress)
+  const executeMutation = useExecuteProposalMutation()
 
   const handleVote = async (choice: 'YES' | 'NO' | 'ABSTAIN') => {
     if (!proposal) return
@@ -53,10 +54,23 @@ export default function ProposalDetailPage() {
   }
 
   const isQuorumMet = proposal && proposal.total_votes >= proposal.quorum
+  const isPassed = proposal && proposal.yes_votes > proposal.no_votes
   const isActive = proposal?.status === 'active'
   const deadlineDate = proposal ? new Date(proposal.deadline) : null
   const isExpired = deadlineDate ? new Date() > deadlineDate : false
   const canVote = isConnected && xvlsBalance.balance > 0
+  const isExecutable = !!(isExpired && isQuorumMet && isPassed)
+  const isExecutedOrNonActive = !!proposal && !isActive
+  const isFailed = isExpired && (!isQuorumMet || !isPassed)
+
+  const handleExecute = async () => {
+    if (!proposal) return
+    try {
+      await executeMutation.mutateAsync({ proposalId: proposal.id })
+    } catch (err) {
+      console.error('Execute proposal failed:', err)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -285,13 +299,60 @@ export default function ProposalDetailPage() {
           {(!isActive || isExpired) && (
             <>
               <Separator className="bg-gray-600/50" />
-              <div className="bg-gray-800/40 rounded-lg p-4 border border-gray-700/50 text-center">
-                <p className="text-gray-400">
-                  {isExpired 
-                    ? "Voting period has ended" 
-                    : "Voting is not available for this proposal"
-                  }
-                </p>
+              <div className="bg-gradient-to-r from-gray-800/60 to-gray-800/30 rounded-xl p-5 border border-gray-700/50">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    {isExecutedOrNonActive || isExecutable ? (
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    ) : (
+                      <XCircle className={`w-5 h-5 ${isExpired ? 'text-yellow-400' : 'text-gray-400'}`} />
+                    )}
+                    <div className="text-left">
+                      <div className="text-gray-200 font-medium">
+                        {isExecutedOrNonActive
+                          ? 'Proposal executed'
+                          : (isExpired ? (isExecutable ? 'Ready to Execute' : (isFailed ? 'Proposal Failed' : 'Voting period has ended')) : 'Voting is not available')}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {isExecutedOrNonActive
+                          ? `Status: ${proposal.status.toUpperCase()}`
+                          : (isExpired
+                              ? (isExecutable
+                                  ? 'Quorum met and majority voted YES'
+                                  : (isFailed
+                                      ? (isQuorumMet
+                                          ? 'Quorum met, but proposal did not pass'
+                                          : 'Quorum not met')
+                                      : 'Voting period has ended'))
+                              : 'This proposal cannot be voted on at this time')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {(isExpired || isExecutedOrNonActive) && (
+                    <Button
+                      onClick={handleExecute}
+                      disabled={executeMutation.isPending || isExecutedOrNonActive || !isConnected}
+                      title={isExecutedOrNonActive ? 'Proposal already executed' : (!isConnected ? 'Connect your wallet to execute this proposal' : undefined)}
+                      className="bg-logo-500 hover:bg-logo-600 text-white border-none disabled:bg-gray-700 disabled:text-gray-400 flex items-center gap-2"
+                    >
+                      {executeMutation.isPending ? 'Executing...' : (
+                        <>
+                          <PlayCircle className="w-4 h-4" />
+                          {isFailed ? 'Clear Proposal' : 'Execute Proposal'}
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+                {/* TODO: is this necessary? */}
+                {isFailed && (
+                  <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-yellow-400 text-xs">
+                      <strong>Note:</strong> This will update the proposal status by triggering Execute function, but will not actually execute the proposal since it did not pass.
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}

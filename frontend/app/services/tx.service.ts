@@ -746,5 +746,45 @@ func main() {
     }
   }
 
+  /**
+   * Execute a proposal by ID
+   * Calls the governance Execute function to enact the proposal if it has passed
+   */
+  public async executeProposal(proposalId: string) {
+    const adenaService = AdenaService.getInstance();
+    
+    if (!adenaService.isConnected()) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const tx = TransactionBuilder.create()
+        .messages(
+          makeMsgCallMessage({
+            caller: adenaService.getAddress(),
+            send: "",
+            pkg_path: GOVERNANCE_PKG_PATH,
+            func: "Execute",
+            args: [proposalId]
+          })
+        )
+        .fee(100000, 'ugnot')
+        .gasWanted(GAS_WANTED)
+        .memo("")
+        .build();
+
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+      return response;
+    } catch (error) {
+      console.error("Execute proposal transaction failed:", error);
+      throw error;
+    }
+  }
+
   
 }

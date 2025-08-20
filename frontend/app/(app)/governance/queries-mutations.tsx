@@ -13,7 +13,7 @@ export const XVLS_BALANCE_QUERY_KEY = 'xvls-balance';
 export const USER_VOTE_QUERY_KEY = 'user-vote';
 export const USER_PENDING_UNSTAKES_QUERY_KEY = 'user-pending-unstakes';
 
-// Hook to fetch all proposals with pagination
+// Query to fetch all proposals with pagination
 export function useProposals(limit?: number, lastId?: string) {
   return useQuery<ProposalsResponse>({
     queryKey: [PROPOSALS_QUERY_KEY, limit, lastId],
@@ -23,7 +23,7 @@ export function useProposals(limit?: number, lastId?: string) {
   });
 }
 
-// Hook to fetch active proposals with pagination
+// Query to fetch active proposals with pagination
 export function useActiveProposals(limit?: number, lastId?: string) {
   return useQuery<ProposalsResponse>({
     queryKey: [ACTIVE_PROPOSALS_QUERY_KEY, limit, lastId],
@@ -33,7 +33,7 @@ export function useActiveProposals(limit?: number, lastId?: string) {
   });
 }
 
-// Hook to fetch first page of all proposals (default limit)
+// Query to fetch first page of all proposals (default limit)
 export function useAllProposals() {
   return useQuery<ProposalsResponse>({
     queryKey: [PROPOSALS_QUERY_KEY, 'all'],
@@ -43,7 +43,7 @@ export function useAllProposals() {
   });
 }
 
-// Hook to fetch first page of active proposals (default limit)
+// Query to fetch first page of active proposals (default limit)
 export function useAllActiveProposals() {
   return useQuery<ProposalsResponse>({
     queryKey: [ACTIVE_PROPOSALS_QUERY_KEY, 'all'],
@@ -53,7 +53,7 @@ export function useAllActiveProposals() {
   });
 }
 
-// Hook to fetch a single proposal by ID
+// Query to fetch a single proposal by ID
 export function useProposal(proposalId?: string) {
   return useQuery<Proposal>({
     queryKey: [PROPOSAL_QUERY_KEY, proposalId],
@@ -66,7 +66,7 @@ export function useProposal(proposalId?: string) {
   });
 }
 
-// Hook to fetch user data
+// Query to fetch user data
 export function useUser(address?: string) {
   return useQuery<User>({
     queryKey: [USER_QUERY_KEY, address],
@@ -79,7 +79,7 @@ export function useUser(address?: string) {
   });
 }
 
-// Hook to fetch governance user info from on-chain
+// Query to fetch governance user info from on-chain
 export function useGovernanceUserInfo(address?: string) {
   return useQuery<GovernanceUserInfo>({
     queryKey: [GOVERNANCE_USER_INFO_QUERY_KEY, address],
@@ -291,7 +291,39 @@ export function useVoteMutation() {
   });
 }
 
-// Hook to fetch xVLS balance for a user
+// Mutation to execute a proposal
+export function useExecuteProposalMutation() {
+  const txService = TxService.getInstance();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      proposalId,
+    }: {
+      proposalId: string;
+    }) => {
+      return txService.executeProposal(proposalId);
+    },
+    onError: (error) => {
+      console.error('Execute proposal failed:', error);
+    },
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),
+        queryClient.invalidateQueries({ queryKey: [PROPOSALS_QUERY_KEY] }),
+        queryClient.invalidateQueries({ queryKey: [ACTIVE_PROPOSALS_QUERY_KEY] }),
+      ]);
+
+      setTimeout(async () => {
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),
+        ]);
+      }, 1000);
+    },
+  });
+}
+
+// Query to fetch xVLS balance for a user
 export function useXVLSBalance(address?: string) {
   return useQuery<Balance>({
     queryKey: [XVLS_BALANCE_QUERY_KEY, address],
@@ -304,7 +336,7 @@ export function useXVLSBalance(address?: string) {
   });
 }
 
-// Hook to fetch user's vote on a specific proposal
+// Query to fetch user's vote on a specific proposal
 export function useUserVoteOnProposal(proposalId?: string, userAddress?: string) {
   return useQuery<UserVote | null>({
     queryKey: [USER_VOTE_QUERY_KEY, proposalId, userAddress],
@@ -317,7 +349,7 @@ export function useUserVoteOnProposal(proposalId?: string, userAddress?: string)
   });
 }
 
-// Hook to fetch user's pending unstakes
+// Query to fetch user's pending unstakes
 export function useUserPendingUnstakes(userAddress?: string) {
   return useQuery<PendingUnstake[]>({
     queryKey: [USER_PENDING_UNSTAKES_QUERY_KEY, userAddress],
