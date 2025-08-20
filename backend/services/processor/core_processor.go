@@ -58,9 +58,15 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, false)
 			}
 		case "Borrow":
-			dbupdater.ProcessBorrow(tx)
+			marketID, _, _, _, amount, _, timestamp, _, _, ok := extractBorrowFields(event)
+			if ok {
+				dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, true)
+			}
 		case "Repay":
-			dbupdater.ProcessRepay(tx)
+			marketID, _, _, amount, _, timestamp, _, _, ok := extractRepayFields(event)
+			if ok {
+				dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, false)
+			}
 		case "Liquidate":
 			dbupdater.ProcessLiquidate(tx)
 		case "RegisterIRM":
@@ -109,4 +115,24 @@ func extractWithdrawFields(event map[string]interface{}) (marketID, user, onBeha
 	}
 
 	return fields["market_id"], fields["user"], fields["on_behalf"], fields["receiver"], fields["amount"], fields["shares"], fields["currentTimestamp"], fields["supplyAPR"], fields["borrowAPR"], true
+}
+
+// extractBorrowFields extracts all fields from a Borrow event
+func extractBorrowFields(event map[string]interface{}) (marketID, user, onBehalf, receiver, amount, shares, timestamp, supplyAPR, borrowAPR string, ok bool) {
+	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		return "", "", "", "", "", "", "", "", "", false
+	}
+	return fields["market_id"], fields["user"], fields["on_behalf"], fields["receiver"], fields["amount"], fields["shares"], fields["currentTimestamp"], fields["supplyAPR"], fields["borrowAPR"], true
+}
+
+// extractRepayFields extracts all fields from a Repay event
+func extractRepayFields(event map[string]interface{}) (marketID, user, onBehalf, amount, shares, timestamp, supplyAPR, borrowAPR string, ok bool) {
+	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		return "", "", "", "", "", "", "", "", false
+	}
+	return fields["market_id"], fields["user"], fields["on_behalf"], fields["amount"], fields["shares"], fields["currentTimestamp"], fields["supplyAPR"], fields["borrowAPR"], true
 }

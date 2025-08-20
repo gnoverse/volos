@@ -14,7 +14,7 @@ import (
 )
 
 // UpdateTotalSupply updates the total_supply for a market using a transactional read-modify-write
-// and appends a history sample for charting.
+// and appends a history sample.
 //
 // Amounts are stored as strings (u256). Arithmetic is done with big.Int.
 // isSupply indicates whether this is a supply event (true) or withdraw event (false).
