@@ -6,7 +6,7 @@
 package processor
 
 import (
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"volos-backend/services/dbupdater"
@@ -19,25 +19,33 @@ import (
 func processGovernanceTransaction(tx map[string]interface{}, client *firestore.Client) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		log.Println("Transaction missing 'response' field")
+		slog.Error("Transaction missing 'response' field",
+			"transaction", tx,
+		)
 		return
 	}
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		log.Println("Transaction missing or empty 'events' array")
+		slog.Error("Transaction missing or empty 'events' array",
+			"response", response,
+		)
 		return
 	}
 
 	for _, eventInterface := range events {
 		event, ok := eventInterface.(map[string]interface{})
 		if !ok {
-			log.Println("Event is not a map")
+			slog.Error("Event is not a map",
+				"event_interface", eventInterface,
+			)
 			continue
 		}
 
 		eventType, ok := event["type"].(string)
 		if !ok {
-			log.Println("Event type is not a string")
+			slog.Error("Event type is not a string",
+				"event", event,
+			)
 			continue
 		}
 
@@ -47,7 +55,16 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			if ok {
 				err := dbupdater.CreateProposal(client, proposalID, title, body, proposer, deadline, quorum, timestamp)
 				if err != nil {
-					log.Printf("Error creating proposal in database: %v", err)
+					slog.Error("Error creating proposal in database",
+						"proposal_id", proposalID,
+						"title", title,
+						"body", body,
+						"proposer", proposer,
+						"deadline", deadline,
+						"quorum", quorum,
+						"event_timestamp", timestamp,
+						"error", err,
+					)
 				}
 			}
 
@@ -59,7 +76,11 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 				}
 				err := dbupdater.UpdateProposal(client, proposalID, updates)
 				if err != nil {
-					log.Printf("Error updating proposal status in database: %v", err)
+					slog.Error("Error updating proposal status in database",
+						"proposal_id", proposalID,
+						"status", status,
+						"error", err,
+					)
 				}
 			}
 
@@ -68,7 +89,15 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			if ok {
 				err := dbupdater.AddVote(client, proposalID, voter, vote, reason, timestamp, xvlsAmount)
 				if err != nil {
-					log.Printf("Error adding vote to database: %v", err)
+					slog.Error("Error adding vote to database",
+						"proposal_id", proposalID,
+						"voter", voter,
+						"vote", vote,
+						"reason", reason,
+						"xvls_amount", xvlsAmount,
+						"event_timestamp", timestamp,
+						"error", err,
+					)
 				}
 			}
 
@@ -77,7 +106,10 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			if member != "" {
 				err := dbupdater.AddDAOMember(client, member)
 				if err != nil {
-					log.Printf("Error adding DAO member to database: %v", err)
+					slog.Error("Error adding DAO member to database",
+						"member", member,
+						"error", err,
+					)
 				}
 			}
 
@@ -86,7 +118,10 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			if member != "" {
 				err := dbupdater.RemoveDAOMember(client, member)
 				if err != nil {
-					log.Printf("Error removing DAO member from database: %v", err)
+					slog.Error("Error removing DAO member from database",
+						"member", member,
+						"error", err,
+					)
 				}
 			}
 
@@ -96,7 +131,13 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 				timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
 				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, amount, timestamp)
 				if err != nil {
-					log.Printf("Error updating staked VLS for user %s: %v", staker, err)
+					slog.Error("Error updating staked VLS for user",
+						"staker", staker,
+						"delegatee", delegatee,
+						"amount", amount,
+						"event_timestamp", timestamp,
+						"error", err,
+					)
 				}
 			}
 
@@ -106,12 +147,25 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 				timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
 				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, -amount, timestamp)
 				if err != nil {
-					log.Printf("Error updating unstaked VLS for user %s: %v", staker, err)
+					slog.Error("Error updating unstaked VLS for user",
+						"staker", staker,
+						"delegatee", delegatee,
+						"amount", amount,
+						"event_timestamp", timestamp,
+						"error", err,
+					)
 				}
 
 				err = dbupdater.AddPendingUnstake(client, staker, delegatee, unstakeId, amount, unlockAt)
 				if err != nil {
-					log.Printf("Error creating pending unstake for user %s: %v", staker, err)
+					slog.Error("Error creating pending unstake for user",
+						"staker", staker,
+						"delegatee", delegatee,
+						"unstake_id", unstakeId,
+						"amount", amount,
+						"event_timestamp", timestamp,
+						"error", err,
+					)
 				}
 			}
 
@@ -120,7 +174,11 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			if ok && len(withdrawnIDs) > 0 {
 				err := dbupdater.DeletePendingUnstakesByIDs(client, staker, withdrawnIDs)
 				if err != nil {
-					log.Printf("Error deleting withdrawn pending unstakes for user %s: %v", staker, err)
+					slog.Error("Error deleting withdrawn pending unstakes for user",
+						"staker", staker,
+						"withdrawn_ids", withdrawnIDs,
+						"error", err,
+					)
 				}
 			}
 
@@ -163,7 +221,10 @@ func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, r
 	amountStr := fields["xvls_amount"]
 	amt, err := strconv.ParseInt(amountStr, 10, 64)
 	if err != nil {
-		log.Printf("Error parsing xVLS amount: %v", err)
+		slog.Error("Error parsing xVLS amount",
+			"amount_str", amountStr,
+			"error", err,
+		)
 		return "", "", "", "", 0, "", false
 	}
 	return fields["proposal_id"], fields["voter"], fields["vote"], fields["reason"], amt, fields["timestamp"], true
@@ -174,7 +235,9 @@ func extractMemberAddress(event map[string]interface{}) string {
 	required := []string{"member"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
-		log.Println("Member event missing attributes")
+		slog.Error("Member event missing attributes",
+			"event", event,
+		)
 		return ""
 	}
 	return fields["member"]
@@ -190,7 +253,10 @@ func extractStakeFields(event map[string]interface{}) (staker, delegatee string,
 
 	amt, err := strconv.ParseInt(fields["amount"], 10, 64)
 	if err != nil {
-		log.Printf("Error parsing stake amount: %v", err)
+		slog.Error("Error parsing stake amount",
+			"amount_str", fields["amount"],
+			"error", err,
+		)
 		return "", "", 0, 0, "", false
 	}
 
@@ -199,7 +265,10 @@ func extractStakeFields(event map[string]interface{}) (staker, delegatee string,
 		if v, err := strconv.ParseInt(cp, 10, 64); err == nil {
 			cooldown = v
 		} else {
-			log.Printf("Error parsing cooldown period: %v", err)
+			slog.Error("Error parsing cooldown period",
+				"cooldown_period_str", cp,
+				"error", err,
+			)
 			return "", "", 0, 0, "", false
 		}
 	}
@@ -217,7 +286,10 @@ func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee 
 
 	amt, err := strconv.ParseInt(fields["amount"], 10, 64)
 	if err != nil {
-		log.Printf("Error parsing unstake amount: %v", err)
+		slog.Error("Error parsing unstake amount",
+			"amount_str", fields["amount"],
+			"error", err,
+		)
 		return "", "", 0, 0, "", "", false
 	}
 
@@ -226,7 +298,10 @@ func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee 
 		if v, err := strconv.ParseInt(ua, 10, 64); err == nil {
 			unlock = v
 		} else {
-			log.Printf("Error parsing unlock_at timestamp: %v", err)
+			slog.Error("Error parsing unlock_at timestamp",
+				"unlock_at_str", ua,
+				"error", err,
+			)
 			return "", "", 0, 0, "", "", false
 		}
 	}

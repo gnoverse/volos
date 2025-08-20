@@ -2,7 +2,7 @@ package dbupdater
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"strconv"
 	"time"
 	"volos-backend/model"
@@ -18,20 +18,17 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 
 	deadlineUnix, err := strconv.ParseInt(deadlineStr, 10, 64)
 	if err != nil {
-		log.Printf("Error parsing deadline timestamp: %v", err)
 		return err
 	}
 	deadline := time.Unix(deadlineUnix, 0)
 
 	quorum, err := strconv.ParseInt(quorumStr, 10, 64)
 	if err != nil {
-		log.Printf("Error parsing quorum: %v", err)
 		return err
 	}
 
 	createdAtUnix, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {
-		log.Printf("Error parsing created timestamp: %v", err)
 		return err
 	}
 	createdAt := time.Unix(createdAtUnix, 0)
@@ -50,11 +47,14 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 
 	_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
 	if err != nil {
-		log.Printf("Error writing proposal to Firestore: %v", err)
 		return err
 	}
 
-	log.Printf("Successfully created proposal %s in Firestore", proposalID)
+	slog.Info("Successfully created proposal",
+		"proposal_id", proposalID,
+		"title", title,
+		"proposer", proposer,
+	)
 	return nil
 }
 
@@ -73,11 +73,13 @@ func UpdateProposal(client *firestore.Client, proposalID string, updates map[str
 
 	_, err := client.Collection("proposals").Doc(proposalID).Update(ctx, firestoreUpdates)
 	if err != nil {
-		log.Printf("Error updating proposal %s in Firestore: %v", proposalID, err)
 		return err
 	}
 
-	log.Printf("Successfully updated proposal %s in Firestore", proposalID)
+	slog.Info("Successfully updated proposal",
+		"proposal_id", proposalID,
+		"updated_fields", len(updates),
+	)
 	return nil
 }
 
@@ -88,7 +90,6 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, ti
 
 	voteTimeUnix, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {
-		log.Printf("Error parsing vote timestamp: %v", err)
 		return err
 	}
 	voteTime := time.Unix(voteTimeUnix, 0)
@@ -166,6 +167,14 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, ti
 		if err := tx.Set(voteDocRef, voteData); err != nil {
 			return err
 		}
+
+		slog.Info("Successfully added vote",
+			"proposal_id", proposalID,
+			"voter", voter,
+			"vote_choice", voteChoice,
+			"reason", reason,
+			"xvls_amount", xvlsAmount,
+		)
 
 		return nil
 	})

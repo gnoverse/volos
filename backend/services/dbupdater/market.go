@@ -2,7 +2,7 @@ package dbupdater
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -12,12 +12,11 @@ import (
 
 // CreateMarket creates a new market in the Firestore database.
 // It uses sanitizedMarketID (replacing "/" with "_") to avoid issues with Firestore document IDs.
-func CreateMarket(client *firestore.Client, marketID, loanToken, collateralToken, timestamp string) {
+func CreateMarket(client *firestore.Client, marketID, loanToken, collateralToken, timestamp string) error {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	timestampInt, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
-		log.Printf("Error parsing timestamp for market %s: %v", marketID, err)
-		return
+		return err
 	}
 
 	marketData := map[string]interface{}{
@@ -29,9 +28,11 @@ func CreateMarket(client *firestore.Client, marketID, loanToken, collateralToken
 
 	_, err = client.Collection("markets").Doc(sanitizedMarketID).Set(context.Background(), marketData)
 	if err != nil {
-		log.Printf("Error creating market document %s: %v", marketID, err)
-		return
+		return err
 	}
 
-	log.Printf("Successfully created market document: %s", marketID)
+	slog.Info("Market created",
+		"market_id", marketID,
+	)
+	return nil
 }

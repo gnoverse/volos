@@ -2,7 +2,7 @@ package dbupdater
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 	"volos-backend/model"
 
@@ -33,7 +33,11 @@ func SetDAOMemberStatus(client *firestore.Client, userAddress string, isMember b
 		_, err = client.Collection("users").Doc(userAddress).Set(ctx, user)
 	}
 	if err != nil {
-		log.Printf("Error updating DAO member status for user %s: %v", userAddress, err)
+		slog.Error("Error updating DAO member status",
+			"user_address", userAddress,
+			"is_member", isMember,
+			"error", err,
+		)
 		return err
 	}
 
@@ -41,7 +45,11 @@ func SetDAOMemberStatus(client *firestore.Client, userAddress string, isMember b
 	if !isMember {
 		status = "removed from"
 	}
-	log.Printf("Successfully %s DAO for user %s", status, userAddress)
+	slog.Info("Successfully updated DAO membership",
+		"user_address", userAddress,
+		"action", status,
+		"dao", "DAO",
+	)
 	return nil
 }
 
@@ -72,7 +80,10 @@ func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string
 
 	if userExists {
 		if err := doc.DataTo(&user); err != nil {
-			log.Printf("Error parsing user data for %s: %v", userAddress, err)
+			slog.Error("Error parsing user data",
+				"user_address", userAddress,
+				"error", err,
+			)
 			return err
 		}
 	} else {
@@ -93,15 +104,28 @@ func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string
 
 	if newAmount <= 0 {
 		delete(user.StakedVLS, delegatee)
-		log.Printf("Removed delegation from %s to %s (amount: %d)", userAddress, delegatee, newAmount)
+		slog.Info("Removed delegation",
+			"user_address", userAddress,
+			"delegatee", delegatee,
+			"final_amount", newAmount,
+		)
 	} else {
 		user.StakedVLS[delegatee] = newAmount
-		log.Printf("Updated delegation from %s to %s: %d VLS (change: %+d)", userAddress, delegatee, newAmount, amount)
+		slog.Info("Updated delegation",
+			"user_address", userAddress,
+			"delegatee", delegatee,
+			"new_amount", newAmount,
+			"amount_change", amount,
+		)
 	}
 
 	_, err = userRef.Set(ctx, user)
 	if err != nil {
-		log.Printf("Error updating staked VLS for user %s: %v", userAddress, err)
+		slog.Error("Error updating staked VLS for user",
+			"user_address", userAddress,
+			"delegatee", delegatee,
+			"error", err,
+		)
 		return err
 	}
 
@@ -122,11 +146,24 @@ func AddPendingUnstake(client *firestore.Client, userAddress, delegatee, unstake
 
 	_, err := client.Collection("users").Doc(userAddress).Collection("pendingUnstakes").Doc(unstakeId).Set(ctx, pendingUnstake)
 	if err != nil {
-		log.Printf("Error creating pending unstake for user %s: %v", userAddress, err)
+		slog.Error("Error creating pending unstake",
+			"user_address", userAddress,
+			"delegatee", delegatee,
+			"unstake_id", unstakeId,
+			"amount", amount,
+			"unlock_at", unlockAt,
+			"error", err,
+		)
 		return err
 	}
 
-	log.Printf("Created pending unstake for user %s: %d VLS from %s, unlocks at %d", userAddress, amount, delegatee, unlockAt)
+	slog.Info("Created pending unstake",
+		"user_address", userAddress,
+		"delegatee", delegatee,
+		"unstake_id", unstakeId,
+		"amount", amount,
+		"unlock_at", unlockAt,
+	)
 	return nil
 }
 
@@ -146,6 +183,10 @@ func DeletePendingUnstakesByIDs(client *firestore.Client, userAddress string, un
 				return err
 			}
 		}
+		slog.Info("Deleted pending unstakes",
+			"user_address", userAddress,
+			"unstake_ids", unstakeIDs,
+		)
 		return nil
 	})
 }

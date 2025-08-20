@@ -2,7 +2,7 @@ package dbupdater
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"math/big"
 	"strconv"
 	"strings"
@@ -15,21 +15,19 @@ import (
 
 // UpdateTotalBorrow updates the total_borrow aggregate for a market and appends a history entry.
 // Amounts are u256 stored as strings; arithmetic uses big.Int. If isBorrow is true we add (borrow), else subtract (repay).
-func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp string, isBorrow bool) {
+func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp string, isBorrow bool) error {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
 	sec, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
-		log.Printf("UpdateTotalBorrow: invalid timestamp %q for market %s: %v", timestamp, marketID, err)
-		return
+		return err
 	}
 	eventTime := time.Unix(sec, 0)
 
 	amt, ok := new(big.Int).SetString(amount, 10)
 	if !ok || amt.Sign() < 0 {
-		log.Printf("UpdateTotalBorrow: invalid amount %q for market %s", amount, marketID)
-		return
+		return err
 	}
 
 	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
@@ -72,8 +70,7 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 		}
 		return tx.Set(marketRef, updates, firestore.MergeAll)
 	}); err != nil {
-		log.Printf("UpdateTotalBorrow: transaction failed for market %s: %v", marketID, err)
-		return
+		return err
 	}
 
 	history := map[string]interface{}{
@@ -82,14 +79,21 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 		"amount_delta": amount,
 		"is_borrow":    isBorrow,
 	}
+	
 	if _, err := marketRef.Collection("total_borrow_history").NewDoc().Set(ctx, history); err != nil {
-		log.Printf("UpdateTotalBorrow: failed to append total_borrow_history for market %s: %v", marketID, err)
+		return err
 	}
 
-	log.Printf("UpdateTotalBorrow: %s %s for market %s; total_borrow updated to %s", func() string {
-		if isBorrow {
-			return "+"
-		}
-		return "-"
-	}(), amount, marketID, updatedTotalStr)
+	operation := "-"
+	if isBorrow {
+		operation = "+"
+	}
+
+	slog.Info("UpdateTotalBorrow completed",
+		"operation", operation,
+		"amount", amount,
+		"market_id", marketID,
+		"total_borrow", updatedTotalStr,
+	)
+	return nil
 }

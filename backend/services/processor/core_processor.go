@@ -6,7 +6,7 @@
 package processor
 
 import (
-	"log"
+	"log/slog"
 	"volos-backend/services/dbupdater"
 
 	"cloud.google.com/go/firestore"
@@ -18,25 +18,33 @@ import (
 func processCoreTransaction(tx map[string]interface{}, client *firestore.Client) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		log.Println("Transaction missing 'response' field")
+		slog.Error("Transaction missing 'response' field",
+			"transaction", tx,
+		)
 		return
 	}
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		log.Println("Transaction missing or empty 'events' array")
+		slog.Error("Transaction missing or empty 'events' array",
+			"response", response,
+		)
 		return
 	}
 
 	for _, eventInterface := range events {
 		event, ok := eventInterface.(map[string]interface{})
 		if !ok {
-			log.Println("Event is not a map")
+			slog.Error("Event is not a map",
+				"event_interface", eventInterface,
+			)
 			continue
 		}
 
 		eventType, ok := event["type"].(string)
 		if !ok {
-			log.Println("Event type is not a string")
+			slog.Error("Event type is not a string",
+				"event", event,
+			)
 			continue
 		}
 
@@ -44,28 +52,67 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 		case "CreateMarket":
 			marketID, loanToken, collateralToken, timestamp, ok := extractCreateMarketFields(event)
 			if ok {
-				dbupdater.CreateMarket(client, marketID, loanToken, collateralToken, timestamp)
+				err := dbupdater.CreateMarket(client, marketID, loanToken, collateralToken, timestamp)
+				if err != nil {
+					slog.Error("Error creating market",
+						"market_id", marketID,
+						"loan_token", loanToken,
+						"collateral_token", collateralToken,
+						"timestamp", timestamp,
+						"error", err,
+					)
+				}
 			}
 
 		case "Supply":
 			marketID, _, _, amount, _, timestamp, _, _, ok := extractSupplyFields(event)
 			if ok {
-				dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, true)
+				err := dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, true)
+				if err != nil {
+					slog.Error("Error updating total supply",
+						"market_id", marketID,
+						"amount", amount,
+						"timestamp", timestamp,
+						"error", err,
+					)
+				}
 			}
 		case "Withdraw":
 			marketID, _, _, _, amount, _, timestamp, _, _, ok := extractWithdrawFields(event)
 			if ok {
-				dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, false)
+				err := dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, false)
+				if err != nil {
+					slog.Error("Error updating total supply",
+						"market_id", marketID,
+						"error", err,
+					)
+				}
 			}
 		case "Borrow":
 			marketID, _, _, _, amount, _, timestamp, _, _, ok := extractBorrowFields(event)
 			if ok {
-				dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, true)
+				err := dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, true)
+				if err != nil {
+					slog.Error("Error updating total borrow",
+						"market_id", marketID,
+						"amount", amount,
+						"timestamp", timestamp,
+						"error", err,
+					)
+				}
 			}
 		case "Repay":
 			marketID, _, _, amount, _, timestamp, _, _, ok := extractRepayFields(event)
 			if ok {
-				dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, false)
+				err := dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, false)
+				if err != nil {
+					slog.Error("Error updating total borrow",
+						"market_id", marketID,
+						"amount", amount,
+						"timestamp", timestamp,
+						"error", err,
+					)
+				}
 			}
 		case "Liquidate":
 			dbupdater.ProcessLiquidate(tx)
