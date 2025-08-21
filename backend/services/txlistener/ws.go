@@ -9,6 +9,7 @@
 // The WebSocket listener monitors transactions from:
 // - gno.land/r/volos/core: Core protocol transactions (supply, borrow, etc.)
 // - gno.land/r/volos/gov/governance: Governance transactions (proposals, voting, etc.)
+// - gno.land/r/volos/gov/staker: Staker transactions (staking, unstaking, etc.)
 package txlistener
 
 import (
@@ -120,5 +121,5 @@ func buildWebSocketQuery() string {
 			) {
 				%s
 			}
-		}`, model.VolosGovPkgPath, model.VolosPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
+		}`, model.GovernancePkgPath, model.CorePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
 }

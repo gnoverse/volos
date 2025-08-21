@@ -10,7 +10,7 @@ import (
 func GetAllMarketIDs() ([]string, error) {
 	qb := indexer.NewQueryBuilder("getEvents", indexer.CreateMarketFields)
 	qb.Where().Success(true).
-		PkgPath(model.VolosPkgPath).
+		PkgPath(model.CorePkgPath).
 		EventType("CreateMarket")
 
 	resp, err := qb.Execute()

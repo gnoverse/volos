@@ -15,6 +15,7 @@
 // The polling mechanism monitors transactions from:
 // - gno.land/r/volos/core: Core protocol transactions (supply, borrow, liquidate, etc.)
 // - gno.land/r/volos/gov/governance: Governance transactions (proposals, voting, etc.)
+// - gno.land/r/volos/gov/staker: Staker transactions (staking, unstaking, etc.)
 package txlistener
 
 import (
@@ -84,7 +85,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 			) {
 				%s
 			}
-		}`, model.VolosPkgPath, model.VolosGovPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
+		}`, model.CorePkgPath, model.GovernancePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
 
 	if lastBlockHeight > 0 {
 		return fmt.Sprintf(`
@@ -113,7 +114,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 			) {
 				%s
 			}
-		}`, lastBlockHeight, model.VolosPkgPath, model.VolosGovPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
+		}`, lastBlockHeight, model.CorePkgPath, model.GovernancePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
 	}
 
 	return baseQuery

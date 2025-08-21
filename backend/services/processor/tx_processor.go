@@ -33,6 +33,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/firestore"
+	"volos-backend/model"
 )
 
 // TransactionProcessorPool processes transactions concurrently using a worker pool.
@@ -162,9 +163,9 @@ func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 	}
 
 	switch pkgPath {
-	case "gno.land/r/volos/core":
+	case model.CorePkgPath:
 		processCoreTransaction(tx, client)
-	case "gno.land/r/volos/gov/governance", "gno.land/r/volos/gov/staker", "gno.land/r/volos/gov/vls", "gno.land/r/volos/gov/xvls":
+	case model.GovernancePkgPath, model.StakerPkgPath, model.VlsPkgPath, model.XvlsPkgPath:
 		processGovernanceTransaction(tx, client)
 	}
 }
