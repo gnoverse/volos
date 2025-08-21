@@ -27,12 +27,13 @@ package processor
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"sync"
 
 	"cloud.google.com/go/firestore"
+	"volos-backend/model"
 )
 
 // TransactionProcessorPool processes transactions concurrently using a worker pool.
@@ -41,6 +42,7 @@ import (
 type TransactionProcessorPool struct {
 	jobs    chan map[string]interface{}
 	workers int
+	logger  *slog.Logger
 
 	// seenMu guards concurrent access to the de-duplication fields below.
 	seenMu sync.Mutex
@@ -65,12 +67,18 @@ func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
 	if env := os.Getenv("VOLOS_TX_DEDUP_SEEN_CAP"); env != "" {
 		if v, err := strconv.Atoi(env); err == nil && v > 0 {
 			defaultCap = v
+		} else {
+			slog.Warn("invalid VOLOS_TX_DEDUP_SEEN_CAP value",
+				"value", env,
+				"error", err,
+			)
 		}
 	}
 
 	return &TransactionProcessorPool{
 		jobs:      make(chan map[string]interface{}, 1000),
 		workers:   workers,
+		logger:    slog.Default().With("component", "TransactionProcessorPool"),
 		seen:      make(map[string]struct{}, defaultCap),
 		seenQueue: make([]string, 0, defaultCap),
 		seenCap:   defaultCap,
@@ -79,6 +87,12 @@ func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
 
 // Start launches the worker goroutines that process transactions from both core and governance packages.
 func (p *TransactionProcessorPool) Start(client *firestore.Client) {
+	p.logger.Info("starting transaction processor pool",
+		"workers", p.workers,
+		"queue_capacity", cap(p.jobs),
+		"dedup_capacity", p.seenCap,
+	)
+
 	for i := 0; i < p.workers; i++ {
 		go func() {
 			for tx := range p.jobs {
@@ -128,40 +142,45 @@ func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 
 	select {
 	case p.jobs <- tx:
-		// submitted
+		// Transaction submitted successfully
 	default:
-		log.Println("TransactionProcessorPool: job queue full, dropping transaction")
+		p.logger.Warn("transaction processor job queue full, dropping transaction",
+			"tx_key", key,
+			"queue_capacity", cap(p.jobs),
+		)
 	}
 }
 
 // ProcessTransaction processes a single transaction JSON object by determining its package path
 // and routing it to the appropriate processor (core or governance).
 func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
-	pkgPath := getPackagePath(tx)
-
-	switch pkgPath {
-	case "gno.land/r/volos/core":
-		processCoreTransaction(tx, client)
-		return
-	case "gno.land/r/volos/gov/governance", "gno.land/r/volos/gov/staker", "gno.land/r/volos/gov/vls", "gno.land/r/volos/gov/xvls":
-		processGovernanceTransaction(tx, client)
+	pkgPath, ok := getPackagePath(tx)
+	if !ok {
+		if h, _ := tx["hash"].(string); h != "" {
+			slog.Info("missing package path, skipping transaction", "tx_hash", h)
+		}
 		return
 	}
 
-	log.Printf("Unknown package path: %s", pkgPath)
+	switch pkgPath {
+	case model.CorePkgPath:
+		processCoreTransaction(tx, client)
+	case model.GovernancePkgPath, model.StakerPkgPath, model.VlsPkgPath, model.XvlsPkgPath:
+		processGovernanceTransaction(tx, client)
+	}
 }
 
 // getPackagePath extracts the package path from the transaction structure by navigating
 // through the events array to find the pkg_path field in GnoEvent, ignoring StorageDeposit events.
-func getPackagePath(tx map[string]interface{}) string {
+func getPackagePath(tx map[string]interface{}) (string, bool) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		return ""
+		return "", false
 	}
 
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		return ""
+		return "", false
 	}
 
 	for i := len(events) - 1; i >= 0; i-- {
@@ -184,8 +203,8 @@ func getPackagePath(tx map[string]interface{}) string {
 			continue
 		}
 
-		return pkgPath
+		return pkgPath, true
 	}
 
-	return ""
+	return "", false
 }

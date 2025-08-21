@@ -2,7 +2,7 @@ package dbfetcher
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"volos-backend/model"
 
@@ -25,7 +25,10 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (*Propo
 	if lastDocID != "" {
 		lastDoc, err := client.Collection("proposals").Doc(lastDocID).Get(ctx)
 		if err != nil {
-			log.Printf("Error fetching last document for pagination: %v", err)
+			slog.Error("Error fetching last document for pagination",
+				"last_doc_id", lastDocID,
+				"error", err,
+			)
 			return nil, err
 		}
 		query = query.StartAfter(lastDoc)
@@ -39,7 +42,11 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (*Propo
 
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Error fetching proposals: %v", err)
+		slog.Error("Error fetching proposals",
+			"limit", limit,
+			"last_doc_id", lastDocID,
+			"error", err,
+		)
 		return nil, err
 	}
 
@@ -47,13 +54,19 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (*Propo
 	for _, doc := range docs {
 		var proposal model.ProposalData
 		if err := doc.DataTo(&proposal); err != nil {
-			log.Printf("Error parsing proposal data: %v", err)
+			slog.Error("Error parsing proposal data",
+				"doc_id", doc.Ref.ID,
+				"error", err,
+			)
 			continue
 		}
 
 		yesVotes, noVotes, abstainVotes, totalVotes, err := calculateVoteTotals(client, proposal.ID)
 		if err != nil {
-			log.Printf("Error calculating vote totals for proposal %s: %v", proposal.ID, err)
+			slog.Error("Error calculating vote totals for proposal",
+				"proposal_id", proposal.ID,
+				"error", err,
+			)
 			yesVotes, noVotes, abstainVotes, totalVotes = 0, 0, 0, 0
 		}
 
@@ -97,7 +110,10 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 	if lastDocID != "" {
 		lastDoc, err := client.Collection("proposals").Doc(lastDocID).Get(ctx)
 		if err != nil {
-			log.Printf("Error fetching last document for pagination: %v", err)
+			slog.Error("Error fetching last document for pagination",
+				"last_doc_id", lastDocID,
+				"error", err,
+			)
 			return nil, err
 		}
 		query = query.StartAfter(lastDoc)
@@ -111,7 +127,11 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Error fetching active proposals: %v", err)
+		slog.Error("Error fetching active proposals",
+			"limit", limit,
+			"last_doc_id", lastDocID,
+			"error", err,
+		)
 		return nil, err
 	}
 
@@ -119,13 +139,19 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 	for _, doc := range docs {
 		var proposal model.ProposalData
 		if err := doc.DataTo(&proposal); err != nil {
-			log.Printf("Error parsing proposal data: %v", err)
+			slog.Error("Error parsing proposal data",
+				"doc_id", doc.Ref.ID,
+				"error", err,
+			)
 			continue
 		}
 
 		yesVotes, noVotes, abstainVotes, totalVotes, err := calculateVoteTotals(client, proposal.ID)
 		if err != nil {
-			log.Printf("Error calculating vote totals for proposal %s: %v", proposal.ID, err)
+			slog.Error("Error calculating vote totals for proposal",
+				"proposal_id", proposal.ID,
+				"error", err,
+			)
 			yesVotes, noVotes, abstainVotes, totalVotes = 0, 0, 0, 0
 		}
 
@@ -167,19 +193,28 @@ func GetProposal(client *firestore.Client, proposalID string) (map[string]interf
 
 	doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
 	if err != nil {
-		log.Printf("Error fetching proposal %s: %v", proposalID, err)
+		slog.Error("Error fetching proposal",
+			"proposal_id", proposalID,
+			"error", err,
+		)
 		return nil, err
 	}
 
 	var proposal model.ProposalData
 	if err := doc.DataTo(&proposal); err != nil {
-		log.Printf("Error parsing proposal data: %v", err)
+		slog.Error("Error parsing proposal data",
+			"proposal_id", proposalID,
+			"error", err,
+		)
 		return nil, err
 	}
 
 	yesVotes, noVotes, abstainVotes, totalVotes, err := calculateVoteTotals(client, proposal.ID)
 	if err != nil {
-		log.Printf("Error calculating vote totals for proposal %s: %v", proposal.ID, err)
+		slog.Error("Error calculating vote totals for proposal",
+			"proposal_id", proposal.ID,
+			"error", err,
+		)
 		yesVotes, noVotes, abstainVotes, totalVotes = 0, 0, 0, 0
 	}
 
@@ -208,7 +243,10 @@ func GetProposalVotes(client *firestore.Client, proposalID string) ([]model.Vote
 
 	docs, err := client.Collection("proposals").Doc(proposalID).Collection("votes").Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Error fetching votes for proposal %s: %v", proposalID, err)
+		slog.Error("Error fetching votes for proposal",
+			"proposal_id", proposalID,
+			"error", err,
+		)
 		return nil, err
 	}
 
@@ -216,13 +254,16 @@ func GetProposalVotes(client *firestore.Client, proposalID string) ([]model.Vote
 	for _, doc := range docs {
 		var vote model.VoteData
 		if err := doc.DataTo(&vote); err != nil {
-			log.Printf("Error parsing vote data: %v", err)
+			slog.Error("Error parsing vote data",
+				"proposal_id", proposalID,
+				"vote_doc_id", doc.Ref.ID,
+				"error", err,
+			)
 			continue
 		}
 		votes = append(votes, vote)
 	}
 
-	log.Printf("Successfully fetched %d votes for proposal %s", len(votes), proposalID)
 	return votes, nil
 }
 
@@ -236,13 +277,21 @@ func GetUserVoteOnProposal(client *firestore.Client, proposalID, userAddress str
 			// User hasn't voted on this proposal
 			return nil, nil
 		}
-		log.Printf("Error fetching user vote for proposal %s, user %s: %v", proposalID, userAddress, err)
+		slog.Error("Error fetching user vote for proposal",
+			"proposal_id", proposalID,
+			"user_address", userAddress,
+			"error", err,
+		)
 		return nil, err
 	}
 
 	var vote model.VoteData
 	if err := doc.DataTo(&vote); err != nil {
-		log.Printf("Error parsing user vote data: %v", err)
+		slog.Error("Error parsing user vote data",
+			"proposal_id", proposalID,
+			"user_address", userAddress,
+			"error", err,
+		)
 		return nil, err
 	}
 
@@ -260,7 +309,6 @@ func calculateVoteTotals(client *firestore.Client, proposalID string) (int64, in
 	yesQuery := votesRef.Where("vote_choice", "==", "YES").Select("xvls_amount")
 	yesDocs, err := yesQuery.Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Error fetching YES votes for proposal %s: %v", proposalID, err)
 		return 0, 0, 0, 0, err
 	}
 
@@ -274,7 +322,6 @@ func calculateVoteTotals(client *firestore.Client, proposalID string) (int64, in
 	noQuery := votesRef.Where("vote_choice", "==", "NO").Select("xvls_amount")
 	noDocs, err := noQuery.Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Error fetching NO votes for proposal %s: %v", proposalID, err)
 		return 0, 0, 0, 0, err
 	}
 
@@ -288,7 +335,6 @@ func calculateVoteTotals(client *firestore.Client, proposalID string) (int64, in
 	abstainQuery := votesRef.Where("vote_choice", "==", "ABSTAIN").Select("xvls_amount")
 	abstainDocs, err := abstainQuery.Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Error fetching ABSTAIN votes for proposal %s: %v", proposalID, err)
 		return 0, 0, 0, 0, err
 	}
 

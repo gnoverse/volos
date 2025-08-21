@@ -15,12 +15,13 @@
 // The polling mechanism monitors transactions from:
 // - gno.land/r/volos/core: Core protocol transactions (supply, borrow, liquidate, etc.)
 // - gno.land/r/volos/gov/governance: Governance transactions (proposals, voting, etc.)
+// - gno.land/r/volos/gov/staker: Staker transactions (staking, unstaking, etc.)
 package txlistener
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"volos-backend/indexer"
 	"volos-backend/model"
@@ -34,13 +35,13 @@ func (tl *TransactionListener) pollNewTransactions() {
 	query := buildPollingQuery(tl.LastBlockHeight)
 	response, err := indexer.FetchIndexerData(query, "VolosTxQuery")
 	if err != nil {
-		log.Printf("Error executing query: %v", err)
+		slog.Error("polling query execution failed", "error", err, "last_block_height", tl.LastBlockHeight)
 		return
 	}
 
 	var result map[string]interface{}
 	if err := json.Unmarshal(response, &result); err != nil {
-		log.Printf("Error parsing response: %v", err)
+		slog.Error("polling response parse failed", "error", err)
 		return
 	}
 
@@ -57,7 +58,7 @@ func (tl *TransactionListener) pollNewTransactions() {
 						}
 					}
 				}
-				log.Printf("Updated last block height to: %d", tl.LastBlockHeight)
+				slog.Info("polling updated last block height", "last_block_height", tl.LastBlockHeight, "tx_count", len(transactions))
 			}
 		}
 	}
@@ -84,7 +85,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 			) {
 				%s
 			}
-		}`, model.VolosPkgPath, model.VolosGovPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
+		}`, model.CorePkgPath, model.GovernancePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
 
 	if lastBlockHeight > 0 {
 		return fmt.Sprintf(`
@@ -99,11 +100,11 @@ func buildPollingQuery(lastBlockHeight int) string {
 							response: {
 								events: {
 									GnoEvent: {
-																			_or: [
+																_or: [
 										{ pkg_path: { eq: "%s" } },
 										{ pkg_path: { eq: "%s" } },
 										{ pkg_path: { eq: "%s" } }
-									]
+										]
 									}
 								}
 							}
@@ -113,7 +114,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 			) {
 				%s
 			}
-		}`, lastBlockHeight, model.VolosPkgPath, model.VolosGovPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
+		}`, lastBlockHeight, model.CorePkgPath, model.GovernancePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
 	}
 
 	return baseQuery

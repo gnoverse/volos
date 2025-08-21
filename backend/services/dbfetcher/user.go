@@ -2,7 +2,6 @@ package dbfetcher
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"volos-backend/model"
@@ -25,13 +24,11 @@ func GetUser(client *firestore.Client, userAddress string) (*model.UserData, err
 				CreatedAt: time.Time{},
 			}, nil
 		}
-		log.Printf("Error fetching user %s: %v", userAddress, err)
 		return nil, err
 	}
 
 	var user model.UserData
 	if err := doc.DataTo(&user); err != nil {
-		log.Printf("Error parsing user data: %v", err)
 		return nil, err
 	}
 
@@ -55,7 +52,6 @@ func GetUserPendingUnstakes(client *firestore.Client, userAddress string) ([]mod
 
 		var pendingUnstake model.PendingUnstakeData
 		if err := doc.DataTo(&pendingUnstake); err != nil {
-			log.Printf("Error parsing pending unstake data for user %s: %v", userAddress, err)
 			continue
 		}
 

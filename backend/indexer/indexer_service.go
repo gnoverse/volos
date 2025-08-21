@@ -3,7 +3,6 @@ package indexer
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 )
@@ -18,7 +17,7 @@ func FetchIndexerData(query string, operationName string) ([]byte, error) {
 	resp, err := http.Post(txIndexerUrl+"/graphql/query", "application/json", bytes.NewBuffer(jsonBody))
 
 	if err != nil {
-		return nil, fmt.Errorf("indexer request failed: %w", err)
+		return nil, err
 	}
 
 	defer resp.Body.Close()

@@ -2,9 +2,11 @@ package model
 
 import "time"
 
-const VolosPkgPath = "gno.land/r/volos/core"              // the package path of the Volos contract
-const VolosGovPkgPath = "gno.land/r/volos/gov/governance" // the package path of the Volos governance contract
-const VolosStakerPkgPath = "gno.land/r/volos/gov/staker"  // the package path of the Volos staker contract
+const CorePkgPath = "gno.land/r/volos/core"              // the package path of the Volos core contract
+const GovernancePkgPath = "gno.land/r/volos/gov/governance" // the package path of the Volos governance contract
+const StakerPkgPath = "gno.land/r/volos/gov/staker"  // the package path of the Volos staker contract
+const VlsPkgPath = "gno.land/r/volos/gov/vls"       // the package path of the Volos vls contract
+const XvlsPkgPath = "gno.land/r/volos/gov/xvls"          // the package path of the Volos xvls contract
 const Rpc = "http://localhost:26657"                      // the RPC endpoint of the node
 const BlockHeightOnDeploy = 0                             // the block height of the deployment of the Volos contract
 

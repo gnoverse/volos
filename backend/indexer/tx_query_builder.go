@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -93,6 +94,10 @@ func (qb *QueryBuilder) Execute() ([]byte, error) {
 	jsonBody, _ := json.Marshal(body)
 	resp, err := http.Post(txIndexerUrl+"/graphql/query", "application/json", bytes.NewBuffer(jsonBody))
 	if err != nil {
+		slog.Error("query builder request failed",
+			"operation", qb.OperationName,
+			"error", err,
+		)
 		return nil, err
 	}
 	defer resp.Body.Close()

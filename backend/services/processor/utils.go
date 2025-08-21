@@ -1,9 +1,5 @@
 package processor
 
-import (
-	"log"
-)
-
 // extractEventFields is a universal function that extracts specified fields from an event's attributes.
 // It returns a map of field names to their values, and a boolean indicating if all required fields were found.
 //
@@ -18,7 +14,6 @@ import (
 func extractEventFields(event map[string]interface{}, requiredFields []string, optionalFields []string) (map[string]string, bool) {
 	attributes, ok := event["attrs"].([]interface{})
 	if !ok {
-		log.Println("Event missing attributes")
 		return nil, false
 	}
 
@@ -28,7 +23,6 @@ func extractEventFields(event map[string]interface{}, requiredFields []string, o
 		result[field] = ""
 	}
 
-	// Extract all attributes
 	for _, attr := range attributes {
 		attrMap, ok := attr.(map[string]interface{})
 		if !ok {
@@ -43,10 +37,8 @@ func extractEventFields(event map[string]interface{}, requiredFields []string, o
 		}
 	}
 
-	// Check if all required fields are present and non-empty
 	for _, field := range requiredFields {
 		if result[field] == "" {
-			log.Printf("Missing required field: %s", field)
 			return nil, false
 		}
 	}

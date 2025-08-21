@@ -2,10 +2,10 @@ package dbupdater
 
 import (
 	"context"
-	"log"
-	"strconv"
+	"log/slog"
 	"time"
 	"volos-backend/model"
+	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
@@ -13,26 +13,23 @@ import (
 )
 
 // CreateProposal creates a new proposal in the Firestore database
-func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr, quorumStr, timestampStr string) error {
+func CreateProposal(client *firestore.Client, proposalID, title, body, proposer, deadlineStr, quorumStr, timestampStr string) {
 	ctx := context.Background()
 
-	deadlineUnix, err := strconv.ParseInt(deadlineStr, 10, 64)
-	if err != nil {
-		log.Printf("Error parsing deadline timestamp: %v", err)
-		return err
+	deadlineUnix := utils.ParseTimestamp(deadlineStr, "proposal deadline")
+	if deadlineUnix == 0 {
+		return
 	}
 	deadline := time.Unix(deadlineUnix, 0)
 
-	quorum, err := strconv.ParseInt(quorumStr, 10, 64)
-	if err != nil {
-		log.Printf("Error parsing quorum: %v", err)
-		return err
+	quorum := utils.ParseInt64(quorumStr, "proposal quorum")
+	if quorum == 0 {
+		return
 	}
 
-	createdAtUnix, err := strconv.ParseInt(timestampStr, 10, 64)
-	if err != nil {
-		log.Printf("Error parsing created timestamp: %v", err)
-		return err
+	createdAtUnix := utils.ParseTimestamp(timestampStr, "proposal creation")
+	if createdAtUnix == 0 {
+		return
 	}
 	createdAt := time.Unix(createdAtUnix, 0)
 
@@ -48,19 +45,27 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 		Quorum:    quorum,
 	}
 
-	_, err = client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
+	_, err := client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
 	if err != nil {
-		log.Printf("Error writing proposal to Firestore: %v", err)
-		return err
+		slog.Error("failed to create proposal in database",
+			"proposal_id", proposalID,
+			"title", title,
+			"proposer", proposer,
+			"error", err,
+		)
+		return
 	}
 
-	log.Printf("Successfully created proposal %s in Firestore", proposalID)
-	return nil
+	slog.Info("successfully created proposal",
+		"proposal_id", proposalID,
+		"title", title,
+		"proposer", proposer,
+	)
 }
 
 // UpdateProposal updates specific fields of a proposal in Firestore.
 // Only the provided fields will be updated, leaving other fields unchanged.
-func UpdateProposal(client *firestore.Client, proposalID string, updates map[string]interface{}) error {
+func UpdateProposal(client *firestore.Client, proposalID string, updates map[string]interface{}) {
 	ctx := context.Background()
 
 	var firestoreUpdates []firestore.Update
@@ -73,30 +78,35 @@ func UpdateProposal(client *firestore.Client, proposalID string, updates map[str
 
 	_, err := client.Collection("proposals").Doc(proposalID).Update(ctx, firestoreUpdates)
 	if err != nil {
-		log.Printf("Error updating proposal %s in Firestore: %v", proposalID, err)
-		return err
+		slog.Error("failed to update proposal in database",
+			"proposal_id", proposalID,
+			"updated_fields", len(updates),
+			"error", err,
+		)
+		return
 	}
 
-	log.Printf("Successfully updated proposal %s in Firestore", proposalID)
-	return nil
+	slog.Info("successfully updated proposal",
+		"proposal_id", proposalID,
+		"updated_fields", len(updates),
+	)
 }
 
 // AddVote stores an individual vote and updates aggregate counters transactionally.
 // Safe under concurrency and handles users changing their vote/amount by applying deltas.
-func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, timestampStr string, xvlsAmount int64) error {
+func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, timestampStr string, xvlsAmount int64) {
 	ctx := context.Background()
 
-	voteTimeUnix, err := strconv.ParseInt(timestampStr, 10, 64)
-	if err != nil {
-		log.Printf("Error parsing vote timestamp: %v", err)
-		return err
+	voteTimeUnix := utils.ParseTimestamp(timestampStr, "vote timestamp")
+	if voteTimeUnix == 0 {
+		return
 	}
 	voteTime := time.Unix(voteTimeUnix, 0)
 
 	proposalRef := client.Collection("proposals").Doc(proposalID)
 	voteDocRef := proposalRef.Collection("votes").Doc(voter)
 
-	return client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+	if err := client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		var prevChoice string
 		var prevAmount int64
 		vSnap, err := tx.Get(voteDocRef)
@@ -167,6 +177,22 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, ti
 			return err
 		}
 
+		slog.Info("successfully added vote",
+			"proposal_id", proposalID,
+			"voter", voter,
+			"vote_choice", voteChoice,
+			"reason", reason,
+			"xvls_amount", xvlsAmount,
+		)
+
 		return nil
-	})
+	}); err != nil {
+		slog.Error("failed to add vote in database",
+			"proposal_id", proposalID,
+			"voter", voter,
+			"vote_choice", voteChoice,
+			"error", err,
+		)
+		return
+	}
 }

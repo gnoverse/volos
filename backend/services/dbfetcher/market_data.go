@@ -2,8 +2,6 @@ package dbfetcher
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"strings"
 
 	"cloud.google.com/go/firestore"
@@ -18,11 +16,9 @@ import (
 func FetchMarketData(client *firestore.Client, marketId, path string) ([]map[string]interface{}, error) {
 	ctx := context.Background()
 	safeMarketId := strings.ReplaceAll(marketId, "/", "_")
-	collectionPath := fmt.Sprintf("markets/%s/%s", safeMarketId, path)
 	subcollection := client.Collection("markets").Doc(safeMarketId).Collection(path)
 	docs, err := subcollection.Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Error fetching documents from %s: %v", collectionPath, err)
 		return nil, err
 	}
 

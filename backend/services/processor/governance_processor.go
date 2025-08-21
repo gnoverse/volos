@@ -6,10 +6,10 @@
 package processor
 
 import (
-	"log"
-	"strconv"
+	"log/slog"
 	"strings"
 	"volos-backend/services/dbupdater"
+	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
 )
@@ -19,25 +19,33 @@ import (
 func processGovernanceTransaction(tx map[string]interface{}, client *firestore.Client) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		log.Println("Transaction missing 'response' field")
+		slog.Error("transaction missing 'response' field",
+			"transaction", tx,
+		)
 		return
 	}
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		log.Println("Transaction missing or empty 'events' array")
+		slog.Error("transaction missing or empty 'events' array",
+			"response", response,
+		)
 		return
 	}
 
 	for _, eventInterface := range events {
 		event, ok := eventInterface.(map[string]interface{})
 		if !ok {
-			log.Println("Event is not a map")
+			slog.Error("event is not a map",
+				"event_interface", eventInterface,
+			)
 			continue
 		}
 
 		eventType, ok := event["type"].(string)
 		if !ok {
-			log.Println("Event type is not a string")
+			slog.Error("event type is not a string",
+				"event", event,
+			)
 			continue
 		}
 
@@ -45,10 +53,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 		case "ProposalCreated":
 			proposalID, title, body, proposer, deadline, quorum, timestamp, ok := extractProposalFields(event)
 			if ok {
-				err := dbupdater.CreateProposal(client, proposalID, title, body, proposer, deadline, quorum, timestamp)
-				if err != nil {
-					log.Printf("Error creating proposal in database: %v", err)
-				}
+				dbupdater.CreateProposal(client, proposalID, title, body, proposer, deadline, quorum, timestamp)
 			}
 
 		case "ProposalExecuted":
@@ -57,71 +62,50 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 				updates := map[string]interface{}{
 					"status": status,
 				}
-				err := dbupdater.UpdateProposal(client, proposalID, updates)
-				if err != nil {
-					log.Printf("Error updating proposal status in database: %v", err)
-				}
+				dbupdater.UpdateProposal(client, proposalID, updates)
 			}
 
 		case "VoteCast":
 			proposalID, voter, vote, reason, xvlsAmount, timestamp, ok := extractVoteFields(event)
 			if ok {
-				err := dbupdater.AddVote(client, proposalID, voter, vote, reason, timestamp, xvlsAmount)
-				if err != nil {
-					log.Printf("Error adding vote to database: %v", err)
-				}
+				dbupdater.AddVote(client, proposalID, voter, vote, reason, timestamp, xvlsAmount)
 			}
 
 		case "MemberAdded":
 			member := extractMemberAddress(event)
 			if member != "" {
-				err := dbupdater.AddDAOMember(client, member)
-				if err != nil {
-					log.Printf("Error adding DAO member to database: %v", err)
-				}
+				dbupdater.AddDAOMember(client, member)
 			}
 
 		case "MemberRemoved":
 			member := extractMemberAddress(event)
 			if member != "" {
-				err := dbupdater.RemoveDAOMember(client, member)
-				if err != nil {
-					log.Printf("Error removing DAO member from database: %v", err)
-				}
+				dbupdater.RemoveDAOMember(client, member)
 			}
 
 		case "Stake":
 			staker, delegatee, amount, _, timestampStr, ok := extractStakeFields(event)
 			if ok {
-				timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
-				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, amount, timestamp)
-				if err != nil {
-					log.Printf("Error updating staked VLS for user %s: %v", staker, err)
+				timestamp := utils.ParseTimestamp(timestampStr, "stake event")
+				if timestamp > 0 {
+					dbupdater.UpdateUserStakedVLS(client, staker, delegatee, amount, timestamp)
 				}
 			}
 
 		case "BeginUnstake":
 			staker, delegatee, amount, unlockAt, timestampStr, unstakeId, ok := extractBeginUnstakeFields(event)
 			if ok {
-				timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
-				err := dbupdater.UpdateUserStakedVLS(client, staker, delegatee, -amount, timestamp)
-				if err != nil {
-					log.Printf("Error updating unstaked VLS for user %s: %v", staker, err)
-				}
-
-				err = dbupdater.AddPendingUnstake(client, staker, delegatee, unstakeId, amount, unlockAt)
-				if err != nil {
-					log.Printf("Error creating pending unstake for user %s: %v", staker, err)
+				timestamp := utils.ParseTimestamp(timestampStr, "begin unstake event")
+				if timestamp > 0 {
+					dbupdater.UpdateUserStakedVLS(client, staker, delegatee, -amount, timestamp)
+					dbupdater.AddPendingUnstake(client, staker, delegatee, unstakeId, amount, unlockAt)
 				}
 			}
 
 		case "Withdraw":
 			staker, withdrawnIDs, ok := extractWithdrawnUnstakeIDs(event)
 			if ok && len(withdrawnIDs) > 0 {
-				err := dbupdater.DeletePendingUnstakesByIDs(client, staker, withdrawnIDs)
-				if err != nil {
-					log.Printf("Error deleting withdrawn pending unstakes for user %s: %v", staker, err)
-				}
+				dbupdater.DeletePendingUnstakesByIDs(client, staker, withdrawnIDs)
 			}
 
 		case "StorageDeposit":
@@ -135,6 +119,9 @@ func extractProposalFields(event map[string]interface{}) (proposalID, title, bod
 	required := []string{"proposal_id", "title", "caller", "deadline", "quorum", "timestamp", "body"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
+		slog.Error("failed to extract proposal fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", false
 	}
 
@@ -146,6 +133,9 @@ func extractProposalIDAndStatus(event map[string]interface{}) (proposalID, statu
 	required := []string{"proposal_id", "status"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
+		slog.Error("failed to extract proposal ID and status",
+			"event", event,
+		)
 		return "", ""
 	}
 	return fields["proposal_id"], fields["status"]
@@ -157,13 +147,15 @@ func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, r
 	optional := []string{"reason"}
 	fields, ok := extractEventFields(event, required, optional)
 	if !ok {
+		slog.Error("failed to extract vote fields",
+			"event", event,
+		)
 		return "", "", "", "", 0, "", false
 	}
 
 	amountStr := fields["xvls_amount"]
-	amt, err := strconv.ParseInt(amountStr, 10, 64)
-	if err != nil {
-		log.Printf("Error parsing xVLS amount: %v", err)
+	amt := utils.ParseInt64(amountStr, "xVLS amount")
+	if amt == 0 {
 		return "", "", "", "", 0, "", false
 	}
 	return fields["proposal_id"], fields["voter"], fields["vote"], fields["reason"], amt, fields["timestamp"], true
@@ -174,7 +166,9 @@ func extractMemberAddress(event map[string]interface{}) string {
 	required := []string{"member"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
-		log.Println("Member event missing attributes")
+		slog.Error("member event missing attributes",
+			"event", event,
+		)
 		return ""
 	}
 	return fields["member"]
@@ -185,24 +179,18 @@ func extractStakeFields(event map[string]interface{}) (staker, delegatee string,
 	required := []string{"staker", "delegatee", "amount", "timestamp", "cooldown_period"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
+		slog.Error("failed to extract stake fields",
+			"event", event,
+		)
 		return "", "", 0, 0, "", false
 	}
 
-	amt, err := strconv.ParseInt(fields["amount"], 10, 64)
-	if err != nil {
-		log.Printf("Error parsing stake amount: %v", err)
+	amt := utils.ParseInt64(fields["amount"], "stake amount")
+	if amt == 0 {
 		return "", "", 0, 0, "", false
 	}
 
-	cooldown := int64(0)
-	if cp := fields["cooldown_period"]; cp != "" {
-		if v, err := strconv.ParseInt(cp, 10, 64); err == nil {
-			cooldown = v
-		} else {
-			log.Printf("Error parsing cooldown period: %v", err)
-			return "", "", 0, 0, "", false
-		}
-	}
+	cooldown := utils.ParseInt64(fields["cooldown_period"], "cooldown period")
 
 	return fields["staker"], fields["delegatee"], amt, cooldown, fields["timestamp"], true
 }
@@ -212,24 +200,18 @@ func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee 
 	required := []string{"staker", "delegatee", "amount", "timestamp", "unstake_id"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
+		slog.Error("failed to extract begin unstake fields",
+			"event", event,
+		)
 		return "", "", 0, 0, "", "", false
 	}
 
-	amt, err := strconv.ParseInt(fields["amount"], 10, 64)
-	if err != nil {
-		log.Printf("Error parsing unstake amount: %v", err)
+	amt := utils.ParseInt64(fields["amount"], "unstake amount")
+	if amt == 0 {
 		return "", "", 0, 0, "", "", false
 	}
 
-	unlock := int64(0)
-	if ua := fields["unlock_at"]; ua != "" {
-		if v, err := strconv.ParseInt(ua, 10, 64); err == nil {
-			unlock = v
-		} else {
-			log.Printf("Error parsing unlock_at timestamp: %v", err)
-			return "", "", 0, 0, "", "", false
-		}
-	}
+	unlock := utils.ParseInt64(fields["unlock_at"], "unlock_at timestamp")
 
 	return fields["staker"], fields["delegatee"], amt, unlock, fields["timestamp"], fields["unstake_id"], true
 }
@@ -239,6 +221,9 @@ func extractWithdrawnUnstakeIDs(event map[string]interface{}) (staker string, wi
 	required := []string{"staker", "withdrawn_unstake_ids"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
+		slog.Error("failed to extract withdrawn unstake IDs",
+			"event", event,
+		)
 		return "", nil, false
 	}
 

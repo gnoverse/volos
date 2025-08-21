@@ -9,12 +9,13 @@
 // The WebSocket listener monitors transactions from:
 // - gno.land/r/volos/core: Core protocol transactions (supply, borrow, etc.)
 // - gno.land/r/volos/gov/governance: Governance transactions (proposals, voting, etc.)
+// - gno.land/r/volos/gov/staker: Staker transactions (staking, unstaking, etc.)
 package txlistener
 
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"volos-backend/indexer"
 	"volos-backend/model"
@@ -77,7 +78,7 @@ func StartVolosTransactionListener(ctx context.Context, pool *processor.Transact
 			var msg map[string]interface{}
 			err := wsjson.Read(ctx, conn, &msg)
 			if err != nil {
-				log.Printf("read error: %v", err)
+				slog.Error("websocket read error", "error", err)
 				return
 			}
 
@@ -120,5 +121,5 @@ func buildWebSocketQuery() string {
 			) {
 				%s
 			}
-		}`, model.VolosGovPkgPath, model.VolosPkgPath, model.VolosStakerPkgPath, indexer.UniversalTransactionFields)
+		}`, model.GovernancePkgPath, model.CorePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
 }

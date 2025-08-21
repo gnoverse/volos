@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"volos-backend/routes"
 	"volos-backend/services/processor"
@@ -19,12 +19,18 @@ import (
 var FirestoreClient *firestore.Client
 
 func init() {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ // TODO: switch to JSON handler for production
+		Level: slog.LevelInfo,
+	}))
+	slog.SetDefault(logger)
+
 	ctx := context.Background()
 	projectID := "volos-f06d9"
 	serviceAccountPath := "firebase.json"
 	client, err := firestore.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountPath))
 	if err != nil {
-		log.Fatalf("Failed to create Firestore client: %v", err)
+		slog.Error("Failed to create Firestore client", "error", err)
+		os.Exit(1)
 	}
 	FirestoreClient = client
 }
@@ -39,7 +45,7 @@ func main() {
 		listener.Start(ctx)
 	}()
 
-	fmt.Println("Server running on http://localhost:8080")
+	slog.Info("server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
 }
 

@@ -6,7 +6,7 @@
 package processor
 
 import (
-	"log"
+	"log/slog"
 	"volos-backend/services/dbupdater"
 
 	"cloud.google.com/go/firestore"
@@ -18,25 +18,33 @@ import (
 func processCoreTransaction(tx map[string]interface{}, client *firestore.Client) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		log.Println("Transaction missing 'response' field")
+		slog.Error("transaction missing 'response' field",
+			"transaction", tx,
+		)
 		return
 	}
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		log.Println("Transaction missing or empty 'events' array")
+		slog.Error("transaction missing or empty 'events' array",
+			"response", response,
+		)
 		return
 	}
 
 	for _, eventInterface := range events {
 		event, ok := eventInterface.(map[string]interface{})
 		if !ok {
-			log.Println("Event is not a map")
+			slog.Error("event is not a map",
+				"event_interface", eventInterface,
+			)
 			continue
 		}
 
 		eventType, ok := event["type"].(string)
 		if !ok {
-			log.Println("Event type is not a string")
+			slog.Error("event type is not a string",
+				"event", event,
+			)
 			continue
 		}
 
@@ -89,6 +97,9 @@ func extractCreateMarketFields(event map[string]interface{}) (marketID, loanToke
 
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract create market fields",
+			"event", event,
+		)
 		return "", "", "", "", false
 	}
 
@@ -100,6 +111,9 @@ func extractSupplyFields(event map[string]interface{}) (marketID, user, onBehalf
 	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract supply fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", "", false
 	}
 
@@ -111,6 +125,9 @@ func extractWithdrawFields(event map[string]interface{}) (marketID, user, onBeha
 	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract withdraw fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", "", "", false
 	}
 
@@ -122,6 +139,9 @@ func extractBorrowFields(event map[string]interface{}) (marketID, user, onBehalf
 	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract borrow fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", "", "", false
 	}
 	return fields["market_id"], fields["user"], fields["on_behalf"], fields["receiver"], fields["amount"], fields["shares"], fields["currentTimestamp"], fields["supplyAPR"], fields["borrowAPR"], true
@@ -132,6 +152,9 @@ func extractRepayFields(event map[string]interface{}) (marketID, user, onBehalf,
 	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract repay fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", "", false
 	}
 	return fields["market_id"], fields["user"], fields["on_behalf"], fields["amount"], fields["shares"], fields["currentTimestamp"], fields["supplyAPR"], fields["borrowAPR"], true
