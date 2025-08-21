@@ -47,20 +47,11 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 
 	_, err := client.Collection("proposals").Doc(proposalID).Set(ctx, proposal)
 	if err != nil {
-		slog.Error("failed to create proposal in database",
-			"proposal_id", proposalID,
-			"title", title,
-			"proposer", proposer,
-			"error", err,
-		)
+		slog.Error("failed to create proposal in database", "proposal_id", proposalID, "title", title, "proposer", proposer, "error", err)
 		return
 	}
 
-	slog.Info("successfully created proposal",
-		"proposal_id", proposalID,
-		"title", title,
-		"proposer", proposer,
-	)
+	slog.Info("successfully created proposal", "proposal_id", proposalID, "title", title, "proposer", proposer)
 }
 
 // UpdateProposal updates specific fields of a proposal in Firestore.
@@ -78,18 +69,11 @@ func UpdateProposal(client *firestore.Client, proposalID string, updates map[str
 
 	_, err := client.Collection("proposals").Doc(proposalID).Update(ctx, firestoreUpdates)
 	if err != nil {
-		slog.Error("failed to update proposal in database",
-			"proposal_id", proposalID,
-			"updated_fields", len(updates),
-			"error", err,
-		)
+		slog.Error("failed to update proposal in database", "proposal_id", proposalID, "updated_fields", len(updates), "error", err)
 		return
 	}
 
-	slog.Info("successfully updated proposal",
-		"proposal_id", proposalID,
-		"updated_fields", len(updates),
-	)
+	slog.Info("successfully updated proposal", "proposal_id", proposalID, "updated_fields", len(updates))
 }
 
 // AddVote stores an individual vote and updates aggregate counters transactionally.
@@ -177,22 +161,11 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, ti
 			return err
 		}
 
-		slog.Info("successfully added vote",
-			"proposal_id", proposalID,
-			"voter", voter,
-			"vote_choice", voteChoice,
-			"reason", reason,
-			"xvls_amount", xvlsAmount,
-		)
+		slog.Info("successfully added vote", "proposal_id", proposalID, "voter", voter, "vote_choice", voteChoice, "reason", reason, "xvls_amount", xvlsAmount)
 
 		return nil
 	}); err != nil {
-		slog.Error("failed to add vote in database",
-			"proposal_id", proposalID,
-			"voter", voter,
-			"vote_choice", voteChoice,
-			"error", err,
-		)
+		slog.Error("failed to add vote in database", "proposal_id", proposalID, "voter", voter, "vote_choice", voteChoice, "error", err)
 		return
 	}
 }

@@ -71,16 +71,10 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		updatedTotalStr = updated.String()
 		updates := map[string]interface{}{
 			"total_supply": updatedTotalStr,
-			"updated_at":   eventTime,
 		}
 		return tx.Set(marketRef, updates, firestore.MergeAll)
 	}); err != nil {
-		slog.Error("failed to update total supply in database",
-			"market_id", marketID,
-			"amount", amount,
-			"is_supply", isSupply,
-			"error", err,
-		)
+		slog.Error("failed to update total supply in database", "market_id", marketID, "amount", amount, "is_supply", isSupply, "error", err)
 		return
 	}
 
@@ -91,10 +85,7 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		"is_supply":    isSupply,
 	}
 	if _, err := marketRef.Collection("total_supply_history").NewDoc().Set(ctx, history); err != nil {
-		slog.Error("failed to add total supply history entry",
-			"market_id", marketID,
-			"error", err,
-		)
+		slog.Error("failed to add total supply history entry", "market_id", marketID, "error", err)
 		return
 	}
 
@@ -103,10 +94,5 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		operation = "+"
 	}
 
-	slog.Info("update total supply completed",
-		"operation", operation,
-		"amount", amount,
-		"market_id", marketID,
-		"total_supply", updatedTotalStr,
-	)
+	slog.Info("total supply updated", "operation", operation, "amount", amount, "market_id", marketID, "total_supply", updatedTotalStr)
 }

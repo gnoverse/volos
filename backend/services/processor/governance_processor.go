@@ -19,33 +19,25 @@ import (
 func processGovernanceTransaction(tx map[string]interface{}, client *firestore.Client) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		slog.Error("transaction missing 'response' field",
-			"transaction", tx,
-		)
+		slog.Error("transaction missing 'response' field", "transaction", tx)
 		return
 	}
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		slog.Error("transaction missing or empty 'events' array",
-			"response", response,
-		)
+		slog.Error("transaction missing or empty 'events' array", "response", response)
 		return
 	}
 
 	for _, eventInterface := range events {
 		event, ok := eventInterface.(map[string]interface{})
 		if !ok {
-			slog.Error("event is not a map",
-				"event_interface", eventInterface,
-			)
+			slog.Error("event is not a map", "event_interface", eventInterface)
 			continue
 		}
 
 		eventType, ok := event["type"].(string)
 		if !ok {
-			slog.Error("event type is not a string",
-				"event", event,
-			)
+			slog.Error("event type is not a string", "event", event)
 			continue
 		}
 
@@ -119,9 +111,7 @@ func extractProposalFields(event map[string]interface{}) (proposalID, title, bod
 	required := []string{"proposal_id", "title", "caller", "deadline", "quorum", "timestamp", "body"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
-		slog.Error("failed to extract proposal fields",
-			"event", event,
-		)
+		slog.Error("failed to extract proposal fields", "event", event)
 		return "", "", "", "", "", "", "", false
 	}
 
@@ -133,9 +123,7 @@ func extractProposalIDAndStatus(event map[string]interface{}) (proposalID, statu
 	required := []string{"proposal_id", "status"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
-		slog.Error("failed to extract proposal ID and status",
-			"event", event,
-		)
+		slog.Error("failed to extract proposal ID and status", "event", event)
 		return "", ""
 	}
 	return fields["proposal_id"], fields["status"]
@@ -147,9 +135,7 @@ func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, r
 	optional := []string{"reason"}
 	fields, ok := extractEventFields(event, required, optional)
 	if !ok {
-		slog.Error("failed to extract vote fields",
-			"event", event,
-		)
+		slog.Error("failed to extract vote fields", "event", event)
 		return "", "", "", "", 0, "", false
 	}
 
@@ -166,9 +152,7 @@ func extractMemberAddress(event map[string]interface{}) string {
 	required := []string{"member"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
-		slog.Error("member event missing attributes",
-			"event", event,
-		)
+		slog.Error("member event missing attributes", "event", event)
 		return ""
 	}
 	return fields["member"]
@@ -179,9 +163,7 @@ func extractStakeFields(event map[string]interface{}) (staker, delegatee string,
 	required := []string{"staker", "delegatee", "amount", "timestamp", "cooldown_period"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
-		slog.Error("failed to extract stake fields",
-			"event", event,
-		)
+		slog.Error("failed to extract stake fields", "event", event)
 		return "", "", 0, 0, "", false
 	}
 
@@ -200,9 +182,7 @@ func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee 
 	required := []string{"staker", "delegatee", "amount", "timestamp", "unstake_id"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
-		slog.Error("failed to extract begin unstake fields",
-			"event", event,
-		)
+		slog.Error("failed to extract begin unstake fields", "event", event)
 		return "", "", 0, 0, "", "", false
 	}
 
@@ -221,9 +201,7 @@ func extractWithdrawnUnstakeIDs(event map[string]interface{}) (staker string, wi
 	required := []string{"staker", "withdrawn_unstake_ids"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
-		slog.Error("failed to extract withdrawn unstake IDs",
-			"event", event,
-		)
+		slog.Error("failed to extract withdrawn unstake IDs", "event", event)
 		return "", nil, false
 	}
 

@@ -15,11 +15,7 @@ func ParseTimestamp(timestamp string, context string) int64 {
 
 	parsed, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
-		slog.Error("failed to parse timestamp",
-			"context", context,
-			"timestamp", timestamp,
-			"error", err,
-		)
+		slog.Error("failed to parse timestamp", "context", context, "timestamp", timestamp, "error", err)
 		return 0
 	}
 	return parsed
@@ -34,10 +30,7 @@ func ParseAmount(amount string, context string) *big.Int {
 
 	parsed, ok := new(big.Int).SetString(amount, 10)
 	if !ok || parsed.Sign() < 0 {
-		slog.Error("failed to parse amount",
-			"context", context,
-			"amount", amount,
-		)
+		slog.Error("failed to parse amount", "context", context, "amount", amount)
 		return big.NewInt(0)
 	}
 	return parsed
@@ -52,11 +45,7 @@ func ParseInt64(value string, context string) int64 {
 
 	parsed, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		slog.Error("failed to parse int64",
-			"context", context,
-			"value", value,
-			"error", err,
-		)
+		slog.Error("failed to parse int64", "context", context, "value", value, "error", err)
 		return 0
 	}
 	return parsed

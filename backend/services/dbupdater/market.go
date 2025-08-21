@@ -28,16 +28,9 @@ func CreateMarket(client *firestore.Client, marketID, loanToken, collateralToken
 
 	_, err := client.Collection("markets").Doc(sanitizedMarketID).Set(context.Background(), marketData)
 	if err != nil {
-		slog.Error("failed to create market in database",
-			"market_id", marketID,
-			"loan_token", loanToken,
-			"collateral_token", collateralToken,
-			"error", err,
-		)
+		slog.Error("failed to create market in database", "market_id", marketID, "loan_token", loanToken, "collateral_token", collateralToken, "error", err)
 		return
 	}
 
-	slog.Info("market created",
-		"market_id", marketID,
-	)
+	slog.Info("market created", "market_id", marketID)
 }
