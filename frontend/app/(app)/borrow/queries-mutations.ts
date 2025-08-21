@@ -1,4 +1,4 @@
-import { apiGetHealthFactor, apiGetMarketInfo, apiGetPosition, apiListMarketsInfo } from "@/app/services/abci";
+import { getMarket, getMarkets } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,18 +13,43 @@ export function useMarketsQuery() {
   return useQuery({
     queryKey: marketsQueryKey,
     queryFn: async (): Promise<MarketInfo[]> => {
-      const marketsArray = await apiListMarketsInfo();
+      const response = await getMarkets();
       
-      const markets: MarketInfo[] = [];
-      
-      for (const marketWrapper of marketsArray) {
-        for (const [marketId, marketInfo] of Object.entries(marketWrapper)) {
-          markets.push({
-            ...marketInfo,
-            marketId
-          });
-        }
-      }
+      // Transform API Market to MarketInfo format
+      const markets: MarketInfo[] = response.markets.map(market => ({
+        // Market fields
+        totalSupplyAssets: market.total_supply,
+        totalSupplyShares: "0", // TODO: Get from market data
+        totalBorrowAssets: market.total_borrow,
+        totalBorrowShares: "0", // TODO: Get from market data
+        lastUpdate: Date.now(), // TODO: Get actual last update timestamp
+        fee: "0", // TODO: Get actual fee from market data
+        
+        // Params fields
+        poolPath: market.id, // TODO: Extract pool path from market ID
+        irm: "default", // TODO: Get actual IRM from market data
+        lltv: "800000000000000000", // TODO: Get actual LLTV from market data (0.8 in WAD)
+        isToken0Loan: true, // TODO: Determine from market data
+        
+        // Additional fields
+        loanToken: market.loan_token,
+        collateralToken: market.collateral_token,
+        currentPrice: "0", // TODO: Get current price from oracle
+        borrowAPR: market.current_borrow_apr,
+        supplyAPR: market.current_supply_apr,
+        utilization: "0", // TODO: Calculate from total supply/borrow
+        
+        // Token information fields
+        loanTokenName: "MockName1", // TODO: Get actual token name
+        loanTokenSymbol: "MOCK1", // TODO: Get actual token symbol from token path
+        loanTokenDecimals: 6, // TODO: Get actual decimals from token info
+        
+        collateralTokenName: "MockName2", // TODO: Get actual token name
+        collateralTokenSymbol: "MOCK2", // TODO: Get actual token symbol from token path
+        collateralTokenDecimals: 6, // TODO: Get actual decimals from token info
+        
+        marketId: market.id,
+      }));
       
       return markets;
     },
@@ -34,9 +59,44 @@ export function useMarketsQuery() {
 export function useMarketQuery(marketId: string) {
   return useQuery({
     queryKey: marketQueryKey(marketId),
-    queryFn: async () => {
-      const marketInfo = await apiGetMarketInfo(marketId);
-      return marketInfo;
+    queryFn: async (): Promise<MarketInfo> => {
+      const market = await getMarket(marketId);
+      
+      // Transform API Market to MarketInfo format
+      return {
+        // Market fields
+        totalSupplyAssets: market.total_supply,
+        totalSupplyShares: "0", // TODO: Get from market data
+        totalBorrowAssets: market.total_borrow,
+        totalBorrowShares: "0", // TODO: Get from market data
+        lastUpdate: Date.now(), // TODO: Get actual last update timestamp
+        fee: "0", // TODO: Get actual fee from market data
+        
+        // Params fields
+        poolPath: market.id, // TODO: Extract pool path from market ID
+        irm: "default", // TODO: Get actual IRM from market data
+        lltv: "800000000000000000", // TODO: Get actual LLTV from market data (0.8 in WAD)
+        isToken0Loan: true, // TODO: Determine from market data
+        
+        // Additional fields
+        loanToken: market.loan_token,
+        collateralToken: market.collateral_token,
+        currentPrice: "0", // TODO: Get current price from oracle
+        borrowAPR: market.current_borrow_apr,
+        supplyAPR: market.current_supply_apr,
+        utilization: "0", // TODO: Calculate from total supply/borrow
+        
+        // Token information fields
+        loanTokenName: "MockName1", // TODO: Get actual token name
+        loanTokenSymbol: "MOCK1", // TODO: Get actual token symbol from token path
+        loanTokenDecimals: 6, // TODO: Get actual decimals from token info
+        
+        collateralTokenName: "MockName2", // TODO: Get actual token name
+        collateralTokenSymbol: "MOCK2", // TODO: Get actual token symbol from token path
+        collateralTokenDecimals: 6, // TODO: Get actual decimals from token info
+        
+        marketId: market.id,
+      };
     },
     enabled: !!marketId,
   });
@@ -46,7 +106,8 @@ export function useHealthFactorQuery(marketId: string, user: string) {
   return useQuery({
     queryKey: healthFactorQueryKey(marketId, user),
     queryFn: async (): Promise<HealthFactor> => {
-      return apiGetHealthFactor(marketId, user);
+      // TODO: Implement health factor calculation or API call
+      return { healthFactor: "0" };
     },
     enabled: !!marketId && !!user,
   });
@@ -56,7 +117,12 @@ export function usePositionQuery(marketId: string, user: string) {
   return useQuery({
     queryKey: positionQueryKey(marketId, user),
     queryFn: async (): Promise<Position> => {
-      return apiGetPosition(marketId, user);
+      // TODO: Implement position fetching from API
+      return {
+        supplyShares: "0",
+        borrowShares: "0", 
+        collateral: "0"
+      };
     },
     enabled: !!marketId && !!user,
   });

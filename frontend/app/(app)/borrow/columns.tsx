@@ -1,7 +1,7 @@
 "use client"
 
 import { MarketInfo } from "@/app/types"
-import { formatLTV, formatRate, parseTokenAmount } from "@/app/utils/format.utils"
+import { formatLTV, parseTokenAmount } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
@@ -98,7 +98,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       )
     },
     cell: ({ row }) => {
-      return <div className="text-left font-medium px-3">{formatRate(row.original.supplyAPR, 18, true)}</div>
+      return <div className="text-left font-medium px-3">{row.original.supplyAPR}</div>
     },
   },
   {
@@ -118,7 +118,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       )
     },
     cell: ({ row }) => {
-      return <div className="text-left font-medium px-3">{formatRate(row.original.borrowAPR, 18, true)}</div>
+      return <div className="text-left font-medium px-3">{row.original.borrowAPR}</div>
     },
   },
   {

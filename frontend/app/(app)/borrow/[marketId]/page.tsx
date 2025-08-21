@@ -1,8 +1,6 @@
 "use client"
 
-import { apiGetMarketInfo } from '@/app/services/abci'
 import { getUserLoanHistory } from '@/app/services/api.service'
-import { MarketInfo } from "@/app/types"
 import { useUserAddress } from "@/app/utils/address.utils"
 import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"
@@ -11,9 +9,9 @@ import { Button } from "@/components/ui/button"
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
 import { RefreshCw } from "lucide-react"
 import { useParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
-import { useHealthFactorQuery, usePositionQuery } from "../queries-mutations"
+import { useHealthFactorQuery, useMarketQuery, usePositionQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 const queryClient = new QueryClient()
@@ -22,20 +20,12 @@ function MarketPageContent() {
   const params = useParams<{ marketId: string }>()
   const marketId = decodeURIComponent(params.marketId)
 
-  const [marketInfo, setMarketInfo] = useState<MarketInfo | null>(null)
-  const [apyVariations, setApyVariations] = useState({ sevenDay: 0, ninetyDay: 0 })
+  const [apyVariations] = useState({ sevenDay: 0, ninetyDay: 0 })
   const [tab, setTab] = useState("add-borrow")
   const { userAddress } = useUserAddress()
 
-  // Fetch all data on mount
-  useEffect(() => {
-    async function fetchData() {
-      const marketInfoRes = await apiGetMarketInfo(marketId)
-      setMarketInfo(marketInfoRes)
-      setApyVariations({ sevenDay: 0, ninetyDay: 0 }) // TODO: update if needed
-    }
-    fetchData()
-  }, [marketId])
+  // Use the new market query
+  const { data: marketInfo, isLoading: isMarketLoading, refetch: refetchMarket } = useMarketQuery(marketId)
 
   const { data: positionData, refetch: refetchPosition } = usePositionQuery(marketId, userAddress);
   const { data: healthFactorData, refetch: refetchHealthFactor } = useHealthFactorQuery(marketId, userAddress)
@@ -55,6 +45,7 @@ function MarketPageContent() {
 
 
   const handleRefetch = () => {
+    refetchMarket();
     refetchPosition();
     refetchHealthFactor();
   };
@@ -67,14 +58,14 @@ function MarketPageContent() {
         className="absolute top-0 right-0 mt-2 mr-2 p-3 bg-gray-700/60 rounded-lg hover:bg-gray-600/80 transition-colors flex items-center gap-2 z-10"
         title="Refetch data"
         variant="outline"
-        disabled={!marketInfo}
+        disabled={isMarketLoading}
       >
         <RefreshCw size={20} className="text-gray-200" />
         <span className="text-sm text-gray-200 font-medium">Refetch Data</span>
       </Button>
 
       <h1 className="text-[36px] font-bold mb-6 text-gray-300">
-        {marketInfo
+        {!isMarketLoading && marketInfo
           ? `${marketInfo.loanTokenSymbol} / ${marketInfo.collateralTokenSymbol.toUpperCase()} Market`
           : <span className="animate-pulse bg-gray-700 rounded-xl w-96 h-15 inline-block mt-4" />}
       </h1>
@@ -83,7 +74,7 @@ function MarketPageContent() {
         {/* Left side - market information */}
         <div className="col-span-1 lg:col-span-9 space-y-6">
           {/* Market info cards */}
-          {marketInfo ? (
+          {!isMarketLoading && marketInfo ? (
             <MarketDashboard 
               market={marketInfo}
               cardStyles={CARD_STYLES}
@@ -93,7 +84,7 @@ function MarketPageContent() {
           )}
 
           {/* Tabbed content */}
-          {marketInfo ? (
+          {!isMarketLoading && marketInfo ? (
             <MarketTabs 
               market={marketInfo} 
               apyVariations={apyVariations} 
@@ -110,7 +101,7 @@ function MarketPageContent() {
         </div>
 
         {/* Right side - tabbed interface */}
-        {marketInfo ? (
+        {!isMarketLoading && marketInfo ? (
           <SidePanel
             tab={tab}
             setTabAction={setTab}
