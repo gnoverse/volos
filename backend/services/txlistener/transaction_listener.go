@@ -14,7 +14,7 @@ package txlistener
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"volos-backend/model"
@@ -54,7 +54,7 @@ func (tl *TransactionListener) startWebSocketListener(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			log.Println("Starting WebSocket listener...")
+			slog.Info("starting WebSocket listener")
 
 			wsCtx, wsCancel := context.WithCancel(context.Background())
 			tl.wsCtx = wsCtx
@@ -75,8 +75,8 @@ func (tl *TransactionListener) startWebSocketListener(ctx context.Context) {
 				}
 			})
 			if err != nil {
-				log.Printf("WebSocket listener failed: %v", err)
-				log.Println("Falling back to polling mode...")
+				slog.Error("websocket listener failed", "error", err, "last_block_height", tl.LastBlockHeight)
+				slog.Info("falling back to polling mode")
 
 				tl.wsCancel()
 
@@ -84,7 +84,7 @@ func (tl *TransactionListener) startWebSocketListener(ctx context.Context) {
 				case <-ctx.Done():
 					return
 				case <-time.After(tl.RetryInterval):
-					log.Println("Retrying WebSocket connection...")
+					slog.Info("retrying websocket connection")
 					continue
 				}
 			}

@@ -14,7 +14,7 @@ package txlistener
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"volos-backend/indexer"
 	"volos-backend/model"
@@ -77,7 +77,7 @@ func StartVolosTransactionListener(ctx context.Context, pool *processor.Transact
 			var msg map[string]interface{}
 			err := wsjson.Read(ctx, conn, &msg)
 			if err != nil {
-				log.Printf("read error: %v", err)
+				slog.Error("websocket read error", "error", err)
 				return
 			}
 

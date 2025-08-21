@@ -18,14 +18,14 @@ import (
 func processCoreTransaction(tx map[string]interface{}, client *firestore.Client) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		slog.Error("Transaction missing 'response' field",
+		slog.Error("transaction missing 'response' field",
 			"transaction", tx,
 		)
 		return
 	}
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		slog.Error("Transaction missing or empty 'events' array",
+		slog.Error("transaction missing or empty 'events' array",
 			"response", response,
 		)
 		return
@@ -34,7 +34,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 	for _, eventInterface := range events {
 		event, ok := eventInterface.(map[string]interface{})
 		if !ok {
-			slog.Error("Event is not a map",
+			slog.Error("event is not a map",
 				"event_interface", eventInterface,
 			)
 			continue
@@ -42,7 +42,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 
 		eventType, ok := event["type"].(string)
 		if !ok {
-			slog.Error("Event type is not a string",
+			slog.Error("event type is not a string",
 				"event", event,
 			)
 			continue
@@ -52,67 +52,28 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 		case "CreateMarket":
 			marketID, loanToken, collateralToken, timestamp, ok := extractCreateMarketFields(event)
 			if ok {
-				err := dbupdater.CreateMarket(client, marketID, loanToken, collateralToken, timestamp)
-				if err != nil {
-					slog.Error("Error creating market",
-						"market_id", marketID,
-						"loan_token", loanToken,
-						"collateral_token", collateralToken,
-						"timestamp", timestamp,
-						"error", err,
-					)
-				}
+				dbupdater.CreateMarket(client, marketID, loanToken, collateralToken, timestamp)
 			}
 
 		case "Supply":
 			marketID, _, _, amount, _, timestamp, _, _, ok := extractSupplyFields(event)
 			if ok {
-				err := dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, true)
-				if err != nil {
-					slog.Error("Error updating total supply",
-						"market_id", marketID,
-						"amount", amount,
-						"timestamp", timestamp,
-						"error", err,
-					)
-				}
+				dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, true)
 			}
 		case "Withdraw":
 			marketID, _, _, _, amount, _, timestamp, _, _, ok := extractWithdrawFields(event)
 			if ok {
-				err := dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, false)
-				if err != nil {
-					slog.Error("Error updating total supply",
-						"market_id", marketID,
-						"error", err,
-					)
-				}
+				dbupdater.UpdateTotalSupply(client, marketID, amount, timestamp, false)
 			}
 		case "Borrow":
 			marketID, _, _, _, amount, _, timestamp, _, _, ok := extractBorrowFields(event)
 			if ok {
-				err := dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, true)
-				if err != nil {
-					slog.Error("Error updating total borrow",
-						"market_id", marketID,
-						"amount", amount,
-						"timestamp", timestamp,
-						"error", err,
-					)
-				}
+				dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, true)
 			}
 		case "Repay":
 			marketID, _, _, amount, _, timestamp, _, _, ok := extractRepayFields(event)
 			if ok {
-				err := dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, false)
-				if err != nil {
-					slog.Error("Error updating total borrow",
-						"market_id", marketID,
-						"amount", amount,
-						"timestamp", timestamp,
-						"error", err,
-					)
-				}
+				dbupdater.UpdateTotalBorrow(client, marketID, amount, timestamp, false)
 			}
 		case "Liquidate":
 			dbupdater.ProcessLiquidate(tx)
@@ -136,6 +97,9 @@ func extractCreateMarketFields(event map[string]interface{}) (marketID, loanToke
 
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract create market fields",
+			"event", event,
+		)
 		return "", "", "", "", false
 	}
 
@@ -147,6 +111,9 @@ func extractSupplyFields(event map[string]interface{}) (marketID, user, onBehalf
 	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract supply fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", "", false
 	}
 
@@ -158,6 +125,9 @@ func extractWithdrawFields(event map[string]interface{}) (marketID, user, onBeha
 	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract withdraw fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", "", "", false
 	}
 
@@ -169,6 +139,9 @@ func extractBorrowFields(event map[string]interface{}) (marketID, user, onBehalf
 	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract borrow fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", "", "", false
 	}
 	return fields["market_id"], fields["user"], fields["on_behalf"], fields["receiver"], fields["amount"], fields["shares"], fields["currentTimestamp"], fields["supplyAPR"], fields["borrowAPR"], true
@@ -179,6 +152,9 @@ func extractRepayFields(event map[string]interface{}) (marketID, user, onBehalf,
 	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
+		slog.Error("failed to extract repay fields",
+			"event", event,
+		)
 		return "", "", "", "", "", "", "", "", false
 	}
 	return fields["market_id"], fields["user"], fields["on_behalf"], fields["amount"], fields["shares"], fields["currentTimestamp"], fields["supplyAPR"], fields["borrowAPR"], true

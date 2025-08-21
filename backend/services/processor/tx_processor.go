@@ -27,7 +27,7 @@ package processor
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"sync"
@@ -41,6 +41,7 @@ import (
 type TransactionProcessorPool struct {
 	jobs    chan map[string]interface{}
 	workers int
+	logger  *slog.Logger
 
 	// seenMu guards concurrent access to the de-duplication fields below.
 	seenMu sync.Mutex
@@ -65,12 +66,18 @@ func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
 	if env := os.Getenv("VOLOS_TX_DEDUP_SEEN_CAP"); env != "" {
 		if v, err := strconv.Atoi(env); err == nil && v > 0 {
 			defaultCap = v
+		} else {
+			slog.Warn("invalid VOLOS_TX_DEDUP_SEEN_CAP value",
+				"value", env,
+				"error", err,
+			)
 		}
 	}
 
 	return &TransactionProcessorPool{
 		jobs:      make(chan map[string]interface{}, 1000),
 		workers:   workers,
+		logger:    slog.Default().With("component", "TransactionProcessorPool"),
 		seen:      make(map[string]struct{}, defaultCap),
 		seenQueue: make([]string, 0, defaultCap),
 		seenCap:   defaultCap,
@@ -79,6 +86,12 @@ func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
 
 // Start launches the worker goroutines that process transactions from both core and governance packages.
 func (p *TransactionProcessorPool) Start(client *firestore.Client) {
+	p.logger.Info("starting transaction processor pool",
+		"workers", p.workers,
+		"queue_capacity", cap(p.jobs),
+		"dedup_capacity", p.seenCap,
+	)
+
 	for i := 0; i < p.workers; i++ {
 		go func() {
 			for tx := range p.jobs {
@@ -128,9 +141,12 @@ func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 
 	select {
 	case p.jobs <- tx:
-		// submitted
+		// Transaction submitted successfully
 	default:
-		log.Println("TransactionProcessorPool: job queue full, dropping transaction")
+		p.logger.Warn("transaction processor job queue full, dropping transaction",
+			"tx_key", key,
+			"queue_capacity", cap(p.jobs),
+		)
 	}
 }
 
@@ -148,7 +164,9 @@ func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 		return
 	}
 
-	log.Printf("Unknown package path: %s", pkgPath)
+	slog.Warn("unknown package path, skipping transaction",
+		"package_path", pkgPath,
+	)
 }
 
 // getPackagePath extracts the package path from the transaction structure by navigating

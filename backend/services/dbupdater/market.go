@@ -3,20 +3,20 @@ package dbupdater
 import (
 	"context"
 	"log/slog"
-	"strconv"
 	"strings"
 	"time"
+	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
 )
 
 // CreateMarket creates a new market in the Firestore database.
 // It uses sanitizedMarketID (replacing "/" with "_") to avoid issues with Firestore document IDs.
-func CreateMarket(client *firestore.Client, marketID, loanToken, collateralToken, timestamp string) error {
+func CreateMarket(client *firestore.Client, marketID, loanToken, collateralToken, timestamp string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
-	timestampInt, err := strconv.ParseInt(timestamp, 10, 64)
-	if err != nil {
-		return err
+	timestampInt := utils.ParseTimestamp(timestamp, "market creation")
+	if timestampInt == 0 {
+		return
 	}
 
 	marketData := map[string]interface{}{
@@ -26,13 +26,18 @@ func CreateMarket(client *firestore.Client, marketID, loanToken, collateralToken
 		"created_at":       time.Unix(timestampInt, 0),
 	}
 
-	_, err = client.Collection("markets").Doc(sanitizedMarketID).Set(context.Background(), marketData)
+	_, err := client.Collection("markets").Doc(sanitizedMarketID).Set(context.Background(), marketData)
 	if err != nil {
-		return err
+		slog.Error("failed to create market in database",
+			"market_id", marketID,
+			"loan_token", loanToken,
+			"collateral_token", collateralToken,
+			"error", err,
+		)
+		return
 	}
 
-	slog.Info("Market created",
+	slog.Info("market created",
 		"market_id", marketID,
 	)
-	return nil
 }

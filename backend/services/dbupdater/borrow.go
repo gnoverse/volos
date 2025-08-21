@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"math/big"
-	"strconv"
 	"strings"
 	"time"
+	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
@@ -15,19 +15,19 @@ import (
 
 // UpdateTotalBorrow updates the total_borrow aggregate for a market and appends a history entry.
 // Amounts are u256 stored as strings; arithmetic uses big.Int. If isBorrow is true we add (borrow), else subtract (repay).
-func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp string, isBorrow bool) error {
+func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp string, isBorrow bool) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
-	sec, err := strconv.ParseInt(timestamp, 10, 64)
-	if err != nil {
-		return err
+	sec := utils.ParseTimestamp(timestamp, "total borrow update")
+	if sec == 0 {
+		return
 	}
 	eventTime := time.Unix(sec, 0)
 
-	amt, ok := new(big.Int).SetString(amount, 10)
-	if !ok || amt.Sign() < 0 {
-		return err
+	amt := utils.ParseAmount(amount, "total borrow update")
+	if amt.Sign() == 0 {
+		return
 	}
 
 	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
@@ -70,7 +70,13 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 		}
 		return tx.Set(marketRef, updates, firestore.MergeAll)
 	}); err != nil {
-		return err
+		slog.Error("failed to update total borrow in database",
+			"market_id", marketID,
+			"amount", amount,
+			"is_borrow", isBorrow,
+			"error", err,
+		)
+		return
 	}
 
 	history := map[string]interface{}{
@@ -79,9 +85,13 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 		"amount_delta": amount,
 		"is_borrow":    isBorrow,
 	}
-	
+
 	if _, err := marketRef.Collection("total_borrow_history").NewDoc().Set(ctx, history); err != nil {
-		return err
+		slog.Error("failed to add total borrow history entry",
+			"market_id", marketID,
+			"error", err,
+		)
+		return
 	}
 
 	operation := "-"
@@ -89,11 +99,10 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 		operation = "+"
 	}
 
-	slog.Info("UpdateTotalBorrow completed",
+	slog.Info("update total borrow completed",
 		"operation", operation,
 		"amount", amount,
 		"market_id", marketID,
 		"total_borrow", updatedTotalStr,
 	)
-	return nil
 }

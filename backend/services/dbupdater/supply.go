@@ -4,9 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"math/big"
-	"strconv"
 	"strings"
 	"time"
+	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
@@ -20,19 +20,19 @@ import (
 // isSupply indicates whether this is a supply event (true) or withdraw event (false).
 // For supply events, the amount is added to the total supply.
 // For withdraw events, the amount is subtracted from the total supply.
-func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp string, isSupply bool) error {
+func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp string, isSupply bool) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
-	sec, err := strconv.ParseInt(timestamp, 10, 64)
-	if err != nil {
-		return err
+	sec := utils.ParseTimestamp(timestamp, "total supply update")
+	if sec == 0 {
+		return
 	}
 	eventTime := time.Unix(sec, 0)
 
-	amt, ok := new(big.Int).SetString(amount, 10)
-	if !ok || amt.Sign() < 0 {
-		return err
+	amt := utils.ParseAmount(amount, "total supply update")
+	if amt.Sign() == 0 {
+		return
 	}
 
 	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
@@ -75,7 +75,13 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		}
 		return tx.Set(marketRef, updates, firestore.MergeAll)
 	}); err != nil {
-		return err
+		slog.Error("failed to update total supply in database",
+			"market_id", marketID,
+			"amount", amount,
+			"is_supply", isSupply,
+			"error", err,
+		)
+		return
 	}
 
 	history := map[string]interface{}{
@@ -85,19 +91,22 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		"is_supply":    isSupply,
 	}
 	if _, err := marketRef.Collection("total_supply_history").NewDoc().Set(ctx, history); err != nil {
-		return err
+		slog.Error("failed to add total supply history entry",
+			"market_id", marketID,
+			"error", err,
+		)
+		return
 	}
 
 	operation := "-"
 	if isSupply {
 		operation = "+"
 	}
-	
-	slog.Info("UpdateTotalSupply completed",
+
+	slog.Info("update total supply completed",
 		"operation", operation,
 		"amount", amount,
 		"market_id", marketID,
 		"total_supply", updatedTotalStr,
 	)
-	return nil
 }
