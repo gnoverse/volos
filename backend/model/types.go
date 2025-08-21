@@ -2,13 +2,13 @@ package model
 
 import "time"
 
-const CorePkgPath = "gno.land/r/volos/core"              // the package path of the Volos core contract
+const CorePkgPath = "gno.land/r/volos/core"                 // the package path of the Volos core contract
 const GovernancePkgPath = "gno.land/r/volos/gov/governance" // the package path of the Volos governance contract
-const StakerPkgPath = "gno.land/r/volos/gov/staker"  // the package path of the Volos staker contract
-const VlsPkgPath = "gno.land/r/volos/gov/vls"       // the package path of the Volos vls contract
-const XvlsPkgPath = "gno.land/r/volos/gov/xvls"          // the package path of the Volos xvls contract
-const Rpc = "http://localhost:26657"                      // the RPC endpoint of the node
-const BlockHeightOnDeploy = 0                             // the block height of the deployment of the Volos contract
+const StakerPkgPath = "gno.land/r/volos/gov/staker"         // the package path of the Volos staker contract
+const VlsPkgPath = "gno.land/r/volos/gov/vls"               // the package path of the Volos vls contract
+const XvlsPkgPath = "gno.land/r/volos/gov/xvls"             // the package path of the Volos xvls contract
+const Rpc = "http://localhost:26657"                        // the RPC endpoint of the node
+const BlockHeightOnDeploy = 0                               // the block height of the deployment of the Volos contract
 
 // Data is a type to be used to extract the value and timestamp from a data point.
 // Since transactions only have block height, we need to fetch the timestamp from the block height.
@@ -85,4 +85,19 @@ type UserData struct {
 	DAOMember bool             `firestore:"dao_member" json:"dao_member"` // Whether the user is a member of the DAO
 	StakedVLS map[string]int64 `firestore:"staked_vls" json:"staked_vls"` // Map of delegatee addresses to staked VLS amounts
 	CreatedAt time.Time        `firestore:"created_at" json:"created_at"` // Timestamp when the user document was first created
+}
+
+// MarketData represents the complete structure of a market document stored in Firestore.
+// This struct contains all market-related fields that are tracked by the system,
+// including totals, parameters, and current APRs for display in market listings.
+type MarketData struct {
+	ID               string    `firestore:"id" json:"id"`                                 // Market identifier (same as marketId)
+	LoanToken        string    `firestore:"loan_token" json:"loan_token"`                 // Loan token path
+	CollateralToken  string    `firestore:"collateral_token" json:"collateral_token"`     // Collateral token path
+	TotalSupply      string    `firestore:"total_supply" json:"total_supply"`             // Total supply amount (u256 string)
+	TotalBorrow      string    `firestore:"total_borrow" json:"total_borrow"`             // Total borrow amount (u256 string)
+	CurrentSupplyAPR float64   `firestore:"current_supply_apr" json:"current_supply_apr"` // Current supply APR (percentage)
+	CurrentBorrowAPR float64   `firestore:"current_borrow_apr" json:"current_borrow_apr"` // Current borrow APR (percentage)
+	CreatedAt        time.Time `firestore:"created_at" json:"created_at"`                 // When the market was created
+	UpdatedAt        time.Time `firestore:"updated_at" json:"updated_at"`                 // Last time market data was updated
 }

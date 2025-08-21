@@ -64,6 +64,8 @@ func setupRoutes() {
 	http.HandleFunc("/api/user-vote", withCORS(routes.GetUserVoteHandler(FirestoreClient)))
 	http.HandleFunc("/api/user-pending-unstakes", withCORS(routes.GetUserPendingUnstakesHandler(FirestoreClient)))
 	http.HandleFunc("/api/user", withCORS(routes.GetUserHandler(FirestoreClient)))
+	http.HandleFunc("/api/markets", withCORS(routes.GetMarketsHandler(FirestoreClient)))
+	http.HandleFunc("/api/market/", withCORS(routes.GetMarketHandler(FirestoreClient)))
 }
 
 func withCORS(handler http.HandlerFunc) http.HandlerFunc {

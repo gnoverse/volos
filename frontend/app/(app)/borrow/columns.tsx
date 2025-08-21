@@ -82,7 +82,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
     },
   },
   {
-    accessorKey: "apy",
+    accessorKey: "supplyAPR",
     header: ({ column }) => {
       return (
         <div className="flex justify-start">
@@ -91,7 +91,27 @@ export const columns: ColumnDef<MarketInfo>[] = [
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="hover:text-logo-400"
           >
-            APR
+            Supply APR
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )
+    },
+    cell: ({ row }) => {
+      return <div className="text-left font-medium px-3">{formatRate(row.original.supplyAPR, 18, true)}</div>
+    },
+  },
+  {
+    accessorKey: "borrowAPR",
+    header: ({ column }) => {
+      return (
+        <div className="flex justify-start">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:text-logo-400"
+          >
+            Borrow APR
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         </div>

@@ -43,61 +43,61 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 
 		switch eventType {
 		case "ProposalCreated":
-			proposalID, title, body, proposer, deadline, quorum, timestamp, ok := extractProposalFields(event)
+			proposalEvent, ok := extractProposalFields(event)
 			if ok {
-				dbupdater.CreateProposal(client, proposalID, title, body, proposer, deadline, quorum, timestamp)
+				dbupdater.CreateProposal(client, proposalEvent.ProposalID, proposalEvent.Title, proposalEvent.Body, proposalEvent.Proposer, proposalEvent.Deadline, proposalEvent.Quorum, proposalEvent.Timestamp)
 			}
 
 		case "ProposalExecuted":
-			proposalID, status := extractProposalIDAndStatus(event)
-			if proposalID != "" {
+			executedEvent, ok := extractProposalIDAndStatus(event)
+			if ok {
 				updates := map[string]interface{}{
-					"status": status,
+					"status": executedEvent.Status,
 				}
-				dbupdater.UpdateProposal(client, proposalID, updates)
+				dbupdater.UpdateProposal(client, executedEvent.ProposalID, updates)
 			}
 
 		case "VoteCast":
-			proposalID, voter, vote, reason, xvlsAmount, timestamp, ok := extractVoteFields(event)
+			voteEvent, ok := extractVoteFields(event)
 			if ok {
-				dbupdater.AddVote(client, proposalID, voter, vote, reason, timestamp, xvlsAmount)
+				dbupdater.AddVote(client, voteEvent.ProposalID, voteEvent.Voter, voteEvent.Vote, voteEvent.Reason, voteEvent.Timestamp, voteEvent.XVLSAmount)
 			}
 
 		case "MemberAdded":
-			member := extractMemberAddress(event)
-			if member != "" {
-				dbupdater.AddDAOMember(client, member)
+			memberEvent, ok := extractMemberAddress(event)
+			if ok {
+				dbupdater.AddDAOMember(client, memberEvent.Member)
 			}
 
 		case "MemberRemoved":
-			member := extractMemberAddress(event)
-			if member != "" {
-				dbupdater.RemoveDAOMember(client, member)
+			memberEvent, ok := extractMemberAddress(event)
+			if ok {
+				dbupdater.RemoveDAOMember(client, memberEvent.Member)
 			}
 
 		case "Stake":
-			staker, delegatee, amount, _, timestampStr, ok := extractStakeFields(event)
+			stakeEvent, ok := extractStakeFields(event)
 			if ok {
-				timestamp := utils.ParseTimestamp(timestampStr, "stake event")
+				timestamp := utils.ParseTimestamp(stakeEvent.Timestamp, "stake event")
 				if timestamp > 0 {
-					dbupdater.UpdateUserStakedVLS(client, staker, delegatee, amount, timestamp)
+					dbupdater.UpdateUserStakedVLS(client, stakeEvent.Staker, stakeEvent.Delegatee, stakeEvent.Amount, timestamp)
 				}
 			}
 
 		case "BeginUnstake":
-			staker, delegatee, amount, unlockAt, timestampStr, unstakeId, ok := extractBeginUnstakeFields(event)
+			unstakeEvent, ok := extractBeginUnstakeFields(event)
 			if ok {
-				timestamp := utils.ParseTimestamp(timestampStr, "begin unstake event")
+				timestamp := utils.ParseTimestamp(unstakeEvent.Timestamp, "begin unstake event")
 				if timestamp > 0 {
-					dbupdater.UpdateUserStakedVLS(client, staker, delegatee, -amount, timestamp)
-					dbupdater.AddPendingUnstake(client, staker, delegatee, unstakeId, amount, unlockAt)
+					dbupdater.UpdateUserStakedVLS(client, unstakeEvent.Staker, unstakeEvent.Delegatee, -unstakeEvent.Amount, timestamp)
+					dbupdater.AddPendingUnstake(client, unstakeEvent.Staker, unstakeEvent.Delegatee, unstakeEvent.UnstakeID, unstakeEvent.Amount, unstakeEvent.UnlockAt)
 				}
 			}
 
 		case "Withdraw":
-			staker, withdrawnIDs, ok := extractWithdrawnUnstakeIDs(event)
-			if ok && len(withdrawnIDs) > 0 {
-				dbupdater.DeletePendingUnstakesByIDs(client, staker, withdrawnIDs)
+			withdrawEvent, ok := extractWithdrawnUnstakeIDs(event)
+			if ok && len(withdrawEvent.WithdrawnIDs) > 0 {
+				dbupdater.DeletePendingUnstakesByIDs(client, withdrawEvent.Staker, withdrawEvent.WithdrawnIDs)
 			}
 
 		case "StorageDeposit":
@@ -107,115 +107,155 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 }
 
 // extractProposalFields extracts proposal fields from a transaction event
-func extractProposalFields(event map[string]interface{}) (proposalID, title, body, proposer, deadline, quorum, timestamp string, ok bool) {
+func extractProposalFields(event map[string]interface{}) (*ProposalCreatedEvent, bool) {
 	required := []string{"proposal_id", "title", "caller", "deadline", "quorum", "timestamp", "body"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		slog.Error("failed to extract proposal fields", "event", event)
-		return "", "", "", "", "", "", "", false
+		return nil, false
 	}
 
-	return fields["proposal_id"], fields["title"], fields["body"], fields["caller"], fields["deadline"], fields["quorum"], fields["timestamp"], true
+	return &ProposalCreatedEvent{
+		ProposalID: fields["proposal_id"],
+		Title:      fields["title"],
+		Body:       fields["body"],
+		Proposer:   fields["caller"],
+		Deadline:   fields["deadline"],
+		Quorum:     fields["quorum"],
+		Timestamp:  fields["timestamp"],
+	}, true
 }
 
 // extractProposalIDAndStatus extracts the proposal ID and status from a ProposalExecuted event
-func extractProposalIDAndStatus(event map[string]interface{}) (proposalID, status string) {
+func extractProposalIDAndStatus(event map[string]interface{}) (*ProposalExecutedEvent, bool) {
 	required := []string{"proposal_id", "status"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		slog.Error("failed to extract proposal ID and status", "event", event)
-		return "", ""
+		return nil, false
 	}
-	return fields["proposal_id"], fields["status"]
+	return &ProposalExecutedEvent{
+		ProposalID: fields["proposal_id"],
+		Status:     fields["status"],
+	}, true
 }
 
 // extractVoteFields extracts vote fields from a VoteCast event
-func extractVoteFields(event map[string]interface{}) (proposalID, voter, vote, reason string, xvlsAmount int64, timestamp string, ok bool) {
+func extractVoteFields(event map[string]interface{}) (*VoteCastEvent, bool) {
 	required := []string{"proposal_id", "voter", "vote", "xvls_amount", "timestamp"}
 	optional := []string{"reason"}
 	fields, ok := extractEventFields(event, required, optional)
 	if !ok {
 		slog.Error("failed to extract vote fields", "event", event)
-		return "", "", "", "", 0, "", false
+		return nil, false
 	}
 
 	amountStr := fields["xvls_amount"]
 	amt := utils.ParseInt64(amountStr, "xVLS amount")
 	if amt == 0 {
-		return "", "", "", "", 0, "", false
+		return nil, false
 	}
-	return fields["proposal_id"], fields["voter"], fields["vote"], fields["reason"], amt, fields["timestamp"], true
+	return &VoteCastEvent{
+		ProposalID: fields["proposal_id"],
+		Voter:      fields["voter"],
+		Vote:       fields["vote"],
+		Reason:     fields["reason"],
+		XVLSAmount: amt,
+		Timestamp:  fields["timestamp"],
+	}, true
 }
 
 // extractMemberAddress extracts the member address from MemberAdded/MemberRemoved events
-func extractMemberAddress(event map[string]interface{}) string {
+func extractMemberAddress(event map[string]interface{}) (*MemberEvent, bool) {
 	required := []string{"member"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		slog.Error("member event missing attributes", "event", event)
-		return ""
+		return nil, false
 	}
-	return fields["member"]
+	return &MemberEvent{
+		Member: fields["member"],
+	}, true
 }
 
 // extractStakeFields extracts stake fields from a Stake event
-func extractStakeFields(event map[string]interface{}) (staker, delegatee string, amount, cooldownPeriod int64, timestamp string, ok bool) {
+func extractStakeFields(event map[string]interface{}) (*StakeEvent, bool) {
 	required := []string{"staker", "delegatee", "amount", "timestamp", "cooldown_period"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		slog.Error("failed to extract stake fields", "event", event)
-		return "", "", 0, 0, "", false
+		return nil, false
 	}
 
 	amt := utils.ParseInt64(fields["amount"], "stake amount")
 	if amt == 0 {
-		return "", "", 0, 0, "", false
+		return nil, false
 	}
 
 	cooldown := utils.ParseInt64(fields["cooldown_period"], "cooldown period")
 
-	return fields["staker"], fields["delegatee"], amt, cooldown, fields["timestamp"], true
+	return &StakeEvent{
+		Staker:         fields["staker"],
+		Delegatee:      fields["delegatee"],
+		Amount:         amt,
+		CooldownPeriod: cooldown,
+		Timestamp:      fields["timestamp"],
+	}, true
 }
 
 // extractBeginUnstakeFields extracts fields from a BeginUnstake event
-func extractBeginUnstakeFields(event map[string]interface{}) (staker, delegatee string, amount, unlockAt int64, timestamp, unstake_id string, ok bool) {
+func extractBeginUnstakeFields(event map[string]interface{}) (*BeginUnstakeEvent, bool) {
 	required := []string{"staker", "delegatee", "amount", "timestamp", "unstake_id"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		slog.Error("failed to extract begin unstake fields", "event", event)
-		return "", "", 0, 0, "", "", false
+		return nil, false
 	}
 
 	amt := utils.ParseInt64(fields["amount"], "unstake amount")
 	if amt == 0 {
-		return "", "", 0, 0, "", "", false
+		return nil, false
 	}
 
 	unlock := utils.ParseInt64(fields["unlock_at"], "unlock_at timestamp")
 
-	return fields["staker"], fields["delegatee"], amt, unlock, fields["timestamp"], fields["unstake_id"], true
+	return &BeginUnstakeEvent{
+		Staker:    fields["staker"],
+		Delegatee: fields["delegatee"],
+		Amount:    amt,
+		UnlockAt:  unlock,
+		Timestamp: fields["timestamp"],
+		UnstakeID: fields["unstake_id"],
+	}, true
 }
 
 // extractWithdrawnUnstakeIDs extracts the staker and the list of withdrawn unstake IDs from a Withdraw event
-func extractWithdrawnUnstakeIDs(event map[string]interface{}) (staker string, withdrawnIDs []string, ok bool) {
+func extractWithdrawnUnstakeIDs(event map[string]interface{}) (*GovernanceWithdrawEvent, bool) {
 	required := []string{"staker", "withdrawn_unstake_ids"}
 	fields, ok := extractEventFields(event, required, []string{})
 	if !ok {
 		slog.Error("failed to extract withdrawn unstake IDs", "event", event)
-		return "", nil, false
+		return nil, false
 	}
 
 	idsStr := fields["withdrawn_unstake_ids"]
 	if idsStr == "" {
-		return fields["staker"], nil, true
+		return &GovernanceWithdrawEvent{
+			Staker:       fields["staker"],
+			WithdrawnIDs: nil,
+		}, true
 	}
 
 	parts := strings.Split(idsStr, ",")
+	var withdrawnIDs []string
 	for _, p := range parts {
 		id := strings.TrimSpace(p)
 		if id != "" {
 			withdrawnIDs = append(withdrawnIDs, id)
 		}
 	}
-	return fields["staker"], withdrawnIDs, true
+	return &GovernanceWithdrawEvent{
+		Staker:       fields["staker"],
+		WithdrawnIDs: withdrawnIDs,
+	}, true
 }

@@ -65,6 +65,24 @@ export interface PendingUnstake {
 	unlock_at: string
 }
 
+// Market types
+export interface Market {
+  id: string
+  loan_token: string
+  collateral_token: string
+  total_supply: string
+  total_borrow: string
+  current_supply_apr: number
+  current_borrow_apr: number
+  created_at: string
+  updated_at: string
+}
+
+export interface MarketsResponse {
+  markets: Market[]
+  has_more: boolean
+  last_id: string
+}
 
 const API_BASE = 'http://localhost:8080/api';
 
@@ -148,4 +166,19 @@ export async function getUserPendingUnstakes(userAddress: string): Promise<Pendi
 		params: { userAddress } 
 	});
 	return res.data;
+}
+
+export async function getMarkets(limit?: number, lastId?: string): Promise<MarketsResponse> {
+  const params: Record<string, string | number> = {};
+  if (limit) params.limit = limit;
+  if (lastId) params.last_id = lastId;
+
+  const res = await axios.get(`${API_BASE}/markets`, { params });
+  return res.data;
+}
+
+export async function getMarket(marketId: string): Promise<Market> {
+  const encoded = encodeURIComponent(marketId);
+  const res = await axios.get(`${API_BASE}/market/${encoded}`);
+  return res.data;
 }
