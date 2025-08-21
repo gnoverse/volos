@@ -153,33 +153,33 @@ func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 // ProcessTransaction processes a single transaction JSON object by determining its package path
 // and routing it to the appropriate processor (core or governance).
 func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
-	pkgPath := getPackagePath(tx)
+	pkgPath, ok := getPackagePath(tx)
+	if !ok {
+		if h, _ := tx["hash"].(string); h != "" {
+			slog.Info("missing package path, skipping transaction", "tx_hash", h)
+		}
+		return
+	}
 
 	switch pkgPath {
 	case "gno.land/r/volos/core":
 		processCoreTransaction(tx, client)
-		return
 	case "gno.land/r/volos/gov/governance", "gno.land/r/volos/gov/staker", "gno.land/r/volos/gov/vls", "gno.land/r/volos/gov/xvls":
 		processGovernanceTransaction(tx, client)
-		return
 	}
-
-	slog.Warn("unknown package path, skipping transaction",
-		"package_path", pkgPath,
-	)
 }
 
 // getPackagePath extracts the package path from the transaction structure by navigating
 // through the events array to find the pkg_path field in GnoEvent, ignoring StorageDeposit events.
-func getPackagePath(tx map[string]interface{}) string {
+func getPackagePath(tx map[string]interface{}) (string, bool) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
-		return ""
+		return "", false
 	}
 
 	events, ok := response["events"].([]interface{})
 	if !ok || len(events) == 0 {
-		return ""
+		return "", false
 	}
 
 	for i := len(events) - 1; i >= 0; i-- {
@@ -202,8 +202,8 @@ func getPackagePath(tx map[string]interface{}) string {
 			continue
 		}
 
-		return pkgPath
+		return pkgPath, true
 	}
 
-	return ""
+	return "", false
 }
