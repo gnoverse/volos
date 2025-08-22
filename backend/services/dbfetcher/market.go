@@ -94,7 +94,7 @@ func GetMarketAPRHistory(client *firestore.Client, marketID string) ([]model.APR
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
 	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr")
-	docs, err := subcollection.OrderBy("timestamp", firestore.Desc).Documents(ctx).GetAll()
+	docs, err := subcollection.OrderBy("timestamp", firestore.Asc).Documents(ctx).GetAll()
 	if err != nil {
 		slog.Error("Error fetching market APR history", "market_id", marketID, "error", err)
 		return nil, err

@@ -3,7 +3,7 @@
 import { getUserLoanHistory } from "@/app/services/api.service"
 import { formatCurrency } from "@/app/utils/format.utils"
 import { useUserAddress } from "@/app/utils/address.utils"
-import { Chart } from "@/components/chart"
+import { TokenChart } from "@/components/tokens-chart"
 import { MyLoanSidePanel } from "@/components/my-loan-side-panel"
 import {
   Card,
@@ -69,7 +69,7 @@ export default function BorrowPage() {
                   </div>
                 ) : (
                   userLoanHistory.length > 0 && (
-                    <Chart
+                    <TokenChart
                       data={userLoanHistory}
                       title="My Loan History"
                       description="Your total borrowed amount over time"

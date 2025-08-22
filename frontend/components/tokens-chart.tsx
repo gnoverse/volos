@@ -1,14 +1,14 @@
 "use client"
 
-import { ChartData as HistoryEvent } from "@/app/services/api.service"
+import { TotalBorrowData, TotalSupplyData } from "@/app/services/api.service"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
-// TODO: fix this type
-interface ChartProps {
-  data: Array<HistoryEvent>
+type TokenChartData = TotalSupplyData | TotalBorrowData
+interface TokenChartProps {
+  data: Array<TokenChartData>
   title: string
   description: string
   dataKey: string
@@ -16,14 +16,21 @@ interface ChartProps {
   className?: string
 }
 
-export function Chart({
+export function TokenChart({
   data,
   title,
   description,
   dataKey,
   color = "rgb(99, 102, 241)",
   className
-}: ChartProps) {
+}: TokenChartProps) {
+  // TODO: This is fixed for now and should be changeable with tokenDecimals prop
+  // Currently dividing by 10^6 to convert from wei to a more readable format
+  const transformedData = data.map(item => ({
+    ...item,
+    total: Number((item as TokenChartData).total) / 1000000
+  }))
+
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
       {(title || description) && (
@@ -36,7 +43,7 @@ export function Chart({
         <div style={{ width: '100%', height: 220 }}>
           <ResponsiveContainer>
             <LineChart
-              data={data}
+              data={transformedData}
               margin={{ top: 5, right: 10, bottom: 10, left: 10 }}
             >
               <XAxis 

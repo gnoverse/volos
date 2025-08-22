@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export type ChartData = {
   value: number;
-  timestamp: string;
+  timestamp: Date;
 };
 
 export type MarketActivity = {
@@ -10,8 +10,29 @@ export type MarketActivity = {
   amount: number;
   caller: string;
   hash: string;
-  timestamp: string;
+  timestamp: Date;
   isAmountInShares: boolean;
+};
+
+// New types for market history data
+export type APRData = {
+  timestamp: Date;
+  supply_apr: number;
+  borrow_apr: number;
+};
+
+export type TotalSupplyData = {
+  amount_delta: string;
+  is_supply: boolean;
+  timestamp: Date;
+  total: string;
+};
+
+export type TotalBorrowData = {
+  amount_delta: string;
+  is_borrow: boolean;
+  timestamp: Date;
+  total: string;
 };
 
 export type User = {
@@ -85,29 +106,8 @@ export interface MarketsResponse {
 }
 
 const API_BASE = 'http://localhost:8080/api';
-
-export async function getTotalSupplyHistory(marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/total-supply-history`, { params: { marketId } });
-  return res.data;
-}
-
-export async function getTotalBorrowHistory(marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/total-borrow-history`, { params: { marketId } });
-  return res.data;
-}
-
-export async function getUtilizationHistory(marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/total-utilization-history`, { params: { marketId } });
-  return res.data;
-}
-
 export async function getMarketActivity(marketId: string): Promise<MarketActivity[]> {
   const res = await axios.get(`${API_BASE}/market-activity`, { params: { marketId } });
-  return res.data;
-}
-
-export async function getAPRHistory(marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/apr-history`, { params: { marketId } });
   return res.data;
 }
 
@@ -180,5 +180,26 @@ export async function getMarkets(limit?: number, lastId?: string): Promise<Marke
 export async function getMarket(marketId: string): Promise<Market> {
   const encoded = encodeURIComponent(marketId);
   const res = await axios.get(`${API_BASE}/market/${encoded}`);
+  return res.data;
+}
+
+export async function getAPRHistory(marketId: string): Promise<APRData[]> {
+  const res = await axios.get(`${API_BASE}/market/apr`, { params: { marketId } });
+  return res.data;
+}
+
+export async function getTotalBorrowHistory(marketId: string): Promise<TotalBorrowData[]> {
+  const res = await axios.get(`${API_BASE}/market/total-borrow-history`, { params: { marketId } });
+  return res.data;
+}
+
+export async function getTotalSupplyHistory(marketId: string): Promise<TotalSupplyData[]> {
+  const res = await axios.get(`${API_BASE}/market/total-supply-history`, { params: { marketId } });
+  return res.data;
+}
+
+export async function getUtilizationHistory(marketId: string): Promise<TotalSupplyData[]> {
+  // TODO: implement this
+  const res = await axios.get(`${API_BASE}/market/total-supply-history`, { params: { marketId } });
   return res.data;
 }
