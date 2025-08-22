@@ -30,7 +30,7 @@ func NewJobScheduler(client *firestore.Client) *JobScheduler {
 func (js *JobScheduler) Start() {
 	go js.runFourHourJobs()
 	go js.runDailyJobs()
-	go js.runThreeDayJobs()
+	go js.runWeeklyJobs()
 
 	slog.Info("aggregation job scheduler started")
 }
@@ -50,7 +50,6 @@ func (js *JobScheduler) runFourHourJobs() {
 		js.runFourHourAggregation()
 	}
 
-	// Wait until next 4-hour block
 	nextFourHour := now.Truncate(4 * time.Hour).Add(4 * time.Hour)
 	delay := nextFourHour.Sub(now)
 	time.Sleep(delay)
@@ -94,21 +93,25 @@ func (js *JobScheduler) runDailyJobs() {
 	}
 }
 
-// runThreeDayJobs schedules and executes 3-day aggregation jobs.
-// It waits until the start of the next 3-day block, then runs aggregation every 3 days
-// for consistent 3-day snapshots.
-func (js *JobScheduler) runThreeDayJobs() {
+// runWeeklyJobs schedules and executes weekly aggregation jobs.
+// It waits until the start of the next week (Monday 00:00), then runs aggregation
+// every week for consistent weekly snapshots.
+func (js *JobScheduler) runWeeklyJobs() {
 	now := time.Now()
-	if now.Day()%3 == 1 && now.Hour() == 0 && now.Minute() == 0 {
-		js.runThreeDayAggregation()
+	if now.Weekday() == time.Monday && now.Hour() == 0 && now.Minute() == 0 {
+		js.runWeeklyAggregation()
 	}
 
-	// Wait until next 3-day block
-	nextThreeDay := now.Truncate(24*time.Hour).AddDate(0, 0, 3)
-	delay := nextThreeDay.Sub(now)
+	// Wait until next Monday
+	daysUntilMonday := (8 - int(now.Weekday())) % 7
+	if daysUntilMonday == 0 {
+		daysUntilMonday = 7
+	}
+	nextMonday := now.Truncate(24*time.Hour).AddDate(0, 0, daysUntilMonday)
+	delay := nextMonday.Sub(now)
 	time.Sleep(delay)
 
-	ticker := time.NewTicker(3 * 24 * time.Hour)
+	ticker := time.NewTicker(7 * 24 * time.Hour)
 	defer ticker.Stop()
 
 	for {
@@ -116,7 +119,7 @@ func (js *JobScheduler) runThreeDayJobs() {
 		case <-js.stopChan:
 			return
 		case <-ticker.C:
-			js.runThreeDayAggregation()
+			js.runWeeklyAggregation()
 		}
 	}
 }
@@ -137,18 +140,18 @@ func (js *JobScheduler) runDailyAggregation() {
 	js.runAggregationForAllMarkets(Daily, now)
 }
 
-// runThreeDayAggregation executes 3-day aggregation for all markets.
-// It truncates the current time to the 3-day boundary and processes all markets
-// with 3-day resolution snapshots.
-func (js *JobScheduler) runThreeDayAggregation() {
-	now := time.Now().Truncate(3 * 24 * time.Hour)
-	js.runAggregationForAllMarkets(ThreeDay, now)
+// runWeeklyAggregation executes weekly aggregation for all markets.
+// It truncates the current time to the week boundary and processes all markets
+// with weekly resolution snapshots.
+func (js *JobScheduler) runWeeklyAggregation() {
+	now := time.Now().Truncate(7 * 24 * time.Hour)
+	js.runAggregationForAllMarkets(Weekly, now)
 }
 
 // runAggregationForAllMarkets executes aggregation jobs for all markets at the specified resolution.
 // It fetches all market IDs from the database and spawns goroutines to create snapshots
 // for each market concurrently. Each snapshot is created with the given timestamp and
-// resolution (hourly, daily, weekly, or monthly).
+// resolution (4hour, daily, or weekly).
 func (js *JobScheduler) runAggregationForAllMarkets(resolution TimeBucketResolution, timestamp time.Time) {
 	markets, err := js.getAllMarketIDs()
 	if err != nil {
@@ -164,8 +167,8 @@ func (js *JobScheduler) runAggregationForAllMarkets(resolution TimeBucketResolut
 				err = js.aggregator.CreateFourHourSnapshot(marketID, timestamp)
 			case Daily:
 				err = js.aggregator.CreateDailySnapshot(marketID, timestamp)
-			case ThreeDay:
-				err = js.aggregator.CreateThreeDaySnapshot(marketID, timestamp)
+			case Weekly:
+				err = js.aggregator.CreateWeeklySnapshot(marketID, timestamp)
 			}
 
 			if err != nil {

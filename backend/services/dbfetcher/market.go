@@ -201,8 +201,8 @@ func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTim
 		bucketCollection = "snapshots_4hour"
 	case "daily":
 		bucketCollection = "snapshots_daily"
-	case "3day":
-		bucketCollection = "snapshots_3day"
+	case "weekly":
+		bucketCollection = "snapshots_weekly"
 	default:
 		bucketCollection = "snapshots_daily"
 	}

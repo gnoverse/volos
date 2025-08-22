@@ -9,7 +9,7 @@ type TimeBucketResolution string
 const (
 	FourHour TimeBucketResolution = "4hour"
 	Daily    TimeBucketResolution = "daily"
-	ThreeDay TimeBucketResolution = "3day"
+	Weekly   TimeBucketResolution = "weekly"
 )
 
 // MarketSnapshotData represents a pre-aggregated snapshot of market data at a specific time resolution.
@@ -17,13 +17,12 @@ const (
 type MarketSnapshotData struct {
 	MarketID        string               `firestore:"market_id" json:"market_id"`               // Market identifier
 	Timestamp       time.Time            `firestore:"timestamp" json:"timestamp"`               // When this snapshot was taken
-	Resolution      TimeBucketResolution `firestore:"resolution" json:"resolution"`             // Time resolution (4hour, daily, 3day)
+	Resolution      TimeBucketResolution `firestore:"resolution" json:"resolution"`             // Time resolution (4hour, daily, weekly)
 	SupplyAPR       float64              `firestore:"supply_apr" json:"supply_apr"`             // Average supply APR for this period
 	BorrowAPR       float64              `firestore:"borrow_apr" json:"borrow_apr"`             // Average borrow APR for this period
 	TotalSupply     string               `firestore:"total_supply" json:"total_supply"`         // Total supply at end of period (u256 string)
 	TotalBorrow     string               `firestore:"total_borrow" json:"total_borrow"`         // Total borrow at end of period (u256 string)
 	UtilizationRate float64              `firestore:"utilization_rate" json:"utilization_rate"` // Utilization rate (borrow/supply) as percentage
-	SampleCount     int                  `firestore:"sample_count" json:"sample_count"`         // Number of samples used for averaging
 	CreatedAt       time.Time            `firestore:"created_at" json:"created_at"`             // When this snapshot was created
 }
 

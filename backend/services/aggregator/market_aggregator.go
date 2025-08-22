@@ -34,22 +34,16 @@ func (ma *MarketAggregator) CreateDailySnapshot(marketID string, endTime time.Ti
 	return ma.createSnapshot(marketID, Daily, startTime, endTime)
 }
 
-// CreateThreeDaySnapshot creates a 3-day snapshot for a market
-func (ma *MarketAggregator) CreateThreeDaySnapshot(marketID string, endTime time.Time) error {
-	startTime := endTime.Add(-3 * 24 * time.Hour)
-	return ma.createSnapshot(marketID, ThreeDay, startTime, endTime)
+// CreateWeeklySnapshot creates a weekly snapshot for a market
+func (ma *MarketAggregator) CreateWeeklySnapshot(marketID string, endTime time.Time) error {
+	startTime := endTime.Add(-7 * 24 * time.Hour)
+	return ma.createSnapshot(marketID, Weekly, startTime, endTime)
 }
 
 // createSnapshot aggregates market data for the given time period and creates a snapshot
 func (ma *MarketAggregator) createSnapshot(marketID string, resolution TimeBucketResolution, startTime, endTime time.Time) error {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
-
-	supplyAPR, borrowAPR, sampleCount, err := ma.aggregateAPRData(ctx, sanitizedMarketID, startTime, endTime)
-	if err != nil {
-		slog.Error("failed to aggregate APR data", "market_id", marketID, "error", err)
-		return err
-	}
 
 	market, err := ma.getLatestMarketData(ctx, sanitizedMarketID)
 	if err != nil {
@@ -61,12 +55,11 @@ func (ma *MarketAggregator) createSnapshot(marketID string, resolution TimeBucke
 		MarketID:        marketID,
 		Timestamp:       endTime,
 		Resolution:      resolution,
-		SupplyAPR:       supplyAPR,
-		BorrowAPR:       borrowAPR,
+		SupplyAPR:       market.CurrentSupplyAPR,
+		BorrowAPR:       market.CurrentBorrowAPR,
 		TotalSupply:     market.TotalSupply,
 		TotalBorrow:     market.TotalBorrow,
 		UtilizationRate: market.UtilizationRate,
-		SampleCount:     sampleCount,
 		CreatedAt:       time.Now(),
 	}
 
@@ -78,41 +71,8 @@ func (ma *MarketAggregator) createSnapshot(marketID string, resolution TimeBucke
 		return err
 	}
 
-	slog.Info("created market snapshot", "market_id", marketID, "resolution", resolution, "timestamp", endTime, "sample_count", sampleCount)
+	slog.Info("created market snapshot", "market_id", marketID, "resolution", resolution, "timestamp", endTime)
 	return nil
-}
-
-// aggregateAPRData calculates average APR values for the given time period
-func (ma *MarketAggregator) aggregateAPRData(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (float64, float64, int, error) {
-	aprCollection := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("apr")
-
-	slog.Debug("aggregating APR data", "start_time", startTime, "end_time", endTime)
-
-	query := aprCollection.Where("timestamp", ">=", startTime).Where("timestamp", "<=", endTime)
-	docs, err := query.Documents(ctx).GetAll()
-	if err != nil {
-		return 0, 0, 0, err
-	}
-
-	if len(docs) == 0 {
-		return 0, 0, 0, nil
-	}
-
-	var totalSupplyAPR, totalBorrowAPR float64
-	for _, doc := range docs {
-		var aprData model.APRHistory
-		if err := doc.DataTo(&aprData); err != nil {
-			continue
-		}
-		totalSupplyAPR += aprData.SupplyAPR
-		totalBorrowAPR += aprData.BorrowAPR
-	}
-
-	sampleCount := len(docs)
-	avgSupplyAPR := totalSupplyAPR / float64(sampleCount)
-	avgBorrowAPR := totalBorrowAPR / float64(sampleCount)
-
-	return avgSupplyAPR, avgBorrowAPR, sampleCount, nil
 }
 
 // getLatestMarketData gets the most recent market data including totals and utilization rate
@@ -137,8 +97,8 @@ func (ma *MarketAggregator) getBucketCollectionName(resolution TimeBucketResolut
 		return "snapshots_4hour"
 	case Daily:
 		return "snapshots_daily"
-	case ThreeDay:
-		return "snapshots_3day"
+	case Weekly:
+		return "snapshots_weekly"
 	default:
 		return "snapshots_daily"
 	}
