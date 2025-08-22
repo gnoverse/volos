@@ -14,6 +14,8 @@ import (
 
 	// Firestore
 	"google.golang.org/api/option"
+
+	"volos-backend/services/aggregator"
 )
 
 var firestoreClient *firestore.Client
@@ -38,12 +40,22 @@ func init() {
 func main() {
 	http.HandleFunc("/api/", withCORS(routes.APIRouter(firestoreClient)))
 
+	// Start transaction processing
 	go func() {
 		ctx := context.Background()
 		pool := processor.NewTransactionProcessorPool(8)
 		pool.Start(firestoreClient)
 		listener := txlistener.NewTransactionListener(pool)
 		listener.Start(ctx)
+	}()
+
+	// Start aggregation job scheduler
+	go func() {
+		scheduler := aggregator.NewJobScheduler(firestoreClient)
+		scheduler.Start()
+
+		// Keep the scheduler running
+		select {}
 	}()
 
 	slog.Info("server running on http://localhost:8080")

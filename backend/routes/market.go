@@ -132,3 +132,33 @@ func GetMarketTotalSupplyHistoryHandler(client *firestore.Client) http.HandlerFu
 		json.NewEncoder(w).Encode(supplyHistory)
 	}
 }
+
+// GetMarketSnapshotsHandler handles GET /market/snapshots?marketId=ID&resolution=hourly&startTime=X&endTime=Y
+func GetMarketSnapshotsHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		marketID := r.URL.Query().Get("marketId")
+		if marketID == "" {
+			http.Error(w, "marketId query parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		resolution := r.URL.Query().Get("resolution")
+		if resolution == "" {
+			resolution = "daily" // Default to daily
+		}
+
+		startTimeStr := r.URL.Query().Get("startTime")
+		endTimeStr := r.URL.Query().Get("endTime")
+
+		snapshots, err := dbfetcher.GetMarketSnapshots(client, marketID, resolution, startTimeStr, endTimeStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(snapshots)
+	}
+}

@@ -4,8 +4,10 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"time"
 
 	"volos-backend/model"
+	"volos-backend/services/aggregator"
 
 	"cloud.google.com/go/firestore"
 )
@@ -161,4 +163,75 @@ func GetMarketTotalSupplyHistory(client *firestore.Client, marketID string) ([]m
 	}
 
 	return dataArray, nil
+}
+
+// GetMarketSnapshots retrieves aggregated market snapshots for a specific time period
+func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTimeStr, endTimeStr string) ([]aggregator.MarketSnapshotData, error) {
+	ctx := context.Background()
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+
+	// Determine bucket collection based on resolution
+	var bucketCollection string
+	switch resolution {
+	case "hourly":
+		bucketCollection = "snapshots_hourly"
+	case "daily":
+		bucketCollection = "snapshots_daily"
+	case "weekly":
+		bucketCollection = "snapshots_weekly"
+	case "monthly":
+		bucketCollection = "snapshots_monthly"
+	default:
+		bucketCollection = "snapshots_daily"
+	}
+
+	// Parse time range
+	var startTime, endTime time.Time
+	var err error
+
+	if startTimeStr != "" {
+		startTime, err = time.Parse(time.RFC3339, startTimeStr)
+		if err != nil {
+			slog.Error("failed to parse start time", "start_time", startTimeStr, "error", err)
+			return nil, err
+		}
+	}
+
+	if endTimeStr != "" {
+		endTime, err = time.Parse(time.RFC3339, endTimeStr)
+		if err != nil {
+			slog.Error("failed to parse end time", "end_time", endTimeStr, "error", err)
+			return nil, err
+		}
+	}
+
+	// Build query
+	query := client.Collection("markets").Doc(sanitizedMarketID).Collection(bucketCollection).OrderBy("timestamp", firestore.Asc)
+
+	if !startTime.IsZero() {
+		query = query.Where("timestamp", ">=", startTime)
+	}
+
+	if !endTime.IsZero() {
+		query = query.Where("timestamp", "<=", endTime)
+	}
+
+	// Execute query
+	docs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		slog.Error("Error fetching market snapshots", "market_id", marketID, "resolution", resolution, "error", err)
+		return nil, err
+	}
+
+	var snapshots []aggregator.MarketSnapshotData
+	for _, doc := range docs {
+		var snapshot aggregator.MarketSnapshotData
+		if err := doc.DataTo(&snapshot); err != nil {
+			slog.Error("Error parsing snapshot data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
+			continue
+		}
+		snapshots = append(snapshots, snapshot)
+	}
+
+	return snapshots, nil
 }
