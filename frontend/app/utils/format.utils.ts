@@ -149,6 +149,25 @@ export function formatTimestamp(timestamp: number | null | undefined): string {
 }
 
 /**
+ * Formats a timestamp to a short date string in "dd MMM" format.
+ * Example: "15 Jan", "22 Feb", "03 Mar"
+ * @param timestamp The timestamp to format
+ * @returns Formatted date string
+ */
+export function formatShortDate(timestamp: number | string | Date): string {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { 
+      day: '2-digit', 
+      month: 'short' 
+    });
+  } catch (error) {
+    console.error("Error formatting short date:", error);
+    return "N/A";
+  }
+}
+
+/**
  * Returns the appropriate Tailwind CSS classes for proposal status badges.
  * @param status The proposal status (active, executed, defeated, etc.)
  * @returns CSS classes for styling the status badge
@@ -163,6 +182,29 @@ export function getProposalStatusColor(status: string): string {
       return 'bg-red-500/20 text-red-400 border-red-500/30'
     default:
       return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+  }
+}
+
+/**
+ * Calculates the start date for a given time period relative to now.
+ * @param period The time period ("1 week", "1 month", "3 months", "6 months", "all time")
+ * @returns The start date for the specified period
+ */
+export function getTimePeriodStartDate(period: "1 week" | "1 month" | "3 months" | "6 months" | "all time"): Date {
+  const now = new Date()
+  switch (period) {
+    case "1 week":
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    case "1 month":
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    case "3 months":
+      return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+    case "6 months":
+      return new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
+    case "all time":
+      return new Date(0) // TODO: set time to contract deployment
+    default:
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // Default to 1 month
   }
 }
 

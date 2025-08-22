@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { useQuery } from '@tanstack/react-query'
-import { TokenChart } from './tokens-chart'
+import { Chart } from './universal-chart'
 
 interface PositionChartTabsProps {
   caller: string
@@ -100,7 +100,7 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
       <CardContent className="items-center">
         {mappedCollateral.length > 0 && (
           <TabsContent value="collateral" className="mt-0">
-            <TokenChart
+            <Chart
               title=""
               description=""
               data={mappedCollateral}
@@ -111,7 +111,7 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
         )}
         {mappedBorrow.length > 0 && (
           <TabsContent value="borrowed" className="mt-0">
-            <TokenChart
+            <Chart
               title=""
               description=""
               data={mappedBorrow}
@@ -121,7 +121,7 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
           </TabsContent>
         )}
         <TabsContent value="health" className="mt-0">
-          <TokenChart
+          <Chart
             title=""
             description=""
             data={mappedCollateral}

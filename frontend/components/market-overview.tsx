@@ -4,7 +4,7 @@ import { InfoCard } from "@/components/info-card";
 import { useQuery } from '@tanstack/react-query';
 import { APRChart } from "./apr-chart";
 import { TimePeriod } from "./chart-dropdown";
-import { TokenChart } from "./tokens-chart";
+import { Chart } from "./universal-chart";
 
 interface MarketOverviewProps {
   market: MarketInfo;
@@ -61,6 +61,7 @@ export function MarketOverview({
     );
   }
 
+  // TODO: fetch different snapshots of the market data depending on the period
   const onSupplyTimePeriodChangeAction = (period: TimePeriod) => {
     console.log(period)
   }
@@ -82,7 +83,7 @@ export function MarketOverview({
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6">
         {netSupplyHistory && (
-        <TokenChart
+        <Chart
           data={netSupplyHistory}
           title="Total Supply"
           description="Total assets supplied to the market"
@@ -92,7 +93,7 @@ export function MarketOverview({
         />
         )}
         {netBorrowHistory && (
-        <TokenChart
+        <Chart
           data={netBorrowHistory}
           title="Net Borrow"
           description="Net borrow (borrow - repay) over time"
@@ -102,7 +103,7 @@ export function MarketOverview({
         />
         )}
         {utilizationHistory && (
-        <TokenChart
+        <Chart
           data={utilizationHistory}
           title="Utilization Rate"
           description="Percentage of supplied assets being borrowed"

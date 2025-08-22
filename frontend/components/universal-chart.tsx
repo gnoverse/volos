@@ -1,10 +1,11 @@
 "use client"
 
 import { TotalBorrowData, TotalSupplyData, UtilizationData } from "@/app/services/api.service"
-import { formatTimestamp } from "@/app/utils/format.utils"
+import { formatShortDate, formatTimestamp, getTimePeriodStartDate } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { useMemo, useState } from "react"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 type TokenChartData = TotalSupplyData | TotalBorrowData | UtilizationData
@@ -19,7 +20,7 @@ interface TokenChartProps {
   onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
-export function TokenChart({
+export function Chart({
   data,
   title,
   description,
@@ -28,7 +29,24 @@ export function TokenChart({
   decimals = 6,
   onTimePeriodChangeAction,
 }: TokenChartProps) {
-  const transformedData = data.map(item => {
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 month")
+
+  // Filter data based on selected time period
+  const filteredData = useMemo(() => {
+    const startTime = getTimePeriodStartDate(selectedTimePeriod)
+    return data.filter(item => {
+      const itemDate = new Date(item.timestamp)
+      return itemDate >= startTime
+    })
+  }, [data, selectedTimePeriod])
+
+  // Handle time period change
+  const handleTimePeriodChange = (period: TimePeriod) => {
+    setSelectedTimePeriod(period)
+    onTimePeriodChangeAction(period)
+  }
+
+  const transformedData = filteredData.map(item => {
     const rawValue = (item as TokenChartData).value;
 
     // TODO: this is a workaround to handle large numbers that are stored as strings which are uint256.
@@ -59,7 +77,7 @@ export function TokenChart({
               {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
             </div>
             <ChartDropdown
-              onTimePeriodChangeAction={onTimePeriodChangeAction}
+              onTimePeriodChangeAction={handleTimePeriodChange}
             />
           </div>
         </CardHeader>
@@ -76,7 +94,7 @@ export function TokenChart({
                 fontSize={10}
                 tickLine={false}
                 tickFormatter={(str) => {
-                  return formatTimestamp(str);
+                  return formatShortDate(str); //TODO: this should be formatted diferently if the period is all time
                 }}
                 height={50}
                 interval={7}

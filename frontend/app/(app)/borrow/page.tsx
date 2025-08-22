@@ -1,9 +1,8 @@
 "use client"
 
 import { getUserLoanHistory } from "@/app/services/api.service"
-import { formatCurrency } from "@/app/utils/format.utils"
 import { useUserAddress } from "@/app/utils/address.utils"
-import { TokenChart } from "@/components/tokens-chart"
+import { formatCurrency } from "@/app/utils/format.utils"
 import { MyLoanSidePanel } from "@/components/my-loan-side-panel"
 import {
   Card,
@@ -12,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
+import { Chart } from "@/components/universal-chart"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -69,7 +69,7 @@ export default function BorrowPage() {
                   </div>
                 ) : (
                   userLoanHistory.length > 0 && (
-                    <TokenChart
+                    <Chart
                       data={userLoanHistory}
                       title="My Loan History"
                       description="Your total borrowed amount over time"
