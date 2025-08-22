@@ -22,7 +22,7 @@ var firestoreClient *firestore.Client
 
 func init() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ // TODO: switch to JSON handler for production
-		Level: slog.LevelInfo,
+		Level: slog.LevelDebug, //dev only
 	}))
 	slog.SetDefault(logger)
 

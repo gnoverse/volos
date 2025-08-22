@@ -22,10 +22,10 @@ func NewMarketAggregator(client *firestore.Client) *MarketAggregator {
 	}
 }
 
-// CreateHourlySnapshot creates an hourly snapshot for a market
-func (ma *MarketAggregator) CreateHourlySnapshot(marketID string, endTime time.Time) error {
-	startTime := endTime.Add(-1 * time.Hour)
-	return ma.createSnapshot(marketID, Hourly, startTime, endTime)
+// CreateFourHourSnapshot creates a 4-hour snapshot for a market
+func (ma *MarketAggregator) CreateFourHourSnapshot(marketID string, endTime time.Time) error {
+	startTime := endTime.Add(-4 * time.Hour)
+	return ma.createSnapshot(marketID, FourHour, startTime, endTime)
 }
 
 // CreateDailySnapshot creates a daily snapshot for a market
@@ -34,16 +34,10 @@ func (ma *MarketAggregator) CreateDailySnapshot(marketID string, endTime time.Ti
 	return ma.createSnapshot(marketID, Daily, startTime, endTime)
 }
 
-// CreateWeeklySnapshot creates a weekly snapshot for a market
-func (ma *MarketAggregator) CreateWeeklySnapshot(marketID string, endTime time.Time) error {
-	startTime := endTime.Add(-7 * 24 * time.Hour)
-	return ma.createSnapshot(marketID, Weekly, startTime, endTime)
-}
-
-// CreateMonthlySnapshot creates a monthly snapshot for a market
-func (ma *MarketAggregator) CreateMonthlySnapshot(marketID string, endTime time.Time) error {
-	startTime := endTime.AddDate(0, -1, 0)
-	return ma.createSnapshot(marketID, Monthly, startTime, endTime)
+// CreateThreeDaySnapshot creates a 3-day snapshot for a market
+func (ma *MarketAggregator) CreateThreeDaySnapshot(marketID string, endTime time.Time) error {
+	startTime := endTime.Add(-3 * 24 * time.Hour)
+	return ma.createSnapshot(marketID, ThreeDay, startTime, endTime)
 }
 
 // createSnapshot aggregates market data for the given time period and creates a snapshot
@@ -92,6 +86,8 @@ func (ma *MarketAggregator) createSnapshot(marketID string, resolution TimeBucke
 func (ma *MarketAggregator) aggregateAPRData(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (float64, float64, int, error) {
 	aprCollection := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("apr")
 
+	slog.Debug("aggregating APR data", "start_time", startTime, "end_time", endTime)
+
 	query := aprCollection.Where("timestamp", ">=", startTime).Where("timestamp", "<=", endTime)
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
@@ -137,14 +133,12 @@ func (ma *MarketAggregator) getLatestMarketData(ctx context.Context, sanitizedMa
 // getBucketCollectionName returns the Firestore collection name for the given resolution
 func (ma *MarketAggregator) getBucketCollectionName(resolution TimeBucketResolution) string {
 	switch resolution {
-	case Hourly:
-		return "snapshots_hourly"
+	case FourHour:
+		return "snapshots_4hour"
 	case Daily:
 		return "snapshots_daily"
-	case Weekly:
-		return "snapshots_weekly"
-	case Monthly:
-		return "snapshots_monthly"
+	case ThreeDay:
+		return "snapshots_3day"
 	default:
 		return "snapshots_daily"
 	}

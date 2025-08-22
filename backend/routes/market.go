@@ -155,8 +155,7 @@ func GetMarketUtilizationHistoryHandler(client *firestore.Client) http.HandlerFu
 	}
 }
 
-
-// GetMarketSnapshotsHandler handles GET /market/snapshots?marketId=ID&resolution=hourly&startTime=X&endTime=Y
+// GetMarketSnapshotsHandler handles GET /market/snapshots?marketId=ID&resolution=4hour&startTime=X&endTime=Y
 func GetMarketSnapshotsHandler(client *firestore.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -169,7 +168,7 @@ func GetMarketSnapshotsHandler(client *firestore.Client) http.HandlerFunc {
 
 		resolution := r.URL.Query().Get("resolution")
 		if resolution == "" {
-			resolution = "daily" // Default to daily
+			resolution = "4hour" // Default to 4hour
 		}
 
 		startTimeStr := r.URL.Query().Get("startTime")
