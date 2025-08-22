@@ -33,7 +33,7 @@ func CreateProposal(client *firestore.Client, proposalID, title, body, proposer,
 	}
 	createdAt := time.Unix(createdAtUnix, 0)
 
-	proposal := model.ProposalData{
+	proposal := model.Proposal{
 		ID:        proposalID,
 		Title:     title,
 		Body:      body,
@@ -99,7 +99,7 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, ti
 				return err
 			}
 		} else if vSnap.Exists() {
-			var existing model.VoteData
+			var existing model.Vote
 			if err := vSnap.DataTo(&existing); err == nil {
 				prevChoice = existing.VoteChoice
 				prevAmount = existing.XVLSAmount
@@ -149,7 +149,7 @@ func AddVote(client *firestore.Client, proposalID, voter, voteChoice, reason, ti
 			}
 		}
 
-		voteData := model.VoteData{
+		voteData := model.Vote{
 			ProposalID: proposalID,
 			Voter:      voter,
 			VoteChoice: voteChoice,

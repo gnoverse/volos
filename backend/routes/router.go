@@ -29,6 +29,8 @@ func APIRouter(client *firestore.Client) http.HandlerFunc {
 			GetMarketTotalBorrowHistoryHandler(client)(w, r)
 		case "/api/market/total-supply-history":
 			GetMarketTotalSupplyHistoryHandler(client)(w, r)
+		case "/api/market/utilization-history":
+			GetMarketUtilizationHistoryHandler(client)(w, r)
 		case "/api/proposals":
 			GetProposalsHandler(client)(w, r)
 		case "/api/proposals/active":
