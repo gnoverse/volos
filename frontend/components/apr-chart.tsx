@@ -2,6 +2,7 @@
 
 import { APRData } from "@/app/services/api.service"
 import { formatTimestamp } from "@/app/utils/format.utils"
+import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
@@ -11,13 +12,17 @@ interface APRChartProps {
   title: string
   description: string
   className?: string
+  onTimePeriodChangeAction: (period: TimePeriod) => void
+  selectedTimePeriod: TimePeriod
 }
 
 export function APRChart({
   data,
   title,
   description,
-  className
+  className,
+  onTimePeriodChangeAction,
+  selectedTimePeriod
 }: APRChartProps) {
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
@@ -37,6 +42,10 @@ export function APRChart({
                 <div className="w-2 h-0.5 bg-teal-400 rounded mr-1"></div>
                 Borrow APR
               </div>
+              <ChartDropdown
+                selectedTimePeriod={selectedTimePeriod}
+                onTimePeriodChangeAction={onTimePeriodChangeAction}
+                />
             </div>
           </div>
         </CardHeader>

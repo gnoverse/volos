@@ -4,6 +4,7 @@ import { InfoCard } from "@/components/info-card";
 import { useQuery } from '@tanstack/react-query';
 import { APRChart } from "./apr-chart";
 import { TokenChart } from "./tokens-chart";
+import { TimePeriod } from "./chart-dropdown";
 
 interface MarketOverviewProps {
   market: MarketInfo;
@@ -60,6 +61,22 @@ export function MarketOverview({
     );
   }
 
+  const onSupplyTimePeriodChangeAction = (period: TimePeriod) => {
+    console.log(period)
+  }
+
+  const onBorrowTimePeriodChangeAction = (period: TimePeriod) => {
+    console.log(period)
+  }
+
+  const onUtilizationTimePeriodChangeAction = (period: TimePeriod) => {
+    console.log(period)
+  }
+
+  const onAprTimePeriodChangeAction = (period: TimePeriod) => {
+    console.log(period)
+  }
+
   return (
     <>
       {/* Charts */}
@@ -72,6 +89,7 @@ export function MarketOverview({
           dataKey="total"
           color="rgba(34, 197, 94, 0.95)"
           className={cardStyles}
+          onTimePeriodChangeAction={onSupplyTimePeriodChangeAction}
         />
         )}
         {netBorrowHistory && (
@@ -82,6 +100,7 @@ export function MarketOverview({
           dataKey="total"
           color="rgba(239, 68, 68, 0.95)"
           className={cardStyles}
+          onTimePeriodChangeAction={onBorrowTimePeriodChangeAction}
         />
         )}
         {utilizationHistory && (
@@ -92,6 +111,7 @@ export function MarketOverview({
           dataKey="total"
           color="rgba(99, 102, 241, 0.95)"
           className={cardStyles}
+          onTimePeriodChangeAction={onUtilizationTimePeriodChangeAction}
         />
         )}
         {aprHistory && (
@@ -100,6 +120,7 @@ export function MarketOverview({
           title="APR"
           description="Annual Percentage Rate"
           className={cardStyles}
+          onTimePeriodChangeAction={onAprTimePeriodChangeAction}
         />
         )}
       </div>

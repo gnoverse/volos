@@ -2,11 +2,13 @@
 
 import { TotalBorrowData, TotalSupplyData } from "@/app/services/api.service"
 import { formatTimestamp } from "@/app/utils/format.utils"
+import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 type TokenChartData = TotalSupplyData | TotalBorrowData
+
 interface TokenChartProps {
   data: Array<TokenChartData>
   title: string
@@ -14,6 +16,7 @@ interface TokenChartProps {
   dataKey: string
   color?: string
   className?: string
+  onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
 export function TokenChart({
@@ -22,7 +25,8 @@ export function TokenChart({
   description,
   dataKey,
   color = "rgb(99, 102, 241)",
-  className
+  className,
+  onTimePeriodChangeAction,
 }: TokenChartProps) {
   // TODO: This is fixed for now and should be changeable with tokenDecimals prop
   // Currently dividing by 10^6 to convert from wei to a more readable format
@@ -35,8 +39,15 @@ export function TokenChart({
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
       {(title || description) && (
         <CardHeader className="pb-4">
-          {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
-          {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+          <div className="flex items-center justify-between">
+            <div>
+              {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
+              {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+            </div>
+            <ChartDropdown
+              onTimePeriodChangeAction={onTimePeriodChangeAction}
+            />
+          </div>
         </CardHeader>
       )}
       <CardContent className="-px-6">

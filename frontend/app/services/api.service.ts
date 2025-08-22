@@ -14,7 +14,6 @@ export type MarketActivity = {
   isAmountInShares: boolean;
 };
 
-// New types for market history data
 export type APRData = {
   timestamp: Date;
   supply_apr: number;
@@ -33,6 +32,23 @@ export type TotalBorrowData = {
   is_borrow: boolean;
   timestamp: Date;
   total: string;
+};
+
+export type UtilizationData = {
+  timestamp: Date;
+  utilization_rate: number;
+};
+
+export type MarketSnapshot = {
+  market_id: string;
+  timestamp: Date;
+  resolution: '4hour' | 'daily' | 'weekly';
+  supply_apr: number;
+  borrow_apr: number;
+  total_supply: string;
+  total_borrow: string;
+  utilization_rate: number;
+  created_at: Date;
 };
 
 export type User = {
@@ -184,22 +200,36 @@ export async function getMarket(marketId: string): Promise<Market> {
 }
 
 export async function getAPRHistory(marketId: string): Promise<APRData[]> {
-  const res = await axios.get(`${API_BASE}/market/apr`, { params: { marketId } });
+  const res = await axios.get(`${API_BASE}/apr`, { params: { marketId } });
   return res.data;
 }
 
 export async function getTotalBorrowHistory(marketId: string): Promise<TotalBorrowData[]> {
-  const res = await axios.get(`${API_BASE}/market/total-borrow-history`, { params: { marketId } });
+  const res = await axios.get(`${API_BASE}/total-borrow-history`, { params: { marketId } });
   return res.data;
 }
 
 export async function getTotalSupplyHistory(marketId: string): Promise<TotalSupplyData[]> {
-  const res = await axios.get(`${API_BASE}/market/total-supply-history`, { params: { marketId } });
+  const res = await axios.get(`${API_BASE}/total-supply-history`, { params: { marketId } });
   return res.data;
 }
 
-export async function getUtilizationHistory(marketId: string): Promise<TotalSupplyData[]> {
-  // TODO: implement this
-  const res = await axios.get(`${API_BASE}/market/total-supply-history`, { params: { marketId } });
+export async function getUtilizationHistory(marketId: string): Promise<UtilizationData[]> {
+  const res = await axios.get(`${API_BASE}/utilization-history`, { params: { marketId } });
+  return res.data;
+}
+
+export async function getMarketSnapshots(
+  marketId: string, 
+  resolution?: '4hour' | 'daily' | 'weekly',
+  startTime?: string,
+  endTime?: string
+): Promise<MarketSnapshot[]> {
+  const params: Record<string, string> = { marketId };
+  if (resolution) params.resolution = resolution;
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/snapshots`, { params });
   return res.data;
 }
