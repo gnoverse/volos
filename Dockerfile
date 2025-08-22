@@ -18,4 +18,4 @@ COPY --from=builder /app/src/build/tx-indexer /app/tx-indexer
 
 ENV PATH="/app:${PATH}"
 
-CMD ["tx-indexer", "start", "--remote", "http://localhost:26657",  "--db-path", "indexer-db", "--listen-address", "localhost:3100"]
+CMD ["tx-indexer", "start", "--remote", "http://gnodev:26657",  "--db-path", "indexer-db", "--listen-address", "0.0.0.0:3100"]

@@ -1,0 +1,26 @@
+services:
+  gnodev:
+    build: ./contract/
+    ports:
+      - "8081:8081"
+
+  tx-indexer:
+    build: .
+    ports:
+      - "8082:8082"
+    depends_on:
+      - gnodev
+
+  backend:
+    build: ./backend/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - tx-indexer
+
+  frontend:
+    build: ./frontend/
+    ports:
+      - "8000:5000"
+    depends_on:
+      - backend

@@ -25,4 +25,4 @@ COPY ./p/volos/* /app/src/examples/gno.land/p/volos/
 
 ENV PATH="/app:${PATH}"
 
-CMD ["gnodev", "-paths", "gno.land/r/volos/**,gno.land/r/gnoswap/**"]
+CMD ["gnodev", "-paths", "gno.land/r/volos/**,gno.land/r/gnoswap/**", "-node-rpc-listener", "0.0.0.0:26657"]
