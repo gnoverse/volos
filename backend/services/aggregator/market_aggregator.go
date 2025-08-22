@@ -3,11 +3,9 @@ package aggregator
 import (
 	"context"
 	"log/slog"
-	"math/big"
 	"strings"
 	"time"
 	"volos-backend/model"
-	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
 )
@@ -53,42 +51,34 @@ func (ma *MarketAggregator) createSnapshot(marketID string, resolution TimeBucke
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	// Aggregate APR data
 	supplyAPR, borrowAPR, sampleCount, err := ma.aggregateAPRData(ctx, sanitizedMarketID, startTime, endTime)
 	if err != nil {
 		slog.Error("failed to aggregate APR data", "market_id", marketID, "error", err)
 		return err
 	}
 
-	// Get latest totals
-	totalSupply, totalBorrow, err := ma.getLatestTotals(ctx, sanitizedMarketID)
+	market, err := ma.getLatestMarketData(ctx, sanitizedMarketID)
 	if err != nil {
-		slog.Error("failed to get latest totals", "market_id", marketID, "error", err)
+		slog.Error("failed to get latest market data", "market_id", marketID, "error", err)
 		return err
 	}
 
-	// Calculate utilization rate
-	utilizationRate := ma.calculateUtilizationRate(totalSupply, totalBorrow)
-
-	// Create snapshot document
 	snapshot := MarketSnapshotData{
 		MarketID:        marketID,
 		Timestamp:       endTime,
 		Resolution:      resolution,
 		SupplyAPR:       supplyAPR,
 		BorrowAPR:       borrowAPR,
-		TotalSupply:     totalSupply,
-		TotalBorrow:     totalBorrow,
-		UtilizationRate: utilizationRate,
+		TotalSupply:     market.TotalSupply,
+		TotalBorrow:     market.TotalBorrow,
+		UtilizationRate: market.UtilizationRate,
 		SampleCount:     sampleCount,
 		CreatedAt:       time.Now(),
 	}
 
-	// Store in appropriate bucket collection
 	bucketCollection := ma.getBucketCollectionName(resolution)
-	docID := ma.generateSnapshotID(marketID, endTime, resolution)
 
-	_, err = ma.client.Collection("markets").Doc(sanitizedMarketID).Collection(bucketCollection).Doc(docID).Set(ctx, snapshot)
+	_, _, err = ma.client.Collection("markets").Doc(sanitizedMarketID).Collection(bucketCollection).Add(ctx, snapshot)
 	if err != nil {
 		slog.Error("failed to store market snapshot", "market_id", marketID, "resolution", resolution, "error", err)
 		return err
@@ -114,7 +104,7 @@ func (ma *MarketAggregator) aggregateAPRData(ctx context.Context, sanitizedMarke
 
 	var totalSupplyAPR, totalBorrowAPR float64
 	for _, doc := range docs {
-		var aprData model.APRHistoryData
+		var aprData model.APRHistory
 		if err := doc.DataTo(&aprData); err != nil {
 			continue
 		}
@@ -129,34 +119,19 @@ func (ma *MarketAggregator) aggregateAPRData(ctx context.Context, sanitizedMarke
 	return avgSupplyAPR, avgBorrowAPR, sampleCount, nil
 }
 
-// getLatestTotals gets the most recent total supply and borrow values
-func (ma *MarketAggregator) getLatestTotals(ctx context.Context, sanitizedMarketID string) (string, string, error) {
+// getLatestMarketData gets the most recent market data including totals and utilization rate
+func (ma *MarketAggregator) getLatestMarketData(ctx context.Context, sanitizedMarketID string) (*model.Market, error) {
 	marketDoc, err := ma.client.Collection("markets").Doc(sanitizedMarketID).Get(ctx)
 	if err != nil {
-		return "0", "0", err
+		return nil, err
 	}
 
-	var market model.MarketData
+	var market model.Market
 	if err := marketDoc.DataTo(&market); err != nil {
-		return "0", "0", err
+		return nil, err
 	}
 
-	return market.TotalSupply, market.TotalBorrow, nil
-}
-
-// calculateUtilizationRate calculates the utilization rate as a percentage
-func (ma *MarketAggregator) calculateUtilizationRate(totalSupply, totalBorrow string) float64 {
-	supply := utils.ParseAmount(totalSupply, "utilization calculation")
-	borrow := utils.ParseAmount(totalBorrow, "utilization calculation")
-
-	if supply.Sign() == 0 {
-		return 0
-	}
-
-	// Calculate utilization rate: (borrow / supply) * 100
-	utilization := new(big.Rat).SetFrac(borrow, supply)
-	utilizationFloat, _ := utilization.Float64()
-	return utilizationFloat * 100
+	return &market, nil
 }
 
 // getBucketCollectionName returns the Firestore collection name for the given resolution
@@ -173,12 +148,4 @@ func (ma *MarketAggregator) getBucketCollectionName(resolution TimeBucketResolut
 	default:
 		return "snapshots_daily"
 	}
-}
-
-// generateSnapshotID creates a unique document ID for the snapshot
-func (ma *MarketAggregator) generateSnapshotID(marketID string, timestamp time.Time, resolution TimeBucketResolution) string {
-	// Format: marketID_timestamp_resolution
-	// Example: "gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/gns:3000_2024-01-15T14:00:00Z_hourly"
-	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
-	return sanitizedMarketID + "_" + timestamp.Format(time.RFC3339) + "_" + string(resolution)
 }

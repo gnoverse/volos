@@ -5,8 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	"volos-backend/model"
+
+	"cloud.google.com/go/firestore"
 )
 
 // JobScheduler manages the scheduling and execution of aggregation jobs
@@ -41,13 +42,21 @@ func (js *JobScheduler) Stop() {
 	slog.Info("aggregation job scheduler stopped")
 }
 
-// runHourlyJobs runs hourly aggregation jobs
+// runHourlyJobs schedules and executes hourly aggregation jobs.
+// It waits until the start of the next hour, then runs aggregation every hour
+// at the beginning of each hour (e.g., 14:00, 15:00, 16:00).
 func (js *JobScheduler) runHourlyJobs() {
+	now := time.Now()
+	if now.Minute() == 0 {
+		js.runHourlyAggregation()
+	}
+
+	nextHour := now.Truncate(time.Hour).Add(1 * time.Hour)
+	delay := nextHour.Sub(now)
+	time.Sleep(delay)
+
 	ticker := time.NewTicker(1 * time.Hour)
 	defer ticker.Stop()
-
-	// Run initial job
-	js.runHourlyAggregation()
 
 	for {
 		select {
@@ -59,13 +68,21 @@ func (js *JobScheduler) runHourlyJobs() {
 	}
 }
 
-// runDailyJobs runs daily aggregation jobs
+// runDailyJobs schedules and executes daily aggregation jobs.
+// It waits until midnight (00:00) of the next day, then runs aggregation
+// every day at midnight for consistent daily snapshots.
 func (js *JobScheduler) runDailyJobs() {
+	now := time.Now()
+	if now.Hour() == 0 && now.Minute() == 0 {
+		js.runDailyAggregation()
+	}
+
+	nextDay := now.Truncate(24 * time.Hour).Add(24 * time.Hour)
+	delay := nextDay.Sub(now)
+	time.Sleep(delay)
+
 	ticker := time.NewTicker(24 * time.Hour)
 	defer ticker.Stop()
-
-	// Run initial job
-	js.runDailyAggregation()
 
 	for {
 		select {
@@ -77,13 +94,25 @@ func (js *JobScheduler) runDailyJobs() {
 	}
 }
 
-// runWeeklyJobs runs weekly aggregation jobs
+// runWeeklyJobs schedules and executes weekly aggregation jobs.
+// It waits until Monday 00:00 of the next week, then runs aggregation
+// every Monday at midnight for consistent weekly snapshots.
 func (js *JobScheduler) runWeeklyJobs() {
+	now := time.Now()
+	if now.Weekday() == time.Monday && now.Hour() == 0 && now.Minute() == 0 {
+		js.runWeeklyAggregation()
+	}
+
+	daysUntilMonday := (8 - int(now.Weekday())) % 7
+	if daysUntilMonday == 0 {
+		daysUntilMonday = 7
+	}
+	nextMonday := now.Truncate(24*time.Hour).AddDate(0, 0, daysUntilMonday)
+	delay := nextMonday.Sub(now)
+	time.Sleep(delay)
+
 	ticker := time.NewTicker(7 * 24 * time.Hour)
 	defer ticker.Stop()
-
-	// Run initial job
-	js.runWeeklyAggregation()
 
 	for {
 		select {
@@ -95,49 +124,79 @@ func (js *JobScheduler) runWeeklyJobs() {
 	}
 }
 
-// runMonthlyJobs runs monthly aggregation jobs
+// runMonthlyJobs schedules and executes monthly aggregation jobs.
+// It waits until the 1st of the next month at 00:00, then runs aggregation
+// every month on the 1st for consistent monthly snapshots that align with
+// calendar months.
 func (js *JobScheduler) runMonthlyJobs() {
-	ticker := time.NewTicker(30 * 24 * time.Hour) // Approximate monthly interval
-	defer ticker.Stop()
+	now := time.Now()
+	if now.Day() == 1 && now.Hour() == 0 && now.Minute() == 0 {
+		js.runMonthlyAggregation()
+	}
 
-	// Run initial job
-	js.runMonthlyAggregation()
+	nextMonth := now.AddDate(0, 1, 0)
+	firstOfNextMonth := time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, now.Location())
+	delay := firstOfNextMonth.Sub(now)
+	time.Sleep(delay)
 
 	for {
 		select {
 		case <-js.stopChan:
 			return
-		case <-ticker.C:
+		default:
 			js.runMonthlyAggregation()
+
+			nextMonth := time.Now().AddDate(0, 1, 0)
+			firstOfNextMonth := time.Date(nextMonth.Year(), nextMonth.Month(), 1, 0, 0, 0, 0, time.Now().Location())
+			delay := time.Until(firstOfNextMonth)
+
+			timer := time.NewTimer(delay)
+			select {
+			case <-js.stopChan:
+				timer.Stop()
+				return
+			case <-timer.C:
+			}
 		}
 	}
 }
 
-// runHourlyAggregation runs hourly aggregation for all markets
+// runHourlyAggregation executes hourly aggregation for all markets.
+// It truncates the current time to the hour boundary and processes all markets
+// with hourly resolution snapshots.
 func (js *JobScheduler) runHourlyAggregation() {
 	now := time.Now().Truncate(time.Hour)
 	js.runAggregationForAllMarkets(Hourly, now)
 }
 
-// runDailyAggregation runs daily aggregation for all markets
+// runDailyAggregation executes daily aggregation for all markets.
+// It truncates the current time to the day boundary and processes all markets
+// with daily resolution snapshots.
 func (js *JobScheduler) runDailyAggregation() {
 	now := time.Now().Truncate(24 * time.Hour)
 	js.runAggregationForAllMarkets(Daily, now)
 }
 
-// runWeeklyAggregation runs weekly aggregation for all markets
+// runWeeklyAggregation executes weekly aggregation for all markets.
+// It truncates the current time to the week boundary and processes all markets
+// with weekly resolution snapshots.
 func (js *JobScheduler) runWeeklyAggregation() {
 	now := time.Now().Truncate(7 * 24 * time.Hour)
 	js.runAggregationForAllMarkets(Weekly, now)
 }
 
-// runMonthlyAggregation runs monthly aggregation for all markets
+// runMonthlyAggregation executes monthly aggregation for all markets.
+// It truncates the current time to the month boundary and processes all markets
+// with monthly resolution snapshots.
 func (js *JobScheduler) runMonthlyAggregation() {
 	now := time.Now().Truncate(30 * 24 * time.Hour)
 	js.runAggregationForAllMarkets(Monthly, now)
 }
 
-// runAggregationForAllMarkets runs aggregation for all markets at the given resolution
+// runAggregationForAllMarkets executes aggregation jobs for all markets at the specified resolution.
+// It fetches all market IDs from the database and spawns goroutines to create snapshots
+// for each market concurrently. Each snapshot is created with the given timestamp and
+// resolution (hourly, daily, weekly, or monthly).
 func (js *JobScheduler) runAggregationForAllMarkets(resolution TimeBucketResolution, timestamp time.Time) {
 	markets, err := js.getAllMarketIDs()
 	if err != nil {
@@ -168,7 +227,7 @@ func (js *JobScheduler) runAggregationForAllMarkets(resolution TimeBucketResolut
 	slog.Info("started aggregation jobs", "resolution", resolution, "market_count", len(markets), "timestamp", timestamp)
 }
 
-// getAllMarketIDs gets all market IDs from the database
+// getAllMarketIDs retrieves all market IDs from the Firestore database.
 func (js *JobScheduler) getAllMarketIDs() ([]string, error) {
 	ctx := context.Background()
 	docs, err := js.client.Collection("markets").Documents(ctx).GetAll()
@@ -178,7 +237,7 @@ func (js *JobScheduler) getAllMarketIDs() ([]string, error) {
 
 	var marketIDs []string
 	for _, doc := range docs {
-		var market model.MarketData
+		var market model.Market
 		if err := doc.DataTo(&market); err != nil {
 			continue
 		}
