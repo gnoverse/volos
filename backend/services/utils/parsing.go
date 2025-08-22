@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"math/big"
 	"strconv"
+	"time"
 )
 
 // ParseTimestamp parses a timestamp string to int64, logs errors and returns 0 on failure
@@ -47,6 +48,21 @@ func ParseInt64(value string, context string) int64 {
 	if err != nil {
 		slog.Error("failed to parse int64", "context", context, "value", value, "error", err)
 		return 0
+	}
+	return parsed
+}
+
+// ParseTime parses a time string in RFC3339 format, logs errors and returns zero time on failure
+func ParseTime(timeStr string, context string) time.Time {
+	if timeStr == "" {
+		slog.Error("Empty time string", "context", context)
+		return time.Time{}
+	}
+
+	parsed, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		slog.Error("failed to parse time", "context", context, "time", timeStr, "error", err)
+		return time.Time{}
 	}
 	return parsed
 }

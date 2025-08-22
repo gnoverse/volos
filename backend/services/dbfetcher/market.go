@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"volos-backend/model"
+	"volos-backend/services/aggregator"
+	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
 )
@@ -186,4 +188,53 @@ func GetMarketUtilizationHistory(client *firestore.Client, marketID string) ([]m
 	}
 
 	return dataArray, nil
+}
+
+// GetMarketSnapshots retrieves aggregated market snapshots for a specific time period
+func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTimeStr, endTimeStr string) ([]aggregator.MarketSnapshotData, error) {
+	ctx := context.Background()
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+
+	var bucketCollection string
+	switch resolution {
+	case "4hour":
+		bucketCollection = "snapshots_4hour"
+	case "daily":
+		bucketCollection = "snapshots_daily"
+	case "weekly":
+		bucketCollection = "snapshots_weekly"
+	default:
+		bucketCollection = "snapshots_daily"
+	}
+
+	startTime := utils.ParseTime(startTimeStr, "market snapshots query")
+	endTime := utils.ParseTime(endTimeStr, "market snapshots query")
+
+	query := client.Collection("markets").Doc(sanitizedMarketID).Collection(bucketCollection).OrderBy("timestamp", firestore.Asc)
+
+	if !startTime.IsZero() {
+		query = query.Where("timestamp", ">=", startTime)
+	}
+
+	if !endTime.IsZero() {
+		query = query.Where("timestamp", "<=", endTime)
+	}
+
+	docs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		slog.Error("Error fetching market snapshots", "market_id", marketID, "resolution", resolution, "error", err)
+		return nil, err
+	}
+
+	var snapshots []aggregator.MarketSnapshotData
+	for _, doc := range docs {
+		var snapshot aggregator.MarketSnapshotData
+		if err := doc.DataTo(&snapshot); err != nil {
+			slog.Error("Error parsing snapshot data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
+			continue
+		}
+		snapshots = append(snapshots, snapshot)
+	}
+
+	return snapshots, nil
 }
