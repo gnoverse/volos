@@ -3,8 +3,8 @@ import { MarketInfo } from "@/app/types";
 import { InfoCard } from "@/components/info-card";
 import { useQuery } from '@tanstack/react-query';
 import { APRChart } from "./apr-chart";
-import { TokenChart } from "./tokens-chart";
 import { TimePeriod } from "./chart-dropdown";
+import { TokenChart } from "./tokens-chart";
 
 interface MarketOverviewProps {
   market: MarketInfo;
@@ -86,7 +86,6 @@ export function MarketOverview({
           data={netSupplyHistory}
           title="Total Supply"
           description="Total assets supplied to the market"
-          dataKey="total"
           color="rgba(34, 197, 94, 0.95)"
           className={cardStyles}
           onTimePeriodChangeAction={onSupplyTimePeriodChangeAction}
@@ -97,7 +96,6 @@ export function MarketOverview({
           data={netBorrowHistory}
           title="Net Borrow"
           description="Net borrow (borrow - repay) over time"
-          dataKey="total"
           color="rgba(239, 68, 68, 0.95)"
           className={cardStyles}
           onTimePeriodChangeAction={onBorrowTimePeriodChangeAction}
@@ -108,7 +106,6 @@ export function MarketOverview({
           data={utilizationHistory}
           title="Utilization Rate"
           description="Percentage of supplied assets being borrowed"
-          dataKey="total"
           color="rgba(99, 102, 241, 0.95)"
           className={cardStyles}
           onTimePeriodChangeAction={onUtilizationTimePeriodChangeAction}

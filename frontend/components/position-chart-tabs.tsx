@@ -104,7 +104,6 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
               title=""
               description=""
               data={mappedCollateral}
-              dataKey="value"
               color="rgba(34, 197, 94, 0.95)"
               className="pt-6"
             />
@@ -116,7 +115,6 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
               title=""
               description=""
               data={mappedBorrow}
-              dataKey="value"
               color="rgba(239, 68, 68, 0.95)"
               className="pt-6"
             />
@@ -127,7 +125,6 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
             title=""
             description=""
             data={mappedCollateral}
-            dataKey="value"
             color="rgba(99, 102, 241, 0.95)"
             className="pt-6"
           />

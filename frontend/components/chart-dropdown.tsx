@@ -24,7 +24,7 @@ export function ChartDropdown({ onTimePeriodChangeAction }: ChartDropdownProps) 
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-24 bg-gray-800/80 border-none text-gray-100 hover:bg-gray-700/90 focus:ring-logo-500/50 rounded-full">
           <span className="text-right">{selectedTimePeriod}</span>
-          <ChevronDown className="ml-1 h-3 w-3" />
+          <ChevronDown className="h-3 w-3" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-gray-800/95 border-none text-gray-100" align="end">

@@ -1,21 +1,21 @@
 "use client"
 
-import { TotalBorrowData, TotalSupplyData } from "@/app/services/api.service"
+import { TotalBorrowData, TotalSupplyData, UtilizationData } from "@/app/services/api.service"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
-type TokenChartData = TotalSupplyData | TotalBorrowData
+type TokenChartData = TotalSupplyData | TotalBorrowData | UtilizationData
 
 interface TokenChartProps {
   data: Array<TokenChartData>
   title: string
   description: string
-  dataKey: string
   color?: string
   className?: string
+  decimals?: number
   onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
@@ -23,17 +23,31 @@ export function TokenChart({
   data,
   title,
   description,
-  dataKey,
   color = "rgb(99, 102, 241)",
   className,
+  decimals = 6,
   onTimePeriodChangeAction,
 }: TokenChartProps) {
-  // TODO: This is fixed for now and should be changeable with tokenDecimals prop
-  // Currently dividing by 10^6 to convert from wei to a more readable format
-  const transformedData = data.map(item => ({
-    ...item,
-    total: Number((item as TokenChartData).total) / 1000000
-  }))
+  const transformedData = data.map(item => {
+    const rawValue = (item as TokenChartData).value;
+
+    // TODO: this is a workaround to handle large numbers that are stored as strings which are uint256.
+    // Number type is 64 bit meaning this won't work for numbers larger than 2^53.
+    // TODO: find a better way to handle this.
+    if (typeof rawValue === 'string') { 
+      const bigValue = Number(rawValue);
+      const divisor = Math.pow(10, decimals);
+      return {
+        ...item,
+        value: bigValue / divisor
+      };
+    }
+    
+    return {
+      ...item,
+      value: rawValue
+    };
+  })
 
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
@@ -80,7 +94,7 @@ export function TokenChart({
               />
               <Line
                 type="monotone"
-                dataKey={dataKey}
+                dataKey="value"
                 stroke={color}
                 strokeWidth={2}
                 dot={false}

@@ -80,8 +80,8 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 
 	history := map[string]interface{}{
 		"timestamp":    eventTime,
-		"total":        updatedTotalStr,
-		"amount_delta": amount,
+		"value":        updatedTotalStr,
+		"delta": amount,
 		"is_supply":    isSupply,
 	}
 	if _, err := marketRef.Collection("total_supply").NewDoc().Set(ctx, history); err != nil {

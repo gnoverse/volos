@@ -75,8 +75,8 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 
 	history := map[string]interface{}{
 		"timestamp":    eventTime,
-		"total":        updatedTotalStr,
-		"amount_delta": amount,
+		"value":        updatedTotalStr,
+		"delta": amount,
 		"is_borrow":    isBorrow,
 	}
 

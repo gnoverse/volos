@@ -13,7 +13,6 @@ interface APRChartProps {
   description: string
   className?: string
   onTimePeriodChangeAction: (period: TimePeriod) => void
-  selectedTimePeriod: TimePeriod
 }
 
 export function APRChart({
@@ -22,7 +21,6 @@ export function APRChart({
   description,
   className,
   onTimePeriodChangeAction,
-  selectedTimePeriod
 }: APRChartProps) {
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
@@ -43,7 +41,6 @@ export function APRChart({
                 Borrow APR
               </div>
               <ChartDropdown
-                selectedTimePeriod={selectedTimePeriod}
                 onTimePeriodChangeAction={onTimePeriodChangeAction}
                 />
             </div>

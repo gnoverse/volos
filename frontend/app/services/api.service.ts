@@ -21,22 +21,22 @@ export type APRData = {
 };
 
 export type TotalSupplyData = {
-  amount_delta: string;
+  delta: string;
   is_supply: boolean;
   timestamp: Date;
-  total: string;
+  value: string;
 };
 
 export type TotalBorrowData = {
-  amount_delta: string;
+  delta: string;
   is_borrow: boolean;
   timestamp: Date;
-  total: string;
+  value: string;
 };
 
 export type UtilizationData = {
   timestamp: Date;
-  utilization_rate: number;
+  value: number;
 };
 
 export type MarketSnapshot = {

@@ -114,24 +114,24 @@ type APRHistory struct {
 // TotalSupplyHistory represents a single total supply history entry stored in the total_supply subcollection.
 // This struct contains the supply amount change at a specific point in time.
 type TotalSupplyHistory struct {
-	AmountDelta string    `firestore:"amount_delta" json:"amount_delta"` // Change in supply amount (u256 string)
+	Delta       string    `firestore:"delta" json:"delta"`               // Change in supply amount (u256 string)
 	IsSupply    bool      `firestore:"is_supply" json:"is_supply"`       // Whether this is a supply (true) or withdraw (false)
 	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this supply/withdraw event occurred
-	Total       string    `firestore:"total" json:"total"`               // Total supply amount after this change (u256 string)
+	Value       string    `firestore:"value" json:"value"`               // Total supply amount after this change (u256 string)
 }
 
 // TotalBorrowHistory represents a single total borrow history entry stored in the total_borrow subcollection.
 // This struct contains the borrow amount change at a specific point in time.
 type TotalBorrowHistory struct {
-	AmountDelta string    `firestore:"amount_delta" json:"amount_delta"` // Change in borrow amount (u256 string)
+	Delta       string    `firestore:"delta" json:"delta"`               // Change in borrow amount (u256 string)
 	IsBorrow    bool      `firestore:"is_borrow" json:"is_borrow"`       // Whether this is a borrow (true) or repay (false)
 	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this borrow/repay event occurred
-	Total       string    `firestore:"total" json:"total"`               // Total borrow amount after this change (u256 string)
+	Value       string    `firestore:"value" json:"value"`               // Total borrow amount after this change (u256 string)
 }
 
 // UtilizationHistory represents a single utilization history entry stored in the utilization subcollection.
 // This struct contains the utilization rate at a specific point in time.
 type UtilizationHistory struct {
 	Timestamp       time.Time `firestore:"timestamp" json:"timestamp"`               // When this utilization snapshot was taken
-	UtilizationRate float64   `firestore:"utilization_rate" json:"utilization_rate"` // Utilization rate as percentage
+	Value           float64   `firestore:"value" json:"value"`                       // Utilization rate as percentage
 }

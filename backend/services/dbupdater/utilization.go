@@ -61,7 +61,7 @@ func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp stri
 		utilizationHistoryRef := marketRef.Collection("utilization").NewDoc()
 		historyData := map[string]interface{}{
 			"timestamp":        eventTime,
-			"utilization_rate": utilizationRate,
+			"value": utilizationRate,
 		}
 		if err := tx.Set(utilizationHistoryRef, historyData); err != nil {
 			return err
