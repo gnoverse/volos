@@ -80,7 +80,7 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 		"is_borrow":    isBorrow,
 	}
 
-	if _, err := marketRef.Collection("total_borrow_history").NewDoc().Set(ctx, history); err != nil {
+	if _, err := marketRef.Collection("total_borrow").NewDoc().Set(ctx, history); err != nil {
 		slog.Error("failed to add total borrow history entry", "market_id", marketID, "error", err)
 		return
 	}

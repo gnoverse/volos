@@ -14,9 +14,9 @@ import (
 
 // MarketsResponse represents the response structure for market listings
 type MarketsResponse struct {
-	Markets []model.MarketData `json:"markets"`
-	HasMore bool               `json:"has_more"`
-	LastID  string             `json:"last_id"`
+	Markets []model.Market `json:"markets"`
+	HasMore bool           `json:"has_more"`
+	LastID  string         `json:"last_id"`
 }
 
 // GetMarkets retrieves all markets from Firestore with cursor-based pagination
@@ -46,9 +46,9 @@ func GetMarkets(client *firestore.Client, limit int, lastDocID string) (*Markets
 		return nil, err
 	}
 
-	var markets []model.MarketData
+	var markets []model.Market
 	for _, doc := range docs {
-		var market model.MarketData
+		var market model.Market
 		if err := doc.DataTo(&market); err != nil {
 			slog.Error("Error parsing market data", "doc_id", doc.Ref.ID, "error", err)
 			continue
@@ -71,7 +71,7 @@ func GetMarkets(client *firestore.Client, limit int, lastDocID string) (*Markets
 }
 
 // GetMarket retrieves a single market by ID from Firestore
-func GetMarket(client *firestore.Client, marketID string) (*model.MarketData, error) {
+func GetMarket(client *firestore.Client, marketID string) (*model.Market, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
@@ -81,7 +81,7 @@ func GetMarket(client *firestore.Client, marketID string) (*model.MarketData, er
 		return nil, err
 	}
 
-	var market model.MarketData
+	var market model.Market
 	if err := doc.DataTo(&market); err != nil {
 		slog.Error("Error parsing market data", "market_id", marketID, "error", err)
 		return nil, err
@@ -91,7 +91,7 @@ func GetMarket(client *firestore.Client, marketID string) (*model.MarketData, er
 }
 
 // GetMarketAPRHistory retrieves APR history data for a specific market
-func GetMarketAPRHistory(client *firestore.Client, marketID string) ([]model.APRHistoryData, error) {
+func GetMarketAPRHistory(client *firestore.Client, marketID string) ([]model.APRHistory, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
@@ -102,9 +102,9 @@ func GetMarketAPRHistory(client *firestore.Client, marketID string) ([]model.APR
 		return nil, err
 	}
 
-	var dataArray []model.APRHistoryData
+	var dataArray []model.APRHistory
 	for _, doc := range docs {
-		var aprData model.APRHistoryData
+		var aprData model.APRHistory
 		if err := doc.DataTo(&aprData); err != nil {
 			slog.Error("Error parsing APR history data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
 			continue
@@ -116,20 +116,20 @@ func GetMarketAPRHistory(client *firestore.Client, marketID string) ([]model.APR
 }
 
 // GetMarketTotalBorrowHistory retrieves total borrow history data for a specific market
-func GetMarketTotalBorrowHistory(client *firestore.Client, marketID string) ([]model.TotalBorrowHistoryData, error) {
+func GetMarketTotalBorrowHistory(client *firestore.Client, marketID string) ([]model.TotalBorrowHistory, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_borrow_history")
+	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_borrow")
 	docs, err := subcollection.OrderBy("timestamp", firestore.Desc).Documents(ctx).GetAll()
 	if err != nil {
 		slog.Error("Error fetching market total borrow history", "market_id", marketID, "error", err)
 		return nil, err
 	}
 
-	var dataArray []model.TotalBorrowHistoryData
+	var dataArray []model.TotalBorrowHistory
 	for _, doc := range docs {
-		var borrowData model.TotalBorrowHistoryData
+		var borrowData model.TotalBorrowHistory
 		if err := doc.DataTo(&borrowData); err != nil {
 			slog.Error("Error parsing total borrow history data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
 			continue
@@ -141,20 +141,20 @@ func GetMarketTotalBorrowHistory(client *firestore.Client, marketID string) ([]m
 }
 
 // GetMarketTotalSupplyHistory retrieves total supply history data for a specific market
-func GetMarketTotalSupplyHistory(client *firestore.Client, marketID string) ([]model.TotalSupplyHistoryData, error) {
+func GetMarketTotalSupplyHistory(client *firestore.Client, marketID string) ([]model.TotalSupplyHistory, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_supply_history")
+	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_supply")
 	docs, err := subcollection.OrderBy("timestamp", firestore.Desc).Documents(ctx).GetAll()
 	if err != nil {
 		slog.Error("Error fetching market total supply history", "market_id", marketID, "error", err)
 		return nil, err
 	}
 
-	var dataArray []model.TotalSupplyHistoryData
+	var dataArray []model.TotalSupplyHistory
 	for _, doc := range docs {
-		var supplyData model.TotalSupplyHistoryData
+		var supplyData model.TotalSupplyHistory
 		if err := doc.DataTo(&supplyData); err != nil {
 			slog.Error("Error parsing total supply history data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
 			continue
@@ -234,4 +234,29 @@ func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTim
 	}
 
 	return snapshots, nil
+}
+
+// GetMarketUtilizationHistory retrieves utilization history data for a specific market
+func GetMarketUtilizationHistory(client *firestore.Client, marketID string) ([]model.UtilizationHistory, error) {
+	ctx := context.Background()
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+
+	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("utilization")
+	docs, err := subcollection.OrderBy("timestamp", firestore.Asc).Documents(ctx).GetAll()
+	if err != nil {
+		slog.Error("Error fetching market utilization history", "market_id", marketID, "error", err)
+		return nil, err
+	}
+
+	var dataArray []model.UtilizationHistory
+	for _, doc := range docs {
+		var utilizationData model.UtilizationHistory
+		if err := doc.DataTo(&utilizationData); err != nil {
+			slog.Error("Error parsing utilization history data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
+			continue
+		}
+		dataArray = append(dataArray, utilizationData)
+	}
+
+	return dataArray, nil
 }

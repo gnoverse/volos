@@ -133,6 +133,29 @@ func GetMarketTotalSupplyHistoryHandler(client *firestore.Client) http.HandlerFu
 	}
 }
 
+// GetMarketUtilizationHistoryHandler handles GET /market/utilization-history?marketId=ID - returns utilization history for a specific market
+func GetMarketUtilizationHistoryHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		marketID := r.URL.Query().Get("marketId")
+		if marketID == "" {
+			http.Error(w, "marketId query parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		utilizationHistory, err := dbfetcher.GetMarketUtilizationHistory(client, marketID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(utilizationHistory)
+	}
+}
+
+
 // GetMarketSnapshotsHandler handles GET /market/snapshots?marketId=ID&resolution=hourly&startTime=X&endTime=Y
 func GetMarketSnapshotsHandler(client *firestore.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

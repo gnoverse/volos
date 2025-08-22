@@ -17,7 +17,7 @@ func SetDAOMemberStatus(client *firestore.Client, userAddress string, isMember b
 	userExists := err == nil
 
 	now := time.Now()
-	user := model.UserData{
+	user := model.User{
 		Address:   userAddress,
 		DAOMember: isMember,
 		StakedVLS: make(map[string]int64),
@@ -66,7 +66,7 @@ func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string
 	userRef := client.Collection("users").Doc(userAddress)
 	doc, err := userRef.Get(ctx)
 
-	var user model.UserData
+	var user model.User
 	userExists := err == nil
 
 	if userExists {
@@ -75,7 +75,7 @@ func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string
 			return
 		}
 	} else {
-		user = model.UserData{
+		user = model.User{
 			Address:   userAddress,
 			DAOMember: false,
 			StakedVLS: make(map[string]int64),
@@ -114,7 +114,7 @@ func UpdateUserStakedVLS(client *firestore.Client, userAddress, delegatee string
 func AddPendingUnstake(client *firestore.Client, userAddress, delegatee, unstakeId string, amount, unlockAt int64) {
 	ctx := context.Background()
 
-	pendingUnstake := model.PendingUnstakeData{
+	pendingUnstake := model.PendingUnstake{
 		Amount:    amount,
 		Delegatee: delegatee,
 		UnlockAt:  time.Unix(unlockAt, 0),

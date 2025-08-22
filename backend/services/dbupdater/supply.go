@@ -84,7 +84,7 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		"amount_delta": amount,
 		"is_supply":    isSupply,
 	}
-	if _, err := marketRef.Collection("total_supply_history").NewDoc().Set(ctx, history); err != nil {
+	if _, err := marketRef.Collection("total_supply").NewDoc().Set(ctx, history); err != nil {
 		slog.Error("failed to add total supply history entry", "market_id", marketID, "error", err)
 		return
 	}
