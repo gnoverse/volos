@@ -66,3 +66,69 @@ func GetMarketHandler(client *firestore.Client) http.HandlerFunc {
 		json.NewEncoder(w).Encode(market)
 	}
 }
+
+// GetMarketAPRHistoryHandler handles GET /market/apr?marketId=ID - returns APR history for a specific market
+func GetMarketAPRHistoryHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		marketID := r.URL.Query().Get("marketId")
+		if marketID == "" {
+			http.Error(w, "marketId query parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		aprHistory, err := dbfetcher.GetMarketAPRHistory(client, marketID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(aprHistory)
+	}
+}
+
+// GetMarketTotalBorrowHistoryHandler handles GET /market/total-borrow-history?marketId=ID - returns total borrow history for a specific market
+func GetMarketTotalBorrowHistoryHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		marketID := r.URL.Query().Get("marketId")
+		if marketID == "" {
+			http.Error(w, "marketId query parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		borrowHistory, err := dbfetcher.GetMarketTotalBorrowHistory(client, marketID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(borrowHistory)
+	}
+}
+
+// GetMarketTotalSupplyHistoryHandler handles GET /market/total-supply-history?marketId=ID - returns total supply history for a specific market
+func GetMarketTotalSupplyHistoryHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		marketID := r.URL.Query().Get("marketId")
+		if marketID == "" {
+			http.Error(w, "marketId query parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		supplyHistory, err := dbfetcher.GetMarketTotalSupplyHistory(client, marketID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(supplyHistory)
+	}
+}

@@ -25,8 +25,7 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPRWad, borrowAP
 	supply := utils.WadToPercent(supplyAPRWad, "supply apr")
 	borrow := utils.WadToPercent(borrowAPRWad, "borrow apr")
 
-	docID := "ts_" + timestamp
-	_, err := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").Doc(docID).Set(ctx, map[string]interface{}{
+	_, _, err := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").Add(ctx, map[string]interface{}{
 		"timestamp":  eventTime,
 		"supply_apr": supply,
 		"borrow_apr": borrow,
@@ -52,9 +51,9 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPRWad, borrowAP
 		}
 		if eventTime.After(cur) {
 			return tx.Set(marketRef, map[string]interface{}{
-				"supply_apr": supply,
-				"borrow_apr": borrow,
-				"apr_updated_at":     eventTime,
+				"supply_apr":     supply,
+				"borrow_apr":     borrow,
+				"apr_updated_at": eventTime,
 			}, firestore.MergeAll)
 		}
 		return nil
@@ -63,6 +62,6 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPRWad, borrowAP
 		slog.Error("failed to update current apr", "market_id", marketID, "error", err)
 		return
 	}
-	
+
 	slog.Info("apr history updated", "market_id", marketID, "supply_apr", supply, "borrow_apr", borrow, "timestamp", timestamp)
 }

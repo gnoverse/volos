@@ -157,7 +157,7 @@ func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 	pkgPath, ok := getPackagePath(tx)
 	if !ok {
 		if h, _ := tx["hash"].(string); h != "" {
-			slog.Info("missing package path, skipping transaction", "tx_hash", h)
+			slog.Warn("missing package path, skipping transaction", "tx_hash", h)
 		}
 		return
 	}

@@ -16,7 +16,7 @@ import (
 	"google.golang.org/api/option"
 )
 
-var FirestoreClient *firestore.Client
+var firestoreClient *firestore.Client
 
 func init() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ // TODO: switch to JSON handler for production
@@ -32,40 +32,22 @@ func init() {
 		slog.Error("Failed to create Firestore client", "error", err)
 		os.Exit(1)
 	}
-	FirestoreClient = client
+	firestoreClient = client
 }
 
 func main() {
-	setupRoutes()
+	http.HandleFunc("/api/", withCORS(routes.APIRouter(firestoreClient)))
+
 	go func() {
 		ctx := context.Background()
 		pool := processor.NewTransactionProcessorPool(8)
-		pool.Start(FirestoreClient)
+		pool.Start(firestoreClient)
 		listener := txlistener.NewTransactionListener(pool)
 		listener.Start(ctx)
 	}()
 
 	slog.Info("server running on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
-}
-
-func setupRoutes() {
-	http.HandleFunc("/api/total-supply-history", withCORS(routes.TotalSupplyHistoryHandler(FirestoreClient)))
-	http.HandleFunc("/api/total-borrow-history", withCORS(routes.TotalBorrowHistoryHandler(FirestoreClient)))
-	http.HandleFunc("/api/total-utilization-history", withCORS(routes.TotalUtilizationHistoryHandler(FirestoreClient)))
-	http.HandleFunc("/api/market-activity", withCORS(routes.MarketActivityHandler(FirestoreClient)))
-	http.HandleFunc("/api/apr-history", withCORS(routes.APRHistoryHandler(FirestoreClient)))
-	http.HandleFunc("/api/user-loans", withCORS(routes.UserLoansHandler(FirestoreClient)))
-	http.HandleFunc("/api/user-collateral", withCORS(routes.UserCollateralHandler(FirestoreClient)))
-	http.HandleFunc("/api/user-borrow", withCORS(routes.UserBorrowHandler(FirestoreClient)))
-	http.HandleFunc("/api/proposals/active", withCORS(routes.GetActiveProposalsHandler(FirestoreClient)))
-	http.HandleFunc("/api/proposal/", withCORS(routes.GetProposalHandler(FirestoreClient)))
-	http.HandleFunc("/api/proposals", withCORS(routes.GetProposalsHandler(FirestoreClient)))
-	http.HandleFunc("/api/user-vote", withCORS(routes.GetUserVoteHandler(FirestoreClient)))
-	http.HandleFunc("/api/user-pending-unstakes", withCORS(routes.GetUserPendingUnstakesHandler(FirestoreClient)))
-	http.HandleFunc("/api/user", withCORS(routes.GetUserHandler(FirestoreClient)))
-	http.HandleFunc("/api/markets", withCORS(routes.GetMarketsHandler(FirestoreClient)))
-	http.HandleFunc("/api/market/", withCORS(routes.GetMarketHandler(FirestoreClient)))
 }
 
 func withCORS(handler http.HandlerFunc) http.HandlerFunc {

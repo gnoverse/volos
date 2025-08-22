@@ -45,7 +45,7 @@ type ProposalData struct {
 	Body      string    `firestore:"body" json:"body"`             // Detailed description and content of the proposal
 	Proposer  string    `firestore:"proposer" json:"proposer"`     // Address of the user who created the proposal
 	Deadline  time.Time `firestore:"deadline" json:"deadline"`     // Unix timestamp when voting period ends
-	Status    string    `firestore:"status" json:"status"`         // Current status: "active", "passed", "failed", "executed"
+	Status    string    `firestore:"status" json:"status"`         // Current status: "active", "passed", "failed"
 	CreatedAt time.Time `firestore:"created_at" json:"created_at"` // Timestamp when proposal was created in database
 	LastVote  time.Time `firestore:"last_vote" json:"last_vote"`   // Timestamp of the last vote cast on this proposal
 	Quorum    int64     `firestore:"quorum" json:"quorum"`         // Quorum for the proposal
@@ -100,4 +100,30 @@ type MarketData struct {
 	CurrentBorrowAPR float64   `firestore:"current_borrow_apr" json:"current_borrow_apr"` // Current borrow APR (percentage)
 	CreatedAt        time.Time `firestore:"created_at" json:"created_at"`                 // When the market was created
 	UpdatedAt        time.Time `firestore:"updated_at" json:"updated_at"`                 // Last time market data was updated
+}
+
+// APRHistoryData represents a single APR history entry stored in the apr subcollection.
+// This struct contains the supply and borrow APRs at a specific point in time.
+type APRHistoryData struct {
+	Timestamp time.Time `firestore:"timestamp" json:"timestamp"`   // When this APR snapshot was taken
+	SupplyAPR float64   `firestore:"supply_apr" json:"supply_apr"` // Supply APR at this timestamp (percentage)
+	BorrowAPR float64   `firestore:"borrow_apr" json:"borrow_apr"` // Borrow APR at this timestamp (percentage)
+}
+
+// TotalSupplyHistoryData represents a single total supply history entry stored in the total_supply_history subcollection.
+// This struct contains the supply amount change at a specific point in time.
+type TotalSupplyHistoryData struct {
+	AmountDelta string    `firestore:"amount_delta" json:"amount_delta"` // Change in supply amount (u256 string)
+	IsSupply    bool      `firestore:"is_supply" json:"is_supply"`       // Whether this is a supply (true) or withdraw (false)
+	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this supply/withdraw event occurred
+	Total       string    `firestore:"total" json:"total"`               // Total supply amount after this change (u256 string)
+}
+
+// TotalBorrowHistoryData represents a single total borrow history entry stored in the total_borrow_history subcollection.
+// This struct contains the borrow amount change at a specific point in time.
+type TotalBorrowHistoryData struct {
+	AmountDelta string    `firestore:"amount_delta" json:"amount_delta"` // Change in borrow amount (u256 string)
+	IsBorrow    bool      `firestore:"is_borrow" json:"is_borrow"`       // Whether this is a borrow (true) or repay (false)
+	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this borrow/repay event occurred
+	Total       string    `firestore:"total" json:"total"`               // Total borrow amount after this change (u256 string)
 }
