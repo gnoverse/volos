@@ -38,3 +38,12 @@ type AggregationJob struct {
 	CompletedAt  *time.Time           `firestore:"completed_at" json:"completed_at"`   // When job completed (if applicable)
 	ErrorMessage string               `firestore:"error_message" json:"error_message"` // Error message if failed
 }
+
+// MarketAverages holds calculated average values for market metrics over a time period.
+type MarketAverages struct {
+	SupplyAPR       float64 `json:"supply_apr"`
+	BorrowAPR       float64 `json:"borrow_apr"`
+	UtilizationRate float64 `json:"utilization_rate"`
+	TotalSupply     string  `json:"total_supply"`
+	TotalBorrow     string  `json:"total_borrow"`
+}

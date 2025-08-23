@@ -12,15 +12,6 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-// MarketAverages holds calculated average values for market metrics over a time period.
-type MarketAverages struct {
-	SupplyAPR       float64 `json:"supply_apr"`
-	BorrowAPR       float64 `json:"borrow_apr"`
-	UtilizationRate float64 `json:"utilization_rate"`
-	TotalSupply     string  `json:"total_supply"`
-	TotalBorrow     string  `json:"total_borrow"`
-}
-
 // calculateAveragesFromTransactions calculates average market metrics from transaction history.
 // Falls back to last known values if no transactions exist in the time period.
 func (ma *MarketAggregator) calculateAveragesFromTransactions(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (*MarketAverages, error) {
