@@ -1,7 +1,8 @@
-import { getAPRHistory, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
+import { useAPRHistoryQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery, useUtilizationHistoryQuery } from "@/app/(app)/borrow/queries-mutations";
 import { MarketInfo } from "@/app/types";
+import { getStableTimePeriodStartDateISO } from "@/app/utils/format.utils";
 import { InfoCard } from "@/components/info-card";
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from "react";
 import { APRChart } from "./apr-chart";
 import { TimePeriod } from "./chart-dropdown";
 import { Chart } from "./universal-chart";
@@ -19,36 +20,29 @@ export function MarketOverview({
   market, 
   cardStyles
 }: MarketOverviewProps) {
+  const [supplyTimePeriod, setSupplyTimePeriod] = useState<TimePeriod>("1 month");
+  const [borrowTimePeriod, setBorrowTimePeriod] = useState<TimePeriod>("1 month");
+  const [utilizationTimePeriod, setUtilizationTimePeriod] = useState<TimePeriod>("1 month");
+  const [aprTimePeriod, setAprTimePeriod] = useState<TimePeriod>("1 month");
 
-  const { data: netSupplyHistory = [], isLoading: isSupplyLoading } = useQuery({
-    queryKey: ['netSupplyHistory', market.poolPath],
-    queryFn: () => getTotalSupplyHistory(market.poolPath!),
-    enabled: !!market.poolPath
-  });
+  const supplyStartTime = useMemo(() => getStableTimePeriodStartDateISO(supplyTimePeriod), [supplyTimePeriod]);
+  const borrowStartTime = useMemo(() => getStableTimePeriodStartDateISO(borrowTimePeriod), [borrowTimePeriod]);
+  const utilizationStartTime = useMemo(() => getStableTimePeriodStartDateISO(utilizationTimePeriod), [utilizationTimePeriod]);
+  const aprStartTime = useMemo(() => getStableTimePeriodStartDateISO(aprTimePeriod), [aprTimePeriod]);
 
-  const { data: netBorrowHistory = [], isLoading: isBorrowLoading } = useQuery({
-    queryKey: ['netBorrowHistory', market.poolPath],
-    queryFn: () => getTotalBorrowHistory(market.poolPath!),
-    enabled: !!market.poolPath
-  });
-
-  const { data: utilizationHistory = [], isLoading: isUtilizationLoading } = useQuery({
-    queryKey: ['utilizationHistory', market.poolPath],
-    queryFn: () => getUtilizationHistory(market.poolPath!),
-    enabled: !!market.poolPath
-  });
-
-  const { data: aprHistory = [], isLoading: isAprLoading } = useQuery({
-    queryKey: ['aprHistory', market.poolPath],
-    queryFn: () => getAPRHistory(market.poolPath!),
-    enabled: !!market.poolPath
-  });
+  const { data: netSupplyHistory = [], isLoading: isSupplyLoading } = useNetSupplyHistoryQuery(market.marketId!, supplyStartTime);
+  const { data: netBorrowHistory = [], isLoading: isBorrowLoading } = useNetBorrowHistoryQuery(market.marketId!, borrowStartTime);
+  const { data: utilizationHistory = [], isLoading: isUtilizationLoading } = useUtilizationHistoryQuery(market.marketId!, utilizationStartTime);
+  const { data: aprHistory = [], isLoading: isAprLoading } = useAPRHistoryQuery(market.marketId!, aprStartTime);
 
   if (isSupplyLoading || isBorrowLoading || isUtilizationLoading || isAprLoading) { //todo add a loading spinner
     return <div>Loading chart data...</div>;
   }
 
-  const noMarketInfo = !netSupplyHistory && !netBorrowHistory && !utilizationHistory && !aprHistory;
+  const noMarketInfo = (!netSupplyHistory || netSupplyHistory.length === 0) && 
+                      (!netBorrowHistory || netBorrowHistory.length === 0) && 
+                      (!utilizationHistory || utilizationHistory.length === 0) && 
+                      (!aprHistory || aprHistory.length === 0);
 
   if (noMarketInfo) {
     return (
@@ -61,21 +55,20 @@ export function MarketOverview({
     );
   }
 
-  // TODO: fetch different snapshots of the market data depending on the period
   const onSupplyTimePeriodChangeAction = (period: TimePeriod) => {
-    console.log(period)
+    setSupplyTimePeriod(period);
   }
 
   const onBorrowTimePeriodChangeAction = (period: TimePeriod) => {
-    console.log(period)
+    setBorrowTimePeriod(period);
   }
 
   const onUtilizationTimePeriodChangeAction = (period: TimePeriod) => {
-    console.log(period)
+    setUtilizationTimePeriod(period);
   }
 
   const onAprTimePeriodChangeAction = (period: TimePeriod) => {
-    console.log(period)
+    setAprTimePeriod(period);
   }
 
   return (

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"time"
 
 	"volos-backend/model"
 	"volos-backend/services/aggregator"
@@ -91,12 +92,29 @@ func GetMarket(client *firestore.Client, marketID string) (*model.Market, error)
 }
 
 // GetMarketAPRHistory retrieves APR history data for a specific market
-func GetMarketAPRHistory(client *firestore.Client, marketID string) ([]model.APRHistory, error) {
+func GetMarketAPRHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.APRHistory, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr")
-	docs, err := subcollection.OrderBy("timestamp", firestore.Asc).Documents(ctx).GetAll()
+	var startTime, endTime time.Time
+	if startTimeStr != "" {
+		startTime = utils.ParseTime(startTimeStr, "market APR history query")
+	}
+	if endTimeStr != "" {
+		endTime = utils.ParseTime(endTimeStr, "market APR history query")
+	}
+
+	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").OrderBy("timestamp", firestore.Asc)
+
+	if !startTime.IsZero() {
+		query = query.Where("timestamp", ">=", startTime)
+	}
+
+	if !endTime.IsZero() {
+		query = query.Where("timestamp", "<=", endTime)
+	}
+
+	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		slog.Error("Error fetching market APR history", "market_id", marketID, "error", err)
 		return nil, err
@@ -116,12 +134,29 @@ func GetMarketAPRHistory(client *firestore.Client, marketID string) ([]model.APR
 }
 
 // GetMarketTotalBorrowHistory retrieves total borrow history data for a specific market
-func GetMarketTotalBorrowHistory(client *firestore.Client, marketID string) ([]model.TotalBorrowHistory, error) {
+func GetMarketTotalBorrowHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.TotalBorrowHistory, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_borrow")
-	docs, err := subcollection.OrderBy("timestamp", firestore.Desc).Documents(ctx).GetAll()
+	var startTime, endTime time.Time
+	if startTimeStr != "" {
+		startTime = utils.ParseTime(startTimeStr, "market total borrow history query")
+	}
+	if endTimeStr != "" {
+		endTime = utils.ParseTime(endTimeStr, "market total borrow history query")
+	}
+
+	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_borrow").OrderBy("timestamp", firestore.Asc)
+
+	if !startTime.IsZero() {
+		query = query.Where("timestamp", ">=", startTime)
+	}
+
+	if !endTime.IsZero() {
+		query = query.Where("timestamp", "<=", endTime)
+	}
+
+	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		slog.Error("Error fetching market total borrow history", "market_id", marketID, "error", err)
 		return nil, err
@@ -141,12 +176,29 @@ func GetMarketTotalBorrowHistory(client *firestore.Client, marketID string) ([]m
 }
 
 // GetMarketTotalSupplyHistory retrieves total supply history data for a specific market
-func GetMarketTotalSupplyHistory(client *firestore.Client, marketID string) ([]model.TotalSupplyHistory, error) {
+func GetMarketTotalSupplyHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.TotalSupplyHistory, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_supply")
-	docs, err := subcollection.OrderBy("timestamp", firestore.Desc).Documents(ctx).GetAll()
+	var startTime, endTime time.Time
+	if startTimeStr != "" {
+		startTime = utils.ParseTime(startTimeStr, "market total supply history query")
+	}
+	if endTimeStr != "" {
+		endTime = utils.ParseTime(endTimeStr, "market total supply history query")
+	}
+
+	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_supply").OrderBy("timestamp", firestore.Asc)
+
+	if !startTime.IsZero() {
+		query = query.Where("timestamp", ">=", startTime)
+	}
+
+	if !endTime.IsZero() {
+		query = query.Where("timestamp", "<=", endTime)
+	}
+
+	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		slog.Error("Error fetching market total supply history", "market_id", marketID, "error", err)
 		return nil, err
@@ -166,12 +218,29 @@ func GetMarketTotalSupplyHistory(client *firestore.Client, marketID string) ([]m
 }
 
 // GetMarketUtilizationHistory retrieves utilization history data for a specific market
-func GetMarketUtilizationHistory(client *firestore.Client, marketID string) ([]model.UtilizationHistory, error) {
+func GetMarketUtilizationHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.UtilizationHistory, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	subcollection := client.Collection("markets").Doc(sanitizedMarketID).Collection("utilization")
-	docs, err := subcollection.OrderBy("timestamp", firestore.Asc).Documents(ctx).GetAll()
+	var startTime, endTime time.Time
+	if startTimeStr != "" {
+		startTime = utils.ParseTime(startTimeStr, "market utilization history query")
+	}
+	if endTimeStr != "" {
+		endTime = utils.ParseTime(endTimeStr, "market utilization history query")
+	}
+
+	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("utilization").OrderBy("timestamp", firestore.Asc)
+
+	if !startTime.IsZero() {
+		query = query.Where("timestamp", ">=", startTime)
+	}
+
+	if !endTime.IsZero() {
+		query = query.Where("timestamp", "<=", endTime)
+	}
+
+	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		slog.Error("Error fetching market utilization history", "market_id", marketID, "error", err)
 		return nil, err

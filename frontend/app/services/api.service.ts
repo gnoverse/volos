@@ -199,23 +199,39 @@ export async function getMarket(marketId: string): Promise<Market> {
   return res.data;
 }
 
-export async function getAPRHistory(marketId: string): Promise<APRData[]> {
-  const res = await axios.get(`${API_BASE}/apr`, { params: { marketId } });
+export async function getAPRHistory(marketId: string, startTime?: string, endTime?: string): Promise<APRData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/apr`, { params });
   return res.data;
 }
 
-export async function getTotalBorrowHistory(marketId: string): Promise<TotalBorrowData[]> {
-  const res = await axios.get(`${API_BASE}/total-borrow-history`, { params: { marketId } });
+export async function getTotalBorrowHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalBorrowData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/total-borrow-history`, { params });
   return res.data;
 }
 
-export async function getTotalSupplyHistory(marketId: string): Promise<TotalSupplyData[]> {
-  const res = await axios.get(`${API_BASE}/total-supply-history`, { params: { marketId } });
+export async function getTotalSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/total-supply-history`, { params });
   return res.data;
 }
 
-export async function getUtilizationHistory(marketId: string): Promise<UtilizationData[]> {
-  const res = await axios.get(`${API_BASE}/utilization-history`, { params: { marketId } });
+export async function getUtilizationHistory(marketId: string, startTime?: string, endTime?: string): Promise<UtilizationData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/utilization-history`, { params });
   return res.data;
 }
 

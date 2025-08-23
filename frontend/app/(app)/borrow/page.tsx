@@ -73,7 +73,6 @@ export default function BorrowPage() {
                       data={userLoanHistory}
                       title="My Loan History"
                       description="Your total borrowed amount over time"
-                      dataKey="value"
                       color="#D95C12"
                       className="bg-transparent border-none p-0 shadow-none"
                     />

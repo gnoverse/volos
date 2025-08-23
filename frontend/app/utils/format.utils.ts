@@ -192,20 +192,70 @@ export function getProposalStatusColor(status: string): string {
  */
 export function getTimePeriodStartDate(period: "1 week" | "1 month" | "3 months" | "6 months" | "all time"): Date {
   const now = new Date()
+  const nowTime = now.getTime()
+  
   switch (period) {
     case "1 week":
-      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      return new Date(nowTime - 7 * 24 * 60 * 60 * 1000)
     case "1 month":
-      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      return new Date(nowTime - 30 * 24 * 60 * 60 * 1000)
     case "3 months":
-      return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+      return new Date(nowTime - 90 * 24 * 60 * 60 * 1000)
     case "6 months":
-      return new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
+      return new Date(nowTime - 180 * 24 * 60 * 60 * 1000)
     case "all time":
       return new Date(0) // TODO: set time to contract deployment
     default:
-      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // Default to 1 month
+      return new Date(nowTime - 30 * 24 * 60 * 60 * 1000) // Default to 1 month
   }
+}
+
+/**
+ * Returns the exact ISO format required for Firestore queries.
+ * Format: "2025-08-23T12:44:30Z"
+ * @param period The time period ("1 week", "1 month", "3 months", "6 months", "all time")
+ * @returns ISO string in the exact format required by Firestore
+ */
+export function getTimePeriodStartDateISO(period: "1 week" | "1 month" | "3 months" | "6 months" | "all time"): string {
+  const date = getTimePeriodStartDate(period)
+  return date.toISOString()
+}
+
+/**
+ * Returns a stable timestamp for the given period that doesn't change on every call.
+ * This is useful for React Query keys to prevent unnecessary refetches.
+ * @param period The time period ("1 week", "1 month", "3 months", "6 months", "all time")
+ * @returns ISO string that remains stable for the duration of the period
+ */
+export function getStableTimePeriodStartDateISO(period: "1 week" | "1 month" | "3 months" | "6 months" | "all time"): string {
+  const now = new Date()
+  const nowTime = now.getTime()
+  
+  // Round down to the nearest hour to create stable timestamps
+  const stableTime = Math.floor(nowTime / (60 * 60 * 1000)) * (60 * 60 * 1000)
+  
+  let startTime: number
+  switch (period) {
+    case "1 week":
+      startTime = stableTime - 7 * 24 * 60 * 60 * 1000
+      break
+    case "1 month":
+      startTime = stableTime - 30 * 24 * 60 * 60 * 1000
+      break
+    case "3 months":
+      startTime = stableTime - 90 * 24 * 60 * 60 * 1000
+      break
+    case "6 months":
+      startTime = stableTime - 180 * 24 * 60 * 60 * 1000
+      break
+    case "all time":
+      startTime = 0
+      break
+    default:
+      startTime = stableTime - 30 * 24 * 60 * 60 * 1000 // Default to 1 month
+  }
+  
+  return new Date(startTime).toISOString()
 }
 
 
