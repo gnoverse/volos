@@ -12,9 +12,9 @@ const (
 	Weekly   TimeBucketResolution = "weekly"
 )
 
-// MarketSnapshotData represents a pre-aggregated snapshot of market data at a specific time resolution.
+// MarketSnapshot represents a pre-aggregated snapshot of market data at a specific time resolution.
 // These snapshots are stored in bucket collections to enable fast queries for different timeframes.
-type MarketSnapshotData struct {
+type MarketSnapshot struct {
 	MarketID        string               `firestore:"market_id" json:"market_id"`               // Market identifier
 	Timestamp       time.Time            `firestore:"timestamp" json:"timestamp"`               // When this snapshot was taken
 	Resolution      TimeBucketResolution `firestore:"resolution" json:"resolution"`             // Time resolution (4hour, daily, weekly)

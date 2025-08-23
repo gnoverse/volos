@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"strings"
 	"time"
-	"volos-backend/model"
 
 	"cloud.google.com/go/firestore"
 )
@@ -22,44 +21,44 @@ func NewMarketAggregator(client *firestore.Client) *MarketAggregator {
 	}
 }
 
-// CreateFourHourSnapshot creates a 4-hour snapshot for a market
+// CreateFourHourSnapshot creates a 4-hour snapshot for a market by averaging transaction data
 func (ma *MarketAggregator) CreateFourHourSnapshot(marketID string, endTime time.Time) error {
 	startTime := endTime.Add(-4 * time.Hour)
-	return ma.createSnapshot(marketID, FourHour, startTime, endTime)
+	return ma.createSnapshotFromTransactions(marketID, FourHour, startTime, endTime)
 }
 
-// CreateDailySnapshot creates a daily snapshot for a market
+// CreateDailySnapshot creates a daily snapshot for a market by averaging 4-hour snapshots
 func (ma *MarketAggregator) CreateDailySnapshot(marketID string, endTime time.Time) error {
 	startTime := endTime.Add(-24 * time.Hour)
-	return ma.createSnapshot(marketID, Daily, startTime, endTime)
+	return ma.createSnapshotFromSnapshots(marketID, Daily, FourHour, startTime, endTime)
 }
 
-// CreateWeeklySnapshot creates a weekly snapshot for a market
+// CreateWeeklySnapshot creates a weekly snapshot for a market by averaging daily snapshots
 func (ma *MarketAggregator) CreateWeeklySnapshot(marketID string, endTime time.Time) error {
 	startTime := endTime.Add(-7 * 24 * time.Hour)
-	return ma.createSnapshot(marketID, Weekly, startTime, endTime)
+	return ma.createSnapshotFromSnapshots(marketID, Weekly, Daily, startTime, endTime)
 }
 
-// createSnapshot aggregates market data for the given time period and creates a snapshot
-func (ma *MarketAggregator) createSnapshot(marketID string, resolution TimeBucketResolution, startTime, endTime time.Time) error {
+// createSnapshotFromTransactions aggregates market data from transaction history for the given time period
+func (ma *MarketAggregator) createSnapshotFromTransactions(marketID string, resolution TimeBucketResolution, startTime, endTime time.Time) error {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	market, err := ma.getLatestMarketData(ctx, sanitizedMarketID)
+	averages, err := ma.calculateAveragesFromTransactions(ctx, sanitizedMarketID, startTime, endTime)
 	if err != nil {
-		slog.Error("failed to get latest market data", "market_id", marketID, "error", err)
+		slog.Error("failed to calculate averages from transactions", "market_id", marketID, "error", err)
 		return err
 	}
 
-	snapshot := MarketSnapshotData{
+	snapshot := MarketSnapshot{
 		MarketID:        marketID,
 		Timestamp:       endTime,
 		Resolution:      resolution,
-		SupplyAPR:       market.CurrentSupplyAPR,
-		BorrowAPR:       market.CurrentBorrowAPR,
-		TotalSupply:     market.TotalSupply,
-		TotalBorrow:     market.TotalBorrow,
-		UtilizationRate: market.UtilizationRate,
+		SupplyAPR:       averages.SupplyAPR,
+		BorrowAPR:       averages.BorrowAPR,
+		TotalSupply:     averages.TotalSupply,
+		TotalBorrow:     averages.TotalBorrow,
+		UtilizationRate: averages.UtilizationRate,
 		CreatedAt:       time.Now(),
 	}
 
@@ -71,35 +70,52 @@ func (ma *MarketAggregator) createSnapshot(marketID string, resolution TimeBucke
 		return err
 	}
 
-	slog.Info("created market snapshot", "market_id", marketID, "resolution", resolution, "timestamp", endTime)
+	slog.Info("created market snapshot from transactions", "market_id", marketID, "resolution", resolution, "timestamp", endTime)
 	return nil
 }
 
-// getLatestMarketData gets the most recent market data including totals and utilization rate
-func (ma *MarketAggregator) getLatestMarketData(ctx context.Context, sanitizedMarketID string) (*model.Market, error) {
-	marketDoc, err := ma.client.Collection("markets").Doc(sanitizedMarketID).Get(ctx)
+// createSnapshotFromSnapshots aggregates market data from shorter period snapshots
+func (ma *MarketAggregator) createSnapshotFromSnapshots(marketID string, targetResolution, sourceResolution TimeBucketResolution, startTime, endTime time.Time) error {
+	ctx := context.Background()
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+
+	snapshots, err := ma.getSnapshotsInRange(ctx, sanitizedMarketID, sourceResolution, startTime, endTime)
 	if err != nil {
-		return nil, err
+		slog.Error("failed to get snapshots in range", "market_id", marketID, "source_resolution", sourceResolution, "error", err)
+		return err
 	}
 
-	var market model.Market
-	if err := marketDoc.DataTo(&market); err != nil {
-		return nil, err
+	if len(snapshots) == 0 {
+		slog.Warn("no snapshots found for aggregation", "market_id", marketID, "source_resolution", sourceResolution, "start_time", startTime, "end_time", endTime)
+		return nil
 	}
 
-	return &market, nil
-}
-
-// getBucketCollectionName returns the Firestore collection name for the given resolution
-func (ma *MarketAggregator) getBucketCollectionName(resolution TimeBucketResolution) string {
-	switch resolution {
-	case FourHour:
-		return "snapshots_4hour"
-	case Daily:
-		return "snapshots_daily"
-	case Weekly:
-		return "snapshots_weekly"
-	default:
-		return "snapshots_daily"
+	averages, err := ma.calculateAveragesFromSnapshots(snapshots)
+	if err != nil {
+		slog.Error("failed to calculate averages from snapshots", "market_id", marketID, "error", err)
+		return err
 	}
+
+	snapshot := MarketSnapshot{
+		MarketID:        marketID,
+		Timestamp:       endTime,
+		Resolution:      targetResolution,
+		SupplyAPR:       averages.SupplyAPR,
+		BorrowAPR:       averages.BorrowAPR,
+		TotalSupply:     averages.TotalSupply,
+		TotalBorrow:     averages.TotalBorrow,
+		UtilizationRate: averages.UtilizationRate,
+		CreatedAt:       time.Now(),
+	}
+
+	bucketCollection := ma.getBucketCollectionName(targetResolution)
+
+	_, _, err = ma.client.Collection("markets").Doc(sanitizedMarketID).Collection(bucketCollection).Add(ctx, snapshot)
+	if err != nil {
+		slog.Error("failed to store market snapshot", "market_id", marketID, "resolution", targetResolution, "error", err)
+		return err
+	}
+
+	slog.Info("created market snapshot from snapshots", "market_id", marketID, "resolution", targetResolution, "snapshot_count", len(snapshots), "timestamp", endTime)
+	return nil
 }

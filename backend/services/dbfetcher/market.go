@@ -260,7 +260,7 @@ func GetMarketUtilizationHistory(client *firestore.Client, marketID, startTimeSt
 }
 
 // GetMarketSnapshots retrieves aggregated market snapshots for a specific time period
-func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTimeStr, endTimeStr string) ([]aggregator.MarketSnapshotData, error) {
+func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTimeStr, endTimeStr string) ([]aggregator.MarketSnapshot, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
@@ -295,9 +295,9 @@ func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTim
 		return nil, err
 	}
 
-	var snapshots []aggregator.MarketSnapshotData
+	var snapshots []aggregator.MarketSnapshot
 	for _, doc := range docs {
-		var snapshot aggregator.MarketSnapshotData
+		var snapshot aggregator.MarketSnapshot
 		if err := doc.DataTo(&snapshot); err != nil {
 			slog.Error("Error parsing snapshot data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
 			continue
