@@ -2,14 +2,21 @@ services:
   gnodev:
     build: ./contract/
     ports:
-      - "8081:8081"
+      - "8888:8888"
+      - "26657:26657"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/r/volos"]
+      interval: 5s
+      retries: 5
 
   tx-indexer:
     build: .
     ports:
-      - "8082:8082"
+      - "3100:3100"
     depends_on:
-      - gnodev
+      gnodev:
+        condition: service_healthy
+    restart: on-failure
 
   backend:
     build: ./backend/
@@ -21,6 +28,6 @@ services:
   frontend:
     build: ./frontend/
     ports:
-      - "8000:5000"
+      - "3000:3000"
     depends_on:
       - backend

@@ -13,7 +13,7 @@ WORKDIR /app/src
 
 RUN make build -C ./contribs/gnodev
 
-FROM gcr.io/distroless/base-debian12
+FROM debian:12-slim AS runtime
 
 WORKDIR /app
 
@@ -25,4 +25,6 @@ COPY ./p/volos/* /app/src/examples/gno.land/p/volos/
 
 ENV PATH="/app:${PATH}"
 
-CMD ["gnodev", "-paths", "gno.land/r/volos/**,gno.land/r/gnoswap/**", "-node-rpc-listener", "0.0.0.0:26657"]
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+CMD ["gnodev", "-paths", "gno.land/r/volos/**,gno.land/r/gnoswap/**", "-node-rpc-listener", "0.0.0.0:26657", "-web-listener", "0.0.0.0:8888"]
