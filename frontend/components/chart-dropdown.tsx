@@ -3,19 +3,17 @@
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ChevronDown } from "lucide-react"
-import { useState } from "react"
+
 
 export type TimePeriod = "1 week" | "1 month" | "3 months" | "6 months" | "all time"
 
 interface ChartDropdownProps {
+  selectedTimePeriod: TimePeriod
   onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
-export function ChartDropdown({ onTimePeriodChangeAction }: ChartDropdownProps) {
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 month")
-  
+export function ChartDropdown({ selectedTimePeriod, onTimePeriodChangeAction }: ChartDropdownProps) {
   const onTimePeriodChange = (period: TimePeriod) => {
-    setSelectedTimePeriod(period)
     onTimePeriodChangeAction(period)
   }
 

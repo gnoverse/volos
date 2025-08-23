@@ -136,7 +136,8 @@ export function useNetSupplyHistoryQuery(marketId: string, startTime?: string, e
   return useQuery({
     queryKey: [...netSupplyHistoryQueryKey(marketId), startTime, endTime],
     queryFn: () => getTotalSupplyHistory(marketId, startTime, endTime),
-    enabled: !!marketId
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -144,7 +145,8 @@ export function useNetBorrowHistoryQuery(marketId: string, startTime?: string, e
   return useQuery({
     queryKey: [...netBorrowHistoryQueryKey(marketId), startTime, endTime],
     queryFn: () => getTotalBorrowHistory(marketId, startTime, endTime),
-    enabled: !!marketId
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -152,7 +154,8 @@ export function useUtilizationHistoryQuery(marketId: string, startTime?: string,
   return useQuery({
     queryKey: [...utilizationHistoryQueryKey(marketId), startTime, endTime],
     queryFn: () => getUtilizationHistory(marketId, startTime, endTime),
-    enabled: !!marketId
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -160,7 +163,8 @@ export function useAPRHistoryQuery(marketId: string, startTime?: string, endTime
   return useQuery({
     queryKey: [...aprHistoryQueryKey(marketId), startTime, endTime],
     queryFn: () => getAPRHistory(marketId, startTime, endTime),
-    enabled: !!marketId
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 

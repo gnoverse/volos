@@ -5,7 +5,7 @@ import { formatShortDate, formatTimestamp, getTimePeriodStartDate } from "@/app/
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 type TokenChartData = TotalSupplyData | TotalBorrowData | UtilizationData
@@ -17,6 +17,7 @@ interface TokenChartProps {
   color?: string
   className?: string
   decimals?: number
+  selectedTimePeriod: TimePeriod
   onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
@@ -27,9 +28,9 @@ export function Chart({
   color = "rgb(99, 102, 241)",
   className,
   decimals = 6,
+  selectedTimePeriod,
   onTimePeriodChangeAction,
 }: TokenChartProps) {
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 month")
 
   // Filter data based on selected time period
   const filteredData = useMemo(() => {
@@ -42,7 +43,6 @@ export function Chart({
 
   // Handle time period change
   const handleTimePeriodChange = (period: TimePeriod) => {
-    setSelectedTimePeriod(period)
     onTimePeriodChangeAction(period)
   }
 
@@ -77,6 +77,7 @@ export function Chart({
               {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
             </div>
             <ChartDropdown
+              selectedTimePeriod={selectedTimePeriod}
               onTimePeriodChangeAction={handleTimePeriodChange}
             />
           </div>

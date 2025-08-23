@@ -3,9 +3,9 @@ import { MarketInfo } from "@/app/types";
 import { getStableTimePeriodStartDateISO } from "@/app/utils/format.utils";
 import { InfoCard } from "@/components/info-card";
 import { useMemo, useState } from "react";
-import { APRChart } from "./apr-chart";
 import { TimePeriod } from "./chart-dropdown";
-import { Chart } from "./universal-chart";
+import { SupplyBorrowChart } from "./supply-borrow-chart";
+import { UtilizationAPRChart } from "./utilization-apr-chart";
 
 interface MarketOverviewProps {
   market: MarketInfo;
@@ -20,20 +20,16 @@ export function MarketOverview({
   market, 
   cardStyles
 }: MarketOverviewProps) {
-  const [supplyTimePeriod, setSupplyTimePeriod] = useState<TimePeriod>("1 month");
-  const [borrowTimePeriod, setBorrowTimePeriod] = useState<TimePeriod>("1 month");
-  const [utilizationTimePeriod, setUtilizationTimePeriod] = useState<TimePeriod>("1 month");
-  const [aprTimePeriod, setAprTimePeriod] = useState<TimePeriod>("1 month");
+  const [supplyBorrowTimePeriod, setSupplyBorrowTimePeriod] = useState<TimePeriod>("1 month");
+  const [utilizationAprTimePeriod, setUtilizationAprTimePeriod] = useState<TimePeriod>("1 month");
 
-  const supplyStartTime = useMemo(() => getStableTimePeriodStartDateISO(supplyTimePeriod), [supplyTimePeriod]);
-  const borrowStartTime = useMemo(() => getStableTimePeriodStartDateISO(borrowTimePeriod), [borrowTimePeriod]);
-  const utilizationStartTime = useMemo(() => getStableTimePeriodStartDateISO(utilizationTimePeriod), [utilizationTimePeriod]);
-  const aprStartTime = useMemo(() => getStableTimePeriodStartDateISO(aprTimePeriod), [aprTimePeriod]);
+  const supplyBorrowStartTime = useMemo(() => getStableTimePeriodStartDateISO(supplyBorrowTimePeriod), [supplyBorrowTimePeriod]);
+  const utilizationAprStartTime = useMemo(() => getStableTimePeriodStartDateISO(utilizationAprTimePeriod), [utilizationAprTimePeriod]);
 
-  const { data: netSupplyHistory = [], isLoading: isSupplyLoading } = useNetSupplyHistoryQuery(market.marketId!, supplyStartTime);
-  const { data: netBorrowHistory = [], isLoading: isBorrowLoading } = useNetBorrowHistoryQuery(market.marketId!, borrowStartTime);
-  const { data: utilizationHistory = [], isLoading: isUtilizationLoading } = useUtilizationHistoryQuery(market.marketId!, utilizationStartTime);
-  const { data: aprHistory = [], isLoading: isAprLoading } = useAPRHistoryQuery(market.marketId!, aprStartTime);
+  const { data: netSupplyHistory = [], isLoading: isSupplyLoading } = useNetSupplyHistoryQuery(market.marketId!, supplyBorrowStartTime);
+  const { data: netBorrowHistory = [], isLoading: isBorrowLoading } = useNetBorrowHistoryQuery(market.marketId!, supplyBorrowStartTime);
+  const { data: utilizationHistory = [], isLoading: isUtilizationLoading } = useUtilizationHistoryQuery(market.marketId!, utilizationAprStartTime);
+  const { data: aprHistory = [], isLoading: isAprLoading } = useAPRHistoryQuery(market.marketId!, utilizationAprStartTime);
 
   if (isSupplyLoading || isBorrowLoading || isUtilizationLoading || isAprLoading) { //todo add a loading spinner
     return <div>Loading chart data...</div>;
@@ -55,64 +51,41 @@ export function MarketOverview({
     );
   }
 
-  const onSupplyTimePeriodChangeAction = (period: TimePeriod) => {
-    setSupplyTimePeriod(period);
+  const onSupplyBorrowTimePeriodChangeAction = (period: TimePeriod) => {
+    setSupplyBorrowTimePeriod(period);
   }
 
-  const onBorrowTimePeriodChangeAction = (period: TimePeriod) => {
-    setBorrowTimePeriod(period);
-  }
-
-  const onUtilizationTimePeriodChangeAction = (period: TimePeriod) => {
-    setUtilizationTimePeriod(period);
-  }
-
-  const onAprTimePeriodChangeAction = (period: TimePeriod) => {
-    setAprTimePeriod(period);
+  const onUtilizationAprTimePeriodChangeAction = (period: TimePeriod) => {
+    setUtilizationAprTimePeriod(period);
   }
 
   return (
     <>
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6">
-        {netSupplyHistory && (
-        <Chart
-          data={netSupplyHistory}
-          title="Total Supply"
-          description="Total assets supplied to the market"
-          color="rgba(34, 197, 94, 0.95)"
-          className={cardStyles}
-          onTimePeriodChangeAction={onSupplyTimePeriodChangeAction}
-        />
+        {/* Utilization and APR Chart */}
+        {(utilizationHistory || aprHistory) && (
+          <UtilizationAPRChart
+            utilizationData={utilizationHistory}
+            aprData={aprHistory}
+            title="Utilization & APR"
+            description="Compare utilization rate and APR trends"
+            className={cardStyles}
+            selectedTimePeriod={utilizationAprTimePeriod}
+            onTimePeriodChangeAction={onUtilizationAprTimePeriodChangeAction}
+          />
         )}
-        {netBorrowHistory && (
-        <Chart
-          data={netBorrowHistory}
-          title="Net Borrow"
-          description="Net borrow (borrow - repay) over time"
-          color="rgba(239, 68, 68, 0.95)"
-          className={cardStyles}
-          onTimePeriodChangeAction={onBorrowTimePeriodChangeAction}
-        />
-        )}
-        {utilizationHistory && (
-        <Chart
-          data={utilizationHistory}
-          title="Utilization Rate"
-          description="Percentage of supplied assets being borrowed"
-          color="rgba(99, 102, 241, 0.95)"
-          className={cardStyles}
-          onTimePeriodChangeAction={onUtilizationTimePeriodChangeAction}
-        />
-        )}
-        {aprHistory && (
-        <APRChart
-          data={aprHistory}
-          title="APR"
-          description="Annual Percentage Rate"
-          className={cardStyles}
-          onTimePeriodChangeAction={onAprTimePeriodChangeAction}
-        />
+        {/* Supply and Borrow Chart */}
+        {(netSupplyHistory || netBorrowHistory) && (
+          <SupplyBorrowChart
+            supplyData={netSupplyHistory}
+            borrowData={netBorrowHistory}
+            title="Supply & Borrow"
+            description="Compare total supply and borrow amounts over time"
+            className={cardStyles}
+            selectedTimePeriod={supplyBorrowTimePeriod}
+            onTimePeriodChangeAction={onSupplyBorrowTimePeriodChangeAction}
+          />
         )}
       </div>
 
