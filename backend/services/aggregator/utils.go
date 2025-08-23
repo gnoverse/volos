@@ -2,6 +2,7 @@ package aggregator
 
 import (
 	"context"
+	"log/slog"
 	"math/big"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-// MarketAverages holds all calculated average values for a market
+// MarketAverages holds calculated average values for market metrics over a time period.
 type MarketAverages struct {
 	SupplyAPR       float64 `json:"supply_apr"`
 	BorrowAPR       float64 `json:"borrow_apr"`
@@ -20,7 +21,8 @@ type MarketAverages struct {
 	TotalBorrow     string  `json:"total_borrow"`
 }
 
-// calculateAveragesFromTransactions calculates all averages from transaction history
+// calculateAveragesFromTransactions calculates average market metrics from transaction history.
+// Falls back to last known values if no transactions exist in the time period.
 func (ma *MarketAggregator) calculateAveragesFromTransactions(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (*MarketAverages, error) {
 	avgSupplyAPR, avgBorrowAPR, err := ma.calculateAPRAverages(ctx, sanitizedMarketID, startTime, endTime)
 	if err != nil {
@@ -42,16 +44,18 @@ func (ma *MarketAggregator) calculateAveragesFromTransactions(ctx context.Contex
 		return nil, err
 	}
 
-	return &MarketAverages{
+	averages := &MarketAverages{
 		SupplyAPR:       avgSupplyAPR,
 		BorrowAPR:       avgBorrowAPR,
 		UtilizationRate: avgUtilization,
 		TotalSupply:     avgTotalSupply,
 		TotalBorrow:     avgTotalBorrow,
-	}, nil
+	}
+
+	return averages, nil
 }
 
-// calculateAveragesFromSnapshots calculates average values from a slice of snapshots
+// calculateAveragesFromSnapshots calculates average market metrics from existing snapshots.
 func (ma *MarketAggregator) calculateAveragesFromSnapshots(snapshots []MarketSnapshot) (*MarketAverages, error) {
 	if len(snapshots) == 0 {
 		return nil, nil
@@ -120,6 +124,14 @@ func (ma *MarketAggregator) calculateAPRAverages(ctx context.Context, sanitizedM
 	if aprCount > 0 {
 		avgSupplyAPR = totalSupplyAPR / float64(aprCount)
 		avgBorrowAPR = totalBorrowAPR / float64(aprCount)
+	} else {
+		lastSupplyAPR, lastBorrowAPR, err := ma.getLastKnownAPR(ctx, sanitizedMarketID, startTime)
+		if err != nil {
+			slog.Info("no APR data found, using defaults", "market_id", sanitizedMarketID, "start_time", startTime)
+			avgSupplyAPR, avgBorrowAPR = 0, 0
+		} else {
+			avgSupplyAPR, avgBorrowAPR = lastSupplyAPR, lastBorrowAPR
+		}
 	}
 
 	return avgSupplyAPR, avgBorrowAPR, nil
@@ -154,6 +166,14 @@ func (ma *MarketAggregator) calculateUtilizationAverages(ctx context.Context, sa
 	var avgUtilization float64
 	if utilCount > 0 {
 		avgUtilization = totalUtilization / float64(utilCount)
+	} else {
+		lastUtilization, err := ma.getLastKnownUtilization(ctx, sanitizedMarketID, startTime)
+		if err != nil {
+			slog.Info("no utilization data found, using default", "market_id", sanitizedMarketID, "start_time", startTime)
+			avgUtilization = 0
+		} else {
+			avgUtilization = lastUtilization
+		}
 	}
 
 	return avgUtilization, nil
@@ -191,7 +211,13 @@ func (ma *MarketAggregator) calculateSupplyAverages(ctx context.Context, sanitiz
 		avgSupply := new(big.Int).Div(totalSupplySum, big.NewInt(int64(supplyCount)))
 		avgTotalSupply = avgSupply.String()
 	} else {
-		avgTotalSupply = "0"
+		lastSupply, err := ma.getLastKnownSupply(ctx, sanitizedMarketID, startTime)
+		if err != nil {
+			slog.Info("no supply data found, using default", "market_id", sanitizedMarketID, "start_time", startTime)
+			avgTotalSupply = "0"
+		} else {
+			avgTotalSupply = lastSupply
+		}
 	}
 
 	return avgTotalSupply, nil
@@ -229,13 +255,103 @@ func (ma *MarketAggregator) calculateBorrowAverages(ctx context.Context, sanitiz
 		avgBorrow := new(big.Int).Div(totalBorrowSum, big.NewInt(int64(borrowCount)))
 		avgTotalBorrow = avgBorrow.String()
 	} else {
-		avgTotalBorrow = "0"
+		lastBorrow, err := ma.getLastKnownBorrow(ctx, sanitizedMarketID, startTime)
+		if err != nil {
+			slog.Info("no borrow data found, using default", "market_id", sanitizedMarketID, "start_time", startTime)
+			avgTotalBorrow = "0"
+		} else {
+			avgTotalBorrow = lastBorrow
+		}
 	}
 
 	return avgTotalBorrow, nil
 }
 
-// getSnapshotsInRange retrieves snapshots from a specific resolution within a time range
+// getLastKnownAPR retrieves the most recent APR values before the specified time.
+func (ma *MarketAggregator) getLastKnownAPR(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (float64, float64, error) {
+	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").
+		Where("timestamp", "<", beforeTime).
+		OrderBy("timestamp", firestore.Desc).
+		Limit(1).
+		Documents(ctx)
+
+	doc, err := iter.Next()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	var aprHistory model.APRHistory
+	if err := doc.DataTo(&aprHistory); err != nil {
+		return 0, 0, err
+	}
+
+	return aprHistory.SupplyAPR, aprHistory.BorrowAPR, nil
+}
+
+// getLastKnownUtilization retrieves the most recent utilization value before the specified time.
+func (ma *MarketAggregator) getLastKnownUtilization(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (float64, error) {
+	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("utilization").
+		Where("timestamp", "<", beforeTime).
+		OrderBy("timestamp", firestore.Desc).
+		Limit(1).
+		Documents(ctx)
+
+	doc, err := iter.Next()
+	if err != nil {
+		return 0, err
+	}
+
+	var utilHistory model.UtilizationHistory
+	if err := doc.DataTo(&utilHistory); err != nil {
+		return 0, err
+	}
+
+	return utilHistory.Value, nil
+}
+
+// getLastKnownSupply retrieves the most recent total supply value before the specified time.
+func (ma *MarketAggregator) getLastKnownSupply(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (string, error) {
+	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("total_supply").
+		Where("timestamp", "<", beforeTime).
+		OrderBy("timestamp", firestore.Desc).
+		Limit(1).
+		Documents(ctx)
+
+	doc, err := iter.Next()
+	if err != nil {
+		return "0", err
+	}
+
+	var supplyHistory model.TotalSupplyHistory
+	if err := doc.DataTo(&supplyHistory); err != nil {
+		return "0", err
+	}
+
+	return supplyHistory.Value, nil
+}
+
+// getLastKnownBorrow retrieves the most recent total borrow value before the specified time.
+func (ma *MarketAggregator) getLastKnownBorrow(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (string, error) {
+	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("total_borrow").
+		Where("timestamp", "<", beforeTime).
+		OrderBy("timestamp", firestore.Desc).
+		Limit(1).
+		Documents(ctx)
+
+	doc, err := iter.Next()
+	if err != nil {
+		return "0", err
+	}
+
+	var borrowHistory model.TotalBorrowHistory
+	if err := doc.DataTo(&borrowHistory); err != nil {
+		return "0", err
+	}
+
+	return borrowHistory.Value, nil
+}
+
+// getSnapshotsInRange retrieves snapshots of a specific resolution within a time range.
 func (ma *MarketAggregator) getSnapshotsInRange(ctx context.Context, sanitizedMarketID string, resolution TimeBucketResolution, startTime, endTime time.Time) ([]MarketSnapshot, error) {
 	bucketCollection := ma.getBucketCollectionName(resolution)
 
@@ -263,7 +379,7 @@ func (ma *MarketAggregator) getSnapshotsInRange(ctx context.Context, sanitizedMa
 	return snapshots, nil
 }
 
-// getBucketCollectionName returns the Firestore collection name for the given resolution
+// getBucketCollectionName returns the Firestore collection name for a given time resolution.
 func (ma *MarketAggregator) getBucketCollectionName(resolution TimeBucketResolution) string {
 	switch resolution {
 	case FourHour:
