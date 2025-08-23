@@ -6,7 +6,7 @@ export class GnoService {
   private currentProviderName: string
   private static instance: GnoService | null = null
   private static defaultRpcUrls: Record<string, string> = {
-    'local': 'http://localhost:26657/',
+    'local': process.env.LOCAL_RPC_URL || 'http://localhost:26657/',
     'portal-loop': 'https://rpc.gno.land:443/',
     'test5': 'https://rpc.test5.gno.land/'
   }
