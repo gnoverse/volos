@@ -1,40 +1,58 @@
 "use client"
 
-import { APRData, UtilizationData } from "@/app/services/api.service"
-import { formatShortDate } from "@/app/utils/format.utils"
+import { useAPRHistoryQuery, useUtilizationHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
+import { formatShortDate, getStableTimePeriodStartDateISO } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 interface UtilizationAPRChartProps {
-  utilizationData: UtilizationData[]
-  aprData: APRData[]
+  marketId: string
   title?: string
   description?: string
   className?: string
-  selectedTimePeriod: TimePeriod
-  onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
 export function UtilizationAPRChart({
-  utilizationData,
-  aprData,
+  marketId,
   title = "Utilization & APR",
   description = "Compare utilization rate and APR trends",
   className,
-  selectedTimePeriod,
-  onTimePeriodChangeAction,
 }: UtilizationAPRChartProps) {
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
   const [selectedMetrics, setSelectedMetrics] = useState({
     utilization: true,
     supplyApr: false,
     borrowApr: false,
   })
 
-  // Transform and combine data
+  const startTime = useMemo(() => getStableTimePeriodStartDateISO(selectedTimePeriod), [selectedTimePeriod])
+
+  const { data: utilizationData = [], isLoading: isUtilizationLoading } = useUtilizationHistoryQuery(marketId, startTime)
+  const { data: aprData = [], isLoading: isAprLoading } = useAPRHistoryQuery(marketId, startTime)
+
+  useEffect(() => {
+    const storageKey = 'utilization-apr-chart-metrics'
+    const savedState = localStorage.getItem(storageKey)
+    
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState)
+        setSelectedMetrics(parsedState)
+      } catch (error) {
+        console.warn('Failed to parse saved checkbox state:', error)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const storageKey = 'utilization-apr-chart-metrics'
+    localStorage.setItem(storageKey, JSON.stringify(selectedMetrics))
+  }, [selectedMetrics])
+
   const transformedData = useMemo(() => {
     const dataMap = new Map<number, {
       timestamp: number
@@ -43,7 +61,6 @@ export function UtilizationAPRChart({
       borrowApr?: number
     }>()
 
-    // Add utilization data
     utilizationData.forEach(item => {
       const timestamp = new Date(item.timestamp).getTime()
       if (!dataMap.has(timestamp)) {
@@ -52,7 +69,6 @@ export function UtilizationAPRChart({
       dataMap.get(timestamp)!.utilization = Number(item.value)
     })
 
-    // Add APR data
     aprData.forEach(item => {
       const timestamp = new Date(item.timestamp).getTime()
       if (!dataMap.has(timestamp)) {
@@ -62,10 +78,8 @@ export function UtilizationAPRChart({
       dataMap.get(timestamp)!.borrowApr = Number(item.borrow_apr)
     })
 
-    // Convert to array, filter by selected metrics, and sort by timestamp
     return Array.from(dataMap.values())
       .filter(item => {
-        // Only include data points that have values for at least one selected metric
         if (selectedMetrics.utilization && item.utilization !== undefined) return true;
         if (selectedMetrics.supplyApr && item.supplyApr !== undefined) return true;
         if (selectedMetrics.borrowApr && item.borrowApr !== undefined) return true;
@@ -75,10 +89,70 @@ export function UtilizationAPRChart({
       }, [utilizationData, aprData, selectedMetrics])
 
   const handleMetricToggle = (metric: keyof typeof selectedMetrics) => {
-    setSelectedMetrics(prev => ({
-      ...prev,
-      [metric]: !prev[metric]
-    }))
+    setSelectedMetrics(prev => {
+      const newState = {
+        ...prev,
+        [metric]: !prev[metric]
+      }
+      
+      const checkedCount = Object.values(newState).filter(Boolean).length
+      if (checkedCount === 0) {
+        return prev
+      }
+      
+      return newState
+    })
+  }
+
+  // Show loading state
+  if (isUtilizationLoading || isAprLoading) {
+    return (
+      <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div>
+              {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
+              {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+            </div>
+            <ChartDropdown
+              selectedTimePeriod={selectedTimePeriod}
+              onTimePeriodChangeAction={setSelectedTimePeriod}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="-px-6">
+          <div className="flex items-center justify-center h-[300px] text-gray-400">
+            Loading chart data...
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Show no data state
+  const hasData = (utilizationData && utilizationData.length > 0) || (aprData && aprData.length > 0)
+  if (!hasData) {
+    return (
+      <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div>
+              {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
+              {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+            </div>
+            <ChartDropdown
+              selectedTimePeriod={selectedTimePeriod}
+              onTimePeriodChangeAction={setSelectedTimePeriod}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="-px-6">
+          <div className="flex items-center justify-center h-[300px] text-gray-400">
+            No data available for this time period
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -119,7 +193,7 @@ export function UtilizationAPRChart({
             </div>
             <ChartDropdown
               selectedTimePeriod={selectedTimePeriod}
-              onTimePeriodChangeAction={onTimePeriodChangeAction}
+              onTimePeriodChangeAction={setSelectedTimePeriod}
             />
           </div>
         </div>

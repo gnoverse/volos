@@ -1,37 +1,56 @@
 "use client"
 
-import { TotalBorrowData, TotalSupplyData } from "@/app/services/api.service"
-import { formatShortDate } from "@/app/utils/format.utils"
+import { useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
+import { formatShortDate, getStableTimePeriodStartDateISO } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 interface SupplyBorrowChartProps {
-  supplyData: TotalSupplyData[]
-  borrowData: TotalBorrowData[]
+  marketId: string
   title?: string
   description?: string
   className?: string
-  selectedTimePeriod: TimePeriod
-  onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
 export function SupplyBorrowChart({
-  supplyData,
-  borrowData,
+  marketId,
   title = "Supply & Borrow",
   description = "Compare total supply and borrow amounts over time",
   className,
-  selectedTimePeriod,
-  onTimePeriodChangeAction,
 }: SupplyBorrowChartProps) {
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
   const [selectedMetrics, setSelectedMetrics] = useState({
     supply: true,
     borrow: true,
   })
+
+  const startTime = useMemo(() => getStableTimePeriodStartDateISO(selectedTimePeriod), [selectedTimePeriod])
+
+  const { data: supplyData = [], isLoading: isSupplyLoading } = useNetSupplyHistoryQuery(marketId, startTime)
+  const { data: borrowData = [], isLoading: isBorrowLoading } = useNetBorrowHistoryQuery(marketId, startTime)
+
+  useEffect(() => {
+    const storageKey = 'supply-borrow-chart-metrics'
+    const savedState = localStorage.getItem(storageKey)
+    
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState)
+        setSelectedMetrics(parsedState)
+      } catch (error) {
+        console.warn('Failed to parse saved checkbox state:', error)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const storageKey = 'supply-borrow-chart-metrics'
+    localStorage.setItem(storageKey, JSON.stringify(selectedMetrics))
+  }, [selectedMetrics])
 
   // Combines supply and borrow data into a single timeline, filtered by selected metrics
   const transformedData = useMemo(() => {
@@ -67,10 +86,68 @@ export function SupplyBorrowChart({
   }, [supplyData, borrowData, selectedMetrics])
 
   const handleMetricToggle = (metric: keyof typeof selectedMetrics) => {
-    setSelectedMetrics(prev => ({
-      ...prev,
-      [metric]: !prev[metric]
-    }))
+    setSelectedMetrics(prev => {
+      const newState = {
+        ...prev,
+        [metric]: !prev[metric]
+      }
+      
+      const checkedCount = Object.values(newState).filter(Boolean).length
+      if (checkedCount === 0) {
+        return prev
+      }
+      
+      return newState
+    })
+  }
+
+  if (isSupplyLoading || isBorrowLoading) {
+    return (
+      <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div>
+              {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
+              {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+            </div>
+            <ChartDropdown
+              selectedTimePeriod={selectedTimePeriod}
+              onTimePeriodChangeAction={setSelectedTimePeriod}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="-px-6">
+          <div className="flex items-center justify-center h-[300px] text-gray-400">
+            Loading chart data...
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const hasData = (supplyData && supplyData.length > 0) || (borrowData && borrowData.length > 0)
+  if (!hasData) {
+    return (
+      <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div>
+              {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
+              {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+            </div>
+            <ChartDropdown
+              selectedTimePeriod={selectedTimePeriod}
+              onTimePeriodChangeAction={setSelectedTimePeriod}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="-px-6">
+          <div className="flex items-center justify-center h-[300px] text-gray-400">
+            No data available for this time period
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -103,7 +180,7 @@ export function SupplyBorrowChart({
             </div>
             <ChartDropdown
               selectedTimePeriod={selectedTimePeriod}
-              onTimePeriodChangeAction={onTimePeriodChangeAction}
+              onTimePeriodChangeAction={setSelectedTimePeriod}
             />
           </div>
         </div>
