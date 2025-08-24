@@ -24,7 +24,7 @@ export function SupplyBorrowChart({
   description = "Compare total supply and borrow amounts over time",
   className,
 }: SupplyBorrowChartProps) {
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1m")
   const [selectedMetrics, setSelectedMetrics] = useLocalStorageState('supply-borrow-chart-metrics', {
     defaultValue: {
       supply: true,

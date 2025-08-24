@@ -7,9 +7,13 @@ import (
 type TimeBucketResolution string
 
 const (
-	FourHour TimeBucketResolution = "4hour"
-	Daily    TimeBucketResolution = "daily"
-	Weekly   TimeBucketResolution = "weekly"
+	FifteenSeconds TimeBucketResolution = "15s"
+	ThirtySeconds  TimeBucketResolution = "30s"
+	OneMinute      TimeBucketResolution = "60s"
+	TwoMinutes     TimeBucketResolution = "120s"
+	FourHour       TimeBucketResolution = "4hour"
+	Daily          TimeBucketResolution = "daily"
+	Weekly         TimeBucketResolution = "weekly"
 )
 
 // MarketSnapshot represents a pre-aggregated snapshot of market data at a specific time resolution.

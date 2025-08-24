@@ -373,6 +373,14 @@ func (ma *MarketAggregator) getSnapshotsInRange(ctx context.Context, sanitizedMa
 // getBucketCollectionName returns the Firestore collection name for a given time resolution.
 func (ma *MarketAggregator) getBucketCollectionName(resolution TimeBucketResolution) string {
 	switch resolution {
+	case FifteenSeconds:
+		return "snapshots_15s"
+	case ThirtySeconds:
+		return "snapshots_30s"
+	case OneMinute:
+		return "snapshots_60s"
+	case TwoMinutes:
+		return "snapshots_120s"
 	case FourHour:
 		return "snapshots_4hour"
 	case Daily:

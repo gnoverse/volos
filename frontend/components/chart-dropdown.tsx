@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ChevronDown } from "lucide-react"
 
 
-export type TimePeriod = "1 week" | "1 month" | "3 months" | "6 months" | "all time"
+export type TimePeriod = "15s" | "30s" | "1m" | "2m" | "1 week" | "1 month" | "3 months" | "6 months" | "all time"
 
 interface ChartDropdownProps {
   selectedTimePeriod: TimePeriod
@@ -26,6 +26,18 @@ export function ChartDropdown({ selectedTimePeriod, onTimePeriodChangeAction }: 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-gray-800/60 border-none text-gray-100" align="end">
+        <DropdownMenuItem onClick={() => onTimePeriodChange("15s")} className="hover:bg-gray-700/90 border-none hover:text-logo-400 focus:bg-gray-700/90 focus:text-logo-400">
+          15s
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTimePeriodChange("30s")} className="hover:bg-gray-700/90 border-none hover:text-logo-400 focus:bg-gray-700/90 focus:text-logo-400">
+          30s
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTimePeriodChange("1m")} className="hover:bg-gray-700/90 border-none hover:text-logo-400 focus:bg-gray-700/90 focus:text-logo-400">
+          1m
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onTimePeriodChange("2m")} className="hover:bg-gray-700/90 border-none hover:text-logo-400 focus:bg-gray-700/90 focus:text-logo-400">
+          2m
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onTimePeriodChange("1 week")} className="hover:bg-gray-700/90 border-none hover:text-logo-400 focus:bg-gray-700/90 focus:text-logo-400">
           1 week
         </DropdownMenuItem>

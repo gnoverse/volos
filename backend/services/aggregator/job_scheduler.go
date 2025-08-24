@@ -28,6 +28,10 @@ func NewJobScheduler(client *firestore.Client) *JobScheduler {
 
 // Start begins the job scheduler
 func (js *JobScheduler) Start() {
+	go js.runFifteenSecondJobs()
+	go js.runThirtySecondJobs()
+	go js.runOneMinuteJobs()
+	go js.runTwoMinuteJobs()
 	go js.runFourHourJobs()
 	go js.runDailyJobs()
 	go js.runWeeklyJobs()
@@ -39,6 +43,110 @@ func (js *JobScheduler) Start() {
 func (js *JobScheduler) Stop() {
 	close(js.stopChan)
 	slog.Info("aggregation job scheduler stopped")
+}
+
+// runFifteenSecondJobs schedules and executes 15-second aggregation jobs.
+// It waits until the start of the next 15-second block, then runs aggregation every 15 seconds
+// at the beginning of each 15-second period.
+func (js *JobScheduler) runFifteenSecondJobs() {
+	now := time.Now()
+	if now.Second()%15 == 0 && now.Nanosecond() == 0 {
+		js.runFifteenSecondAggregation()
+	}
+
+	nextFifteenSecond := now.Truncate(15 * time.Second).Add(15 * time.Second)
+	delay := nextFifteenSecond.Sub(now)
+	time.Sleep(delay)
+
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-js.stopChan:
+			return
+		case <-ticker.C:
+			js.runFifteenSecondAggregation()
+		}
+	}
+}
+
+// runThirtySecondJobs schedules and executes 30-second aggregation jobs.
+// It waits until the start of the next 30-second block, then runs aggregation every 30 seconds
+// at the beginning of each 30-second period.
+func (js *JobScheduler) runThirtySecondJobs() {
+	now := time.Now()
+	if now.Second()%30 == 0 && now.Nanosecond() == 0 {
+		js.runThirtySecondAggregation()
+	}
+
+	nextThirtySecond := now.Truncate(30 * time.Second).Add(30 * time.Second)
+	delay := nextThirtySecond.Sub(now)
+	time.Sleep(delay)
+
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-js.stopChan:
+			return
+		case <-ticker.C:
+			js.runThirtySecondAggregation()
+		}
+	}
+}
+
+// runOneMinuteJobs schedules and executes 1-minute aggregation jobs.
+// It waits until the start of the next minute, then runs aggregation every minute
+// at the beginning of each minute.
+func (js *JobScheduler) runOneMinuteJobs() {
+	now := time.Now()
+	if now.Second() == 0 && now.Nanosecond() == 0 {
+		js.runOneMinuteAggregation()
+	}
+
+	nextMinute := now.Truncate(time.Minute).Add(time.Minute)
+	delay := nextMinute.Sub(now)
+	time.Sleep(delay)
+
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-js.stopChan:
+			return
+		case <-ticker.C:
+			js.runOneMinuteAggregation()
+		}
+	}
+}
+
+// runTwoMinuteJobs schedules and executes 2-minute aggregation jobs.
+// It waits until the start of the next 2-minute block, then runs aggregation every 2 minutes
+// at the beginning of each 2-minute period.
+func (js *JobScheduler) runTwoMinuteJobs() {
+	now := time.Now()
+	if now.Minute()%2 == 0 && now.Second() == 0 && now.Nanosecond() == 0 {
+		js.runTwoMinuteAggregation()
+	}
+
+	nextTwoMinute := now.Truncate(2 * time.Minute).Add(2 * time.Minute)
+	delay := nextTwoMinute.Sub(now)
+	time.Sleep(delay)
+
+	ticker := time.NewTicker(2 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-js.stopChan:
+			return
+		case <-ticker.C:
+			js.runTwoMinuteAggregation()
+		}
+	}
 }
 
 // runFourHourJobs schedules and executes 4-hour aggregation jobs.
@@ -124,6 +232,38 @@ func (js *JobScheduler) runWeeklyJobs() {
 	}
 }
 
+// runFifteenSecondAggregation executes 15-second aggregation for all markets.
+// It truncates the current time to the 15-second boundary and processes all markets
+// with 15-second resolution snapshots.
+func (js *JobScheduler) runFifteenSecondAggregation() {
+	now := time.Now().Truncate(15 * time.Second)
+	js.runAggregationForAllMarkets(FifteenSeconds, now)
+}
+
+// runThirtySecondAggregation executes 30-second aggregation for all markets.
+// It truncates the current time to the 30-second boundary and processes all markets
+// with 30-second resolution snapshots.
+func (js *JobScheduler) runThirtySecondAggregation() {
+	now := time.Now().Truncate(30 * time.Second)
+	js.runAggregationForAllMarkets(ThirtySeconds, now)
+}
+
+// runOneMinuteAggregation executes 1-minute aggregation for all markets.
+// It truncates the current time to the minute boundary and processes all markets
+// with 1-minute resolution snapshots.
+func (js *JobScheduler) runOneMinuteAggregation() {
+	now := time.Now().Truncate(time.Minute)
+	js.runAggregationForAllMarkets(OneMinute, now)
+}
+
+// runTwoMinuteAggregation executes 2-minute aggregation for all markets.
+// It truncates the current time to the 2-minute boundary and processes all markets
+// with 2-minute resolution snapshots.
+func (js *JobScheduler) runTwoMinuteAggregation() {
+	now := time.Now().Truncate(2 * time.Minute)
+	js.runAggregationForAllMarkets(TwoMinutes, now)
+}
+
 // runFourHourAggregation executes 4-hour aggregation for all markets.
 // It truncates the current time to the 4-hour boundary and processes all markets
 // with 4-hour resolution snapshots.
@@ -163,6 +303,14 @@ func (js *JobScheduler) runAggregationForAllMarkets(resolution TimeBucketResolut
 		go func(marketID string) {
 			var err error
 			switch resolution {
+			case FifteenSeconds:
+				err = js.aggregator.CreateFifteenSecondSnapshot(marketID, timestamp)
+			case ThirtySeconds:
+				err = js.aggregator.CreateThirtySecondSnapshot(marketID, timestamp)
+			case OneMinute:
+				err = js.aggregator.CreateOneMinuteSnapshot(marketID, timestamp)
+			case TwoMinutes:
+				err = js.aggregator.CreateTwoMinuteSnapshot(marketID, timestamp)
 			case FourHour:
 				err = js.aggregator.CreateFourHourSnapshot(marketID, timestamp)
 			case Daily:

@@ -21,6 +21,30 @@ func NewMarketAggregator(client *firestore.Client) *MarketAggregator {
 	}
 }
 
+// CreateFifteenSecondSnapshot creates a 15-second snapshot for a market by averaging transaction data
+func (ma *MarketAggregator) CreateFifteenSecondSnapshot(marketID string, endTime time.Time) error {
+	startTime := endTime.Add(-15 * time.Second)
+	return ma.createSnapshotFromTransactions(marketID, FifteenSeconds, startTime, endTime)
+}
+
+// CreateThirtySecondSnapshot creates a 30-second snapshot for a market by averaging 15-second snapshots
+func (ma *MarketAggregator) CreateThirtySecondSnapshot(marketID string, endTime time.Time) error {
+	startTime := endTime.Add(-30 * time.Second)
+	return ma.createSnapshotFromSnapshots(marketID, ThirtySeconds, FifteenSeconds, startTime, endTime)
+}
+
+// CreateOneMinuteSnapshot creates a 1-minute snapshot for a market by averaging 30-second snapshots
+func (ma *MarketAggregator) CreateOneMinuteSnapshot(marketID string, endTime time.Time) error {
+	startTime := endTime.Add(-time.Minute)
+	return ma.createSnapshotFromSnapshots(marketID, OneMinute, ThirtySeconds, startTime, endTime)
+}
+
+// CreateTwoMinuteSnapshot creates a 2-minute snapshot for a market by averaging 1-minute snapshots
+func (ma *MarketAggregator) CreateTwoMinuteSnapshot(marketID string, endTime time.Time) error {
+	startTime := endTime.Add(-2 * time.Minute)
+	return ma.createSnapshotFromSnapshots(marketID, TwoMinutes, OneMinute, startTime, endTime)
+}
+
 // CreateFourHourSnapshot creates a 4-hour snapshot for a market by averaging transaction data
 func (ma *MarketAggregator) CreateFourHourSnapshot(marketID string, endTime time.Time) error {
 	startTime := endTime.Add(-4 * time.Hour)

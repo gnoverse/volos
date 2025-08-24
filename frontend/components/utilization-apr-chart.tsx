@@ -24,7 +24,7 @@ export function UtilizationAPRChart({
   description = "Compare utilization rate and APR trends",
   className,
 }: UtilizationAPRChartProps) {
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1m")
   const [selectedMetrics, setSelectedMetrics] = useLocalStorageState('utilization-apr-chart-metrics', {
     defaultValue: {
       utilization: true,
