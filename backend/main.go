@@ -27,7 +27,7 @@ func init() {
 	slog.SetDefault(logger)
 
 	ctx := context.Background()
-	projectID := "volos-test-98223"
+	projectID := "volos-f06d9"
 	serviceAccountPath := "firebase.json"
 	client, err := firestore.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountPath))
 	if err != nil {
