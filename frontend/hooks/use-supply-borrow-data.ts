@@ -14,6 +14,25 @@ interface ChartDataPoint {
   borrow?: number
 }
 
+/**
+ * Custom hook that fetches and transforms supply & borrow data for chart visualization.
+ * 
+ * This hook handles two data sources:
+ * 1. **History data**: Used for "1 week" period - fetches raw transaction history
+ * 2. **Snapshot data**: Used for all other periods - fetches pre-aggregated snapshots
+ * 
+ * The hook automatically:
+ * - Calculates the appropriate time range based on the selected period
+ * - Fetches data from the correct source (history vs snapshots)
+ * - Transforms raw data into chart-ready format
+ * - Filters data based on selected metrics (supply/borrow visibility)
+ * - Provides loading states and data availability flags
+ * 
+ * @param marketId - The market identifier to fetch data for
+ * @param selectedTimePeriod - The time period selected by the user
+ * @param selectedMetrics - Which metrics (supply/borrow) should be displayed
+ * @returns Object containing transformed data, loading state, and data availability
+ */
 export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePeriod, selectedMetrics: ChartMetrics) {
   const startTime = useMemo(() => getStableTimePeriodStartDateISO(selectedTimePeriod), [selectedTimePeriod])
 

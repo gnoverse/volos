@@ -16,6 +16,25 @@ interface ChartDataPoint {
   borrowApr?: number
 }
 
+/**
+ * Custom hook that fetches and transforms utilization & APR data for chart visualization.
+ * 
+ * This hook handles two data sources:
+ * 1. **History data**: Used for "1 week" period - fetches raw transaction history
+ * 2. **Snapshot data**: Used for all other periods - fetches pre-aggregated snapshots
+ * 
+ * The hook automatically:
+ * - Calculates the appropriate time range based on the selected period
+ * - Fetches data from the correct source (history vs snapshots)
+ * - Transforms raw data into chart-ready format
+ * - Filters data based on selected metrics (utilization/supply APR/borrow APR visibility)
+ * - Provides loading states and data availability flags
+ * 
+ * @param marketId - The market identifier to fetch data for
+ * @param selectedTimePeriod - The time period selected by the user
+ * @param selectedMetrics - Which metrics (utilization/supply APR/borrow APR) should be displayed
+ * @returns Object containing transformed data, loading state, and data availability
+ */
 export function useUtilizationAPRData(marketId: string, selectedTimePeriod: TimePeriod, selectedMetrics: ChartMetrics) {
   const startTime = useMemo(() => getStableTimePeriodStartDateISO(selectedTimePeriod), [selectedTimePeriod])
 

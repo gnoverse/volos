@@ -1,7 +1,8 @@
 "use client"
 
 import { TotalBorrowData, TotalSupplyData, UtilizationData } from "@/app/services/api.service"
-import { formatShortDate, formatTimestamp, getTimePeriodStartDate } from "@/app/utils/format.utils"
+import { formatShortDate, formatTimestamp } from "@/app/utils/format.utils"
+import { getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
@@ -34,10 +35,10 @@ export function Chart({
 
   // Filter data based on selected time period
   const filteredData = useMemo(() => {
-    const startTime = getTimePeriodStartDate(selectedTimePeriod)
+    const startTime = getStableTimePeriodStartDateISO(selectedTimePeriod)
     return data.filter(item => {
       const itemDate = new Date(item.timestamp)
-      return itemDate >= startTime
+      return itemDate >= new Date(startTime)
     })
   }, [data, selectedTimePeriod])
 

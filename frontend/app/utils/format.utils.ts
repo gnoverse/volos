@@ -167,6 +167,50 @@ export function formatShortDate(timestamp: number | string | Date): string {
   }
 }
 
+/**
+ * Returns the appropriate X-axis formatter function based on the selected time period.
+ * Each period uses different formatting to match the data resolution and provide optimal readability.
+ * 
+ * @param period The time period ("1 week", "1 month", "3 months", "6 months", "all time")
+ * @returns A function that formats timestamps for X-axis labels
+ */
+export function getXAxisFormatter(period: "1 week" | "1 month" | "3 months" | "6 months" | "all time") {
+  switch (period) {
+    case "1 week":
+      return (timestamp: number | string | Date) => {
+        const date = new Date(timestamp);
+        const hour = date.getHours();
+        if (hour === 0) {
+          return formatShortDate(timestamp);
+        } else if (hour === 12) {
+          return "12:00";
+        }
+        return "";
+      }
+    case "1 month":
+      return (timestamp: number | string | Date) => {
+        const date = new Date(timestamp);
+        return formatShortDate(timestamp) + ' ' + date.toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          hour12: false
+        });
+      }
+    case "3 months":
+    case "6 months":
+      return formatShortDate;
+    case "all time":
+      return (timestamp: number | string | Date) => {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString('en-US', { 
+          month: 'short',
+          year: '2-digit'
+        });
+      }
+    default:
+      return formatShortDate;
+  }
+}
+
 
 
 

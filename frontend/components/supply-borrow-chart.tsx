@@ -1,7 +1,7 @@
 "use client"
 
 
-import { formatShortDate } from "@/app/utils/format.utils"
+import { formatTimestamp, getXAxisFormatter } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -130,7 +130,7 @@ export function SupplyBorrowChart({
                 dataKey="timestamp"
                 fontSize={10}
                 tickLine={false}
-                tickFormatter={(str) => formatShortDate(str)}
+                tickFormatter={getXAxisFormatter(selectedTimePeriod)}
                 height={50}
                 interval={7}
                 tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}
@@ -179,9 +179,9 @@ export function SupplyBorrowChart({
                   border: '1px solid rgba(75, 85, 99, 0.4)',
                   borderRadius: '0.5rem',
                   color: 'rgb(156 163 175)',
-                }}
-                labelFormatter={(label) => formatShortDate(label)}
-                formatter={(value) => [`${(Number(value) / 1000000).toFixed(2)}M`, '']}
+                }} 
+                labelFormatter={(label) => formatTimestamp(label)}
+                formatter={(value) => [`${(Number(value) / 1000000).toFixed(2)}M`]}
               />
             </LineChart>
           </ResponsiveContainer>

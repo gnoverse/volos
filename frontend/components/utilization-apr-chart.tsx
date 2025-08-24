@@ -1,7 +1,7 @@
 "use client"
 
 
-import { formatShortDate } from "@/app/utils/format.utils"
+import { formatTimestamp, getXAxisFormatter } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -139,7 +139,7 @@ export function UtilizationAPRChart({
                 dataKey="timestamp"
                 fontSize={10}
                 tickLine={false}
-                tickFormatter={(str) => formatShortDate(str)}
+                tickFormatter={getXAxisFormatter(selectedTimePeriod)}
                 height={50}
                 interval={7}
                 tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}
@@ -198,8 +198,8 @@ export function UtilizationAPRChart({
                   borderRadius: '0.5rem',
                   color: 'rgb(156 163 175)',
                 }}
-                labelFormatter={(label) => formatShortDate(label)}
-                formatter={(value, name) => [`${value}%`, name]}
+                labelFormatter={(label) => formatTimestamp(label)}
+                formatter={(value) => [`${Number(Number(value).toFixed(2))}%`]}
               />
             </LineChart>
           </ResponsiveContainer>
