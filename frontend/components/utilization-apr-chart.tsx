@@ -1,18 +1,15 @@
 "use client"
 
-import {
-  useAPRHistoryQuery,
-  useMarketSnapshotsQuery,
-  useUtilizationHistoryQuery
-} from "@/app/(app)/borrow/queries-mutations"
+
 import { formatShortDate } from "@/app/utils/format.utils"
-import { getSnapshotResolution, getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useUtilizationAPRData } from "@/hooks/use-utilization-apr-data"
 import { cn } from "@/lib/utils"
-import { useEffect, useMemo, useState } from "react"
+import { useState } from "react"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import useLocalStorageState from "use-local-storage-state"
 
 interface UtilizationAPRChartProps {
   marketId: string
@@ -28,125 +25,15 @@ export function UtilizationAPRChart({
   className,
 }: UtilizationAPRChartProps) {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
-  const [selectedMetrics, setSelectedMetrics] = useState({
-    utilization: true,
-    supplyApr: false,
-    borrowApr: false,
+  const [selectedMetrics, setSelectedMetrics] = useLocalStorageState('utilization-apr-chart-metrics', {
+    defaultValue: {
+      utilization: true,
+      supplyApr: false,
+      borrowApr: false,
+    }
   })
 
-  const startTime = useMemo(() => getStableTimePeriodStartDateISO(selectedTimePeriod), [selectedTimePeriod])
-
-  const useHistory = selectedTimePeriod === "1 week"
-  const useSnapshots = !useHistory
-
-  const { data: utilizationHistoryData = [], isLoading: isUtilizationHistoryLoading } = useUtilizationHistoryQuery(
-    marketId, 
-    useHistory ? startTime : undefined, 
-    useHistory ? undefined : undefined
-  )
-  const { data: aprHistoryData = [], isLoading: isAprHistoryLoading } = useAPRHistoryQuery(
-    marketId, 
-    useHistory ? startTime : undefined, 
-    useHistory ? undefined : undefined
-  )
-
-  const { data: snapshotData = [], isLoading: isSnapshotLoading } = useMarketSnapshotsQuery(
-    marketId,
-    getSnapshotResolution(selectedTimePeriod),
-    useSnapshots ? startTime : undefined,
-    useSnapshots ? undefined : undefined
-  )
-
-  useEffect(() => {
-    const storageKey = 'utilization-apr-chart-metrics'
-    const savedState = localStorage.getItem(storageKey)
-    
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState)
-        setSelectedMetrics(parsedState)
-      } catch (error) {
-        console.warn('Failed to parse saved checkbox state:', error)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    const storageKey = 'utilization-apr-chart-metrics'
-    localStorage.setItem(storageKey, JSON.stringify(selectedMetrics))
-  }, [selectedMetrics])
-
-  const transformedData = useMemo(() => {
-    if (useHistory) {
-      const dataMap = new Map<number, {
-        timestamp: number
-        utilization?: number
-        supplyApr?: number
-        borrowApr?: number
-      }>()
-
-      utilizationHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
-        }
-        dataMap.get(timestamp)!.utilization = Number(item.value)
-      })
-
-      aprHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
-        }
-        dataMap.get(timestamp)!.supplyApr = Number(item.supply_apr)
-        dataMap.get(timestamp)!.borrowApr = Number(item.borrow_apr)
-      })
-
-      return Array.from(dataMap.values())
-        .filter(item => {
-          if (selectedMetrics.utilization && item.utilization !== undefined) return true;
-          if (selectedMetrics.supplyApr && item.supplyApr !== undefined) return true;
-          if (selectedMetrics.borrowApr && item.borrowApr !== undefined) return true;
-          return false;
-        })
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-    } else {
-      return snapshotData && snapshotData
-        .map(snapshot => ({
-          timestamp: new Date(snapshot.timestamp).getTime(),
-          utilization: selectedMetrics.utilization ? snapshot.utilization_rate : undefined,
-          supplyApr: selectedMetrics.supplyApr ? snapshot.supply_apr : undefined,
-          borrowApr: selectedMetrics.borrowApr ? snapshot.borrow_apr : undefined,
-        }))
-        .filter(item => {
-          if (selectedMetrics.utilization && item.utilization !== undefined) return true;
-          if (selectedMetrics.supplyApr && item.supplyApr !== undefined) return true;
-          if (selectedMetrics.borrowApr && item.borrowApr !== undefined) return true;
-          return false;
-        })
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-    }
-  }, [useHistory, utilizationHistoryData, aprHistoryData, snapshotData, selectedMetrics])
-
-  const handleMetricToggle = (metric: keyof typeof selectedMetrics) => {
-    setSelectedMetrics(prev => {
-      const newState = {
-        ...prev,
-        [metric]: !prev[metric]
-      }
-      
-      const checkedCount = Object.values(newState).filter(Boolean).length
-      if (checkedCount === 0) {
-        return prev
-      }
-      
-      return newState
-    })
-  }
-
-  const isLoading = useHistory 
-    ? (isUtilizationHistoryLoading || isAprHistoryLoading)
-    : isSnapshotLoading
+  const { transformedData, isLoading, hasData } = useUtilizationAPRData(marketId, selectedTimePeriod, selectedMetrics)
 
   if (isLoading) {
     return (
@@ -172,9 +59,7 @@ export function UtilizationAPRChart({
     )
   }
 
-  const hasData = useHistory
-    ? ((utilizationHistoryData && utilizationHistoryData.length > 0) || (aprHistoryData && aprHistoryData.length > 0))
-    : (snapshotData && snapshotData.length > 0)
+
 
   if (!hasData) {
     return (
@@ -214,7 +99,7 @@ export function UtilizationAPRChart({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={selectedMetrics.utilization}
-                  onCheckedChange={() => handleMetricToggle('utilization')}
+                  onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, utilization: !prev.utilization }))}
                   className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                 />
                 <span className="text-blue-400">Utilization</span>
@@ -222,7 +107,7 @@ export function UtilizationAPRChart({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={selectedMetrics.supplyApr}
-                  onCheckedChange={() => handleMetricToggle('supplyApr')}
+                  onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, supplyApr: !prev.supplyApr }))}
                   className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                 />
                 <span className="text-blue-400">Supply APR</span>
@@ -230,7 +115,7 @@ export function UtilizationAPRChart({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={selectedMetrics.borrowApr}
-                  onCheckedChange={() => handleMetricToggle('borrowApr')}
+                  onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, borrowApr: !prev.borrowApr }))}
                   className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500"
                 />
                 <span className="text-teal-400">Borrow APR</span>

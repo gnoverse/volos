@@ -1,18 +1,15 @@
 "use client"
 
-import {
-  useMarketSnapshotsQuery,
-  useNetBorrowHistoryQuery,
-  useNetSupplyHistoryQuery
-} from "@/app/(app)/borrow/queries-mutations"
+
 import { formatShortDate } from "@/app/utils/format.utils"
-import { getSnapshotResolution, getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useSupplyBorrowData } from "@/hooks/use-supply-borrow-data"
 import { cn } from "@/lib/utils"
-import { useEffect, useMemo, useState } from "react"
+import { useState } from "react"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import useLocalStorageState from "use-local-storage-state"
 
 interface SupplyBorrowChartProps {
   marketId: string
@@ -28,116 +25,14 @@ export function SupplyBorrowChart({
   className,
 }: SupplyBorrowChartProps) {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
-  const [selectedMetrics, setSelectedMetrics] = useState({
-    supply: true,
-    borrow: true,
+  const [selectedMetrics, setSelectedMetrics] = useLocalStorageState('supply-borrow-chart-metrics', {
+    defaultValue: {
+      supply: true,
+      borrow: true,
+    }
   })
 
-  const startTime = useMemo(() => getStableTimePeriodStartDateISO(selectedTimePeriod), [selectedTimePeriod])
-
-  const useHistory = selectedTimePeriod === "1 week"
-  const useSnapshots = !useHistory
-
-  const { data: supplyHistoryData = [], isLoading: isSupplyHistoryLoading } = useNetSupplyHistoryQuery(
-    marketId, 
-    useHistory ? startTime : undefined, 
-  )
-  const { data: borrowHistoryData = [], isLoading: isBorrowHistoryLoading } = useNetBorrowHistoryQuery(
-    marketId, 
-    useHistory ? startTime : undefined, 
-  )
-
-  const { data: snapshotData = [], isLoading: isSnapshotLoading } = useMarketSnapshotsQuery(
-    marketId,
-    getSnapshotResolution(selectedTimePeriod),
-    useSnapshots ? startTime : undefined,
-  )
-
-  useEffect(() => {
-    const storageKey = 'supply-borrow-chart-metrics'
-    const savedState = localStorage.getItem(storageKey)
-    
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState)
-        setSelectedMetrics(parsedState)
-      } catch (error) {
-        console.warn('Failed to parse saved checkbox state:', error)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    const storageKey = 'supply-borrow-chart-metrics'
-    localStorage.setItem(storageKey, JSON.stringify(selectedMetrics))
-  }, [selectedMetrics])
-
-  const transformedData = useMemo(() => {
-    if (useHistory) {
-      const dataMap = new Map<number, {
-        timestamp: number
-        supply?: number
-        borrow?: number
-      }>()
-
-      supplyHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
-        }
-        dataMap.get(timestamp)!.supply = Number(item.value)
-      })
-
-      borrowHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
-        }
-        dataMap.get(timestamp)!.borrow = Number(item.value)
-      })
-
-      return Array.from(dataMap.values())
-        .filter(item => {
-          if (selectedMetrics.supply && item.supply !== undefined) return true;
-          if (selectedMetrics.borrow && item.borrow !== undefined) return true;
-          return false;
-        })
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-    } else {
-      return snapshotData && snapshotData
-        .map(snapshot => ({
-          timestamp: new Date(snapshot.timestamp).getTime(),
-          supply: selectedMetrics.supply ? Number(snapshot.total_supply) : undefined,
-          borrow: selectedMetrics.borrow ? Number(snapshot.total_borrow) : undefined,
-        }))
-        .filter(item => {
-          if (selectedMetrics.supply && item.supply !== undefined) return true;
-          if (selectedMetrics.borrow && item.borrow !== undefined) return true;
-          return false;
-        })
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-    }
-  }, [useHistory, supplyHistoryData, borrowHistoryData, snapshotData, selectedMetrics])
-
-  const handleMetricToggle = (metric: keyof typeof selectedMetrics) => {
-    setSelectedMetrics(prev => {
-      const newState = {
-        ...prev,
-        [metric]: !prev[metric]
-      }
-      
-      const checkedCount = Object.values(newState).filter(Boolean).length
-      if (checkedCount === 0) {
-        return prev
-      }
-      
-      return newState
-    })
-  }
-
-  const isLoading = useHistory 
-    ? (isSupplyHistoryLoading || isBorrowHistoryLoading)
-    : isSnapshotLoading
+  const { transformedData, isLoading, hasData } = useSupplyBorrowData(marketId, selectedTimePeriod, selectedMetrics)
 
   if (isLoading) {
     return (
@@ -163,9 +58,7 @@ export function SupplyBorrowChart({
     )
   }
 
-  const hasData = useHistory
-    ? ((supplyHistoryData && supplyHistoryData.length > 0) || (borrowHistoryData && borrowHistoryData.length > 0))
-    : (snapshotData && snapshotData.length > 0)
+
 
   if (!hasData) {
     return (
@@ -205,7 +98,7 @@ export function SupplyBorrowChart({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={selectedMetrics.supply}
-                  onCheckedChange={() => handleMetricToggle('supply')}
+                  onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, supply: !prev.supply }))}
                   className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                 />
                 <span className="text-green-400">Supply</span>
@@ -213,7 +106,7 @@ export function SupplyBorrowChart({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={selectedMetrics.borrow}
-                  onCheckedChange={() => handleMetricToggle('borrow')}
+                  onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, borrow: !prev.borrow }))}
                   className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
                 />
                 <span className="text-red-400">Borrow</span>

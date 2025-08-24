@@ -98,10 +98,10 @@ func GetMarketAPRHistory(client *firestore.Client, marketID, startTimeStr, endTi
 
 	var startTime, endTime time.Time
 	if startTimeStr != "" {
-		startTime = utils.ParseTime(startTimeStr, "market APR history query")
+		startTime = utils.ParseTime(startTimeStr, "market APR history query start time")
 	}
 	if endTimeStr != "" {
-		endTime = utils.ParseTime(endTimeStr, "market APR history query")
+		endTime = utils.ParseTime(endTimeStr, "market APR history query end time")
 	}
 
 	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").OrderBy("timestamp", firestore.Asc)
@@ -140,10 +140,10 @@ func GetMarketTotalBorrowHistory(client *firestore.Client, marketID, startTimeSt
 
 	var startTime, endTime time.Time
 	if startTimeStr != "" {
-		startTime = utils.ParseTime(startTimeStr, "market total borrow history query")
+		startTime = utils.ParseTime(startTimeStr, "market total borrow history query start time")
 	}
 	if endTimeStr != "" {
-		endTime = utils.ParseTime(endTimeStr, "market total borrow history query")
+		endTime = utils.ParseTime(endTimeStr, "market total borrow history query end time")
 	}
 
 	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_borrow").OrderBy("timestamp", firestore.Asc)
@@ -182,10 +182,10 @@ func GetMarketTotalSupplyHistory(client *firestore.Client, marketID, startTimeSt
 
 	var startTime, endTime time.Time
 	if startTimeStr != "" {
-		startTime = utils.ParseTime(startTimeStr, "market total supply history query")
+		startTime = utils.ParseTime(startTimeStr, "market total supply history query start time")
 	}
 	if endTimeStr != "" {
-		endTime = utils.ParseTime(endTimeStr, "market total supply history query")
+		endTime = utils.ParseTime(endTimeStr, "market total supply history query end time")
 	}
 
 	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("total_supply").OrderBy("timestamp", firestore.Asc)
@@ -224,10 +224,10 @@ func GetMarketUtilizationHistory(client *firestore.Client, marketID, startTimeSt
 
 	var startTime, endTime time.Time
 	if startTimeStr != "" {
-		startTime = utils.ParseTime(startTimeStr, "market utilization history query")
+		startTime = utils.ParseTime(startTimeStr, "market utilization history query start time")
 	}
 	if endTimeStr != "" {
-		endTime = utils.ParseTime(endTimeStr, "market utilization history query")
+		endTime = utils.ParseTime(endTimeStr, "market utilization history query end time")
 	}
 
 	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("utilization").OrderBy("timestamp", firestore.Asc)
@@ -276,8 +276,13 @@ func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTim
 		bucketCollection = "snapshots_daily"
 	}
 
-	startTime := utils.ParseTime(startTimeStr, "market snapshots query")
-	endTime := utils.ParseTime(endTimeStr, "market snapshots query")
+	var startTime, endTime time.Time
+	if startTimeStr != "" {
+		startTime = utils.ParseTime(startTimeStr, "market snapshots query start time")
+	}
+	if endTimeStr != "" {
+		endTime = utils.ParseTime(endTimeStr, "market snapshots query end time")
+	}
 
 	query := client.Collection("markets").Doc(sanitizedMarketID).Collection(bucketCollection).OrderBy("timestamp", firestore.Asc)
 
