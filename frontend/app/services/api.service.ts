@@ -237,7 +237,7 @@ export async function getUtilizationHistory(marketId: string, startTime?: string
 
 export async function getMarketSnapshots(
   marketId: string, 
-  resolution?: '4hour' | 'daily' | 'weekly',
+  resolution?: '15s' | '30s' | '60s' | '120s' | '4hour' | 'daily' | 'weekly',
   startTime?: string,
   endTime?: string
 ): Promise<MarketSnapshot[]> {

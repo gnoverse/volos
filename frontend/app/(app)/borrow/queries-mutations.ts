@@ -1,4 +1,4 @@
-import { getAPRHistory, getMarket, getMarkets, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory, getMarketSnapshots } from "@/app/services/api.service";
+import { getAPRHistory, getMarket, getMarkets, getMarketSnapshots, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -173,7 +173,7 @@ export function useAPRHistoryQuery(marketId: string, startTime?: string, endTime
 // Snapshot queries for different resolutions
 export function useMarketSnapshotsQuery(
   marketId: string, 
-  resolution: '4hour' | 'daily' | 'weekly',
+  resolution: '15s' | '30s' | '60s' | '120s' | '4hour' | 'daily' | 'weekly',
   startTime?: string,
   endTime?: string
 ) {
