@@ -8,40 +8,55 @@ export function getStableTimePeriodStartDateISO(period: "15s" | "30s" | "1m" | "
   const now = new Date()
   const nowTime = now.getTime()
   
-  // Round down to the nearest hour to create stable timestamps
-  const stableTime = Math.floor(nowTime / (60 * 60 * 1000)) * (60 * 60 * 1000)
-  
   let startTime: number
   switch (period) {
     case "15s":
-      startTime = stableTime - 15 * 1000
+      // Round down to nearest 15 seconds for stability
+      const stableTime15s = Math.floor(nowTime / (15 * 1000)) * (15 * 1000)
+      startTime = stableTime15s - 15 * 1000
       break
     case "30s":
-      startTime = stableTime - 30 * 1000
+      // Round down to nearest 30 seconds for stability
+      const stableTime30s = Math.floor(nowTime / (30 * 1000)) * (30 * 1000)
+      startTime = stableTime30s - 30 * 1000
       break
     case "1m":
-      startTime = stableTime - 60 * 1000
+      // Round down to nearest minute for stability
+      const stableTime1m = Math.floor(nowTime / (60 * 1000)) * (60 * 1000)
+      startTime = stableTime1m - 60 * 1000
       break
     case "2m":
-      startTime = stableTime - 2 * 60 * 1000
+      // Round down to nearest 2 minutes for stability
+      const stableTime2m = Math.floor(nowTime / (2 * 60 * 1000)) * (2 * 60 * 1000)
+      startTime = stableTime2m - 2 * 60 * 1000
       break
     case "1 week":
-      startTime = stableTime - 7 * 24 * 60 * 60 * 1000
+      // Round down to nearest hour for stability
+      const stableTime1w = Math.floor(nowTime / (60 * 60 * 1000)) * (60 * 60 * 1000)
+      startTime = stableTime1w - 7 * 24 * 60 * 60 * 1000
       break
     case "1 month":
-      startTime = stableTime - 30 * 24 * 60 * 60 * 1000
+      // Round down to nearest hour for stability
+      const stableTime1mo = Math.floor(nowTime / (60 * 60 * 1000)) * (60 * 60 * 1000)
+      startTime = stableTime1mo - 30 * 24 * 60 * 60 * 1000
       break
     case "3 months":
-      startTime = stableTime - 90 * 24 * 60 * 60 * 1000
+      // Round down to nearest hour for stability
+      const stableTime3mo = Math.floor(nowTime / (60 * 60 * 1000)) * (60 * 60 * 1000)
+      startTime = stableTime3mo - 90 * 24 * 60 * 60 * 1000
       break
     case "6 months":
-      startTime = stableTime - 180 * 24 * 60 * 60 * 1000
+      // Round down to nearest hour for stability
+      const stableTime6mo = Math.floor(nowTime / (60 * 60 * 1000)) * (60 * 60 * 1000)
+      startTime = stableTime6mo - 180 * 24 * 60 * 60 * 1000
       break
     case "all time":
       startTime = 0
       break
     default:
-      startTime = stableTime - 30 * 24 * 60 * 60 * 1000 // Default to 1 month
+      // Round down to nearest hour for stability
+      const stableTimeDefault = Math.floor(nowTime / (60 * 60 * 1000)) * (60 * 60 * 1000)
+      startTime = stableTimeDefault - 30 * 24 * 60 * 60 * 1000 // Default to 1 month
   }
   
   return new Date(startTime).toISOString()
