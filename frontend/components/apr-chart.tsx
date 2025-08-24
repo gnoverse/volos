@@ -1,35 +1,53 @@
 "use client"
 
-import { ChartData as HistoryEvent } from "@/app/services/api.service"
+import { APRData } from "@/app/services/api.service"
 import { formatTimestamp } from "@/app/utils/format.utils"
+import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
-// TODO: fix this type
-interface ChartProps {
-  data: Array<HistoryEvent>
+interface APRChartProps {
+  data: Array<APRData>
   title: string
   description: string
-  dataKey: string
-  color?: string
   className?: string
+  selectedTimePeriod: TimePeriod
+  onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
-export function Chart({
+export function APRChart({
   data,
   title,
   description,
-  dataKey,
-  color = "rgb(99, 102, 241)",
-  className
-}: ChartProps) {
+  className,
+  selectedTimePeriod,
+  onTimePeriodChangeAction,
+}: APRChartProps) {
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
       {(title || description) && (
         <CardHeader className="pb-4">
-          {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
-          {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+          <div className="flex items-start justify-between">
+            <div>
+              {title && <CardTitle className="text-logo-600">{title}</CardTitle>}
+              {description && <CardDescription className="text-gray-400">{description}</CardDescription>}
+            </div>
+            <div className="flex gap-2">
+              <div className="inline-flex items-center px-2 py-1 rounded-md border border-blue-400 text-xs font-medium text-blue-400 bg-transparent">
+                <div className="w-2 h-0.5 bg-blue-400 rounded mr-1"></div>
+                Supply APR
+              </div>
+              <div className="inline-flex items-center px-2 py-1 rounded-md border border-teal-400 text-xs font-medium text-teal-400 bg-transparent">
+                <div className="w-2 h-0.5 bg-teal-400 rounded mr-1"></div>
+                Borrow APR
+              </div>
+              <ChartDropdown
+                selectedTimePeriod={selectedTimePeriod}
+                onTimePeriodChangeAction={onTimePeriodChangeAction}
+                />
+            </div>
+          </div>
         </CardHeader>
       )}
       <CardContent className="-px-6">
@@ -58,15 +76,24 @@ export function Chart({
                 axisLine={false}
                 width={35}
                 tick={{ fill: 'rgb(156 163 175)' }}
+                tickFormatter={(value) => `${value}%`}
                 stroke="rgba(75, 85, 99, 0.3)"
               />
               <Line
                 type="monotone"
-                dataKey={dataKey}
-                stroke={color}
+                dataKey="supply_apr"
+                stroke="rgb(59, 130, 246)"
                 strokeWidth={2}
                 dot={false}
-                style={{ filter: `drop-shadow(0 0 6px ${color})` }}
+                style={{ filter: `drop-shadow(0 0 6px rgb(59, 130, 246))` }}
+              />
+              <Line
+                type="monotone"
+                dataKey="borrow_apr"
+                stroke="rgb(20, 184, 166)"
+                strokeWidth={2}
+                dot={false}
+                style={{ filter: `drop-shadow(0 0 6px rgb(20, 184, 166))` }}
               />
               <Tooltip
                 contentStyle={{
@@ -81,6 +108,11 @@ export function Chart({
                 itemStyle={{ color: 'rgb(229 231 235)' }}
                 labelFormatter={(label) => {
                   return formatTimestamp(label);
+                }}
+                formatter={(value: number, name: string) => {
+                  const roundedValue = value.toFixed(2);
+                  const label = name === 'supply_apr' ? 'Supply APR' : 'Borrow APR';
+                  return [`${roundedValue}%`, label];
                 }}
               />
             </LineChart>

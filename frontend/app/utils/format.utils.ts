@@ -149,22 +149,69 @@ export function formatTimestamp(timestamp: number | null | undefined): string {
 }
 
 /**
- * Returns the appropriate Tailwind CSS classes for proposal status badges.
- * @param status The proposal status (active, executed, defeated, etc.)
- * @returns CSS classes for styling the status badge
+ * Formats a timestamp to a short date string in "dd MMM" format.
+ * Example: "15 Jan", "22 Feb", "03 Mar"
+ * @param timestamp The timestamp to format
+ * @returns Formatted date string
  */
-export function getProposalStatusColor(status: string): string {
-  switch (status) {
-    case 'active':
-      return 'bg-green-500/20 text-green-400 border-green-500/30'
-    case 'passed':
-      return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-    case 'failed':
-      return 'bg-red-500/20 text-red-400 border-red-500/30'
-    default:
-      return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+export function formatShortDate(timestamp: number | string | Date): string {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { 
+      day: '2-digit', 
+      month: 'short' 
+    });
+  } catch (error) {
+    console.error("Error formatting short date:", error);
+    return "N/A";
   }
 }
+
+/**
+ * Returns the appropriate X-axis formatter function based on the selected time period.
+ * Each period uses different formatting to match the data resolution and provide optimal readability.
+ * 
+ * @param period The time period ("1 week", "1 month", "3 months", "6 months", "all time")
+ * @returns A function that formats timestamps for X-axis labels
+ */
+export function getXAxisFormatter(period: "1 week" | "1 month" | "3 months" | "6 months" | "all time") {
+  switch (period) {
+    case "1 week":
+      return (timestamp: number | string | Date) => {
+        const date = new Date(timestamp);
+        const hour = date.getHours();
+        if (hour === 0) {
+          return formatShortDate(timestamp);
+        } else if (hour === 12) {
+          return "12:00";
+        }
+        return "";
+      }
+    case "1 month":
+      return (timestamp: number | string | Date) => {
+        const date = new Date(timestamp);
+        return formatShortDate(timestamp) + ' ' + date.toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          hour12: false
+        });
+      }
+    case "3 months":
+    case "6 months":
+      return formatShortDate;
+    case "all time":
+      return (timestamp: number | string | Date) => {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString('en-US', { 
+          month: 'short',
+          year: '2-digit'
+        });
+      }
+    default:
+      return formatShortDate;
+  }
+}
+
+
 
 
 

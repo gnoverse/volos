@@ -52,24 +52,28 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 			if ok {
 				dbupdater.UpdateTotalSupply(client, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Timestamp, true)
 				dbupdater.UpdateAPRHistory(client, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(client, supplyEvent.MarketID, supplyEvent.Timestamp)
 			}
 		case "Withdraw":
 			withdrawEvent, ok := extractWithdrawFields(event)
 			if ok {
 				dbupdater.UpdateTotalSupply(client, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Timestamp, false)
 				dbupdater.UpdateAPRHistory(client, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(client, withdrawEvent.MarketID, withdrawEvent.Timestamp)
 			}
 		case "Borrow":
 			borrowEvent, ok := extractBorrowFields(event)
 			if ok {
 				dbupdater.UpdateTotalBorrow(client, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Timestamp, true)
 				dbupdater.UpdateAPRHistory(client, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(client, borrowEvent.MarketID, borrowEvent.Timestamp)
 			}
 		case "Repay":
 			repayEvent, ok := extractRepayFields(event)
 			if ok {
 				dbupdater.UpdateTotalBorrow(client, repayEvent.MarketID, repayEvent.Amount, repayEvent.Timestamp, false)
 				dbupdater.UpdateAPRHistory(client, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(client, repayEvent.MarketID, repayEvent.Timestamp)
 			}
 		case "Liquidate":
 			liquidateEvent, ok := extractLiquidateFields(event)
@@ -78,6 +82,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				// TODO: If borrower collateral becomes zero, also decrease total_supply and any additional bad-debt borrow reduction.
 				//       Requires extra event data (e.g., bad_debt_assets) or a state read/reconciliation pass.
 				dbupdater.UpdateAPRHistory(client, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(client, liquidateEvent.MarketID, liquidateEvent.Timestamp)
 			}
 		case "AccrueInterest":
 			dbupdater.ProcessAccrueInterest(tx)

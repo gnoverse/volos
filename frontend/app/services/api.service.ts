@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export type ChartData = {
   value: number;
-  timestamp: string;
+  timestamp: Date;
 };
 
 export type MarketActivity = {
@@ -10,8 +10,45 @@ export type MarketActivity = {
   amount: number;
   caller: string;
   hash: string;
-  timestamp: string;
+  timestamp: Date;
   isAmountInShares: boolean;
+};
+
+export type APRData = {
+  timestamp: Date;
+  supply_apr: number;
+  borrow_apr: number;
+};
+
+export type TotalSupplyData = {
+  delta: string;
+  is_supply: boolean;
+  timestamp: Date;
+  value: string;
+};
+
+export type TotalBorrowData = {
+  delta: string;
+  is_borrow: boolean;
+  timestamp: Date;
+  value: string;
+};
+
+export type UtilizationData = {
+  timestamp: Date;
+  value: number;
+};
+
+export type MarketSnapshot = {
+  market_id: string;
+  timestamp: Date;
+  resolution: '4hour' | 'daily' | 'weekly';
+  supply_apr: number;
+  borrow_apr: number;
+  total_supply: string;
+  total_borrow: string;
+  utilization_rate: number;
+  created_at: Date;
 };
 
 export type User = {
@@ -86,28 +123,8 @@ export interface MarketsResponse {
 
 const API_BASE = process.env.API_BASE_URL || 'http://localhost:8080/api';
 
-export async function getTotalSupplyHistory(marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/total-supply-history`, { params: { marketId } });
-  return res.data;
-}
-
-export async function getTotalBorrowHistory(marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/total-borrow-history`, { params: { marketId } });
-  return res.data;
-}
-
-export async function getUtilizationHistory(marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/total-utilization-history`, { params: { marketId } });
-  return res.data;
-}
-
 export async function getMarketActivity(marketId: string): Promise<MarketActivity[]> {
   const res = await axios.get(`${API_BASE}/market-activity`, { params: { marketId } });
-  return res.data;
-}
-
-export async function getAPRHistory(marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/apr-history`, { params: { marketId } });
   return res.data;
 }
 
@@ -180,5 +197,56 @@ export async function getMarkets(limit?: number, lastId?: string): Promise<Marke
 export async function getMarket(marketId: string): Promise<Market> {
   const encoded = encodeURIComponent(marketId);
   const res = await axios.get(`${API_BASE}/market/${encoded}`);
+  return res.data;
+}
+
+export async function getAPRHistory(marketId: string, startTime?: string, endTime?: string): Promise<APRData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/apr`, { params });
+  return res.data;
+}
+
+export async function getTotalBorrowHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalBorrowData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/total-borrow-history`, { params });
+  return res.data;
+}
+
+export async function getTotalSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/total-supply-history`, { params });
+  return res.data;
+}
+
+export async function getUtilizationHistory(marketId: string, startTime?: string, endTime?: string): Promise<UtilizationData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/utilization-history`, { params });
+  return res.data;
+}
+
+export async function getMarketSnapshots(
+  marketId: string, 
+  resolution?: '4hour' | 'daily' | 'weekly',
+  startTime?: string,
+  endTime?: string
+): Promise<MarketSnapshot[]> {
+  const params: Record<string, string> = { marketId };
+  if (resolution) params.resolution = resolution;
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  
+  const res = await axios.get(`${API_BASE}/snapshots`, { params });
   return res.data;
 }

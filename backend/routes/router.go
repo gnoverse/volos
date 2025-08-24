@@ -23,12 +23,16 @@ func APIRouter(client *firestore.Client) http.HandlerFunc {
 			GetUserPendingUnstakesHandler(client)(w, r)
 		case "/api/markets":
 			GetMarketsHandler(client)(w, r)
-		case "/api/market/apr":
+		case "/api/apr":
 			GetMarketAPRHistoryHandler(client)(w, r)
-		case "/api/market/total-borrow-history":
+		case "/api/total-borrow-history":
 			GetMarketTotalBorrowHistoryHandler(client)(w, r)
-		case "/api/market/total-supply-history":
+		case "/api/total-supply-history":
 			GetMarketTotalSupplyHistoryHandler(client)(w, r)
+		case "/api/utilization-history":
+			GetMarketUtilizationHistoryHandler(client)(w, r)
+		case "/api/snapshots":
+			GetMarketSnapshotsHandler(client)(w, r)
 		case "/api/proposals":
 			GetProposalsHandler(client)(w, r)
 		case "/api/proposals/active":

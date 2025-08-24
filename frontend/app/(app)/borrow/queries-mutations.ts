@@ -1,4 +1,4 @@
-import { getMarket, getMarkets } from "@/app/services/api.service";
+import { getAPRHistory, getMarket, getMarkets, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory, getMarketSnapshots } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +8,11 @@ export const marketQueryKey = (marketId: string) => ["market", marketId];
 export const marketHistoryQueryKey = (marketId: string) => ["marketHistory", marketId];
 export const healthFactorQueryKey = (marketId: string, user: string) => ["healthFactor", marketId, user];
 export const positionQueryKey = (marketId: string, user: string) => ["position", marketId, user];
+export const netSupplyHistoryQueryKey = (marketId: string) => ["netSupplyHistory", marketId];
+export const netBorrowHistoryQueryKey = (marketId: string) => ["netBorrowHistory", marketId];
+export const utilizationHistoryQueryKey = (marketId: string) => ["utilizationHistory", marketId];
+export const aprHistoryQueryKey = (marketId: string) => ["aprHistory", marketId];
+export const marketSnapshotsQueryKey = (marketId: string) => ["marketSnapshots", marketId];
 
 export function useMarketsQuery() {
   return useQuery({
@@ -125,6 +130,58 @@ export function usePositionQuery(marketId: string, user: string) {
       };
     },
     enabled: !!marketId && !!user,
+  });
+}
+
+// History queries (for 1 week period)
+export function useNetSupplyHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
+  return useQuery({
+    queryKey: [...netSupplyHistoryQueryKey(marketId), startTime, endTime],
+    queryFn: () => getTotalSupplyHistory(marketId, startTime, endTime),
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useNetBorrowHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
+  return useQuery({
+    queryKey: [...netBorrowHistoryQueryKey(marketId), startTime, endTime],
+    queryFn: () => getTotalBorrowHistory(marketId, startTime, endTime),
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useUtilizationHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
+  return useQuery({
+    queryKey: [...utilizationHistoryQueryKey(marketId), startTime, endTime],
+    queryFn: () => getUtilizationHistory(marketId, startTime, endTime),
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useAPRHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
+  return useQuery({
+    queryKey: [...aprHistoryQueryKey(marketId), startTime, endTime],
+    queryFn: () => getAPRHistory(marketId, startTime, endTime),
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Snapshot queries for different resolutions
+export function useMarketSnapshotsQuery(
+  marketId: string, 
+  resolution: '4hour' | 'daily' | 'weekly',
+  startTime?: string,
+  endTime?: string
+) {
+  return useQuery({
+    queryKey: [...marketSnapshotsQueryKey(marketId), resolution, startTime, endTime],
+    queryFn: () => getMarketSnapshots(marketId, resolution, startTime, endTime),
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -442,17 +499,17 @@ export function useCreateMarketMutation() {
   
   return useMutation({
     mutationFn: async ({ 
-      poolPath,
+      marketId,
       isToken0Loan,
       irm,
       lltv
     }: { 
-      poolPath: string;
+      marketId: string;
       isToken0Loan: boolean;
       irm: string;
       lltv: number;
     }) => {
-      return txService.createMarket(poolPath, isToken0Loan, irm, lltv);
+      return txService.createMarket(marketId, isToken0Loan, irm, lltv);
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: marketsQueryKey });

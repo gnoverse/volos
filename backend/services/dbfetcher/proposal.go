@@ -11,9 +11,9 @@ import (
 
 // ProposalsResponse represents the response structure for proposal listings
 type ProposalsResponse struct {
-	Proposals []model.ProposalData `json:"proposals"`
-	HasMore   bool                 `json:"has_more"`
-	LastID    string               `json:"last_id"`
+	Proposals []model.Proposal `json:"proposals"`
+	HasMore   bool             `json:"has_more"`
+	LastID    string           `json:"last_id"`
 }
 
 // GetProposals retrieves all proposals from Firestore with cursor-based pagination
@@ -43,9 +43,9 @@ func GetProposals(client *firestore.Client, limit int, lastDocID string) (*Propo
 		return nil, err
 	}
 
-	var proposals []model.ProposalData
+	var proposals []model.Proposal
 	for _, doc := range docs {
-		var proposal model.ProposalData
+		var proposal model.Proposal
 		if err := doc.DataTo(&proposal); err != nil {
 			slog.Error("Error parsing proposal data", "doc_id", doc.Ref.ID, "error", err)
 			continue
@@ -104,9 +104,9 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 		return nil, err
 	}
 
-	var proposals []model.ProposalData
+	var proposals []model.Proposal
 	for _, doc := range docs {
-		var proposal model.ProposalData
+		var proposal model.Proposal
 		if err := doc.DataTo(&proposal); err != nil {
 			slog.Error("Error parsing proposal data", "doc_id", doc.Ref.ID, "error", err)
 			continue
@@ -140,7 +140,7 @@ func GetActiveProposals(client *firestore.Client, limit int, lastDocID string) (
 }
 
 // GetProposal retrieves a single proposal by ID from Firestore
-func GetProposal(client *firestore.Client, proposalID string) (*model.ProposalData, error) {
+func GetProposal(client *firestore.Client, proposalID string) (*model.Proposal, error) {
 	ctx := context.Background()
 
 	doc, err := client.Collection("proposals").Doc(proposalID).Get(ctx)
@@ -149,7 +149,7 @@ func GetProposal(client *firestore.Client, proposalID string) (*model.ProposalDa
 		return nil, err
 	}
 
-	var proposal model.ProposalData
+	var proposal model.Proposal
 	if err := doc.DataTo(&proposal); err != nil {
 		slog.Error("Error parsing proposal data", "proposal_id", proposalID, "error", err)
 		return nil, err
@@ -170,7 +170,7 @@ func GetProposal(client *firestore.Client, proposalID string) (*model.ProposalDa
 }
 
 // GetProposalVotes retrieves all individual votes for a specific proposal from the votes subcollection
-func GetProposalVotes(client *firestore.Client, proposalID string) ([]model.VoteData, error) {
+func GetProposalVotes(client *firestore.Client, proposalID string) ([]model.Vote, error) {
 	ctx := context.Background()
 
 	docs, err := client.Collection("proposals").Doc(proposalID).Collection("votes").Documents(ctx).GetAll()
@@ -179,9 +179,9 @@ func GetProposalVotes(client *firestore.Client, proposalID string) ([]model.Vote
 		return nil, err
 	}
 
-	var votes []model.VoteData
+	var votes []model.Vote
 	for _, doc := range docs {
-		var vote model.VoteData
+		var vote model.Vote
 		if err := doc.DataTo(&vote); err != nil {
 			slog.Error("Error parsing vote data", "proposal_id", proposalID, "vote_doc_id", doc.Ref.ID, "error", err)
 			continue
@@ -193,7 +193,7 @@ func GetProposalVotes(client *firestore.Client, proposalID string) ([]model.Vote
 }
 
 // GetUserVoteOnProposal retrieves a specific user's vote on a proposal, returns nil if no vote exists
-func GetUserVoteOnProposal(client *firestore.Client, proposalID, userAddress string) (*model.VoteData, error) {
+func GetUserVoteOnProposal(client *firestore.Client, proposalID, userAddress string) (*model.Vote, error) {
 	ctx := context.Background()
 
 	doc, err := client.Collection("proposals").Doc(proposalID).Collection("votes").Doc(userAddress).Get(ctx)
@@ -206,7 +206,7 @@ func GetUserVoteOnProposal(client *firestore.Client, proposalID, userAddress str
 		return nil, err
 	}
 
-	var vote model.VoteData
+	var vote model.Vote
 	if err := doc.DataTo(&vote); err != nil {
 		slog.Error("Error parsing user vote data", "proposal_id", proposalID, "user_address", userAddress, "error", err)
 		return nil, err

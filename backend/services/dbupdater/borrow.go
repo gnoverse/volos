@@ -75,12 +75,12 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 
 	history := map[string]interface{}{
 		"timestamp":    eventTime,
-		"total":        updatedTotalStr,
-		"amount_delta": amount,
+		"value":        updatedTotalStr,
+		"delta": amount,
 		"is_borrow":    isBorrow,
 	}
 
-	if _, err := marketRef.Collection("total_borrow_history").NewDoc().Set(ctx, history); err != nil {
+	if _, err := marketRef.Collection("total_borrow").NewDoc().Set(ctx, history); err != nil {
 		slog.Error("failed to add total borrow history entry", "market_id", marketID, "error", err)
 		return
 	}
