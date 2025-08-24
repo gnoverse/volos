@@ -1,7 +1,12 @@
 "use client"
 
-import { useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
-import { formatShortDate, getStableTimePeriodStartDateISO } from "@/app/utils/format.utils"
+import {
+  useMarketSnapshotsQuery,
+  useNetBorrowHistoryQuery,
+  useNetSupplyHistoryQuery
+} from "@/app/(app)/borrow/queries-mutations"
+import { formatShortDate } from "@/app/utils/format.utils"
+import { getSnapshotResolution, getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -30,8 +35,23 @@ export function SupplyBorrowChart({
 
   const startTime = useMemo(() => getStableTimePeriodStartDateISO(selectedTimePeriod), [selectedTimePeriod])
 
-  const { data: supplyData = [], isLoading: isSupplyLoading } = useNetSupplyHistoryQuery(marketId, startTime)
-  const { data: borrowData = [], isLoading: isBorrowLoading } = useNetBorrowHistoryQuery(marketId, startTime)
+  const useHistory = selectedTimePeriod === "1 week"
+  const useSnapshots = !useHistory
+
+  const { data: supplyHistoryData = [], isLoading: isSupplyHistoryLoading } = useNetSupplyHistoryQuery(
+    marketId, 
+    useHistory ? startTime : undefined, 
+  )
+  const { data: borrowHistoryData = [], isLoading: isBorrowHistoryLoading } = useNetBorrowHistoryQuery(
+    marketId, 
+    useHistory ? startTime : undefined, 
+  )
+
+  const { data: snapshotData = [], isLoading: isSnapshotLoading } = useMarketSnapshotsQuery(
+    marketId,
+    getSnapshotResolution(selectedTimePeriod),
+    useSnapshots ? startTime : undefined,
+  )
 
   useEffect(() => {
     const storageKey = 'supply-borrow-chart-metrics'
@@ -52,38 +72,52 @@ export function SupplyBorrowChart({
     localStorage.setItem(storageKey, JSON.stringify(selectedMetrics))
   }, [selectedMetrics])
 
-  // Combines supply and borrow data into a single timeline, filtered by selected metrics
   const transformedData = useMemo(() => {
-    const dataMap = new Map<number, {
-      timestamp: number
-      supply?: number
-      borrow?: number
-    }>()
+    if (useHistory) {
+      const dataMap = new Map<number, {
+        timestamp: number
+        supply?: number
+        borrow?: number
+      }>()
 
-    supplyData.forEach(item => {
-      const timestamp = new Date(item.timestamp).getTime()
-      if (!dataMap.has(timestamp)) {
-        dataMap.set(timestamp, { timestamp })
-      }
-      dataMap.get(timestamp)!.supply = Number(item.value)
-    })
-
-    borrowData.forEach(item => {
-      const timestamp = new Date(item.timestamp).getTime()
-      if (!dataMap.has(timestamp)) {
-        dataMap.set(timestamp, { timestamp })
-      }
-      dataMap.get(timestamp)!.borrow = Number(item.value)
-    })
-
-    return Array.from(dataMap.values())
-      .filter(item => {
-        if (selectedMetrics.supply && item.supply !== undefined) return true;
-        if (selectedMetrics.borrow && item.borrow !== undefined) return true;
-        return false;
+      supplyHistoryData.forEach(item => {
+        const timestamp = new Date(item.timestamp).getTime()
+        if (!dataMap.has(timestamp)) {
+          dataMap.set(timestamp, { timestamp })
+        }
+        dataMap.get(timestamp)!.supply = Number(item.value)
       })
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-  }, [supplyData, borrowData, selectedMetrics])
+
+      borrowHistoryData.forEach(item => {
+        const timestamp = new Date(item.timestamp).getTime()
+        if (!dataMap.has(timestamp)) {
+          dataMap.set(timestamp, { timestamp })
+        }
+        dataMap.get(timestamp)!.borrow = Number(item.value)
+      })
+
+      return Array.from(dataMap.values())
+        .filter(item => {
+          if (selectedMetrics.supply && item.supply !== undefined) return true;
+          if (selectedMetrics.borrow && item.borrow !== undefined) return true;
+          return false;
+        })
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    } else {
+      return snapshotData && snapshotData
+        .map(snapshot => ({
+          timestamp: new Date(snapshot.timestamp).getTime(),
+          supply: selectedMetrics.supply ? Number(snapshot.total_supply) : undefined,
+          borrow: selectedMetrics.borrow ? Number(snapshot.total_borrow) : undefined,
+        }))
+        .filter(item => {
+          if (selectedMetrics.supply && item.supply !== undefined) return true;
+          if (selectedMetrics.borrow && item.borrow !== undefined) return true;
+          return false;
+        })
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    }
+  }, [useHistory, supplyHistoryData, borrowHistoryData, snapshotData, selectedMetrics])
 
   const handleMetricToggle = (metric: keyof typeof selectedMetrics) => {
     setSelectedMetrics(prev => {
@@ -101,7 +135,11 @@ export function SupplyBorrowChart({
     })
   }
 
-  if (isSupplyLoading || isBorrowLoading) {
+  const isLoading = useHistory 
+    ? (isSupplyHistoryLoading || isBorrowHistoryLoading)
+    : isSnapshotLoading
+
+  if (isLoading) {
     return (
       <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
         <CardHeader className="pb-4">
@@ -125,7 +163,10 @@ export function SupplyBorrowChart({
     )
   }
 
-  const hasData = (supplyData && supplyData.length > 0) || (borrowData && borrowData.length > 0)
+  const hasData = useHistory
+    ? ((supplyHistoryData && supplyHistoryData.length > 0) || (borrowHistoryData && borrowHistoryData.length > 0))
+    : (snapshotData && snapshotData.length > 0)
+
   if (!hasData) {
     return (
       <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>

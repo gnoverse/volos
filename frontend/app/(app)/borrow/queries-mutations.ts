@@ -1,4 +1,4 @@
-import { getAPRHistory, getMarket, getMarkets, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
+import { getAPRHistory, getMarket, getMarkets, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory, getMarketSnapshots } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ export const netSupplyHistoryQueryKey = (marketId: string) => ["netSupplyHistory
 export const netBorrowHistoryQueryKey = (marketId: string) => ["netBorrowHistory", marketId];
 export const utilizationHistoryQueryKey = (marketId: string) => ["utilizationHistory", marketId];
 export const aprHistoryQueryKey = (marketId: string) => ["aprHistory", marketId];
+export const marketSnapshotsQueryKey = (marketId: string) => ["marketSnapshots", marketId];
 
 export function useMarketsQuery() {
   return useQuery({
@@ -132,6 +133,7 @@ export function usePositionQuery(marketId: string, user: string) {
   });
 }
 
+// History queries (for 1 week period)
 export function useNetSupplyHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
   return useQuery({
     queryKey: [...netSupplyHistoryQueryKey(marketId), startTime, endTime],
@@ -163,6 +165,21 @@ export function useAPRHistoryQuery(marketId: string, startTime?: string, endTime
   return useQuery({
     queryKey: [...aprHistoryQueryKey(marketId), startTime, endTime],
     queryFn: () => getAPRHistory(marketId, startTime, endTime),
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Snapshot queries for different resolutions
+export function useMarketSnapshotsQuery(
+  marketId: string, 
+  resolution: '4hour' | 'daily' | 'weekly',
+  startTime?: string,
+  endTime?: string
+) {
+  return useQuery({
+    queryKey: [...marketSnapshotsQueryKey(marketId), resolution, startTime, endTime],
+    queryFn: () => getMarketSnapshots(marketId, resolution, startTime, endTime),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

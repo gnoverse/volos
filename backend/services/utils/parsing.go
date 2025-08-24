@@ -55,7 +55,7 @@ func ParseInt64(value string, context string) int64 {
 // ParseTime parses a time string in RFC3339 format, logs errors and returns zero time on failure
 func ParseTime(timeStr string, context string) time.Time {
 	if timeStr == "" {
-		slog.Error("Empty time string", "context", context)
+		slog.Error("empty time string", "context", context)
 		return time.Time{}
 	}
 
