@@ -29,6 +29,18 @@ services:
 
   frontend:
     build: ./frontend/
+    command: npm run dev
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+            - .git/
+        - action: rebuild
+          path: package.json
     ports:
       - "3000:3000"
     env_file:
