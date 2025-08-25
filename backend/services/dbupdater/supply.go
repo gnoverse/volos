@@ -20,7 +20,7 @@ import (
 // isSupply indicates whether this is a supply event (true) or withdraw event (false).
 // For supply events, the amount is added to the total supply.
 // For withdraw events, the amount is subtracted from the total supply.
-func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp string, isSupply bool) {
+func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp string, isSupply bool, caller string, txHash string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -79,10 +79,12 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 	}
 
 	history := map[string]interface{}{
-		"timestamp":    eventTime,
-		"value":        updatedTotalStr,
-		"delta": amount,
-		"is_supply":    isSupply,
+		"timestamp": eventTime,
+		"value":     updatedTotalStr,
+		"delta":     amount,
+		"is_supply": isSupply,
+		"caller":    caller,
+		"tx_hash":   txHash,
 	}
 	if _, err := marketRef.Collection("total_supply").NewDoc().Set(ctx, history); err != nil {
 		slog.Error("failed to add total supply history entry", "market_id", marketID, "error", err)

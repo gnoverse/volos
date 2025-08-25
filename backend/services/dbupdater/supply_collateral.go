@@ -17,7 +17,7 @@ import (
 // and appends a history sample in a dedicated subcollection.
 // Amounts are stored as strings (u256). Arithmetic is done with big.Int.
 // isSupply indicates whether this is a collateral supply event (true) or withdraw collateral event (false).
-func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, timestamp string, isSupply bool) {
+func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, timestamp string, isSupply bool, caller string, txHash string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -80,6 +80,8 @@ func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, tim
 		"value":     updatedTotalStr,
 		"delta":     amount,
 		"is_supply": isSupply,
+		"caller":    caller,
+		"tx_hash":   txHash,
 	}
 	if _, err := marketRef.Collection("total_collateral_supply").NewDoc().Set(ctx, history); err != nil {
 		slog.Error("failed to add total collateral supply history entry", "market_id", marketID, "error", err)
