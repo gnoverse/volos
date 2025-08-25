@@ -6,6 +6,7 @@
 package processor
 
 import (
+	"log/slog"
 	"volos-backend/services/dbupdater"
 
 	"cloud.google.com/go/firestore"
@@ -40,24 +41,28 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				dbupdater.UpdateAPRHistory(client, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, supplyEvent.MarketID, supplyEvent.Timestamp)
 			}
+
 		case "Withdraw":
 			if withdrawEvent, ok := extractWithdrawFields(event); ok {
 				dbupdater.UpdateTotalSupply(client, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Timestamp, false, caller, txHash)
 				dbupdater.UpdateAPRHistory(client, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, withdrawEvent.MarketID, withdrawEvent.Timestamp)
 			}
+
 		case "Borrow":
 			if borrowEvent, ok := extractBorrowFields(event); ok {
 				dbupdater.UpdateTotalBorrow(client, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Timestamp, true, caller, txHash)
 				dbupdater.UpdateAPRHistory(client, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, borrowEvent.MarketID, borrowEvent.Timestamp)
 			}
+
 		case "Repay":
 			if repayEvent, ok := extractRepayFields(event); ok {
 				dbupdater.UpdateTotalBorrow(client, repayEvent.MarketID, repayEvent.Amount, repayEvent.Timestamp, false, caller, txHash)
 				dbupdater.UpdateAPRHistory(client, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, repayEvent.MarketID, repayEvent.Timestamp)
 			}
+
 		case "Liquidate":
 			if liquidateEvent, ok := extractLiquidateFields(event); ok {
 				dbupdater.UpdateTotalBorrow(client, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Timestamp, false, caller, txHash)
@@ -66,18 +71,177 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				dbupdater.UpdateAPRHistory(client, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, liquidateEvent.MarketID, liquidateEvent.Timestamp)
 			}
-		case "AccrueInterest":
-			dbupdater.ProcessAccrueInterest(tx)
+
 		case "SupplyCollateral":
 			if scEvent, ok := extractSupplyCollateralFields(event); ok {
 				dbupdater.UpdateTotalCollateralSupply(client, scEvent.MarketID, scEvent.Amount, scEvent.Timestamp, true, caller, txHash)
 			}
+
 		case "WithdrawCollateral":
 			if wcEvent, ok := extractWithdrawCollateralFields(event); ok {
 				dbupdater.UpdateTotalCollateralSupply(client, wcEvent.MarketID, wcEvent.Amount, wcEvent.Timestamp, false, caller, txHash)
 			}
+
+		case "AccrueInterest":
+			dbupdater.ProcessAccrueInterest(tx)
+			
 		case "StorageDeposit":
 			continue
 		}
 	}
+}
+
+
+func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent, bool) {
+	requiredFields := []string{"market_id", "loan_token", "collateral_token", "currentTimestamp"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract create market fields", "event", event)
+		return nil, false
+	}
+
+	return &CreateMarketEvent{
+		MarketID:        fields["market_id"],
+		LoanToken:       fields["loan_token"],
+		CollateralToken: fields["collateral_token"],
+		Timestamp:       fields["currentTimestamp"],
+	}, true
+}
+
+func extractSupplyFields(event map[string]interface{}) (*SupplyEvent, bool) {
+	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract supply fields", "event", event)
+		return nil, false
+	}
+
+	return &SupplyEvent{
+		MarketID:  fields["market_id"],
+		User:      fields["user"],
+		OnBehalf:  fields["on_behalf"],
+		Amount:    fields["amount"],
+		Shares:    fields["shares"],
+		Timestamp: fields["currentTimestamp"],
+		SupplyAPR: fields["supplyAPR"],
+		BorrowAPR: fields["borrowAPR"],
+	}, true
+}
+
+func extractWithdrawFields(event map[string]interface{}) (*WithdrawEvent, bool) {
+	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract withdraw fields", "event", event)
+		return nil, false
+	}
+
+	return &WithdrawEvent{
+		MarketID:  fields["market_id"],
+		User:      fields["user"],
+		OnBehalf:  fields["on_behalf"],
+		Receiver:  fields["receiver"],
+		Amount:    fields["amount"],
+		Shares:    fields["shares"],
+		Timestamp: fields["currentTimestamp"],
+		SupplyAPR: fields["supplyAPR"],
+		BorrowAPR: fields["borrowAPR"],
+	}, true
+}
+
+func extractBorrowFields(event map[string]interface{}) (*BorrowEvent, bool) {
+	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract borrow fields", "event", event)
+		return nil, false
+	}
+
+	return &BorrowEvent{
+		MarketID:  fields["market_id"],
+		User:      fields["user"],
+		OnBehalf:  fields["on_behalf"],
+		Receiver:  fields["receiver"],
+		Amount:    fields["amount"],
+		Shares:    fields["shares"],
+		Timestamp: fields["currentTimestamp"],
+		SupplyAPR: fields["supplyAPR"],
+		BorrowAPR: fields["borrowAPR"],
+	}, true
+}
+
+func extractRepayFields(event map[string]interface{}) (*RepayEvent, bool) {
+	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract repay fields", "event", event)
+		return nil, false
+	}
+
+	return &RepayEvent{
+		MarketID:  fields["market_id"],
+		User:      fields["user"],
+		OnBehalf:  fields["on_behalf"],
+		Amount:    fields["amount"],
+		Shares:    fields["shares"],
+		Timestamp: fields["currentTimestamp"],
+		SupplyAPR: fields["supplyAPR"],
+		BorrowAPR: fields["borrowAPR"],
+	}, true
+}
+
+func extractLiquidateFields(event map[string]interface{}) (*LiquidateEvent, bool) {
+	requiredFields := []string{"market_id", "user", "borrower", "amount", "shares", "seized", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract liquidate fields", "event", event)
+		return nil, false
+	}
+
+	return &LiquidateEvent{
+		MarketID:  fields["market_id"],
+		User:      fields["user"],
+		Borrower:  fields["borrower"],
+		Amount:    fields["amount"],
+		Shares:    fields["shares"],
+		Seized:    fields["seized"],
+		Timestamp: fields["currentTimestamp"],
+		SupplyAPR: fields["supplyAPR"],
+		BorrowAPR: fields["borrowAPR"],
+	}, true
+}
+
+func extractSupplyCollateralFields(event map[string]interface{}) (*SupplyCollateralEvent, bool) {
+	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "currentTimestamp"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract supply collateral fields", "event", event)
+		return nil, false
+	}
+
+	return &SupplyCollateralEvent{
+		MarketID:  fields["market_id"],
+		User:      fields["user"],
+		OnBehalf:  fields["on_behalf"],
+		Amount:    fields["amount"],
+		Timestamp: fields["currentTimestamp"],
+	}, true
+}
+
+func extractWithdrawCollateralFields(event map[string]interface{}) (*WithdrawCollateralEvent, bool) {
+	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "currentTimestamp"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract withdraw collateral fields", "event", event)
+		return nil, false
+	}
+
+	return &WithdrawCollateralEvent{
+		MarketID:  fields["market_id"],
+		User:      fields["user"],
+		OnBehalf:  fields["on_behalf"],
+		Receiver:  fields["receiver"],
+		Amount:    fields["amount"],
+		Timestamp: fields["currentTimestamp"],
+	}, true
 }

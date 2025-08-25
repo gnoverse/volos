@@ -102,174 +102,17 @@ func extractEventsFromTx(tx map[string]interface{}) []interface{} {
 	return events
 }
 
-// getEventAndType parses a raw event interface into a map and extracts its type.
 func getEventAndType(eventInterface interface{}) (map[string]interface{}, string) {
 	event, ok := eventInterface.(map[string]interface{})
 	if !ok {
 		slog.Error("event is not a map", "event_interface", eventInterface)
 		return nil, ""
 	}
-	
+
 	eventType, ok := event["type"].(string)
 	if !ok || eventType == "" {
 		slog.Error("event type is not a string", "event", event)
 		return nil, ""
 	}
 	return event, eventType
-}
-
-// Event-specific extractors
-
-func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent, bool) {
-	requiredFields := []string{"market_id", "loan_token", "collateral_token", "currentTimestamp"}
-	fields, ok := extractEventFields(event, requiredFields, []string{})
-	if !ok {
-		slog.Error("failed to extract create market fields", "event", event)
-		return nil, false
-	}
-
-	return &CreateMarketEvent{
-		MarketID:        fields["market_id"],
-		LoanToken:       fields["loan_token"],
-		CollateralToken: fields["collateral_token"],
-		Timestamp:       fields["currentTimestamp"],
-	}, true
-}
-
-func extractSupplyFields(event map[string]interface{}) (*SupplyEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
-	fields, ok := extractEventFields(event, requiredFields, []string{})
-	if !ok {
-		slog.Error("failed to extract supply fields", "event", event)
-		return nil, false
-	}
-
-	return &SupplyEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
-	}, true
-}
-
-func extractWithdrawFields(event map[string]interface{}) (*WithdrawEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
-	fields, ok := extractEventFields(event, requiredFields, []string{})
-	if !ok {
-		slog.Error("failed to extract withdraw fields", "event", event)
-		return nil, false
-	}
-
-	return &WithdrawEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Receiver:  fields["receiver"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
-	}, true
-}
-
-func extractBorrowFields(event map[string]interface{}) (*BorrowEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
-	fields, ok := extractEventFields(event, requiredFields, []string{})
-	if !ok {
-		slog.Error("failed to extract borrow fields", "event", event)
-		return nil, false
-	}
-
-	return &BorrowEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Receiver:  fields["receiver"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
-	}, true
-}
-
-func extractRepayFields(event map[string]interface{}) (*RepayEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
-	fields, ok := extractEventFields(event, requiredFields, []string{})
-	if !ok {
-		slog.Error("failed to extract repay fields", "event", event)
-		return nil, false
-	}
-
-	return &RepayEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
-	}, true
-}
-
-func extractLiquidateFields(event map[string]interface{}) (*LiquidateEvent, bool) {
-	requiredFields := []string{"market_id", "user", "borrower", "amount", "shares", "seized", "currentTimestamp", "supplyAPR", "borrowAPR"}
-	fields, ok := extractEventFields(event, requiredFields, []string{})
-	if !ok {
-		slog.Error("failed to extract liquidate fields", "event", event)
-		return nil, false
-	}
-
-	return &LiquidateEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		Borrower:  fields["borrower"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Seized:    fields["seized"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
-	}, true
-}
-
-func extractSupplyCollateralFields(event map[string]interface{}) (*SupplyCollateralEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "currentTimestamp"}
-	fields, ok := extractEventFields(event, requiredFields, []string{})
-	if !ok {
-		slog.Error("failed to extract supply collateral fields", "event", event)
-		return nil, false
-	}
-
-	return &SupplyCollateralEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Amount:    fields["amount"],
-		Timestamp: fields["currentTimestamp"],
-	}, true
-}
-
-func extractWithdrawCollateralFields(event map[string]interface{}) (*WithdrawCollateralEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "currentTimestamp"}
-	fields, ok := extractEventFields(event, requiredFields, []string{})
-	if !ok {
-		slog.Error("failed to extract withdraw collateral fields", "event", event)
-		return nil, false
-	}
-
-	return &WithdrawCollateralEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Receiver:  fields["receiver"],
-		Amount:    fields["amount"],
-		Timestamp: fields["currentTimestamp"],
-	}, true
 }
