@@ -5,13 +5,14 @@ export type ChartData = {
   timestamp: Date;
 };
 
-export type MarketActivity = {
-  type: string;
-  amount: number;
-  caller: string;
-  hash: string;
+export type MarketHistory = {
   timestamp: Date;
-  isAmountInShares: boolean;
+  value: string;
+  delta: string;
+  operation: string;
+  caller: string;
+  tx_hash: string;
+  event_type: string;
 };
 
 export type APRData = {
@@ -139,9 +140,19 @@ export interface MarketsResponse {
   last_id: string
 }
 
+export interface MarketActivityResponse {
+  activities: MarketHistory[]
+  has_more: boolean
+  last_id: string
+}
+
 const API_BASE = 'http://localhost:8080/api';
-export async function getMarketActivity(marketId: string): Promise<MarketActivity[]> {
-  const res = await axios.get(`${API_BASE}/market-activity`, { params: { marketId } });
+export async function getMarketActivity(marketId: string, limit?: number, lastId?: string): Promise<MarketActivityResponse> {
+  const params: Record<string, string | number> = { marketId };
+  if (limit) params.limit = limit;
+  if (lastId) params.last_id = lastId;
+  
+  const res = await axios.get(`${API_BASE}/market-activity`, { params });
   return res.data;
 }
 

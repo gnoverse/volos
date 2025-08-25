@@ -1,4 +1,4 @@
-import { getAPRHistory, getMarket, getMarkets, getUtilizationHistory, getMarketSnapshots, getBorrowHistory, getSupplyHistory, getCollateralSupplyHistory } from "@/app/services/api.service";
+import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ export const collateralSupplyHistoryQueryKey = (marketId: string) => ["collatera
 export const utilizationHistoryQueryKey = (marketId: string) => ["utilizationHistory", marketId];
 export const aprHistoryQueryKey = (marketId: string) => ["aprHistory", marketId];
 export const marketSnapshotsQueryKey = (marketId: string) => ["marketSnapshots", marketId];
+export const marketActivityQueryKey = (marketId: string) => ["marketActivity", marketId];
 
 export function useMarketsQuery() {
   return useQuery({
@@ -175,6 +176,15 @@ export function useAPRHistoryQuery(marketId: string, startTime?: string, endTime
   return useQuery({
     queryKey: [...aprHistoryQueryKey(marketId), startTime, endTime],
     queryFn: () => getAPRHistory(marketId, startTime, endTime),
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useMarketActivityQuery(marketId: string, limit?: number, lastId?: string) {
+  return useQuery({
+    queryKey: [...marketActivityQueryKey(marketId), limit, lastId],
+    queryFn: () => getMarketActivity(marketId, limit, lastId),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
