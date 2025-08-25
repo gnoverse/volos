@@ -266,7 +266,7 @@ func getMarketHistoryInRange[T any](client *firestore.Client, marketID string, s
 	for _, doc := range docs {
 		var item T
 		if err := doc.DataTo(&item); err != nil {
-			slog.Error("Error parsing "+logContext+" data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
+			slog.Error("Error parsing "+logContext+" data", "market_id", marketID, "subcollection", subcollection, "doc_id", doc.Ref.ID, "error", err)
 			continue
 		}
 		data = append(data, item)

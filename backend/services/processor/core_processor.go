@@ -217,7 +217,6 @@ func extractSupplyCollateralFields(event map[string]interface{}) (*SupplyCollate
 		slog.Error("failed to extract supply collateral fields", "event", event)
 		return nil, false
 	}
-
 	return &SupplyCollateralEvent{
 		MarketID:  fields["market_id"],
 		User:      fields["user"],
@@ -234,7 +233,6 @@ func extractWithdrawCollateralFields(event map[string]interface{}) (*WithdrawCol
 		slog.Error("failed to extract withdraw collateral fields", "event", event)
 		return nil, false
 	}
-
 	return &WithdrawCollateralEvent{
 		MarketID:  fields["market_id"],
 		User:      fields["user"],
