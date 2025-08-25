@@ -22,9 +22,9 @@ type MarketsResponse struct {
 
 // MarketActivityResponse represents the response structure for market activity listings
 type MarketActivityResponse struct {
-	Activities []model.MarketActivity `json:"activities"`
-	HasMore    bool                   `json:"has_more"`
-	LastID     string                 `json:"last_id"`
+	Activities []model.MarketHistory `json:"activities"`
+	HasMore    bool                  `json:"has_more"`
+	LastID     string                `json:"last_id"`
 }
 
 // GetMarkets retrieves all markets from Firestore with cursor-based pagination
@@ -182,10 +182,10 @@ func GetMarketActivity(client *firestore.Client, marketID string, limit int, las
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("market_activity").OrderBy("timestamp", firestore.Desc)
+	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("market_history").OrderBy("timestamp", firestore.Desc)
 
 	if lastDocID != "" {
-		lastDoc, err := client.Collection("markets").Doc(sanitizedMarketID).Collection("market_activity").Doc(lastDocID).Get(ctx)
+		lastDoc, err := client.Collection("markets").Doc(sanitizedMarketID).Collection("market_history").Doc(lastDocID).Get(ctx)
 		if err != nil {
 			slog.Error("Error fetching last document for pagination", "market_id", marketID, "last_doc_id", lastDocID, "error", err)
 			return nil, err
@@ -205,9 +205,9 @@ func GetMarketActivity(client *firestore.Client, marketID string, limit int, las
 		return nil, err
 	}
 
-	var activities []model.MarketActivity
+	var activities []model.MarketHistory
 	for _, doc := range docs {
-		var activity model.MarketActivity
+		var activity model.MarketHistory
 		if err := doc.DataTo(&activity); err != nil {
 			slog.Error("Error parsing market activity data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
 			continue

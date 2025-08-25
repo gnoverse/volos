@@ -24,17 +24,6 @@ type TransactionData struct {
 	BlockHeight int64
 }
 
-// MarketActivity is a type to be used to extract the type, amount, caller, hash, timestamp, and isAmountInShares from a market activity transaction.
-// This is the format of the data that is cached in Firestore and that is sent to the frontend.
-type MarketActivity struct {
-	Type             string  `json:"type"`
-	Amount           float64 `json:"amount"`
-	Caller           string  `json:"caller"`
-	Hash             string  `json:"hash"`
-	Timestamp        string  `json:"timestamp"`
-	IsAmountInShares bool    `json:"isAmountInShares"`
-}
-
 // Proposal represents the complete structure of a governance proposal document stored in Firestore.
 // This struct contains all fields that are persisted to the database when a proposal is created,
 // including metadata and timestamps for tracking proposal lifecycle.
