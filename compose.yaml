@@ -5,8 +5,8 @@ services:
       - "8888:8888"
       - "26657:26657"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8888/r/volos"]
-      interval: 5s
+      test: ["CMD", "curl", "-f", "http://localhost:8888/r/volos/render"]
+      interval: 60s
       retries: 5
 
   tx-indexer:
