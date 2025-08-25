@@ -3,3 +3,6 @@ backend/firebase.json
 
 # Ignore indexer README.md
 indexer-README.md
+
+# Ignore environment file
+.env
