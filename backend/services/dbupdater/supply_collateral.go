@@ -14,7 +14,7 @@ import (
 )
 
 // UpdateTotalCollateralSupply updates the total_collateral_supply for a market using a transactional read-modify-write
-// and appends a history sample in a dedicated subcollection.
+// and appends a history sample to the unified market_history collection.
 // Amounts are stored as strings (u256). Arithmetic is done with big.Int.
 // eventType determines whether this is a collateral supply event (adds to total) or withdraw collateral event (subtracts from total).
 func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string) {
@@ -89,10 +89,11 @@ func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, tim
 		"operation":  operation, // "+" for supply collateral, "-" for withdraw collateral (redundant with event_type but kept for clarity)
 		"caller":     caller,
 		"tx_hash":    txHash,
-		"event_type": eventType, // "SupplyCollateral" or "WithdrawCollateral" - determines the operation
+		"event_type": eventType,
 	}
-	if _, err := marketRef.Collection("total_collateral_supply").NewDoc().Set(ctx, history); err != nil {
-		slog.Error("failed to add total collateral supply history entry", "market_id", marketID, "error", err)
+
+	if _, err := marketRef.Collection("market_history").NewDoc().Set(ctx, history); err != nil {
+		slog.Error("failed to add market history entry", "market_id", marketID, "error", err)
 		return
 	}
 

@@ -93,27 +93,27 @@ func GetMarket(client *firestore.Client, marketID string) (*model.Market, error)
 
 // GetMarketAPRHistory retrieves APR history data for a specific market
 func GetMarketAPRHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.APRHistory, error) {
-	return getMarketHistoryInRange[model.APRHistory](client, marketID, "apr", startTimeStr, endTimeStr, "market APR history")
+	return getMarketHistoryInRange[model.APRHistory](client, marketID, "apr", []string{}, startTimeStr, endTimeStr, "market APR history")
 }
 
 // GetMarketTotalBorrowHistory retrieves total borrow history data for a specific market
-func GetMarketTotalBorrowHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.TotalBorrowHistory, error) {
-	return getMarketHistoryInRange[model.TotalBorrowHistory](client, marketID, "total_borrow", startTimeStr, endTimeStr, "market total borrow history")
+func GetMarketTotalBorrowHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.MarketHistory, error) {
+	return getMarketHistoryInRange[model.MarketHistory](client, marketID, "market_history", []string{"Borrow", "Repay", "Liquidate"}, startTimeStr, endTimeStr, "market total borrow history")
 }
 
 // GetMarketTotalSupplyHistory retrieves total supply history data for a specific market
-func GetMarketTotalSupplyHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.TotalSupplyHistory, error) {
-	return getMarketHistoryInRange[model.TotalSupplyHistory](client, marketID, "total_supply", startTimeStr, endTimeStr, "market total supply history")
+func GetMarketTotalSupplyHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.MarketHistory, error) {
+	return getMarketHistoryInRange[model.MarketHistory](client, marketID, "market_history", []string{"Supply", "Withdraw"}, startTimeStr, endTimeStr, "market total supply history")
 }
 
 // GetMarketTotalCollateralSupplyHistory retrieves total collateral supply history data for a specific market
-func GetMarketTotalCollateralSupplyHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.TotalSupplyHistory, error) {
-	return getMarketHistoryInRange[model.TotalSupplyHistory](client, marketID, "total_collateral_supply", startTimeStr, endTimeStr, "market total collateral supply history")
+func GetMarketTotalCollateralSupplyHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.MarketHistory, error) {
+	return getMarketHistoryInRange[model.MarketHistory](client, marketID, "market_history", []string{"SupplyCollateral", "WithdrawCollateral"}, startTimeStr, endTimeStr, "market total collateral supply history")
 }
 
 // GetMarketUtilizationHistory retrieves utilization history data for a specific market
 func GetMarketUtilizationHistory(client *firestore.Client, marketID, startTimeStr, endTimeStr string) ([]model.UtilizationHistory, error) {
-	return getMarketHistoryInRange[model.UtilizationHistory](client, marketID, "utilization", startTimeStr, endTimeStr, "market utilization history")
+	return getMarketHistoryInRange[model.UtilizationHistory](client, marketID, "utilization", []string{}, startTimeStr, endTimeStr, "market utilization history")
 }
 
 // GetMarketSnapshots retrieves aggregated market snapshots for a specific time period
@@ -170,9 +170,9 @@ func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTim
 	return snapshots, nil
 }
 
-// getMarketHistoryInRange is a generic helper that fetches documents from a market subcollection
-// between optional start and end times, and decodes them into a typed slice.
-func getMarketHistoryInRange[T any](client *firestore.Client, marketID, subcollection, startTimeStr, endTimeStr, logContext string) ([]T, error) {
+// getMarketHistoryInRangeByEventType is a generic helper that fetches documents from the unified market_history collection
+// based on event types and optional start/end times.
+func getMarketHistoryInRange[T any](client *firestore.Client, marketID string, subcollection string, eventTypes []string, startTimeStr, endTimeStr, logContext string) ([]T, error) {
 	ctx := context.Background()
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
@@ -193,9 +193,13 @@ func getMarketHistoryInRange[T any](client *firestore.Client, marketID, subcolle
 		query = query.Where("timestamp", "<=", endTime)
 	}
 
+	if len(eventTypes) > 0 {
+		query = query.Where("event_type", "in", eventTypes)
+	}
+
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
-		slog.Error("Error fetching "+subcollection, "market_id", marketID, "error", err)
+		slog.Error("Error fetching "+logContext, "market_id", marketID, "error", err)
 		return nil, err
 	}
 
@@ -203,7 +207,7 @@ func getMarketHistoryInRange[T any](client *firestore.Client, marketID, subcolle
 	for _, doc := range docs {
 		var item T
 		if err := doc.DataTo(&item); err != nil {
-			slog.Error("Error parsing "+subcollection+" data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
+			slog.Error("Error parsing "+logContext+" data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
 			continue
 		}
 		data = append(data, item)

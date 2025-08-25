@@ -22,16 +22,32 @@ export type APRData = {
 
 export type TotalSupplyData = {
   delta: string;
-  is_supply: boolean;
+  operation: string;
+  event_type: string;
   timestamp: Date;
   value: string;
+  caller: string;
+  tx_hash: string;
 };
 
 export type TotalBorrowData = {
   delta: string;
-  is_borrow: boolean;
+  operation: string;
+  event_type: string;
   timestamp: Date;
   value: string;
+  caller: string;
+  tx_hash: string;
+};
+
+export type TotalCollateralSupplyData = {
+  delta: string;
+  operation: string;
+  event_type: string;
+  timestamp: Date;
+  value: string;
+  caller: string;
+  tx_hash: string;
 };
 
 export type UtilizationData = {
@@ -226,7 +242,7 @@ export async function getSupplyHistory(marketId: string, startTime?: string, end
   return res.data;
 }
 
-export async function getCollateralSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
+export async function getCollateralSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalCollateralSupplyData[]> {
   const params: Record<string, string> = { marketId };
   if (startTime) params.startTime = startTime;
   if (endTime) params.endTime = endTime;

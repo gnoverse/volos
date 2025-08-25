@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// UpdateTotalBorrow updates the total_borrow aggregate for a market and appends a history entry.
+// UpdateTotalBorrow updates the total_borrow aggregate for a market and appends a history entry to the unified market_history collection.
 // Amounts are u256 stored as strings; arithmetic uses big.Int. eventType determines whether this adds (borrow) or subtracts (repay/liquidate).
 func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
@@ -87,11 +87,11 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 		"operation":  operation, // "+" for borrow, "-" for repay/liquidate (redundant with event_type but kept for clarity)
 		"caller":     caller,
 		"tx_hash":    txHash,
-		"event_type": eventType, // "Borrow", "Repay", or "Liquidate" - determines the operation
+		"event_type": eventType,
 	}
 
-	if _, err := marketRef.Collection("total_borrow").NewDoc().Set(ctx, history); err != nil {
-		slog.Error("failed to add total borrow history entry", "market_id", marketID, "error", err)
+	if _, err := marketRef.Collection("market_history").NewDoc().Set(ctx, history); err != nil {
+		slog.Error("failed to add market history entry", "market_id", marketID, "error", err)
 		return
 	}
 
