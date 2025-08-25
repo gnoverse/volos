@@ -210,21 +210,27 @@ export async function getAPRHistory(marketId: string, startTime?: string, endTim
   return res.data;
 }
 
-export async function getTotalBorrowHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalBorrowData[]> {
+export async function getBorrowHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalBorrowData[]> {
   const params: Record<string, string> = { marketId };
   if (startTime) params.startTime = startTime;
   if (endTime) params.endTime = endTime;
-  
-  const res = await axios.get(`${API_BASE}/total-borrow-history`, { params });
+  const res = await axios.get(`${API_BASE}/borrow-history`, { params });
   return res.data;
 }
 
-export async function getTotalSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
+export async function getSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
   const params: Record<string, string> = { marketId };
   if (startTime) params.startTime = startTime;
   if (endTime) params.endTime = endTime;
-  
-  const res = await axios.get(`${API_BASE}/total-supply-history`, { params });
+  const res = await axios.get(`${API_BASE}/supply-history`, { params });
+  return res.data;
+}
+
+export async function getCollateralSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  const res = await axios.get(`${API_BASE}/collateral-supply-history`, { params });
   return res.data;
 }
 

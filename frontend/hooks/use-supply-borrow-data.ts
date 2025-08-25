@@ -1,4 +1,4 @@
-import { useMarketSnapshotsQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
+import { useCollateralSupplyHistoryQuery, useMarketSnapshotsQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
 import { getSnapshotResolution, getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { TimePeriod } from "@/components/chart-dropdown"
 import { useMemo } from "react"
@@ -51,6 +51,11 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
     useHistory ? startTime : undefined, 
   )
 
+  const { data: collateralHistoryData = [], isLoading: isCollateralHistoryLoading } = useCollateralSupplyHistoryQuery(
+    marketId,
+    useHistory ? startTime : undefined,
+  )
+
   const { data: snapshotData = [], isLoading: isSnapshotLoading } = useMarketSnapshotsQuery(
     marketId,
     getSnapshotResolution(selectedTimePeriod),
@@ -77,11 +82,21 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
         dataMap.get(timestamp)!.borrow = Number(item.value)
       })
 
+      if (selectedMetrics.collateral) {
+        collateralHistoryData.forEach(item => {
+          const timestamp = new Date(item.timestamp).getTime()
+          if (!dataMap.has(timestamp)) {
+            dataMap.set(timestamp, { timestamp })
+          }
+          dataMap.get(timestamp)!.collateral = Number(item.value)
+        })
+      }
+
       return Array.from(dataMap.values())
         .filter(item => {
           if (selectedMetrics.supply && item.supply !== undefined) return true;
           if (selectedMetrics.borrow && item.borrow !== undefined) return true;
-          // collateral history not yet supported; omit in history mode
+          if (selectedMetrics.collateral && item.collateral !== undefined) return true;
           return false;
         })
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
@@ -101,14 +116,14 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
         })
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     }
-  }, [useHistory, supplyHistoryData, borrowHistoryData, snapshotData, selectedMetrics])
+  }, [useHistory, supplyHistoryData, borrowHistoryData, collateralHistoryData, snapshotData, selectedMetrics])
 
   const isLoading = useHistory 
-    ? (isSupplyHistoryLoading || isBorrowHistoryLoading)
+    ? (isSupplyHistoryLoading || isBorrowHistoryLoading || isCollateralHistoryLoading)
     : isSnapshotLoading
 
   const hasData = useHistory
-    ? ((supplyHistoryData && supplyHistoryData.length > 0) || (borrowHistoryData && borrowHistoryData.length > 0))
+    ? ((supplyHistoryData && supplyHistoryData.length > 0) || (borrowHistoryData && borrowHistoryData.length > 0) || (selectedMetrics.collateral && collateralHistoryData && collateralHistoryData.length > 0))
     : (snapshotData && snapshotData.length > 0)
 
   return {
