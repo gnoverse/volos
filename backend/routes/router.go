@@ -14,7 +14,7 @@ func APIRouter(client *firestore.Client) http.HandlerFunc {
 
 		switch path {
 		case "/api/market-activity":
-			MarketActivityHandler(client)(w, r)
+			GetMarketActivityHandler(client)(w, r)
 		case "/api/user":
 			GetUserHandler(client)(w, r)
 		case "/api/user-vote":

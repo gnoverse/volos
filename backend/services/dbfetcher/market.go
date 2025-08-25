@@ -20,6 +20,13 @@ type MarketsResponse struct {
 	LastID  string         `json:"last_id"`
 }
 
+// MarketActivityResponse represents the response structure for market activity listings
+type MarketActivityResponse struct {
+	Activities []model.MarketActivity `json:"activities"`
+	HasMore    bool                   `json:"has_more"`
+	LastID     string                 `json:"last_id"`
+}
+
 // GetMarkets retrieves all markets from Firestore with cursor-based pagination
 func GetMarkets(client *firestore.Client, limit int, lastDocID string) (*MarketsResponse, error) {
 	ctx := context.Background()
@@ -168,6 +175,58 @@ func GetMarketSnapshots(client *firestore.Client, marketID, resolution, startTim
 	}
 
 	return snapshots, nil
+}
+
+// GetMarketActivity retrieves market activity for a specific market with cursor-based pagination
+func GetMarketActivity(client *firestore.Client, marketID string, limit int, lastDocID string) (*MarketActivityResponse, error) {
+	ctx := context.Background()
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+
+	query := client.Collection("markets").Doc(sanitizedMarketID).Collection("market_activity").OrderBy("timestamp", firestore.Desc)
+
+	if lastDocID != "" {
+		lastDoc, err := client.Collection("markets").Doc(sanitizedMarketID).Collection("market_activity").Doc(lastDocID).Get(ctx)
+		if err != nil {
+			slog.Error("Error fetching last document for pagination", "market_id", marketID, "last_doc_id", lastDocID, "error", err)
+			return nil, err
+		}
+		query = query.StartAfter(lastDoc)
+	}
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	} else {
+		query = query.Limit(20)
+	}
+
+	docs, err := query.Documents(ctx).GetAll()
+	if err != nil {
+		slog.Error("Error fetching market activity", "market_id", marketID, "limit", limit, "last_doc_id", lastDocID, "error", err)
+		return nil, err
+	}
+
+	var activities []model.MarketActivity
+	for _, doc := range docs {
+		var activity model.MarketActivity
+		if err := doc.DataTo(&activity); err != nil {
+			slog.Error("Error parsing market activity data", "market_id", marketID, "doc_id", doc.Ref.ID, "error", err)
+			continue
+		}
+
+		activities = append(activities, activity)
+	}
+
+	response := &MarketActivityResponse{
+		Activities: activities,
+		HasMore:    len(docs) == limit,
+		LastID:     "",
+	}
+
+	if len(docs) > 0 {
+		response.LastID = docs[len(docs)-1].Ref.ID
+	}
+
+	return response, nil
 }
 
 // getMarketHistoryInRangeByEventType is a generic helper that fetches documents from the unified market_history collection
