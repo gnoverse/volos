@@ -1,0 +1,55 @@
+services:
+  gnodev:
+    build: ./contract/
+    ports:
+      - "8888:8888"
+      - "26657:26657"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/r/volos/render"]
+      interval: 60s
+      retries: 5
+
+  tx-indexer:
+    build: .
+    ports:
+      - "3100:3100"
+    depends_on:
+      gnodev:
+        condition: service_healthy
+    restart: on-failure
+
+  backend:
+    build: ./backend/
+    command: go run .
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend
+          target: /app
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - tx-indexer
+
+  frontend:
+    build: ./frontend/
+    command: npm run dev
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+            - .git/
+        - action: rebuild
+          path: package.json
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
