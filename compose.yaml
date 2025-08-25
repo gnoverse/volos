@@ -1,6 +1,19 @@
 services:
   gnodev:
     build: ./contract/
+    command: gnodev -paths gno.land/r/volos/**,gno.land/r/gnoswap/** -node-rpc-listener 0.0.0.0:26657 -web-listener 0.0.0.0:8888
+    develop:
+      watch:
+        - action: sync
+          path: ./contract/r
+          target: /app/src/examples/gno.land/r
+          ignore:
+            - .git/
+        - action: sync
+          path: ./contract/p
+          target: /app/src/examples/gno.land/p
+          ignore:
+            - .git/
     ports:
       - "8888:8888"
       - "26657:26657"
