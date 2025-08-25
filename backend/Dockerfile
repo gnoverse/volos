@@ -1,18 +1,9 @@
-FROM golang:1.23.1 AS builder
+FROM golang:1.23.1
+RUN useradd -ms /bin/sh -u 1001 app
+USER app
 
 WORKDIR /app
-
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
-
-RUN go build -o backend main.go
-
-FROM gcr.io/distroless/base-debian12
-
-WORKDIR /app
-COPY --from=builder /app/backend .
-COPY firebase.json ./firebase.json
-
-CMD ["./backend"]
+COPY --chown=app:app . .
