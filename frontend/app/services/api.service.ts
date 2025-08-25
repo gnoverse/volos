@@ -46,6 +46,7 @@ export type MarketSnapshot = {
   supply_apr: number;
   borrow_apr: number;
   total_supply: string;
+  total_collateral_supply: string;
   total_borrow: string;
   utilization_rate: number;
   created_at: Date;
@@ -111,6 +112,7 @@ export interface Market {
   total_borrow: string
   current_supply_apr: number
   current_borrow_apr: number
+  utilization_rate: number
   created_at: string
   updated_at: string
 }
