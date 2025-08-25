@@ -67,6 +67,23 @@ type LiquidateEvent struct {
 	BorrowAPR string
 }
 
+type SupplyCollateralEvent struct {
+	MarketID  string
+	User      string
+	OnBehalf  string
+	Amount    string
+	Timestamp string
+}
+
+type WithdrawCollateralEvent struct {
+	MarketID  string
+	User      string
+	OnBehalf  string
+	Receiver  string
+	Amount    string
+	Timestamp string
+}
+
 // governance events
 
 type ProposalCreatedEvent struct {

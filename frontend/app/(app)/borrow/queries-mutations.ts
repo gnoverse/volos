@@ -1,4 +1,4 @@
-import { getAPRHistory, getMarket, getMarkets, getTotalBorrowHistory, getTotalSupplyHistory, getUtilizationHistory, getMarketSnapshots } from "@/app/services/api.service";
+import { getAPRHistory, getMarket, getMarkets, getUtilizationHistory, getMarketSnapshots, getBorrowHistory, getSupplyHistory, getCollateralSupplyHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ export const healthFactorQueryKey = (marketId: string, user: string) => ["health
 export const positionQueryKey = (marketId: string, user: string) => ["position", marketId, user];
 export const netSupplyHistoryQueryKey = (marketId: string) => ["netSupplyHistory", marketId];
 export const netBorrowHistoryQueryKey = (marketId: string) => ["netBorrowHistory", marketId];
+export const collateralSupplyHistoryQueryKey = (marketId: string) => ["collateralSupplyHistory", marketId];
 export const utilizationHistoryQueryKey = (marketId: string) => ["utilizationHistory", marketId];
 export const aprHistoryQueryKey = (marketId: string) => ["aprHistory", marketId];
 export const marketSnapshotsQueryKey = (marketId: string) => ["marketSnapshots", marketId];
@@ -137,7 +138,7 @@ export function usePositionQuery(marketId: string, user: string) {
 export function useNetSupplyHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
   return useQuery({
     queryKey: [...netSupplyHistoryQueryKey(marketId), startTime, endTime],
-    queryFn: () => getTotalSupplyHistory(marketId, startTime, endTime),
+    queryFn: () => getSupplyHistory(marketId, startTime, endTime),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -146,7 +147,16 @@ export function useNetSupplyHistoryQuery(marketId: string, startTime?: string, e
 export function useNetBorrowHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
   return useQuery({
     queryKey: [...netBorrowHistoryQueryKey(marketId), startTime, endTime],
-    queryFn: () => getTotalBorrowHistory(marketId, startTime, endTime),
+    queryFn: () => getBorrowHistory(marketId, startTime, endTime),
+    enabled: !!marketId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useCollateralSupplyHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
+  return useQuery({
+    queryKey: [...collateralSupplyHistoryQueryKey(marketId), startTime, endTime],
+    queryFn: () => getCollateralSupplyHistory(marketId, startTime, endTime),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

@@ -15,15 +15,16 @@ const (
 // MarketSnapshot represents a pre-aggregated snapshot of market data at a specific time resolution.
 // These snapshots are stored in bucket collections to enable fast queries for different timeframes.
 type MarketSnapshot struct {
-	MarketID        string               `firestore:"market_id" json:"market_id"`               // Market identifier
-	Timestamp       time.Time            `firestore:"timestamp" json:"timestamp"`               // When this snapshot was taken
-	Resolution      TimeBucketResolution `firestore:"resolution" json:"resolution"`             // Time resolution (4hour, daily, weekly)
-	SupplyAPR       float64              `firestore:"supply_apr" json:"supply_apr"`             // Average supply APR for this period
-	BorrowAPR       float64              `firestore:"borrow_apr" json:"borrow_apr"`             // Average borrow APR for this period
-	TotalSupply     string               `firestore:"total_supply" json:"total_supply"`         // Total supply at end of period (u256 string)
-	TotalBorrow     string               `firestore:"total_borrow" json:"total_borrow"`         // Total borrow at end of period (u256 string)
-	UtilizationRate float64              `firestore:"utilization_rate" json:"utilization_rate"` // Utilization rate (borrow/supply) as percentage
-	CreatedAt       time.Time            `firestore:"created_at" json:"created_at"`             // When this snapshot was created
+	MarketID              string               `firestore:"market_id" json:"market_id"`                             // Market identifier
+	Timestamp             time.Time            `firestore:"timestamp" json:"timestamp"`                             // When this snapshot was taken
+	Resolution            TimeBucketResolution `firestore:"resolution" json:"resolution"`                           // Time resolution (4hour, daily, weekly)
+	SupplyAPR             float64              `firestore:"supply_apr" json:"supply_apr"`                           // Average supply APR for this period
+	BorrowAPR             float64              `firestore:"borrow_apr" json:"borrow_apr"`                           // Average borrow APR for this period
+	TotalSupply           string               `firestore:"total_supply" json:"total_supply"`                       // Total supply at end of period (u256 string)
+	TotalCollateralSupply string               `firestore:"total_collateral_supply" json:"total_collateral_supply"` // Total collateral supply at end of period (u256 string)
+	TotalBorrow           string               `firestore:"total_borrow" json:"total_borrow"`                       // Total borrow at end of period (u256 string)
+	UtilizationRate       float64              `firestore:"utilization_rate" json:"utilization_rate"`               // Utilization rate (borrow/supply) as percentage
+	CreatedAt             time.Time            `firestore:"created_at" json:"created_at"`                           // When this snapshot was created
 }
 
 // AggregationJob represents a scheduled job for creating market snapshots
@@ -41,9 +42,10 @@ type AggregationJob struct {
 
 // MarketAverages holds calculated average values for market metrics over a time period.
 type MarketAverages struct {
-	SupplyAPR       float64 `json:"supply_apr"`
-	BorrowAPR       float64 `json:"borrow_apr"`
-	UtilizationRate float64 `json:"utilization_rate"`
-	TotalSupply     string  `json:"total_supply"`
-	TotalBorrow     string  `json:"total_borrow"`
+	SupplyAPR             float64 `json:"supply_apr"`
+	BorrowAPR             float64 `json:"borrow_apr"`
+	UtilizationRate       float64 `json:"utilization_rate"`
+	TotalSupply           string  `json:"total_supply"`
+	TotalCollateralSupply string  `json:"total_collateral_supply"`
+	TotalBorrow           string  `json:"total_borrow"`
 }
