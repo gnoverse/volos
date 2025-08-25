@@ -16,8 +16,8 @@ import (
 // UpdateTotalCollateralSupply updates the total_collateral_supply for a market using a transactional read-modify-write
 // and appends a history sample in a dedicated subcollection.
 // Amounts are stored as strings (u256). Arithmetic is done with big.Int.
-// isSupply indicates whether this is a collateral supply event (true) or withdraw collateral event (false).
-func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, timestamp string, isSupply bool, caller string, txHash string) {
+// eventType determines whether this is a collateral supply event (adds to total) or withdraw collateral event (subtracts from total).
+func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -31,6 +31,8 @@ func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, tim
 	if amt.Sign() == 0 {
 		return
 	}
+
+	isSupply := eventType == "SupplyCollateral"
 
 	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
 
@@ -71,26 +73,27 @@ func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, tim
 		}
 		return tx.Set(marketRef, updates, firestore.MergeAll)
 	}); err != nil {
-		slog.Error("failed to update total collateral supply in database", "market_id", marketID, "amount", amount, "is_supply", isSupply, "error", err)
-		return
-	}
-
-	history := map[string]interface{}{
-		"timestamp": eventTime,
-		"value":     updatedTotalStr,
-		"delta":     amount,
-		"is_supply": isSupply,
-		"caller":    caller,
-		"tx_hash":   txHash,
-	}
-	if _, err := marketRef.Collection("total_collateral_supply").NewDoc().Set(ctx, history); err != nil {
-		slog.Error("failed to add total collateral supply history entry", "market_id", marketID, "error", err)
+		slog.Error("failed to update total collateral supply in database", "market_id", marketID, "amount", amount, "event_type", eventType, "error", err)
 		return
 	}
 
 	operation := "-"
 	if isSupply {
 		operation = "+"
+	}
+
+	history := map[string]interface{}{
+		"timestamp":  eventTime,
+		"value":      updatedTotalStr,
+		"delta":      amount,
+		"operation":  operation, // "+" for supply collateral, "-" for withdraw collateral (redundant with event_type but kept for clarity)
+		"caller":     caller,
+		"tx_hash":    txHash,
+		"event_type": eventType, // "SupplyCollateral" or "WithdrawCollateral" - determines the operation
+	}
+	if _, err := marketRef.Collection("total_collateral_supply").NewDoc().Set(ctx, history); err != nil {
+		slog.Error("failed to add total collateral supply history entry", "market_id", marketID, "error", err)
+		return
 	}
 
 	slog.Info("total collateral supply updated", "operation", operation, "amount", amount, "market_id", marketID, "total_collateral_supply", updatedTotalStr)

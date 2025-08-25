@@ -17,10 +17,10 @@ import (
 // and appends a history sample.
 //
 // Amounts are stored as strings (u256). Arithmetic is done with big.Int.
-// isSupply indicates whether this is a supply event (true) or withdraw event (false).
+// eventType determines whether this is a supply event (adds to total) or withdraw event (subtracts from total).
 // For supply events, the amount is added to the total supply.
 // For withdraw events, the amount is subtracted from the total supply.
-func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp string, isSupply bool, caller string, txHash string) {
+func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -34,6 +34,8 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 	if amt.Sign() == 0 {
 		return
 	}
+
+	isSupply := eventType == "Supply"
 
 	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
 
@@ -74,26 +76,27 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		}
 		return tx.Set(marketRef, updates, firestore.MergeAll)
 	}); err != nil {
-		slog.Error("failed to update total supply in database", "market_id", marketID, "amount", amount, "is_supply", isSupply, "error", err)
-		return
-	}
-
-	history := map[string]interface{}{
-		"timestamp": eventTime,
-		"value":     updatedTotalStr,
-		"delta":     amount,
-		"is_supply": isSupply,
-		"caller":    caller,
-		"tx_hash":   txHash,
-	}
-	if _, err := marketRef.Collection("total_supply").NewDoc().Set(ctx, history); err != nil {
-		slog.Error("failed to add total supply history entry", "market_id", marketID, "error", err)
+		slog.Error("failed to update total supply in database", "market_id", marketID, "amount", amount, "event_type", eventType, "error", err)
 		return
 	}
 
 	operation := "-"
 	if isSupply {
 		operation = "+"
+	}
+
+	history := map[string]interface{}{
+		"timestamp":  eventTime,
+		"value":      updatedTotalStr,
+		"delta":      amount,
+		"operation":  operation, // "+" for supply, "-" for withdraw (redundant with event_type but kept for clarity)
+		"caller":     caller,
+		"tx_hash":    txHash,
+		"event_type": eventType, // "Supply" or "Withdraw" - determines the operation
+	}
+	if _, err := marketRef.Collection("total_supply").NewDoc().Set(ctx, history); err != nil {
+		slog.Error("failed to add total supply history entry", "market_id", marketID, "error", err)
+		return
 	}
 
 	slog.Info("total supply updated", "operation", operation, "amount", amount, "market_id", marketID, "total_supply", updatedTotalStr)
