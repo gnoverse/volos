@@ -142,6 +142,31 @@ func GetMarketTotalSupplyHistoryHandler(client *firestore.Client) http.HandlerFu
 	}
 }
 
+// GetMarketTotalCollateralSupplyHistoryHandler handles GET /market/total-collateral-supply-history?marketId=ID&startTime=X&endTime=Y - returns total collateral supply history for a specific market
+func GetMarketTotalCollateralSupplyHistoryHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		marketID := r.URL.Query().Get("marketId")
+		if marketID == "" {
+			http.Error(w, "marketId query parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		startTimeStr := r.URL.Query().Get("startTime")
+		endTimeStr := r.URL.Query().Get("endTime")
+
+		history, err := dbfetcher.GetMarketTotalCollateralSupplyHistory(client, marketID, startTimeStr, endTimeStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(history)
+	}
+}
+
 // GetMarketUtilizationHistoryHandler handles GET /market/utilization-history?marketId=ID&startTime=X&endTime=Y - returns utilization history for a specific market
 func GetMarketUtilizationHistoryHandler(client *firestore.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

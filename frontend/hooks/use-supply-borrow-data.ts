@@ -6,12 +6,14 @@ import { useMemo } from "react"
 interface ChartMetrics {
   supply: boolean
   borrow: boolean
+  collateral: boolean
 }
 
 interface ChartDataPoint {
   timestamp: number
   supply?: number
   borrow?: number
+  collateral?: number
 }
 
 /**
@@ -79,6 +81,7 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
         .filter(item => {
           if (selectedMetrics.supply && item.supply !== undefined) return true;
           if (selectedMetrics.borrow && item.borrow !== undefined) return true;
+          // collateral history not yet supported; omit in history mode
           return false;
         })
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
@@ -88,10 +91,12 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
           timestamp: new Date(snapshot.timestamp).getTime(),
           supply: selectedMetrics.supply ? Number(snapshot.total_supply) : undefined,
           borrow: selectedMetrics.borrow ? Number(snapshot.total_borrow) : undefined,
+          collateral: selectedMetrics.collateral ? Number(snapshot.total_collateral_supply) : undefined,
         }))
         .filter(item => {
           if (selectedMetrics.supply && item.supply !== undefined) return true;
           if (selectedMetrics.borrow && item.borrow !== undefined) return true;
+          if (selectedMetrics.collateral && item.collateral !== undefined) return true;
           return false;
         })
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
