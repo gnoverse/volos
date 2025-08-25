@@ -164,7 +164,6 @@ export function UtilizationAPRChart({
                   stroke="rgb(99, 102, 241)"
                   strokeWidth={2}
                   dot={false}
-                  style={{ filter: `drop-shadow(0 0 6px rgb(99, 102, 241))` }}
                 />
               )}
               
@@ -175,7 +174,6 @@ export function UtilizationAPRChart({
                   stroke="rgb(59, 130, 246)"
                   strokeWidth={2}
                   dot={false}
-                  style={{ filter: `drop-shadow(0 0 6px rgb(59, 130, 246))` }}
                 />
               )}
               
@@ -186,7 +184,6 @@ export function UtilizationAPRChart({
                   stroke="rgb(20, 184, 166)"
                   strokeWidth={2}
                   dot={false}
-                  style={{ filter: `drop-shadow(0 0 6px rgb(20, 184, 166))` }}
                 />
               )}
               
