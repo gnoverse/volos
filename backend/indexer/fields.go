@@ -6,8 +6,6 @@ const UniversalTransactionFields = `
   hash
   messages {
     ... on TransactionMessage {
-      typeUrl
-      route
       value {
         ... on MsgCall {
           caller
@@ -32,99 +30,4 @@ const UniversalTransactionFields = `
       }
     }
   }
-`
-
-const SupplyBorrowFields = `
-  block_height
-  messages {
-    ... on TransactionMessage {
-      value {
-        ... on MsgCall {
-          caller
-        }
-      }
-    }
-  }
-  response {
-    events {
-      ... on GnoEvent {
-        type
-        attrs {
-          key
-          value
-        }
-      }
-    }
-  }
-`
-
-const MinimalTransactionFields = `
-  block_height
-  hash
-  messages {
-    ... on TransactionMessage {
-      value {
-        ... on MsgCall {
-          caller
-          func
-        }
-      }
-    }
-  }
-  response {
-    events {
-      ... on GnoEvent {
-        type
-        attrs {
-          key
-          value
-        }
-      }
-    }
-  }
-`
-
-const MarketActivityFields = `
-  block_height
-  hash
-  messages {
-    ... on TransactionMessage {
-      value {
-        ... on MsgCall {
-          caller
-          func
-        }
-      }
-    }
-  }
-  response {
-    events {
-      ... on GnoEvent {
-        type
-        func
-        attrs {
-          key
-          value
-        }
-      }
-    }
-  }
-`
-
-const CreateMarketFields = `
-  response {
-    events {
-      ... on GnoEvent {
-        attrs {
-          key
-          value
-        }
-      }
-    }
-  }
-`
-
-const BlockFields = `
-  height
-  time
 `
