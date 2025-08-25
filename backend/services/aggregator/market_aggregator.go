@@ -51,15 +51,16 @@ func (ma *MarketAggregator) createSnapshotFromTransactions(marketID string, reso
 	}
 
 	snapshot := MarketSnapshot{
-		MarketID:        marketID,
-		Timestamp:       endTime,
-		Resolution:      resolution,
-		SupplyAPR:       averages.SupplyAPR,
-		BorrowAPR:       averages.BorrowAPR,
-		TotalSupply:     averages.TotalSupply,
-		TotalBorrow:     averages.TotalBorrow,
-		UtilizationRate: averages.UtilizationRate,
-		CreatedAt:       time.Now(),
+		MarketID:              marketID,
+		Timestamp:             endTime,
+		Resolution:            resolution,
+		SupplyAPR:             averages.SupplyAPR,
+		BorrowAPR:             averages.BorrowAPR,
+		TotalSupply:           averages.TotalSupply,
+		TotalCollateralSupply: averages.TotalCollateralSupply,
+		TotalBorrow:           averages.TotalBorrow,
+		UtilizationRate:       averages.UtilizationRate,
+		CreatedAt:             time.Now(),
 	}
 
 	bucketCollection := ma.getBucketCollectionName(resolution)

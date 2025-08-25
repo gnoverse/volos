@@ -38,7 +38,7 @@ func GetMarkets(client *firestore.Client, limit int, lastDocID string) (*Markets
 	if limit > 0 {
 		query = query.Limit(limit)
 	} else {
-		query = query.Limit(20) // Default limit
+		query = query.Limit(20)
 	}
 
 	docs, err := query.Documents(ctx).GetAll()
