@@ -2,6 +2,7 @@ package dbfetcher
 
 import (
 	"context"
+	"math/big"
 	"time"
 
 	"volos-backend/model"
@@ -62,9 +63,9 @@ func GetUserPendingUnstakes(client *firestore.Client, userAddress string) ([]mod
 	return pendingUnstakes, nil
 }
 
-// GetUserBorrowRepayHistory retrieves all borrow/repay events for a user across all markets
+// GetUserLoanHistory retrieves all borrow/repay events for a user across all markets
 // Returns value-timestamp objects suitable for charting
-func GetUserBorrowRepayHistory(client *firestore.Client, userAddress string) ([]model.UserLoan, error) {
+func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.UserLoan, error) {
 	ctx := context.Background()
 	var results []model.UserLoan
 
@@ -79,6 +80,16 @@ func GetUserBorrowRepayHistory(client *firestore.Client, userAddress string) ([]
 		}
 
 		marketID := marketDoc.Ref.ID
+
+		marketData, err := client.Collection("markets").Doc(marketID).Get(ctx)
+		if err != nil {
+			continue
+		}
+
+		var market model.Market
+		if err := marketData.DataTo(&market); err != nil {
+			continue
+		}
 
 		// Query market_history subcollection for this user's borrow/repay events
 		query := client.Collection("markets").Doc(marketID).Collection("market_history").
@@ -99,15 +110,32 @@ func GetUserBorrowRepayHistory(client *firestore.Client, userAddress string) ([]
 				continue
 			}
 
-			// Convert uint256 string value to float64 for charting
-			amount := utils.ParseAmount(history.Value, "GetUserBorrowRepayHistory")
+			// Convert uint256 string value to big.Int for precise calculation
+			amount := utils.ParseAmount(history.Value, "GetUserLoanHistory")
 			if amount.Sign() == 0 {
 				continue // Skip invalid values
 			}
 
+			// Calculate value in USD using whole token pricing
+			// Convert amount to big.Float for precise decimal arithmetic
+			amountFloat := new(big.Float).SetInt(amount)
+			priceFloat := new(big.Float).SetFloat64(history.LoanPrice) // Price per whole token
+
+			// Get token decimals from market document
+			decimals := big.NewInt(1)
+			decimals.Exp(big.NewInt(10), big.NewInt(int64(market.LoanTokenDecimals)), nil)
+			decimalsFloat := new(big.Float).SetInt(decimals)
+
+			// Divide amount by decimals to get actual tokens, then multiply by price
+			actualTokens := new(big.Float).Quo(amountFloat, decimalsFloat)
+			valueFloat := new(big.Float).Mul(actualTokens, priceFloat)
+
+			// Convert back to string with full precision
+			valueInUSD := valueFloat.Text('f', -1) // -1 means use all available precision
+
 			// Convert to chart point
 			point := model.UserLoan{
-				Value:     float64(amount.Int64()),
+				Value:     valueInUSD,
 				Timestamp: history.Timestamp,
 				MarketID:  marketID,
 				EventType: history.EventType,

@@ -2,7 +2,8 @@
 
 import { useExecuteProposalMutation, useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
 import { useUserAddress } from "@/app/utils/address.utils"
-import { formatTimestamp, getProposalStatusColor } from "@/app/utils/format.utils"
+import { formatTimestamp } from "@/app/utils/format.utils"
+import { getProposalStatusColor } from "@/app/utils/ui.utils"
 import CopiableAddress from "@/components/copiable-addess"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
