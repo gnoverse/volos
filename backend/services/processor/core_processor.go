@@ -32,7 +32,19 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 		switch eventType {
 		case "CreateMarket":
 			if createEvent, ok := extractCreateMarketFields(event); ok {
-				dbupdater.CreateMarket(client, createEvent.MarketID, createEvent.LoanToken, createEvent.CollateralToken, createEvent.Timestamp)
+				dbupdater.CreateMarket(client,
+					createEvent.MarketID,
+					createEvent.LoanToken,
+					createEvent.CollateralToken,
+					createEvent.IsToken0Loan,
+					createEvent.LoanTokenName,
+					createEvent.LoanTokenSymbol,
+					createEvent.LoanTokenDecimals,
+					createEvent.CollateralTokenName,
+					createEvent.CollateralTokenSymbol,
+					createEvent.CollateralTokenDecimals,
+					createEvent.Timestamp,
+				)
 			}
 
 		case "Supply":
@@ -92,7 +104,19 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 }
 
 func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent, bool) {
-	requiredFields := []string{"market_id", "loan_token", "collateral_token", "currentTimestamp"}
+	requiredFields := []string{
+		"market_id",
+		"loan_token",
+		"collateral_token",
+		"isToken0Loan",
+		"loanTokenName",
+		"loanTokenSymbol",
+		"loanTokenDecimals",
+		"collateralTokenName",
+		"collateralTokenSymbol",
+		"collateralTokenDecimals",
+		"currentTimestamp",
+	}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		slog.Error("failed to extract create market fields", "event", event)
@@ -100,10 +124,17 @@ func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent
 	}
 
 	return &CreateMarketEvent{
-		MarketID:        fields["market_id"],
-		LoanToken:       fields["loan_token"],
-		CollateralToken: fields["collateral_token"],
-		Timestamp:       fields["currentTimestamp"],
+		MarketID:                fields["market_id"],
+		LoanToken:               fields["loan_token"],
+		CollateralToken:         fields["collateral_token"],
+		IsToken0Loan:            fields["isToken0Loan"],
+		LoanTokenName:           fields["loanTokenName"],
+		LoanTokenSymbol:         fields["loanTokenSymbol"],
+		LoanTokenDecimals:       fields["loanTokenDecimals"],
+		CollateralTokenName:     fields["collateralTokenName"],
+		CollateralTokenSymbol:   fields["collateralTokenSymbol"],
+		CollateralTokenDecimals: fields["collateralTokenDecimals"],
+		Timestamp:               fields["currentTimestamp"],
 	}, true
 }
 

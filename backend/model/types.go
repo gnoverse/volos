@@ -10,20 +10,6 @@ const XvlsPkgPath = "gno.land/r/volos/gov/xvls"             // the package path 
 const Rpc = "http://localhost:26657"                        // the RPC endpoint of the node
 const BlockHeightOnDeploy = 0                               // the block height of the deployment of the Volos contract
 
-// Data is a type to be used to extract the value and timestamp from a data point.
-// Since transactions only have block height, we need to fetch the timestamp from the block height.
-// This is the format of the data (mostly for charts) that is cached in Firestore and that is sent to the frontend.
-type Data struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
-// TransactionData is a type to be used to extract the value and block height from a transaction.
-type TransactionData struct {
-	Value       float64
-	BlockHeight int64
-}
-
 // Proposal represents the complete structure of a governance proposal document stored in Firestore.
 // This struct contains all fields that are persisted to the database when a proposal is created,
 // including metadata and timestamps for tracking proposal lifecycle.
@@ -117,4 +103,14 @@ type MarketHistory struct {
 type UtilizationHistory struct {
 	Timestamp time.Time `firestore:"timestamp" json:"timestamp"` // When this utilization snapshot was taken
 	Value     float64   `firestore:"value" json:"value"`         // Utilization rate as percentage
+}
+
+// UserLoan represents a single borrow/repay event for charting.
+// This struct contains user loan activity data suitable for time-series charts.
+type UserLoan struct {
+	Value     float64   `json:"value"`     // Total value after the event (converted from u256 string)
+	Timestamp time.Time `json:"timestamp"` // When the event occurred
+	MarketID  string    `json:"marketId"`  // Which market this event was in
+	EventType string    `json:"eventType"` // Type of event: "Borrow" or "Repay"
+	Operation string    `json:"operation"` // Operation: "+" for increases, "-" for decreases
 }
