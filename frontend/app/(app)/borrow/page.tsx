@@ -64,7 +64,7 @@ export default function BorrowPage() {
                     <span className="animate-pulse text-muted-foreground">Loading loan history...</span>
                   </div>
                 ) : (
-                  userLoanHistory.length > 0 && (
+                  userLoanHistory && userLoanHistory.length > 0 && (
                     <LoansChart
                       data={userLoanHistory}
                       title="My Loan History"
@@ -81,7 +81,7 @@ export default function BorrowPage() {
           </div>
           <div className="w-full md:w-1/3 md:border-l md:border-gray-700/50">
             <MyLoanSidePanel 
-              netRate={userLoanHistory.length > 0 ? "4.8%" : "0%"}
+              netRate={userLoanHistory && userLoanHistory.length > 0 ? "4.8%" : "0%"}
               apy="5.2%"
               rewards="$12.45"
               className="h-full bg-transparent border-none shadow-none rounded-none md:rounded-r-3xl md:rounded-l-none"
