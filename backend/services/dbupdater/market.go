@@ -14,7 +14,6 @@ import (
 // It uses sanitizedMarketID (replacing "/" with "_") to avoid issues with Firestore document IDs.
 func CreateMarket(client *firestore.Client,
 	marketID, loanToken, collateralToken string,
-	isToken0Loan string,
 	loanTokenName string,
 	loanTokenSymbol string,
 	loanTokenDecimals string,
@@ -29,17 +28,19 @@ func CreateMarket(client *firestore.Client,
 		return
 	}
 
+	loanDecimals := utils.ParseInt64(loanTokenDecimals, "market creation loanTokenDecimals")
+	collDecimals := utils.ParseInt64(collateralTokenDecimals, "market creation collateralTokenDecimals")
+
 	marketData := map[string]interface{}{
 		"id":                        marketID,
 		"loan_token":                loanToken,
 		"collateral_token":          collateralToken,
-		"is_token0_loan":            isToken0Loan,
 		"loan_token_name":           loanTokenName,
 		"loan_token_symbol":         loanTokenSymbol,
-		"loan_token_decimals":       loanTokenDecimals,
+		"loan_token_decimals":       loanDecimals,
 		"collateral_token_name":     collateralTokenName,
 		"collateral_token_symbol":   collateralTokenSymbol,
-		"collateral_token_decimals": collateralTokenDecimals,
+		"collateral_token_decimals": collDecimals,
 		"created_at":                time.Unix(timestampInt, 0),
 	}
 
