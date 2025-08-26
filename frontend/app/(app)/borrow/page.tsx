@@ -1,8 +1,9 @@
 "use client"
 
-import { getUserLoanHistory } from "@/app/services/api.service"
 import { useUserAddress } from "@/app/utils/address.utils"
 import { formatCurrency } from "@/app/utils/format.utils"
+import { TimePeriod } from "@/components/chart-dropdown"
+import { LoansChart } from "@/components/loans-chart"
 import { MyLoanSidePanel } from "@/components/my-loan-side-panel"
 import {
   Card,
@@ -11,30 +12,25 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
-import { Chart } from "@/components/universal-chart"
-import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { columns } from "./columns"
-import { useMarketsQuery } from "./queries-mutations"
+import { useMarketsQuery, useUserLoanHistoryQuery } from "./queries-mutations"
 
 export default function BorrowPage() {
   const router = useRouter()
   const { userAddress } = useUserAddress()
   const [totalLoanAmount, setTotalLoanAmount] = useState("0.00")
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
   const { data: markets, isLoading, error } = useMarketsQuery()
 
-  const { data: userLoanHistory = [], isLoading: isUserLoanLoading } = useQuery({
-    queryKey: ['userLoanHistory', userAddress],
-    queryFn: () => getUserLoanHistory(userAddress!),
-    enabled: !!userAddress
-  });
+  const { data: userLoanHistory = [], isLoading: isUserLoanLoading } = useUserLoanHistoryQuery(userAddress!);
   
   useEffect(() => {
     if (userLoanHistory && userLoanHistory.length > 0) {
       // Get the last (most recent) value from the history
       const lastEntry = userLoanHistory[userLoanHistory.length - 1]
-      setTotalLoanAmount(lastEntry.value.toFixed(2))
+      setTotalLoanAmount(parseFloat(lastEntry.value).toFixed(2))
     } else {
       setTotalLoanAmount("0.00")
     }
@@ -69,12 +65,14 @@ export default function BorrowPage() {
                   </div>
                 ) : (
                   userLoanHistory.length > 0 && (
-                    <Chart
+                    <LoansChart
                       data={userLoanHistory}
                       title="My Loan History"
                       description="Your total borrowed amount over time"
                       color="#D95C12"
                       className="bg-transparent border-none p-0 shadow-none"
+                      selectedTimePeriod={selectedTimePeriod}
+                      onTimePeriodChangeAction={setSelectedTimePeriod}
                     />
                   )
                 )}

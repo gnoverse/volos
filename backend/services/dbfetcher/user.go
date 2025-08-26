@@ -129,11 +129,13 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 			valueInUSD := valueFloat.Text('f', -1)
 
 			point := model.UserLoan{
-				Value:     valueInUSD,
-				Timestamp: history.Timestamp,
-				MarketID:  marketID,
-				EventType: history.EventType,
-				Operation: history.Operation,
+				Value:                 valueInUSD,
+				Timestamp:             history.Timestamp,
+				MarketID:              marketID,
+				EventType:             history.EventType,
+				Operation:             history.Operation,
+				LoanTokenSymbol:       market.LoanTokenSymbol,
+				CollateralTokenSymbol: market.CollateralTokenSymbol,
 			}
 
 			results = append(results, point)

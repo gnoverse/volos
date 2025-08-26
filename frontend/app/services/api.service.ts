@@ -75,6 +75,17 @@ export type User = {
   staked_vls: Record<string, number>;
   created_at: string | null;
 };
+
+export type UserLoan = {
+  value: string;
+  timestamp: Date;
+  marketId: string;
+  eventType: string;
+  operation: string;
+  loan_token_symbol: string;
+  collateral_token_symbol: string;
+};
+
 export interface Proposal {
   id: string
   title: string
@@ -147,6 +158,12 @@ export interface MarketActivityResponse {
 }
 
 const API_BASE = 'http://localhost:8080/api';
+
+export async function getUserLoanHistory(userAddress: string): Promise<UserLoan[]> {
+  const res = await axios.get(`${API_BASE}/user-loans`, { params: { user: userAddress } });
+  return res.data;
+}
+
 export async function getMarketActivity(marketId: string, limit?: number, lastId?: string): Promise<MarketActivityResponse> {
   const params: Record<string, string | number> = { marketId };
   if (limit) params.limit = limit;
@@ -155,11 +172,6 @@ export async function getMarketActivity(marketId: string, limit?: number, lastId
   const res = await axios.get(`${API_BASE}/market-activity`, { params });
   return res.data;
 }
-
-export async function getUserLoanHistory(caller: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/user-loans`, { params: { caller } });
-  return res.data;
-} 
 
 export async function getUserCollateralHistory(caller: string, marketId: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/user-collateral`, { params: { caller, marketId } });

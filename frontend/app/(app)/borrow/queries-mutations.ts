@@ -1,4 +1,4 @@
-import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
+import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUtilizationHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ export const utilizationHistoryQueryKey = (marketId: string) => ["utilizationHis
 export const aprHistoryQueryKey = (marketId: string) => ["aprHistory", marketId];
 export const marketSnapshotsQueryKey = (marketId: string) => ["marketSnapshots", marketId];
 export const marketActivityQueryKey = (marketId: string) => ["marketActivity", marketId];
+export const userLoanHistoryQueryKey = (userAddress: string) => ["userLoanHistory", userAddress];
 
 export function useMarketsQuery() {
   return useQuery({
@@ -60,6 +61,15 @@ export function useMarketsQuery() {
       
       return markets;
     },
+  });
+}
+
+export function useUserLoanHistoryQuery(userAddress: string) {
+  return useQuery({
+    queryKey: userLoanHistoryQueryKey(userAddress),
+    queryFn: () => getUserLoanHistory(userAddress),
+    enabled: !!userAddress,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 

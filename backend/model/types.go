@@ -120,4 +120,6 @@ type UserLoan struct {
 	MarketID  string    `json:"marketId"`  // Which market this event was in
 	EventType string    `json:"eventType"` // Type of event: "Borrow" or "Repay"
 	Operation string    `json:"operation"` // Operation: "+" for increases, "-" for decreases
+	LoanTokenSymbol string    `json:"loan_token_symbol"` // Loan token symbol
+	CollateralTokenSymbol string    `json:"collateral_token_symbol"` // Collateral token symbol
 }
