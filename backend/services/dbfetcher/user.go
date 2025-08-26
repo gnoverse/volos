@@ -3,6 +3,7 @@ package dbfetcher
 import (
 	"context"
 	"math/big"
+	"sort"
 	"time"
 
 	"volos-backend/model"
@@ -63,13 +64,12 @@ func GetUserPendingUnstakes(client *firestore.Client, userAddress string) ([]mod
 	return pendingUnstakes, nil
 }
 
-// GetUserLoanHistory retrieves all borrow/repay events for a user across all markets
-// Returns value-timestamp objects suitable for charting
+// GetUserLoanHistory retrieves all borrow/repay events for a user across all markets.
+// Returns all user loans in fiat (USD) ordered by timestamp in ascending order.
 func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.UserLoan, error) {
 	ctx := context.Background()
 	var results []model.UserLoan
 
-	// Get all markets
 	marketsIter := client.Collection("markets").Documents(ctx)
 	defer marketsIter.Stop()
 
@@ -91,10 +91,10 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 			continue
 		}
 
-		// Query market_history subcollection for this user's borrow/repay events
 		query := client.Collection("markets").Doc(marketID).Collection("market_history").
 			Where("caller", "==", userAddress).
 			Where("event_type", "in", []string{"Borrow", "Repay"})
+			//TODO : .OrderBy("timestamp", firestore.Asc) - optimization instead of sorting in the end (requires Firebase index)
 
 		historyIter := query.Documents(ctx)
 		defer historyIter.Stop()
@@ -110,30 +110,24 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 				continue
 			}
 
-			// Convert uint256 string value to big.Int for precise calculation
 			amount := utils.ParseAmount(history.Value, "GetUserLoanHistory")
 			if amount.Sign() == 0 {
-				continue // Skip invalid values
+				continue
 			}
 
-			// Calculate value in USD using whole token pricing
-			// Convert amount to big.Float for precise decimal arithmetic
+			// Convert denom amount to USD value: (amount / 10^decimals) * price_per_token
 			amountFloat := new(big.Float).SetInt(amount)
-			priceFloat := new(big.Float).SetFloat64(history.LoanPrice) // Price per whole token
+			priceFloat := new(big.Float).SetFloat64(history.LoanPrice)
 
-			// Get token decimals from market document
 			decimals := big.NewInt(1)
 			decimals.Exp(big.NewInt(10), big.NewInt(int64(market.LoanTokenDecimals)), nil)
 			decimalsFloat := new(big.Float).SetInt(decimals)
 
-			// Divide amount by decimals to get actual tokens, then multiply by price
 			actualTokens := new(big.Float).Quo(amountFloat, decimalsFloat)
 			valueFloat := new(big.Float).Mul(actualTokens, priceFloat)
 
-			// Convert back to string with full precision
-			valueInUSD := valueFloat.Text('f', -1) // -1 means use all available precision
+			valueInUSD := valueFloat.Text('f', -1)
 
-			// Convert to chart point
 			point := model.UserLoan{
 				Value:     valueInUSD,
 				Timestamp: history.Timestamp,
@@ -145,6 +139,10 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 			results = append(results, point)
 		}
 	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Timestamp.Before(results[j].Timestamp)
+	})
 
 	return results, nil
 }

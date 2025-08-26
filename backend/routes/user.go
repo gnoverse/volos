@@ -83,3 +83,24 @@ func GetUserPendingUnstakesHandler(client *firestore.Client) http.HandlerFunc {
 		json.NewEncoder(w).Encode(pendingUnstakes)
 	}
 }
+
+// GetUserLoanHistoryHandler handles GET /user-loan-history?userAddress=ADDRESS - returns user's borrow/repay history across all markets
+func GetUserLoanHistoryHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		user := r.URL.Query().Get("user")
+		if user == "" {
+			http.Error(w, "user parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		loanHistory, err := dbfetcher.GetUserLoanHistory(client, user)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(loanHistory)
+	}
+}
