@@ -33,17 +33,6 @@ type TransactionData struct {
 	BlockHeight int64
 }
 
-// MarketActivity is a type to be used to extract the type, amount, caller, hash, timestamp, and isAmountInShares from a market activity transaction.
-// This is the format of the data that is cached in Firestore and that is sent to the frontend.
-type MarketActivity struct {
-	Type             string  `json:"type"`
-	Amount           float64 `json:"amount"`
-	Caller           string  `json:"caller"`
-	Hash             string  `json:"hash"`
-	Timestamp        string  `json:"timestamp"`
-	IsAmountInShares bool    `json:"isAmountInShares"`
-}
-
 // Proposal represents the complete structure of a governance proposal document stored in Firestore.
 // This struct contains all fields that are persisted to the database when a proposal is created,
 // including metadata and timestamps for tracking proposal lifecycle.
@@ -120,27 +109,21 @@ type APRHistory struct {
 	BorrowAPR float64   `firestore:"borrow_apr" json:"borrow_apr"` // Borrow APR at this timestamp (percentage)
 }
 
-// TotalSupplyHistory represents a single total supply history entry stored in the total_supply subcollection.
-// This struct contains the supply amount change at a specific point in time.
-type TotalSupplyHistory struct {
-	Delta       string    `firestore:"delta" json:"delta"`               // Change in supply amount (u256 string)
-	IsSupply    bool      `firestore:"is_supply" json:"is_supply"`       // Whether this is a supply (true) or withdraw (false)
-	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this supply/withdraw event occurred
-	Value       string    `firestore:"value" json:"value"`               // Total supply amount after this change (u256 string)
-}
-
-// TotalBorrowHistory represents a single total borrow history entry stored in the total_borrow subcollection.
-// This struct contains the borrow amount change at a specific point in time.
-type TotalBorrowHistory struct {
-	Delta       string    `firestore:"delta" json:"delta"`               // Change in borrow amount (u256 string)
-	IsBorrow    bool      `firestore:"is_borrow" json:"is_borrow"`       // Whether this is a borrow (true) or repay (false)
-	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this borrow/repay event occurred
-	Value       string    `firestore:"value" json:"value"`               // Total borrow amount after this change (u256 string)
+// MarketHistory represents a single market history entry stored in the market_history subcollection.
+// This struct contains the change in market totals at a specific point in time for any event type.
+type MarketHistory struct {
+	Timestamp time.Time `firestore:"timestamp" json:"timestamp"`   // When this event occurred
+	Value     string    `firestore:"value" json:"value"`           // Total amount after this change (u256 string)
+	Delta     string    `firestore:"delta" json:"delta"`           // Change in amount (u256 string)
+	Operation string    `firestore:"operation" json:"operation"`   // "+" for increases, "-" for decreases
+	Caller    string    `firestore:"caller" json:"caller"`         // Address of the user who triggered this event
+	TxHash    string    `firestore:"tx_hash" json:"tx_hash"`       // Transaction hash that caused this event
+	EventType string    `firestore:"event_type" json:"event_type"` // Type of event: "Supply", "Withdraw", "Borrow", "Repay", "Liquidate", "SupplyCollateral", "WithdrawCollateral"
 }
 
 // UtilizationHistory represents a single utilization history entry stored in the utilization subcollection.
 // This struct contains the utilization rate at a specific point in time.
 type UtilizationHistory struct {
-	Timestamp       time.Time `firestore:"timestamp" json:"timestamp"`               // When this utilization snapshot was taken
-	Value           float64   `firestore:"value" json:"value"`                       // Utilization rate as percentage
+	Timestamp time.Time `firestore:"timestamp" json:"timestamp"` // When this utilization snapshot was taken
+	Value     float64   `firestore:"value" json:"value"`         // Utilization rate as percentage
 }

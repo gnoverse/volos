@@ -5,9 +5,7 @@ import { useUserAddress } from "@/app/utils/address.utils"
 import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
-import { Button } from "@/components/ui/button"
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
-import { RefreshCw } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
@@ -25,10 +23,9 @@ function MarketPageContent() {
   const { userAddress } = useUserAddress()
 
   // Use the new market query
-  const { data: marketInfo, isLoading: isMarketLoading, refetch: refetchMarket } = useMarketQuery(marketId)
-
-  const { data: positionData, refetch: refetchPosition } = usePositionQuery(marketId, userAddress);
-  const { data: healthFactorData, refetch: refetchHealthFactor } = useHealthFactorQuery(marketId, userAddress)
+  const { data: marketInfo, isLoading: isMarketLoading } = useMarketQuery(marketId)
+  const { data: positionData } = usePositionQuery(marketId, userAddress);
+  const { data: healthFactorData } = useHealthFactorQuery(marketId, userAddress)
 
   // Fetch user loan history using Tanstack Query
   const { data: userLoanHistory = [] } = useQuery({
@@ -42,28 +39,8 @@ function MarketPageContent() {
 
   const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
 
-
-
-  const handleRefetch = () => {
-    refetchMarket();
-    refetchPosition();
-    refetchHealthFactor();
-  };
-
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
-      {/* Refetch button in top right corner */}
-      <Button 
-        onClick={handleRefetch}
-        className="absolute top-0 right-0 mt-2 mr-2 p-3 bg-gray-700/60 rounded-lg hover:bg-gray-600/80 transition-colors flex items-center gap-2 z-10"
-        title="Refetch data"
-        variant="outline"
-        disabled={isMarketLoading}
-      >
-        <RefreshCw size={20} className="text-gray-200" />
-        <span className="text-sm text-gray-200 font-medium">Refetch Data</span>
-      </Button>
-
       <h1 className="text-[36px] font-bold mb-6 text-gray-300">
         {!isMarketLoading && marketInfo
           ? `${marketInfo.loanTokenSymbol} / ${marketInfo.collateralTokenSymbol.toUpperCase()} Market`

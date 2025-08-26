@@ -14,7 +14,7 @@ func APIRouter(client *firestore.Client) http.HandlerFunc {
 
 		switch path {
 		case "/api/market-activity":
-			MarketActivityHandler(client)(w, r)
+			GetMarketActivityHandler(client)(w, r)
 		case "/api/user":
 			GetUserHandler(client)(w, r)
 		case "/api/user-vote":
@@ -25,10 +25,12 @@ func APIRouter(client *firestore.Client) http.HandlerFunc {
 			GetMarketsHandler(client)(w, r)
 		case "/api/apr":
 			GetMarketAPRHistoryHandler(client)(w, r)
-		case "/api/total-borrow-history":
+		case "/api/borrow-history":
 			GetMarketTotalBorrowHistoryHandler(client)(w, r)
-		case "/api/total-supply-history":
+		case "/api/supply-history":
 			GetMarketTotalSupplyHistoryHandler(client)(w, r)
+		case "/api/collateral-supply-history":
+			GetMarketTotalCollateralSupplyHistoryHandler(client)(w, r)
 		case "/api/utilization-history":
 			GetMarketUtilizationHistoryHandler(client)(w, r)
 		case "/api/snapshots":

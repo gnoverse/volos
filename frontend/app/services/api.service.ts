@@ -5,13 +5,14 @@ export type ChartData = {
   timestamp: Date;
 };
 
-export type MarketActivity = {
-  type: string;
-  amount: number;
-  caller: string;
-  hash: string;
+export type MarketHistory = {
   timestamp: Date;
-  isAmountInShares: boolean;
+  value: string;
+  delta: string;
+  operation: string;
+  caller: string;
+  tx_hash: string;
+  event_type: string;
 };
 
 export type APRData = {
@@ -22,16 +23,32 @@ export type APRData = {
 
 export type TotalSupplyData = {
   delta: string;
-  is_supply: boolean;
+  operation: string;
+  event_type: string;
   timestamp: Date;
   value: string;
+  caller: string;
+  tx_hash: string;
 };
 
 export type TotalBorrowData = {
   delta: string;
-  is_borrow: boolean;
+  operation: string;
+  event_type: string;
   timestamp: Date;
   value: string;
+  caller: string;
+  tx_hash: string;
+};
+
+export type TotalCollateralSupplyData = {
+  delta: string;
+  operation: string;
+  event_type: string;
+  timestamp: Date;
+  value: string;
+  caller: string;
+  tx_hash: string;
 };
 
 export type UtilizationData = {
@@ -46,6 +63,7 @@ export type MarketSnapshot = {
   supply_apr: number;
   borrow_apr: number;
   total_supply: string;
+  total_collateral_supply: string;
   total_borrow: string;
   utilization_rate: number;
   created_at: Date;
@@ -111,6 +129,7 @@ export interface Market {
   total_borrow: string
   current_supply_apr: number
   current_borrow_apr: number
+  utilization_rate: number
   created_at: string
   updated_at: string
 }
@@ -121,10 +140,20 @@ export interface MarketsResponse {
   last_id: string
 }
 
+export interface MarketActivityResponse {
+  activities: MarketHistory[]
+  has_more: boolean
+  last_id: string
+}
+
 const API_BASE = process.env.API_BASE_URL || 'http://localhost:8080/api';
 
-export async function getMarketActivity(marketId: string): Promise<MarketActivity[]> {
-  const res = await axios.get(`${API_BASE}/market-activity`, { params: { marketId } });
+export async function getMarketActivity(marketId: string, limit?: number, lastId?: string): Promise<MarketActivityResponse> {
+  const params: Record<string, string | number> = { marketId };
+  if (limit) params.limit = limit;
+  if (lastId) params.last_id = lastId;
+  
+  const res = await axios.get(`${API_BASE}/market-activity`, { params });
   return res.data;
 }
 
@@ -209,21 +238,27 @@ export async function getAPRHistory(marketId: string, startTime?: string, endTim
   return res.data;
 }
 
-export async function getTotalBorrowHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalBorrowData[]> {
+export async function getBorrowHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalBorrowData[]> {
   const params: Record<string, string> = { marketId };
   if (startTime) params.startTime = startTime;
   if (endTime) params.endTime = endTime;
-  
-  const res = await axios.get(`${API_BASE}/total-borrow-history`, { params });
+  const res = await axios.get(`${API_BASE}/borrow-history`, { params });
   return res.data;
 }
 
-export async function getTotalSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
+export async function getSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
   const params: Record<string, string> = { marketId };
   if (startTime) params.startTime = startTime;
   if (endTime) params.endTime = endTime;
-  
-  const res = await axios.get(`${API_BASE}/total-supply-history`, { params });
+  const res = await axios.get(`${API_BASE}/supply-history`, { params });
+  return res.data;
+}
+
+export async function getCollateralSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalCollateralSupplyData[]> {
+  const params: Record<string, string> = { marketId };
+  if (startTime) params.startTime = startTime;
+  if (endTime) params.endTime = endTime;
+  const res = await axios.get(`${API_BASE}/collateral-supply-history`, { params });
   return res.data;
 }
 

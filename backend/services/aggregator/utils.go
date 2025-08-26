@@ -35,12 +35,18 @@ func (ma *MarketAggregator) calculateAveragesFromTransactions(ctx context.Contex
 		return nil, err
 	}
 
+	avgTotalCollateralSupply, err := ma.calculateCollateralSupplyAverages(ctx, sanitizedMarketID, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
 	averages := &MarketAverages{
-		SupplyAPR:       avgSupplyAPR,
-		BorrowAPR:       avgBorrowAPR,
-		UtilizationRate: avgUtilization,
-		TotalSupply:     avgTotalSupply,
-		TotalBorrow:     avgTotalBorrow,
+		SupplyAPR:             avgSupplyAPR,
+		BorrowAPR:             avgBorrowAPR,
+		UtilizationRate:       avgUtilization,
+		TotalSupply:           avgTotalSupply,
+		TotalBorrow:           avgTotalBorrow,
+		TotalCollateralSupply: avgTotalCollateralSupply,
 	}
 
 	return averages, nil
@@ -53,7 +59,7 @@ func (ma *MarketAggregator) calculateAveragesFromSnapshots(snapshots []MarketSna
 	}
 
 	var totalSupplyAPR, totalBorrowAPR, totalUtilization float64
-	var totalSupplySum, totalBorrowSum *big.Int = big.NewInt(0), big.NewInt(0)
+	var totalSupplySum, totalBorrowSum, totalCollateralSupplySum *big.Int = big.NewInt(0), big.NewInt(0), big.NewInt(0)
 
 	for _, snapshot := range snapshots {
 		totalSupplyAPR += snapshot.SupplyAPR
@@ -62,9 +68,11 @@ func (ma *MarketAggregator) calculateAveragesFromSnapshots(snapshots []MarketSna
 
 		supply := utils.ParseAmount(snapshot.TotalSupply, "snapshot average calculation")
 		borrow := utils.ParseAmount(snapshot.TotalBorrow, "snapshot average calculation")
+		collateral := utils.ParseAmount(snapshot.TotalCollateralSupply, "snapshot average calculation")
 
 		totalSupplySum.Add(totalSupplySum, supply)
 		totalBorrowSum.Add(totalBorrowSum, borrow)
+		totalCollateralSupplySum.Add(totalCollateralSupplySum, collateral)
 	}
 
 	count := float64(len(snapshots))
@@ -74,13 +82,15 @@ func (ma *MarketAggregator) calculateAveragesFromSnapshots(snapshots []MarketSna
 
 	avgSupply := new(big.Int).Div(totalSupplySum, big.NewInt(int64(len(snapshots))))
 	avgBorrow := new(big.Int).Div(totalBorrowSum, big.NewInt(int64(len(snapshots))))
+	avgCollateralSupply := new(big.Int).Div(totalCollateralSupplySum, big.NewInt(int64(len(snapshots))))
 
 	return &MarketAverages{
-		SupplyAPR:       avgSupplyAPR,
-		BorrowAPR:       avgBorrowAPR,
-		UtilizationRate: avgUtilization,
-		TotalSupply:     avgSupply.String(),
-		TotalBorrow:     avgBorrow.String(),
+		SupplyAPR:             avgSupplyAPR,
+		BorrowAPR:             avgBorrowAPR,
+		UtilizationRate:       avgUtilization,
+		TotalSupply:           avgSupply.String(),
+		TotalBorrow:           avgBorrow.String(),
+		TotalCollateralSupply: avgCollateralSupply.String(),
 	}, nil
 }
 
@@ -172,7 +182,8 @@ func (ma *MarketAggregator) calculateUtilizationAverages(ctx context.Context, sa
 
 // calculateSupplyAverages calculates average total supply from transaction history
 func (ma *MarketAggregator) calculateSupplyAverages(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (string, error) {
-	supplyIter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("total_supply").
+	supplyIter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("market_history").
+		Where("event_type", "in", []string{"Supply", "Withdraw"}).
 		Where("timestamp", ">=", startTime).
 		Where("timestamp", "<=", endTime).
 		OrderBy("timestamp", firestore.Asc).
@@ -187,7 +198,7 @@ func (ma *MarketAggregator) calculateSupplyAverages(ctx context.Context, sanitiz
 			break
 		}
 
-		var supplyHistory model.TotalSupplyHistory
+		var supplyHistory model.MarketHistory
 		if err := doc.DataTo(&supplyHistory); err != nil {
 			continue
 		}
@@ -214,9 +225,51 @@ func (ma *MarketAggregator) calculateSupplyAverages(ctx context.Context, sanitiz
 	return avgTotalSupply, nil
 }
 
+// calculateCollateralSupplyAverages calculates average total collateral supply from transaction history
+func (ma *MarketAggregator) calculateCollateralSupplyAverages(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (string, error) {
+	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("market_history").
+		Where("event_type", "in", []string{"SupplyCollateral", "WithdrawCollateral"}).
+		Where("timestamp", ">=", startTime).
+		Where("timestamp", "<=", endTime).
+		OrderBy("timestamp", firestore.Asc).
+		Documents(ctx)
+
+	var sum *big.Int = big.NewInt(0)
+	var count int
+
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			break
+		}
+
+		var hist model.MarketHistory
+		if err := doc.DataTo(&hist); err != nil {
+			continue
+		}
+
+		value := utils.ParseAmount(hist.Value, "average total collateral supply calculation")
+		sum.Add(sum, value)
+		count++
+	}
+
+	if count > 0 {
+		avg := new(big.Int).Div(sum, big.NewInt(int64(count)))
+		return avg.String(), nil
+	}
+
+	last, err := ma.getLastKnownCollateralSupply(ctx, sanitizedMarketID, startTime)
+	if err != nil {
+		slog.Info("no collateral supply data found, using default", "market_id", sanitizedMarketID, "start_time", startTime)
+		return "0", nil
+	}
+	return last, nil
+}
+
 // calculateBorrowAverages calculates average total borrow from transaction history
 func (ma *MarketAggregator) calculateBorrowAverages(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (string, error) {
-	borrowIter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("total_borrow").
+	borrowIter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("market_history").
+		Where("event_type", "in", []string{"Borrow", "Repay", "Liquidate"}).
 		Where("timestamp", ">=", startTime).
 		Where("timestamp", "<=", endTime).
 		OrderBy("timestamp", firestore.Asc).
@@ -231,7 +284,7 @@ func (ma *MarketAggregator) calculateBorrowAverages(ctx context.Context, sanitiz
 			break
 		}
 
-		var borrowHistory model.TotalBorrowHistory
+		var borrowHistory model.MarketHistory
 		if err := doc.DataTo(&borrowHistory); err != nil {
 			continue
 		}
@@ -302,7 +355,8 @@ func (ma *MarketAggregator) getLastKnownUtilization(ctx context.Context, sanitiz
 
 // getLastKnownSupply retrieves the most recent total supply value before the specified time.
 func (ma *MarketAggregator) getLastKnownSupply(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (string, error) {
-	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("total_supply").
+	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("market_history").
+		Where("event_type", "in", []string{"Supply", "Withdraw"}).
 		Where("timestamp", "<", beforeTime).
 		OrderBy("timestamp", firestore.Desc).
 		Limit(1).
@@ -313,7 +367,7 @@ func (ma *MarketAggregator) getLastKnownSupply(ctx context.Context, sanitizedMar
 		return "0", err
 	}
 
-	var supplyHistory model.TotalSupplyHistory
+	var supplyHistory model.MarketHistory
 	if err := doc.DataTo(&supplyHistory); err != nil {
 		return "0", err
 	}
@@ -321,9 +375,10 @@ func (ma *MarketAggregator) getLastKnownSupply(ctx context.Context, sanitizedMar
 	return supplyHistory.Value, nil
 }
 
-// getLastKnownBorrow retrieves the most recent total borrow value before the specified time.
-func (ma *MarketAggregator) getLastKnownBorrow(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (string, error) {
-	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("total_borrow").
+// getLastKnownCollateralSupply retrieves the most recent total collateral supply value before the specified time.
+func (ma *MarketAggregator) getLastKnownCollateralSupply(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (string, error) {
+	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("market_history").
+		Where("event_type", "in", []string{"SupplyCollateral", "WithdrawCollateral"}).
 		Where("timestamp", "<", beforeTime).
 		OrderBy("timestamp", firestore.Desc).
 		Limit(1).
@@ -334,7 +389,29 @@ func (ma *MarketAggregator) getLastKnownBorrow(ctx context.Context, sanitizedMar
 		return "0", err
 	}
 
-	var borrowHistory model.TotalBorrowHistory
+	var hist model.MarketHistory
+	if err := doc.DataTo(&hist); err != nil {
+		return "0", err
+	}
+
+	return hist.Value, nil
+}
+
+// getLastKnownBorrow retrieves the most recent total borrow value before the specified time.
+func (ma *MarketAggregator) getLastKnownBorrow(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (string, error) {
+	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("market_history").
+		Where("event_type", "in", []string{"Borrow", "Repay", "Liquidate"}).
+		Where("timestamp", "<", beforeTime).
+		OrderBy("timestamp", firestore.Desc).
+		Limit(1).
+		Documents(ctx)
+
+	doc, err := iter.Next()
+	if err != nil {
+		return "0", err
+	}
+
+	var borrowHistory model.MarketHistory
 	if err := doc.DataTo(&borrowHistory); err != nil {
 		return "0", err
 	}

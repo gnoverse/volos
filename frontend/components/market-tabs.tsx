@@ -1,11 +1,10 @@
 "use client"
 
-import { getMarketActivity } from '@/app/services/api.service'
+import { useMarketActivityQuery } from "@/app/(app)/borrow/queries-mutations"
 import { MarketInfo, Position } from "@/app/types"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useQuery } from '@tanstack/react-query'
 import { activityColumns } from "./activity-columns"
 import { DataTable } from "./ui/data-table"
 
@@ -34,11 +33,7 @@ export function MarketTabs({
   caller
 }: MarketTabsProps) {
 
-  const { data: marketActivity = [] } = useQuery({
-    queryKey: ['marketActivity', market.poolPath],
-    queryFn: () => getMarketActivity(market.poolPath!),
-    enabled: !!market.poolPath
-  });
+  const { data: marketActivityResponse } = useMarketActivityQuery(market.poolPath!);
 
   return (
     <Tabs defaultValue="overview" className="w-full">
@@ -84,7 +79,11 @@ export function MarketTabs({
       </TabsContent>
 
       <TabsContent value="activity" className="mt-0">
-        <DataTable columns={activityColumns} data={Array.isArray(marketActivity) ? marketActivity : []} className="w-full h-full mt-0" />
+        <DataTable 
+          columns={activityColumns} 
+          data={marketActivityResponse?.activities || []} 
+          className="w-full h-full mt-0" 
+        />
       </TabsContent>
     </Tabs>
   )
