@@ -25,7 +25,9 @@ COPY --from=builder /go/bin/gnokey /app/gnokey
 
 COPY --from=builder /app/src /app/src
 
-COPY ./r/volos/* /app/src/examples/gno.land/r/volos/
-COPY ./p/volos/* /app/src/examples/gno.land/p/volos/
+COPY ./r/ /app/src/examples/gno.land/r/
+COPY ./p/ /app/src/examples/gno.land/p/
+
+COPY ./keys.db /root/.config/gno/data/keys.db
 
 ENV PATH="/app:${PATH}"

@@ -1,6 +1,6 @@
 include _info.mk
-include ../gnoswap-tests/_info.mk
-include ../gnoswap-tests/test.mk
+include ../gnoswap/_info.mk
+include ../gnoswap/test.mk
 
 # Complete flow that includes both GNS-WUGNOT and BAR-WUGNOT operations
 full-workflow: pool-create-gns-wugnot-default mint-gns-gnot enable-irm enable-lltv market-create-gns-wugnot supply-assets-gns-wugnot supply-collateral-gns-wugnot borrow-gns \
