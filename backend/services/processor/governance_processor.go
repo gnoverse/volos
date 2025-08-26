@@ -17,40 +17,25 @@ import (
 // processGovernanceTransaction handles transactions from the governance package, processing
 // governance-related events such as proposal creation, voting, and execution.
 func processGovernanceTransaction(tx map[string]interface{}, client *firestore.Client) {
-	response, ok := tx["response"].(map[string]interface{})
-	if !ok {
-		slog.Error("transaction missing 'response' field", "transaction", tx)
-		return
-	}
-	events, ok := response["events"].([]interface{})
-	if !ok || len(events) == 0 {
-		slog.Error("transaction missing or empty 'events' array", "response", response)
+	events := extractEventsFromTx(tx)
+	if events == nil {
 		return
 	}
 
 	for _, eventInterface := range events {
-		event, ok := eventInterface.(map[string]interface{})
-		if !ok {
-			slog.Error("event is not a map", "event_interface", eventInterface)
-			continue
-		}
-
-		eventType, ok := event["type"].(string)
-		if !ok {
-			slog.Error("event type is not a string", "event", event)
+		event, eventType := getEventAndType(eventInterface)
+		if event == nil || eventType == "" {
 			continue
 		}
 
 		switch eventType {
 		case "ProposalCreated":
-			proposalEvent, ok := extractProposalFields(event)
-			if ok {
+			if proposalEvent, ok := extractProposalFields(event); ok {
 				dbupdater.CreateProposal(client, proposalEvent.ProposalID, proposalEvent.Title, proposalEvent.Body, proposalEvent.Proposer, proposalEvent.Deadline, proposalEvent.Quorum, proposalEvent.Timestamp)
 			}
 
 		case "ProposalExecuted":
-			executedEvent, ok := extractProposalIDAndStatus(event)
-			if ok {
+			if executedEvent, ok := extractProposalIDAndStatus(event); ok {
 				updates := map[string]interface{}{
 					"status": executedEvent.Status,
 				}
@@ -58,26 +43,22 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			}
 
 		case "VoteCast":
-			voteEvent, ok := extractVoteFields(event)
-			if ok {
+			if voteEvent, ok := extractVoteFields(event); ok {
 				dbupdater.AddVote(client, voteEvent.ProposalID, voteEvent.Voter, voteEvent.Vote, voteEvent.Reason, voteEvent.Timestamp, voteEvent.XVLSAmount)
 			}
 
 		case "MemberAdded":
-			memberEvent, ok := extractMemberAddress(event)
-			if ok {
+			if memberEvent, ok := extractMemberAddress(event); ok {
 				dbupdater.AddDAOMember(client, memberEvent.Member)
 			}
 
 		case "MemberRemoved":
-			memberEvent, ok := extractMemberAddress(event)
-			if ok {
+			if memberEvent, ok := extractMemberAddress(event); ok {
 				dbupdater.RemoveDAOMember(client, memberEvent.Member)
 			}
 
 		case "Stake":
-			stakeEvent, ok := extractStakeFields(event)
-			if ok {
+			if stakeEvent, ok := extractStakeFields(event); ok {
 				timestamp := utils.ParseTimestamp(stakeEvent.Timestamp, "stake event")
 				if timestamp > 0 {
 					dbupdater.UpdateUserStakedVLS(client, stakeEvent.Staker, stakeEvent.Delegatee, stakeEvent.Amount, timestamp)
@@ -85,8 +66,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			}
 
 		case "BeginUnstake":
-			unstakeEvent, ok := extractBeginUnstakeFields(event)
-			if ok {
+			if unstakeEvent, ok := extractBeginUnstakeFields(event); ok {
 				timestamp := utils.ParseTimestamp(unstakeEvent.Timestamp, "begin unstake event")
 				if timestamp > 0 {
 					dbupdater.UpdateUserStakedVLS(client, unstakeEvent.Staker, unstakeEvent.Delegatee, -unstakeEvent.Amount, timestamp)
@@ -95,8 +75,7 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 			}
 
 		case "Withdraw":
-			withdrawEvent, ok := extractWithdrawnUnstakeIDs(event)
-			if ok && len(withdrawEvent.WithdrawnIDs) > 0 {
+			if withdrawEvent, ok := extractWithdrawnUnstakeIDs(event); ok && len(withdrawEvent.WithdrawnIDs) > 0 {
 				dbupdater.DeletePendingUnstakesByIDs(client, withdrawEvent.Staker, withdrawEvent.WithdrawnIDs)
 			}
 

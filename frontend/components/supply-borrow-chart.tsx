@@ -29,6 +29,7 @@ export function SupplyBorrowChart({
     defaultValue: {
       supply: true,
       borrow: true,
+      collateral: false,
     }
   })
 
@@ -99,17 +100,25 @@ export function SupplyBorrowChart({
                 <Checkbox
                   checked={selectedMetrics.supply}
                   onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, supply: !prev.supply }))}
-                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-800 data-[state=checked]:border-blue-800"
                 />
-                <span className="text-green-400">Supply</span>
+                <span className="text-blue-400">Supply</span>
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={selectedMetrics.borrow}
                   onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, borrow: !prev.borrow }))}
-                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500"
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                 />
-                <span className="text-red-400">Borrow</span>
+                <span className="text-purple-400">Borrow</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedMetrics.collateral}
+                  onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, collateral: !prev.collateral }))}
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-slate-500 data-[state=checked]:border-slate-500"
+                />
+                <span className="text-slate-400">Collateral</span>
               </div>
             </div>
             <ChartDropdown
@@ -152,11 +161,10 @@ export function SupplyBorrowChart({
                 <Line
                   type="monotone"
                   dataKey="supply"
-                  stroke="rgb(34, 197, 94)"
+                  stroke="rgb(59, 130, 246)"
                   strokeWidth={2}
                   dot={false}
                   connectNulls={true}
-                  style={{ filter: `drop-shadow(0 0 6px rgb(34, 197, 94))` }}
                 />
               )}
               
@@ -164,11 +172,21 @@ export function SupplyBorrowChart({
                 <Line
                   type="monotone"
                   dataKey="borrow"
-                  stroke="rgb(239, 68, 68)"
+                  stroke="rgb(147, 51, 234)"
                   strokeWidth={2}
                   dot={false}
                   connectNulls={true}
-                  style={{ filter: `drop-shadow(0 0 6px rgb(239, 68, 68))` }}
+                />
+              )}
+
+              {selectedMetrics.collateral && (
+                <Line
+                  type="monotone"
+                  dataKey="collateral"
+                  stroke="rgb(100, 116, 139)"
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls={true}
                 />
               )}
               

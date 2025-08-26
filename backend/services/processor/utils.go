@@ -1,5 +1,9 @@
 package processor
 
+import (
+	"log/slog"
+)
+
 // extractEventFields is a universal function that extracts specified fields from an event's attributes.
 // It returns a map of field names to their values, and a boolean indicating if all required fields were found.
 //
@@ -44,4 +48,71 @@ func extractEventFields(event map[string]interface{}, requiredFields []string, o
 	}
 
 	return result, true
+}
+
+// extractCallerAndHash extracts the caller and tx hash from the transaction object.
+// Uses only the first message from the array-based messages shape. Logs errors and returns empty strings on failure.
+func extractCallerAndHash(tx map[string]interface{}) (string, string) {
+	msgs, ok := tx["messages"].([]interface{})
+	if !ok || len(msgs) == 0 {
+		slog.Error("transaction messages missing or empty", "tx", tx)
+		return "", ""
+	}
+
+	first, ok := msgs[0].(map[string]interface{})
+	if !ok {
+		slog.Error("first message is not a map", "messages[0]", msgs[0])
+		return "", ""
+	}
+
+	value, ok := first["value"].(map[string]interface{})
+	if !ok {
+		slog.Error("message value is not a map", "message", first)
+		return "", ""
+	}
+
+	caller, ok := value["caller"].(string)
+	if !ok || caller == "" {
+		slog.Error("caller missing in message value", "value", value)
+		caller = ""
+	}
+
+	hash, _ := tx["hash"].(string)
+	if hash == "" {
+		slog.Error("transaction hash missing", "tx", tx)
+	}
+
+	return caller, hash
+}
+
+// Top-level parse helpers for core processor
+
+func extractEventsFromTx(tx map[string]interface{}) []interface{} {
+	response, ok := tx["response"].(map[string]interface{})
+	if !ok {
+		slog.Error("transaction missing 'response' field", "tx", tx)
+		return nil
+	}
+
+	events, ok := response["events"].([]interface{})
+	if !ok || len(events) == 0 {
+		slog.Error("transaction missing or empty 'events' array", "response", response)
+		return nil
+	}
+	return events
+}
+
+func getEventAndType(eventInterface interface{}) (map[string]interface{}, string) {
+	event, ok := eventInterface.(map[string]interface{})
+	if !ok {
+		slog.Error("event is not a map", "event_interface", eventInterface)
+		return nil, ""
+	}
+
+	eventType, ok := event["type"].(string)
+	if !ok || eventType == "" {
+		slog.Error("event type is not a string", "event", event)
+		return nil, ""
+	}
+	return event, eventType
 }
