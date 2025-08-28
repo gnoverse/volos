@@ -1,4 +1,4 @@
-import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUtilizationHistory } from "@/app/services/api.service";
+import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUtilizationHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ export const utilizationHistoryQueryKey = (marketId: string) => ["utilizationHis
 export const aprHistoryQueryKey = (marketId: string) => ["aprHistory", marketId];
 export const marketSnapshotsQueryKey = (marketId: string) => ["marketSnapshots", marketId];
 export const marketActivityQueryKey = (marketId: string) => ["marketActivity", marketId];
+export const userLoanHistoryQueryKey = (userAddress: string) => ["userLoanHistory", userAddress];
 
 export function useMarketsQuery() {
   return useQuery({
@@ -42,24 +43,33 @@ export function useMarketsQuery() {
         loanToken: market.loan_token,
         collateralToken: market.collateral_token,
         currentPrice: "0", // TODO: Get current price from oracle
-        borrowAPR: market.current_borrow_apr,
-        supplyAPR: market.current_supply_apr,
-        utilization: "0", // TODO: Calculate from total supply/borrow
+        borrowAPR: market.borrow_apr,
+        supplyAPR: market.supply_apr,
+        utilization: String(market.utilization_rate),
         
         // Token information fields
-        loanTokenName: "MockName1", // TODO: Get actual token name
-        loanTokenSymbol: "MOCK1", // TODO: Get actual token symbol from token path
-        loanTokenDecimals: 6, // TODO: Get actual decimals from token info
+        loanTokenName: market.loan_token_name,
+        loanTokenSymbol: market.loan_token_symbol,
+        loanTokenDecimals: market.loan_token_decimals,
         
-        collateralTokenName: "MockName2", // TODO: Get actual token name
-        collateralTokenSymbol: "MOCK2", // TODO: Get actual token symbol from token path
-        collateralTokenDecimals: 6, // TODO: Get actual decimals from token info
+        collateralTokenName: market.collateral_token_name,
+        collateralTokenSymbol: market.collateral_token_symbol,
+        collateralTokenDecimals: market.collateral_token_decimals,
         
         marketId: market.id,
       }));
       
       return markets;
     },
+  });
+}
+
+export function useUserLoanHistoryQuery(userAddress: string) {
+  return useQuery({
+    queryKey: userLoanHistoryQueryKey(userAddress),
+    queryFn: () => getUserLoanHistory(userAddress),
+    enabled: !!userAddress,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -89,18 +99,18 @@ export function useMarketQuery(marketId: string) {
         loanToken: market.loan_token,
         collateralToken: market.collateral_token,
         currentPrice: "0", // TODO: Get current price from oracle
-        borrowAPR: market.current_borrow_apr,
-        supplyAPR: market.current_supply_apr,
-        utilization: "0", // TODO: Calculate from total supply/borrow
+        borrowAPR: market.borrow_apr,
+        supplyAPR: market.supply_apr,
+        utilization: String(market.utilization_rate),
         
         // Token information fields
-        loanTokenName: "MockName1", // TODO: Get actual token name
-        loanTokenSymbol: "MOCK1", // TODO: Get actual token symbol from token path
-        loanTokenDecimals: 6, // TODO: Get actual decimals from token info
+        loanTokenName: market.loan_token_name,
+        loanTokenSymbol: market.loan_token_symbol,
+        loanTokenDecimals: market.loan_token_decimals,
         
-        collateralTokenName: "MockName2", // TODO: Get actual token name
-        collateralTokenSymbol: "MOCK2", // TODO: Get actual token symbol from token path
-        collateralTokenDecimals: 6, // TODO: Get actual decimals from token info
+        collateralTokenName: market.collateral_token_name,
+        collateralTokenSymbol: market.collateral_token_symbol,
+        collateralTokenDecimals: market.collateral_token_decimals,
         
         marketId: market.id,
       };

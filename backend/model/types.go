@@ -10,20 +10,6 @@ const XvlsPkgPath = "gno.land/r/volos/gov/xvls"             // the package path 
 const Rpc = "http://localhost:26657"                        // the RPC endpoint of the node
 const BlockHeightOnDeploy = 0                               // the block height of the deployment of the Volos contract
 
-// Data is a type to be used to extract the value and timestamp from a data point.
-// Since transactions only have block height, we need to fetch the timestamp from the block height.
-// This is the format of the data (mostly for charts) that is cached in Firestore and that is sent to the frontend.
-type Data struct {
-	Value     float64 `json:"value"`
-	Timestamp string  `json:"timestamp"`
-}
-
-// TransactionData is a type to be used to extract the value and block height from a transaction.
-type TransactionData struct {
-	Value       float64
-	BlockHeight int64
-}
-
 // Proposal represents the complete structure of a governance proposal document stored in Firestore.
 // This struct contains all fields that are persisted to the database when a proposal is created,
 // including metadata and timestamps for tracking proposal lifecycle.
@@ -80,16 +66,22 @@ type User struct {
 // This struct contains all market-related fields that are tracked by the system,
 // including totals, parameters, and current APRs for display in market listings.
 type Market struct {
-	ID               string    `firestore:"id" json:"id"`                                 // Market identifier (same as marketId)
-	LoanToken        string    `firestore:"loan_token" json:"loan_token"`                 // Loan token path
-	CollateralToken  string    `firestore:"collateral_token" json:"collateral_token"`     // Collateral token path
-	TotalSupply      string    `firestore:"total_supply" json:"total_supply"`             // Total supply amount (u256 string)
-	TotalBorrow      string    `firestore:"total_borrow" json:"total_borrow"`             // Total borrow amount (u256 string)
-	CurrentSupplyAPR float64   `firestore:"current_supply_apr" json:"current_supply_apr"` // Current supply APR (percentage)
-	CurrentBorrowAPR float64   `firestore:"current_borrow_apr" json:"current_borrow_apr"` // Current borrow APR (percentage)
-	UtilizationRate  float64   `firestore:"utilization_rate" json:"utilization_rate"`     // Current utilization rate (borrow/supply) as percentage
-	CreatedAt        time.Time `firestore:"created_at" json:"created_at"`                 // When the market was created
-	UpdatedAt        time.Time `firestore:"updated_at" json:"updated_at"`                 // Last time market data was updated
+	ID                      string    `firestore:"id" json:"id"`                                               // Market identifier (same as marketId)
+	LoanToken               string    `firestore:"loan_token" json:"loan_token"`                               // Loan token path
+	CollateralToken         string    `firestore:"collateral_token" json:"collateral_token"`                   // Collateral token path
+	LoanTokenName           string    `firestore:"loan_token_name" json:"loan_token_name"`                     // Loan token name
+	LoanTokenSymbol         string    `firestore:"loan_token_symbol" json:"loan_token_symbol"`                 // Loan token symbol
+	LoanTokenDecimals       int64     `firestore:"loan_token_decimals" json:"loan_token_decimals"`             // Loan token decimals
+	CollateralTokenName     string    `firestore:"collateral_token_name" json:"collateral_token_name"`         // Collateral token name
+	CollateralTokenSymbol   string    `firestore:"collateral_token_symbol" json:"collateral_token_symbol"`     // Collateral token symbol
+	CollateralTokenDecimals int64     `firestore:"collateral_token_decimals" json:"collateral_token_decimals"` // Collateral token decimals
+	TotalSupply             string    `firestore:"total_supply" json:"total_supply"`                           // Total supply amount (u256 string)
+	TotalBorrow             string    `firestore:"total_borrow" json:"total_borrow"`                           // Total borrow amount (u256 string)
+	SupplyAPR               float64   `firestore:"supply_apr" json:"supply_apr"`                             // Current supply APR (percentage)
+	BorrowAPR               float64   `firestore:"borrow_apr" json:"borrow_apr"`                             // Current borrow APR (percentage)
+	UtilizationRate         float64   `firestore:"utilization_rate" json:"utilization_rate"`                   // Current utilization rate (borrow/supply) as percentage
+	CreatedAt               time.Time `firestore:"created_at" json:"created_at"`                               // When the market was created
+	UpdatedAt               time.Time `firestore:"updated_at" json:"updated_at"`                               // Last time market data was updated
 }
 
 // APRHistory represents a single APR history entry stored in the apr subcollection.
@@ -110,6 +102,7 @@ type MarketHistory struct {
 	Caller    string    `firestore:"caller" json:"caller"`         // Address of the user who triggered this event
 	TxHash    string    `firestore:"tx_hash" json:"tx_hash"`       // Transaction hash that caused this event
 	EventType string    `firestore:"event_type" json:"event_type"` // Type of event: "Supply", "Withdraw", "Borrow", "Repay", "Liquidate", "SupplyCollateral", "WithdrawCollateral"
+	LoanPrice float64   `firestore:"loan_price" json:"loan_price"` // Price of the loan token at the time of the event
 }
 
 // UtilizationHistory represents a single utilization history entry stored in the utilization subcollection.
@@ -117,4 +110,16 @@ type MarketHistory struct {
 type UtilizationHistory struct {
 	Timestamp time.Time `firestore:"timestamp" json:"timestamp"` // When this utilization snapshot was taken
 	Value     float64   `firestore:"value" json:"value"`         // Utilization rate as percentage
+}
+
+// UserLoan represents a single borrow/repay event for charting.
+// This struct contains user loan activity data suitable for time-series charts.
+type UserLoan struct {
+	Value     string    `json:"value"`     // Total value after the event (u256 string, USD value)
+	Timestamp time.Time `json:"timestamp"` // When the event occurred
+	MarketID  string    `json:"marketId"`  // Which market this event was in
+	EventType string    `json:"eventType"` // Type of event: "Borrow" or "Repay"
+	Operation string    `json:"operation"` // Operation: "+" for increases, "-" for decreases
+	LoanTokenSymbol string    `json:"loan_token_symbol"` // Loan token symbol
+	CollateralTokenSymbol string    `json:"collateral_token_symbol"` // Collateral token symbol
 }

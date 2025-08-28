@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 	"time"
+	"volos-backend/services"
 	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
@@ -93,6 +94,7 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 		"caller":     caller,
 		"tx_hash":    txHash,
 		"event_type": eventType,
+		"loan_price": services.GetTokenPrice(marketID),
 	}
 	if _, err := marketRef.Collection("market_history").NewDoc().Set(ctx, history); err != nil {
 		slog.Error("failed to add market history entry", "market_id", marketID, "error", err)

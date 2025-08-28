@@ -1,7 +1,7 @@
 "use client"
 
-import { TotalBorrowData, TotalSupplyData, UtilizationData } from "@/app/services/api.service"
-import { formatPercentage, formatShortDate, formatTimestamp } from "@/app/utils/format.utils"
+import { UserLoan } from "@/app/services/api.service"
+import { formatShortDate, formatTimestamp } from "@/app/utils/format.utils"
 import { getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,29 +9,25 @@ import { cn } from "@/lib/utils"
 import { useMemo } from "react"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
-type TokenChartData = TotalSupplyData | TotalBorrowData | UtilizationData
-
-interface TokenChartProps {
-  data: Array<TokenChartData>
+interface LoansChartProps {
+  data: UserLoan[]
   title: string
   description: string
   color?: string
   className?: string
-  decimals?: number
   selectedTimePeriod: TimePeriod
   onTimePeriodChangeAction: (period: TimePeriod) => void
 }
 
-export function Chart({
+export function LoansChart({
   data,
   title,
   description,
-  color = "rgb(99, 102, 241)",
+  color = "#D95C12",
   className,
-  decimals = 6,
   selectedTimePeriod,
   onTimePeriodChangeAction,
-}: TokenChartProps) {
+}: LoansChartProps) {
 
   // Filter data based on selected time period
   const filteredData = useMemo(() => {
@@ -47,26 +43,12 @@ export function Chart({
     onTimePeriodChangeAction(period)
   }
 
-  const transformedData = filteredData.map(item => {
-    const rawValue = (item as TokenChartData).value;
-
-    // TODO: this is a workaround to handle large numbers that are stored as strings which are uint256.
-    // Number type is 64 bit meaning this won't work for numbers larger than 2^53.
-    // TODO: find a better way to handle this.
-    if (typeof rawValue === 'string') { 
-      const bigValue = Number(rawValue);
-      const divisor = Math.pow(10, decimals);
-      return {
-        ...item,
-        value: bigValue / divisor
-      };
-    }
-    
-    return {
-      ...item,
-      value: rawValue
-    };
-  })
+  // Transform data for the chart
+  const transformedData = filteredData.map(item => ({
+    ...item,
+    value: parseFloat(item.value),
+    timestamp: new Date(item.timestamp)
+  }))
 
   return (
     <Card className={cn("bg-gray-700/60 border-none rounded-3xl", className)}>
@@ -96,21 +78,37 @@ export function Chart({
                 fontSize={10}
                 tickLine={false}
                 tickFormatter={(str) => {
-                  return formatShortDate(str); //TODO: this should be formatted diferently if the period is all time
+                  return formatShortDate(str);
                 }}
-                height={50}
-                interval={7}
-                tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}
-                tickMargin={5}
-                stroke="rgba(75, 85, 99, 0.3)"
+                stroke="#6B7280"
               />
               <YAxis 
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
-                width={35}
-                tick={{ fill: 'rgb(156 163 175)' }}
-                stroke="rgba(75, 85, 99, 0.3)"
+                tickFormatter={(value) => `$${value.toFixed(2)}`}
+                stroke="#6B7280"
+              />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload as UserLoan;
+                    return (
+                      <div className="bg-gray-800/90 border border-gray-600 rounded-lg p-3 shadow-lg">
+                        <p className="text-gray-300 text-sm">
+                          {formatTimestamp(Number(label))}
+                        </p>
+                        <p className="text-white font-semibold">
+                          ${parseFloat(data.value).toFixed(2)}
+                        </p>
+                        <p className="text-gray-400 text-xs">
+                          {data.eventType} • {data.loan_token_symbol} / {data.collateral_token_symbol}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
               />
               <Line
                 type="monotone"
@@ -118,27 +116,7 @@ export function Chart({
                 stroke={color}
                 strokeWidth={2}
                 dot={false}
-                style={{ filter: `drop-shadow(0 0 6px ${color})` }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(31, 41, 55, 0.9)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(75, 85, 99, 0.4)',
-                  borderRadius: '0.5rem',
-                  fontSize: '12px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                }}
-                labelStyle={{ color: 'rgb(156 163 175)' }}
-                itemStyle={{ color: 'rgb(229 231 235)' }}
-                labelFormatter={(label) => {
-                  return formatTimestamp(label);
-                }}
-                formatter={(value) => {
-                  const base = Array.isArray(value) ? value[0] : value
-                  const num = typeof base === 'string' ? parseFloat(base) : (base as number)
-                  return [formatPercentage(num, 2)]
-                }}
+                activeDot={{ r: 4, fill: color }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -146,4 +124,4 @@ export function Chart({
       </CardContent>
     </Card>
   )
-} 
+}

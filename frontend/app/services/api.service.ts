@@ -75,6 +75,17 @@ export type User = {
   staked_vls: Record<string, number>;
   created_at: string | null;
 };
+
+export type UserLoan = {
+  value: string;
+  timestamp: Date;
+  marketId: string;
+  eventType: string;
+  operation: string;
+  loan_token_symbol: string;
+  collateral_token_symbol: string;
+};
+
 export interface Proposal {
   id: string
   title: string
@@ -125,10 +136,16 @@ export interface Market {
   id: string
   loan_token: string
   collateral_token: string
+  loan_token_name: string
+  loan_token_symbol: string
+  loan_token_decimals: number
+  collateral_token_name: string
+  collateral_token_symbol: string
+  collateral_token_decimals: number
   total_supply: string
   total_borrow: string
-  current_supply_apr: number
-  current_borrow_apr: number
+  supply_apr: number
+  borrow_apr: number
   utilization_rate: number
   created_at: string
   updated_at: string
@@ -147,6 +164,12 @@ export interface MarketActivityResponse {
 }
 
 const API_BASE = 'http://localhost:8080/api';
+
+export async function getUserLoanHistory(userAddress: string): Promise<UserLoan[]> {
+  const res = await axios.get(`${API_BASE}/user-loans`, { params: { user: userAddress } });
+  return res.data;
+}
+
 export async function getMarketActivity(marketId: string, limit?: number, lastId?: string): Promise<MarketActivityResponse> {
   const params: Record<string, string | number> = { marketId };
   if (limit) params.limit = limit;
@@ -155,11 +178,6 @@ export async function getMarketActivity(marketId: string, limit?: number, lastId
   const res = await axios.get(`${API_BASE}/market-activity`, { params });
   return res.data;
 }
-
-export async function getUserLoanHistory(caller: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/user-loans`, { params: { caller } });
-  return res.data;
-} 
 
 export async function getUserCollateralHistory(caller: string, marketId: string): Promise<ChartData[]> {
   const res = await axios.get(`${API_BASE}/user-collateral`, { params: { caller, marketId } });
@@ -225,6 +243,7 @@ export async function getMarkets(limit?: number, lastId?: string): Promise<Marke
 export async function getMarket(marketId: string): Promise<Market> {
   const encoded = encodeURIComponent(marketId);
   const res = await axios.get(`${API_BASE}/market/${encoded}`);
+  console.log(res.data);
   return res.data;
 }
 
