@@ -45,16 +45,16 @@ export function useMarketsQuery() {
         currentPrice: "0", // TODO: Get current price from oracle
         borrowAPR: market.current_borrow_apr,
         supplyAPR: market.current_supply_apr,
-        utilization: "0", // TODO: Calculate from total supply/borrow
+        utilization: String(market.utilization_rate),
         
         // Token information fields
-        loanTokenName: "MockName1", // TODO: Get actual token name
-        loanTokenSymbol: "MOCK1", // TODO: Get actual token symbol from token path
-        loanTokenDecimals: 6, // TODO: Get actual decimals from token info
+        loanTokenName: market.loan_token_name,
+        loanTokenSymbol: market.loan_token_symbol,
+        loanTokenDecimals: market.loan_token_decimals,
         
-        collateralTokenName: "MockName2", // TODO: Get actual token name
-        collateralTokenSymbol: "MOCK2", // TODO: Get actual token symbol from token path
-        collateralTokenDecimals: 6, // TODO: Get actual decimals from token info
+        collateralTokenName: market.collateral_token_name,
+        collateralTokenSymbol: market.collateral_token_symbol,
+        collateralTokenDecimals: market.collateral_token_decimals,
         
         marketId: market.id,
       }));
@@ -101,16 +101,16 @@ export function useMarketQuery(marketId: string) {
         currentPrice: "0", // TODO: Get current price from oracle
         borrowAPR: market.current_borrow_apr,
         supplyAPR: market.current_supply_apr,
-        utilization: "0", // TODO: Calculate from total supply/borrow
+        utilization: String(market.utilization_rate),
         
         // Token information fields
-        loanTokenName: "MockName1", // TODO: Get actual token name
-        loanTokenSymbol: "MOCK1", // TODO: Get actual token symbol from token path
-        loanTokenDecimals: 6, // TODO: Get actual decimals from token info
+        loanTokenName: market.loan_token_name,
+        loanTokenSymbol: market.loan_token_symbol,
+        loanTokenDecimals: market.loan_token_decimals,
         
-        collateralTokenName: "MockName2", // TODO: Get actual token name
-        collateralTokenSymbol: "MOCK2", // TODO: Get actual token symbol from token path
-        collateralTokenDecimals: 6, // TODO: Get actual decimals from token info
+        collateralTokenName: market.collateral_token_name,
+        collateralTokenSymbol: market.collateral_token_symbol,
+        collateralTokenDecimals: market.collateral_token_decimals,
         
         marketId: market.id,
       };

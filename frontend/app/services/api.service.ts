@@ -136,6 +136,12 @@ export interface Market {
   id: string
   loan_token: string
   collateral_token: string
+  loan_token_name: string
+  loan_token_symbol: string
+  loan_token_decimals: number
+  collateral_token_name: string
+  collateral_token_symbol: string
+  collateral_token_decimals: number
   total_supply: string
   total_borrow: string
   current_supply_apr: number
