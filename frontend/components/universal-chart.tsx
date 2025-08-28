@@ -1,7 +1,7 @@
 "use client"
 
 import { TotalBorrowData, TotalSupplyData, UtilizationData } from "@/app/services/api.service"
-import { formatShortDate, formatTimestamp } from "@/app/utils/format.utils"
+import { formatPercentage, formatShortDate, formatTimestamp } from "@/app/utils/format.utils"
 import { getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -133,6 +133,11 @@ export function Chart({
                 itemStyle={{ color: 'rgb(229 231 235)' }}
                 labelFormatter={(label) => {
                   return formatTimestamp(label);
+                }}
+                formatter={(value) => {
+                  const base = Array.isArray(value) ? value[0] : value
+                  const num = typeof base === 'string' ? parseFloat(base) : (base as number)
+                  return [formatPercentage(num, 2)]
                 }}
               />
             </LineChart>

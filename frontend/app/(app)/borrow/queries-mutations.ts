@@ -43,8 +43,8 @@ export function useMarketsQuery() {
         loanToken: market.loan_token,
         collateralToken: market.collateral_token,
         currentPrice: "0", // TODO: Get current price from oracle
-        borrowAPR: market.current_borrow_apr,
-        supplyAPR: market.current_supply_apr,
+        borrowAPR: market.borrow_apr,
+        supplyAPR: market.supply_apr,
         utilization: String(market.utilization_rate),
         
         // Token information fields
@@ -99,8 +99,8 @@ export function useMarketQuery(marketId: string) {
         loanToken: market.loan_token,
         collateralToken: market.collateral_token,
         currentPrice: "0", // TODO: Get current price from oracle
-        borrowAPR: market.current_borrow_apr,
-        supplyAPR: market.current_supply_apr,
+        borrowAPR: market.borrow_apr,
+        supplyAPR: market.supply_apr,
         utilization: String(market.utilization_rate),
         
         // Token information fields

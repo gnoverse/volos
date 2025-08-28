@@ -144,8 +144,8 @@ export interface Market {
   collateral_token_decimals: number
   total_supply: string
   total_borrow: string
-  current_supply_apr: number
-  current_borrow_apr: number
+  supply_apr: number
+  borrow_apr: number
   utilization_rate: number
   created_at: string
   updated_at: string
@@ -243,6 +243,7 @@ export async function getMarkets(limit?: number, lastId?: string): Promise<Marke
 export async function getMarket(marketId: string): Promise<Market> {
   const encoded = encodeURIComponent(marketId);
   const res = await axios.get(`${API_BASE}/market/${encoded}`);
+  console.log(res.data);
   return res.data;
 }
 

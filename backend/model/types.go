@@ -77,8 +77,8 @@ type Market struct {
 	CollateralTokenDecimals int64     `firestore:"collateral_token_decimals" json:"collateral_token_decimals"` // Collateral token decimals
 	TotalSupply             string    `firestore:"total_supply" json:"total_supply"`                           // Total supply amount (u256 string)
 	TotalBorrow             string    `firestore:"total_borrow" json:"total_borrow"`                           // Total borrow amount (u256 string)
-	CurrentSupplyAPR        float64   `firestore:"current_supply_apr" json:"current_supply_apr"`               // Current supply APR (percentage)
-	CurrentBorrowAPR        float64   `firestore:"current_borrow_apr" json:"current_borrow_apr"`               // Current borrow APR (percentage)
+	SupplyAPR               float64   `firestore:"supply_apr" json:"supply_apr"`                             // Current supply APR (percentage)
+	BorrowAPR               float64   `firestore:"borrow_apr" json:"borrow_apr"`                             // Current borrow APR (percentage)
 	UtilizationRate         float64   `firestore:"utilization_rate" json:"utilization_rate"`                   // Current utilization rate (borrow/supply) as percentage
 	CreatedAt               time.Time `firestore:"created_at" json:"created_at"`                               // When the market was created
 	UpdatedAt               time.Time `firestore:"updated_at" json:"updated_at"`                               // Last time market data was updated
