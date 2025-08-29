@@ -16,22 +16,38 @@ The system calculates borrowing capacity based on collateral values derived from
 
 ## Setup
 
-1. First, follow the setup instructions from [Gnoswap](https://github.com/gnoswap-labs/gnoswap) to set up your development environment.
+Clone the repository and set up environment files:
+```bash
+# Clone the Volos repository and navigate to the project directory
+git clone https://github.com/gnoverse/volos && cd volos
 
-2. Add Volos realms to your gno repository:
+# Copy example environment files to create your local configuration
+# These files contain necessary environment variables for the backend and frontend
+mv backend/.env.example backend/.env && mv frontend/.env.example frontend/.env
+```
 
-   ```bash
-   cp -r volos/* $WORKDIR/gno.land/examples/r/volos/
-   ```
+Start the development environment using Docker Compose:
+```bash
+# Launch all services (gno.land node, tx-indexer, backend, frontend) in detached mode
+docker compose up -d -w
+```
 
-3. Configure admin addresses:
+## Run tests
 
-   For proper testing and development, you'll need to update the admin addresses in several locations:
+Execute the complete test suite to verify the protocol functionality:
+```bash
+# Navigate to the test directory containing Volos protocol tests
+cd tests/volos
 
-   - In Volos test files: Update the admin addresses to match your test accounts
-   - In Gnoswap test files: Ensure the admin addresses align with your test environment
-   - To avoid manual token minting, you can aloso modify the admin address in `p/gnoswap/consts.gno` to match your preferred test account
+# Run the full test workflow using the custom makefile
+# This includes unit tests, integration tests, and end-to-end scenarios
+# covering lending, borrowing, liquidation, and interest rate calculations
+make -f test.mk full-workflow
+```
 
-4. Run Make file tests:
-
-   Before running Volos tests, you'll need to first initialize a WUGNOT-GNS pool in Gnoswap and mint at least one liquidity position. This provides the price oracle that Volos depends on. After that's done, you can proceed with testing the Volos functions.
+The test suite will:
+- Deploy all necessary contracts to the local gno.land node
+- Initialize lending markets with test tokens
+- Execute various lending and borrowing scenarios
+- Validate interest rate calculations and health factor monitoring
+- Test liquidation mechanisms and edge cases
