@@ -25,8 +25,11 @@ COPY --from=builder /go/bin/gnokey /app/gnokey
 
 COPY --from=builder /app/src /app/src
 
-COPY ./r/ /app/src/examples/gno.land/r/
-COPY ./p/ /app/src/examples/gno.land/p/
+COPY ./r/gnoswap/v1/test_token/bar/ /app/src/examples/gno.land/r/gnoswap/v1/test_token/bar/
+COPY ./p/gnoswap/consts/ /app/src/examples/gno.land/p/gnoswap/consts/
+
+# temporary
+COPY ./r/volos/core/volos.gno /app/src/examples/gno.land/r/volos/core/
 
 COPY ./keys.db /root/.config/gno/data/keys.db
 
