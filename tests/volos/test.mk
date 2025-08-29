@@ -1,25 +1,13 @@
 include _info.mk
+include key_setup.mk
 include ../gnoswap/_info.mk
 include ../gnoswap/test.mk
 
 # Complete flow that includes both GNS-WUGNOT and BAR-WUGNOT operations
-full-workflow: setup-keys pool-create-gns-wugnot-default mint-gns-gnot enable-irm enable-lltv market-create-gns-wugnot supply-assets-gns-wugnot supply-collateral-gns-wugnot borrow-gns \
+full-workflow: set-keys pool-create-gns-wugnot-default mint-gns-gnot enable-irm enable-lltv market-create-gns-wugnot supply-assets-gns-wugnot supply-collateral-gns-wugnot borrow-gns \
 	pool-create-bar-wugnot-default mint-bar-wugnot market-create-bar-wugnot supply-assets-bar-wugnot supply-collateral-bar-wugnot borrow-bar \
 	check-position-gns-wugnot check-position-bar-wugnot reset-keys
 	@echo "************ WORKFLOW FINISHED ************"
-
-setup-keys:
-	$(info ************ Setup keys ************)
-	@echo "" | mkdir -p ~/.config/gno/data/
-	@echo "" | [ -e ~/.config/gno/data/keys.db ] && mv ~/.config/gno/data/keys.db ~/.config/gno/data/keys.db.bak || true
-	@echo "" | cp -r ../../contract/keys.db ~/.config/gno/data
-	@echo
-
-reset-keys:
-	$(info ************ Reset keys ************)
-	@echo "" | rm -rf ~/.config/gno/data/keys.db
-	@echo "" | [ -e ~/.config/gno/data/keys.db.bak ] && mv ~/.config/gno/data/keys.db.bak ~/.config/gno/data/keys.db || true
-	@echo
 
 # Enable the linear IRM
 enable-irm:
