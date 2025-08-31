@@ -1,5 +1,5 @@
 import { MarketInfo } from "@/app/types";
-import { formatLTV, formatPercentage, formatTokenAmount, formatUtilization } from "@/app/utils/format.utils";
+import { formatPercentage, formatTokenAmount } from "@/app/utils/format.utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 interface MarketDashboardProps {
   market: MarketInfo;
@@ -7,10 +7,6 @@ interface MarketDashboardProps {
 }
 
 export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
-  // mock data from utilization for risk level
-  const utilizationPercent = Number(formatUtilization(market.utilization).replace('%', ''));
-  const riskLevel = Math.min(utilizationPercent, 100);
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Market Overview Card */}
@@ -99,11 +95,11 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
               <div className="w-full bg-gray-800 rounded-full h-2">
                 <div 
                   className="bg-gradient-to-r from-green-500 to-emerald-400 h-2 rounded-full" 
-                  style={{ width: `${formatUtilization(market.utilization)}` }}
+                  style={{ width: `${formatPercentage(market.utilization)}` }}
                 ></div>
               </div>
               <span className="text-xs font-semibold text-gray-200 whitespace-nowrap">
-                {formatUtilization(market.utilization)}
+                {formatPercentage(market.utilization)}
               </span>
             </div>
           </div>
@@ -122,13 +118,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           {/* APR Rates */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="text-xs text-gray-400 mb-0.5">Supply Rate</div>
+              <div className="text-xs text-gray-400 mb-0.5">Supply APR</div>
               <div className="text-2xl text-gray-200">
                 {formatPercentage(market.supplyAPR, 2)}
               </div>
             </div>
             <div>
-              <div className="text-xs text-gray-400 mb-0.5">Borrow Rate</div>
+              <div className="text-xs text-gray-400 mb-0.5">Borrow APR</div>
               <div className="text-2xl text-gray-200">
                 {formatPercentage(market.borrowAPR, 2)}
               </div>
@@ -140,14 +136,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             <div>
               <div className="text-xs text-gray-400 mb-0.5">Liq. LTV</div>
               <div className="text-2xl text-gray-200">
-                {formatLTV(market.lltv, 18)}
+                {formatPercentage(market.lltv)}
               </div>
             </div>
             <div>
               <div className="text-xs text-gray-400 mb-0.5">Market Fee</div>
               <div className="text-2xl text-gray-200">
-                {/* {formatRate(market.fee, 18, true)} */}
-                3.00%
+                {formatPercentage(market.fee)}
               </div>
             </div>
           </div>
@@ -160,13 +155,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
                 <div 
                   className="h-2 rounded-full" 
                   style={{ 
-                    width: `${riskLevel}%`,
+                    width: `${formatPercentage(market.utilization)}`, //TODO: use risk level
                     background: "linear-gradient(to right, #10b981, #f59e0b, #ef4444)"
                   }}
                 ></div>
               </div>
               <span className="text-xs font-semibold text-gray-200 whitespace-nowrap">
-                {riskLevel}%
+                {formatPercentage(market.utilization)} {/* TODO: use risk level */}
               </span>
             </div>
           </div>

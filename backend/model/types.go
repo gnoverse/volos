@@ -91,6 +91,7 @@ type Market struct {
 	UtilizationRate         float64   `firestore:"utilization_rate" json:"utilization_rate"`                   // Current utilization rate (borrow/supply) as percentage
 	CreatedAt               time.Time `firestore:"created_at" json:"created_at"`                               // When the market was created
 	UpdatedAt               time.Time `firestore:"updated_at" json:"updated_at"`                               // Last time market data was updated
+	LLTV                    float64   `firestore:"lltv" json:"lltv"`                                           // Liquidation Loan-to-Value ratio (WAD-scaled, e.g., 75% = 0.75 * 1e18)
 }
 
 // APRHistory represents a single APR history entry stored in the apr subcollection.

@@ -36,7 +36,7 @@ export function useMarketsQuery() {
         // Params fields
         poolPath: market.id, // TODO: Extract pool path from market ID
         irm: "default", // TODO: Get actual IRM from market data
-        lltv: 0.8, // TODO: Get actual LLTV from market data (0.8 in WAD)
+        lltv: market.lltv,
         isToken0Loan: true, // TODO: Determine from market data
         
         // Additional fields
@@ -92,7 +92,7 @@ export function useMarketQuery(marketId: string) {
         // Params fields
         poolPath: market.id, // TODO: Extract pool path from market ID
         irm: "default", // TODO: Get actual IRM from market data
-        lltv: 0.8, // TODO: Get actual LLTV from market data (0.8 in WAD)
+        lltv: market.lltv,
         isToken0Loan: true, // TODO: Determine from market data
         
         // Additional fields

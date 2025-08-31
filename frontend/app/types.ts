@@ -149,6 +149,7 @@ export const MarketSchema = z.object({
   utilization_rate: z.number(),
   created_at: z.string(),
   updated_at: z.string(),
+  lltv: z.number(),
 });
 
 export const MarketsResponseSchema = z.object({
@@ -162,8 +163,6 @@ export const MarketActivityResponseSchema = z.object({
   has_more: z.boolean(),
   last_id: z.string(),
 });
-
-
 
 // Updated to match RpcMarketInfo structure from json.gno
 export const MarketInfoSchema = z.object({

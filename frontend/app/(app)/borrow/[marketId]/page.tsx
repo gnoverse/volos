@@ -1,14 +1,13 @@
 "use client"
 
 import { useUserAddress } from "@/app/utils/address.utils"
-import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
-import { useHealthFactorQuery, useMarketQuery, usePositionQuery, useUserLoanHistoryQuery } from "../queries-mutations"
+import { useHealthFactorQuery, useMarketQuery, useUserLoanHistoryQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 const queryClient = new QueryClient()
@@ -22,7 +21,6 @@ function MarketPageContent() {
   const { userAddress } = useUserAddress()
 
   const { data: marketInfo, isLoading: isMarketLoading } = useMarketQuery(marketId)
-  const { data: positionData } = usePositionQuery(marketId, userAddress);
   const { data: healthFactorData } = useHealthFactorQuery(marketId, userAddress)
   const { data: userLoanHistory } = useUserLoanHistoryQuery(userAddress)
 
@@ -30,7 +28,7 @@ function MarketPageContent() {
   const currentLoan = userLoanHistory && userLoanHistory.length > 0 ? userLoanHistory[userLoanHistory.length - 1].value : 0;
 
   //TODO
-  const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
+  //const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
 
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
@@ -60,9 +58,9 @@ function MarketPageContent() {
               apyVariations={apyVariations} 
               cardStyles={CARD_STYLES}
               healthFactor={healthFactorData?.healthFactor ?? "0"}
-              currentCollateral={currentCollateral}
-              currentLoan={currentLoan}
-              positionData={positionData}
+              currentCollateral={0}
+              currentLoan={currentLoan as number}
+              positionData={null}
               caller={userAddress}
             />
           ) : (
@@ -79,12 +77,12 @@ function MarketPageContent() {
             supplyValue={100}
             borrowValue={100}
             healthFactor={healthFactorData?.healthFactor ?? "0"}
-            currentCollateral={currentCollateral}
-            currentLoan={currentLoan}
-            ltv={marketInfo.lltv}
+            currentCollateral={0}
+            currentLoan={currentLoan as number}
+            ltv={marketInfo.lltv.toString()}
             collateralTokenDecimals={marketInfo.collateralTokenDecimals}
             loanTokenDecimals={marketInfo.loanTokenDecimals}
-            positionData={positionData}
+            positionData={null}
           />
         ) : (
           <div className="lg:col-span-3 h-174 bg-gray-700/60 rounded-3xl animate-pulse" />

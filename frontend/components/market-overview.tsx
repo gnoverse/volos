@@ -34,6 +34,7 @@ export function MarketOverview({
           title="Supply & Borrow"
           description="Compare total supply and borrow amounts over time"
           className={cardStyles}
+          symbol={market.loanTokenSymbol}
         />
       </div>
 

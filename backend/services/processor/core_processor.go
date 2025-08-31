@@ -43,6 +43,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 					createEvent.CollateralTokenSymbol,
 					createEvent.CollateralTokenDecimals,
 					createEvent.Timestamp,
+					createEvent.LLTV,
 				)
 			}
 
@@ -114,6 +115,7 @@ func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent
 		"collateralTokenSymbol",
 		"collateralTokenDecimals",
 		"currentTimestamp",
+		"lltv",
 	}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
@@ -132,6 +134,7 @@ func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent
 		CollateralTokenSymbol:   fields["collateralTokenSymbol"],
 		CollateralTokenDecimals: fields["collateralTokenDecimals"],
 		Timestamp:               fields["currentTimestamp"],
+		LLTV:                    fields["lltv"],
 	}, true
 }
 
