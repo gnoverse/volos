@@ -10,9 +10,17 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"os"
+	_ "github.com/joho/godotenv/autoload"
+
 )
 
-const txIndexerUrl = "http://localhost:3100"
+var txIndexerUrl = func() string {
+	if url := os.Getenv("TX_INDEXER_URL"); url != "" {
+		return url
+	}
+	return "http://localhost:3100"
+}()
 
 // QueryBuilder helps build and execute GraphQL queries for the indexer
 type QueryBuilder struct {

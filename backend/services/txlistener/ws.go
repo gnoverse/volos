@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"volos-backend/indexer"
 	"volos-backend/model"
@@ -23,12 +24,17 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
+	_ "github.com/joho/godotenv/autoload"
 )
 
-const (
-	wsURL    = "ws://localhost:3100/graphql/query"
-	protocol = "graphql-transport-ws"
-)
+const protocol = "graphql-transport-ws"
+
+var wsURL = func() string {
+	if url := os.Getenv("WS_URL"); url != "" {
+		return url
+	}
+	return "ws://localhost:3100/graphql/query"
+}()
 
 // StartVolosTransactionListener establishes a WebSocket connection to the GraphQL endpoint
 // and subscribes to real-time transactions from both core and governance packages.

@@ -15,10 +15,12 @@ import (
 	// Firestore
 	"google.golang.org/api/option"
 
+	_ "github.com/joho/godotenv/autoload"
 	"volos-backend/services/aggregator"
 )
 
 var firestoreClient *firestore.Client
+var frontendURL string
 
 func init() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ // TODO: switch to JSON handler for production
@@ -35,6 +37,13 @@ func init() {
 		os.Exit(1)
 	}
 	firestoreClient = client
+
+	frontendURL = func() string {
+		if url := os.Getenv("FRONTEND_URL"); url != "" {
+			return url
+		}
+		return "http://localhost:3000"
+}()
 }
 
 func main() {
@@ -64,7 +73,7 @@ func main() {
 
 func withCORS(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		w.Header().Set("Access-Control-Allow-Origin", frontendURL)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == "OPTIONS" {

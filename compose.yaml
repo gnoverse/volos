@@ -1,0 +1,66 @@
+services:
+  gnodev:
+    build: ./contract/
+    command: gnodev -paths gno.land/r/volos/**,gno.land/r/gnoswap/** -node-rpc-listener 0.0.0.0:26657 -web-listener 0.0.0.0:8888
+    develop:
+      watch:
+        - action: sync
+          path: ./contract/r
+          target: /app/src/examples/gno.land/r
+          ignore:
+            - .git/
+        - action: sync
+          path: ./contract/p
+          target: /app/src/examples/gno.land/p
+          ignore:
+            - .git/
+    ports:
+      - "8888:8888"
+      - "26657:26657"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/r/volos/render"]
+      interval: 60s
+      retries: 5
+
+  tx-indexer:
+    build: .
+    ports:
+      - "3100:3100"
+    depends_on:
+      gnodev:
+        condition: service_healthy
+    restart: on-failure
+
+  backend:
+    build: ./backend/
+    command: go run .
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./backend
+          target: /app
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - tx-indexer
+
+  frontend:
+    build: ./frontend/
+    command: npm run dev
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+            - .git/
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend

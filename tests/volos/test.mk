@@ -1,11 +1,12 @@
 include _info.mk
-include ../gnoswap-tests/_info.mk
-include ../gnoswap-tests/test.mk
+include key_setup.mk
+include ../gnoswap/_info.mk
+include ../gnoswap/test.mk
 
 # Complete flow that includes both GNS-WUGNOT and BAR-WUGNOT operations
-full-workflow: pool-create-gns-wugnot-default mint-gns-gnot enable-irm enable-lltv market-create-gns-wugnot supply-assets-gns-wugnot supply-collateral-gns-wugnot borrow-gns \
+full-workflow: set-keys pool-create-gns-wugnot-default mint-gns-gnot enable-irm enable-lltv market-create-gns-wugnot supply-assets-gns-wugnot supply-collateral-gns-wugnot borrow-gns \
 	pool-create-bar-wugnot-default mint-bar-wugnot market-create-bar-wugnot supply-assets-bar-wugnot supply-collateral-bar-wugnot borrow-bar \
-	check-position-gns-wugnot check-position-bar-wugnot
+	check-position-gns-wugnot check-position-bar-wugnot reset-keys
 	@echo "************ WORKFLOW FINISHED ************"
 
 # Enable the linear IRM

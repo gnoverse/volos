@@ -163,7 +163,7 @@ export interface MarketActivityResponse {
   last_id: string
 }
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = process.env.API_BASE_URL || 'http://localhost:8080/api';
 
 export async function getUserLoanHistory(userAddress: string): Promise<UserLoan[]> {
   const res = await axios.get(`${API_BASE}/user-loans`, { params: { user: userAddress } });
