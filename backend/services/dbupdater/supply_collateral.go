@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strings"
 	"time"
+	"volos-backend/services"
 	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
@@ -90,6 +91,7 @@ func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, tim
 		"caller":     caller,
 		"tx_hash":    txHash,
 		"event_type": eventType,
+		"loan_price": services.GetTokenPrice(marketID),
 	}
 
 	if _, err := marketRef.Collection("market_history").NewDoc().Set(ctx, history); err != nil {

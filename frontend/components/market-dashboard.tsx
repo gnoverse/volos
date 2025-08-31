@@ -1,5 +1,5 @@
 import { MarketInfo } from "@/app/types";
-import { formatLTV, formatTokenAmount, formatUtilization } from "@/app/utils/format.utils";
+import { formatLTV, formatPercentage, formatTokenAmount, formatUtilization } from "@/app/utils/format.utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 interface MarketDashboardProps {
   market: MarketInfo;
@@ -124,13 +124,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             <div>
               <div className="text-xs text-gray-400 mb-0.5">Supply Rate</div>
               <div className="text-2xl text-gray-200">
-                {market.supplyAPR}
+                {formatPercentage(market.supplyAPR, 2)}
               </div>
             </div>
             <div>
               <div className="text-xs text-gray-400 mb-0.5">Borrow Rate</div>
               <div className="text-2xl text-gray-200">
-                {market.borrowAPR}
+                {formatPercentage(market.borrowAPR, 2)}
               </div>
             </div>
           </div>

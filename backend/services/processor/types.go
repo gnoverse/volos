@@ -3,10 +3,17 @@ package processor
 //core events
 
 type CreateMarketEvent struct {
-	MarketID        string
-	LoanToken       string
-	CollateralToken string
-	Timestamp       string
+	MarketID                string
+	LoanToken               string
+	CollateralToken         string
+	IsToken0Loan            string
+	LoanTokenName           string
+	LoanTokenSymbol         string
+	LoanTokenDecimals       string
+	CollateralTokenName     string
+	CollateralTokenSymbol   string
+	CollateralTokenDecimals string
+	Timestamp               string
 }
 
 type SupplyEvent struct {

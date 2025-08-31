@@ -1,7 +1,7 @@
 "use client"
 
 import { Proposal } from "@/app/services/api.service"
-import { getProposalStatusColor } from "@/app/utils/format.utils"
+import { getProposalStatusColor } from "@/app/utils/ui.utils"
 import CopiableAddress from "@/components/copiable-addess"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"

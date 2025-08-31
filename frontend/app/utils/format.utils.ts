@@ -65,6 +65,23 @@ export function formatLTV(
 }
 
 /**
+ * Formats a plain number as a percentage string with fixed decimals.
+ * Accepts number or numeric string. Example: 5.2 => "5.20%"
+ */
+export function formatPercentage(
+  value: number | string,
+  maxFractionDigits: number = 2
+): string {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (Number.isNaN(num)) return `0%`;
+  const formatted = num.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxFractionDigits,
+  });
+  return `${formatted}%`;
+}
+
+/**
  * Formats a variable APY (e.g., 7D, 90D) given a base APR, a variation multiplier, and decimals.
  */
 export function formatApyVariation(

@@ -2,9 +2,12 @@ package dbfetcher
 
 import (
 	"context"
+	"log/slog"
+	"math/big"
 	"time"
 
 	"volos-backend/model"
+	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
 )
@@ -59,4 +62,90 @@ func GetUserPendingUnstakes(client *firestore.Client, userAddress string) ([]mod
 	}
 
 	return pendingUnstakes, nil
+}
+
+// GetUserLoanHistory retrieves all borrow/repay events for a user across all markets.
+// Returns cumulative total loan amounts in fiat (USD) ordered by timestamp in ascending order.
+func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.UserLoan, error) {
+	ctx := context.Background()
+	var results []model.UserLoan
+	cumulativeTotalUSD := big.NewFloat(0)
+
+	query := client.CollectionGroup("market_history").
+		Where("caller", "==", userAddress).
+		Where("event_type", "in", []string{"Borrow", "Repay"}).
+		OrderBy("timestamp", firestore.Asc)
+
+	historyIter := query.Documents(ctx)
+	defer historyIter.Stop()
+
+	for {
+		historyDoc, err := historyIter.Next()
+		if err != nil {
+			break
+		}
+
+		var history model.MarketHistory
+		if err := historyDoc.DataTo(&history); err != nil {
+			slog.Error("Error parsing market history", "error", err)
+			continue
+		}
+
+		amount := utils.ParseAmount(history.Value, "GetUserLoanHistory")
+		if amount.Sign() == 0 {
+			continue
+		}
+
+		marketRef := historyDoc.Ref.Parent.Parent
+		if marketRef == nil {
+			slog.Error("Invalid document path structure", "docPath", historyDoc.Ref.Path)
+			continue
+		}
+
+		marketID := marketRef.ID
+
+		marketData, err := marketRef.Get(ctx)
+		if err != nil {
+			slog.Error("Error getting market data", "error", err, "marketPath", marketRef.Path)
+			continue
+		}
+
+		var market model.Market
+		if err := marketData.DataTo(&market); err != nil {
+			slog.Error("Error parsing market data", "error", err)
+			continue
+		}
+
+		// Convert denom amount to USD value: (amount / 10^decimals) * price_per_token
+		amountFloat := new(big.Float).SetInt(amount)
+		priceFloat := new(big.Float).SetFloat64(history.LoanPrice)
+
+		decimals := big.NewInt(1)
+		decimals.Exp(big.NewInt(10), big.NewInt(int64(market.LoanTokenDecimals)), nil)
+		decimalsFloat := new(big.Float).SetInt(decimals)
+
+		actualTokens := new(big.Float).Quo(amountFloat, decimalsFloat)
+		eventValueUSD := new(big.Float).Mul(actualTokens, priceFloat)
+
+		switch history.Operation {
+		case "+":
+			cumulativeTotalUSD.Add(cumulativeTotalUSD, eventValueUSD)
+		case "-":
+			cumulativeTotalUSD.Sub(cumulativeTotalUSD, eventValueUSD)
+		}
+
+		point := model.UserLoan{
+			Value:                 cumulativeTotalUSD.Text('f', -1),
+			Timestamp:             history.Timestamp,
+			MarketID:              marketID,
+			EventType:             history.EventType,
+			Operation:             history.Operation,
+			LoanTokenSymbol:       market.LoanTokenSymbol,
+			CollateralTokenSymbol: market.CollateralTokenSymbol,
+		}
+
+		results = append(results, point)
+	}
+
+	return results, nil
 }
