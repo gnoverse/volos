@@ -21,7 +21,7 @@ const API_BASE = process.env.API_BASE_URL || 'http://localhost:8080/api';
 
 // API functions
 export async function getUserLoanHistory(userAddress: string): Promise<UserLoan[]> {
-  const response = await fetch(`${API_BASE}/user-loans?address=${userAddress}`);
+  const response = await fetch(`${API_BASE}/user-loans?user=${userAddress}`);
   if (!response.ok) throw new Error('Failed to fetch user loan history');
   return response.json();
 }
