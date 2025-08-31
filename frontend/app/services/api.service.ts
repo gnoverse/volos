@@ -1,292 +1,160 @@
-import axios from 'axios';
+import {
+  APRData,
+  ChartData,
+  Market,
+  MarketActivityResponse,
+  MarketSnapshot,
+  MarketsResponse,
+  PendingUnstake,
+  Proposal,
+  ProposalsResponse,
+  TotalBorrowData,
+  TotalCollateralSupplyData,
+  TotalSupplyData,
+  User,
+  UserLoan,
+  UserVote,
+  UtilizationData
+} from "@/app/types";
 
-export type ChartData = {
-  value: number;
-  timestamp: Date;
-};
-
-export type MarketHistory = {
-  timestamp: Date;
-  value: string;
-  delta: string;
-  operation: string;
-  caller: string;
-  tx_hash: string;
-  event_type: string;
-};
-
-export type APRData = {
-  timestamp: Date;
-  supply_apr: number;
-  borrow_apr: number;
-};
-
-export type TotalSupplyData = {
-  delta: string;
-  operation: string;
-  event_type: string;
-  timestamp: Date;
-  value: string;
-  caller: string;
-  tx_hash: string;
-};
-
-export type TotalBorrowData = {
-  delta: string;
-  operation: string;
-  event_type: string;
-  timestamp: Date;
-  value: string;
-  caller: string;
-  tx_hash: string;
-};
-
-export type TotalCollateralSupplyData = {
-  delta: string;
-  operation: string;
-  event_type: string;
-  timestamp: Date;
-  value: string;
-  caller: string;
-  tx_hash: string;
-};
-
-export type UtilizationData = {
-  timestamp: Date;
-  value: number;
-};
-
-export type MarketSnapshot = {
-  market_id: string;
-  timestamp: Date;
-  resolution: '4hour' | 'daily' | 'weekly';
-  supply_apr: number;
-  borrow_apr: number;
-  total_supply: string;
-  total_collateral_supply: string;
-  total_borrow: string;
-  utilization_rate: number;
-  created_at: Date;
-};
-
-export type User = {
-  address: string;
-  dao_member: boolean;
-  staked_vls: Record<string, number>;
-  created_at: string | null;
-};
-
-export type UserLoan = {
-  value: string;
-  timestamp: Date;
-  marketId: string;
-  eventType: string;
-  operation: string;
-  loan_token_symbol: string;
-  collateral_token_symbol: string;
-};
-
-export interface Proposal {
-  id: string
-  title: string
-  body: string
-  proposer: string
-  deadline: string
-  status: string
-  created_at: string
-  last_vote: string
-  yes_votes: number
-  no_votes: number
-  abstain_votes: number
-  total_votes: number
-  quorum: number
-}
-
-export interface ProposalsResponse {
-  proposals: Proposal[]
-  has_more: boolean
-  last_id: string
-}
-
-export interface GovernanceUserInfo {
-  address: string
-  vlsBalance: number
-  xvlsBalance: number
-  proposalThreshold: number
-  isMember: boolean
-}
-
-export interface UserVote {
-	proposal_id: string
-	voter: string
-	vote_choice: string
-	reason: string
-	xvls_amount: number
-	timestamp: string
-}
-
-export interface PendingUnstake {
-	amount: number
-	delegatee: string
-	unlock_at: string
-}
-
-// Market types
-export interface Market {
-  id: string
-  loan_token: string
-  collateral_token: string
-  loan_token_name: string
-  loan_token_symbol: string
-  loan_token_decimals: number
-  collateral_token_name: string
-  collateral_token_symbol: string
-  collateral_token_decimals: number
-  total_supply: string
-  total_borrow: string
-  supply_apr: number
-  borrow_apr: number
-  utilization_rate: number
-  created_at: string
-  updated_at: string
-}
-
-export interface MarketsResponse {
-  markets: Market[]
-  has_more: boolean
-  last_id: string
-}
-
-export interface MarketActivityResponse {
-  activities: MarketHistory[]
-  has_more: boolean
-  last_id: string
-}
-
-const API_BASE = process.env.API_BASE_URL || 'http://localhost:8080/api';
-
+// API functions
 export async function getUserLoanHistory(userAddress: string): Promise<UserLoan[]> {
-  const res = await axios.get(`${API_BASE}/user-loans`, { params: { user: userAddress } });
-  return res.data;
+  const response = await fetch(`/api/user/${userAddress}/loan-history`);
+  if (!response.ok) throw new Error('Failed to fetch user loan history');
+  return response.json();
 }
 
 export async function getMarketActivity(marketId: string, limit?: number, lastId?: string): Promise<MarketActivityResponse> {
-  const params: Record<string, string | number> = { marketId };
-  if (limit) params.limit = limit;
-  if (lastId) params.last_id = lastId;
+  const params = new URLSearchParams();
+  if (limit) params.append('limit', limit.toString());
+  if (lastId) params.append('lastId', lastId);
   
-  const res = await axios.get(`${API_BASE}/market-activity`, { params });
-  return res.data;
+  const response = await fetch(`/api/markets/${marketId}/activity?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch market activity');
+  return response.json();
 }
 
 export async function getUserCollateralHistory(caller: string, marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/user-collateral`, { params: { caller, marketId } });
-  return res.data;
+  const response = await fetch(`/api/markets/${marketId}/user/${caller}/collateral-history`);
+  if (!response.ok) throw new Error('Failed to fetch user collateral history');
+  return response.json();
 }
 
 export async function getUserBorrowHistory(caller: string, marketId: string): Promise<ChartData[]> {
-  const res = await axios.get(`${API_BASE}/user-borrow`, { params: { caller, marketId } });
-  return res.data;
-} 
+  const response = await fetch(`/api/markets/${marketId}/user/${caller}/borrow-history`);
+  if (!response.ok) throw new Error('Failed to fetch user borrow history');
+  return response.json();
+}
 
 export async function getProposals(limit?: number, lastId?: string): Promise<ProposalsResponse> {
-  const params: Record<string, string | number> = {};
-  if (limit) params.limit = limit;
-  if (lastId) params.last_id = lastId;
+  const params = new URLSearchParams();
+  if (limit) params.append('limit', limit.toString());
+  if (lastId) params.append('lastId', lastId);
   
-  const res = await axios.get(`${API_BASE}/proposals`, { params });
-  return res.data;
+  const response = await fetch(`/api/proposals?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch proposals');
+  return response.json();
 }
 
 export async function getActiveProposals(limit?: number, lastId?: string): Promise<ProposalsResponse> {
-  const params: Record<string, string | number> = {};
-  if (limit) params.limit = limit;
-  if (lastId) params.last_id = lastId;
+  const params = new URLSearchParams();
+  if (limit) params.append('limit', limit.toString());
+  if (lastId) params.append('lastId', lastId);
   
-  const res = await axios.get(`${API_BASE}/proposals/active`, { params });
-  return res.data;
+  const response = await fetch(`/api/proposals/active?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch active proposals');
+  return response.json();
 }
 
 export async function getProposal(proposalId: string): Promise<Proposal> {
-  const res = await axios.get(`${API_BASE}/proposal/${proposalId}`);
-  return res.data;
+  const response = await fetch(`/api/proposals/${proposalId}`);
+  if (!response.ok) throw new Error('Failed to fetch proposal');
+  return response.json();
 }
 
 export async function getUser(address: string): Promise<User> {
-  const res = await axios.get(`${API_BASE}/user`, { params: { address } });
-  return res.data;
+  const response = await fetch(`/api/users/${address}`);
+  if (!response.ok) throw new Error('Failed to fetch user');
+  return response.json();
 }
 
 export async function getUserVoteOnProposal(proposalId: string, userAddress: string): Promise<UserVote | null> {
-	const res = await axios.get(`${API_BASE}/user-vote`, { 
-		params: { proposalId, userAddress } 
-	});
-	return res.data;
+  const response = await fetch(`/api/proposals/${proposalId}/votes/${userAddress}`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error('Failed to fetch user vote');
+  return response.json();
 }
 
 export async function getUserPendingUnstakes(userAddress: string): Promise<PendingUnstake[]> {
-	const res = await axios.get(`${API_BASE}/user-pending-unstakes`, { 
-		params: { userAddress } 
-	});
-	return res.data;
+  const response = await fetch(`/api/users/${userAddress}/pending-unstakes`);
+  if (!response.ok) throw new Error('Failed to fetch pending unstakes');
+  return response.json();
 }
 
 export async function getMarkets(limit?: number, lastId?: string): Promise<MarketsResponse> {
-  const params: Record<string, string | number> = {};
-  if (limit) params.limit = limit;
-  if (lastId) params.last_id = lastId;
-
-  const res = await axios.get(`${API_BASE}/markets`, { params });
-  return res.data;
+  const params = new URLSearchParams();
+  if (limit) params.append('limit', limit.toString());
+  if (lastId) params.append('lastId', lastId);
+  
+  const response = await fetch(`/api/markets?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch markets');
+  return response.json();
 }
 
 export async function getMarket(marketId: string): Promise<Market> {
-  const encoded = encodeURIComponent(marketId);
-  const res = await axios.get(`${API_BASE}/market/${encoded}`);
-  console.log(res.data);
-  return res.data;
+  const response = await fetch(`/api/markets/${marketId}`);
+  if (!response.ok) throw new Error('Failed to fetch market');
+  return response.json();
 }
 
 export async function getAPRHistory(marketId: string, startTime?: string, endTime?: string): Promise<APRData[]> {
-  const params: Record<string, string> = { marketId };
-  if (startTime) params.startTime = startTime;
-  if (endTime) params.endTime = endTime;
+  const params = new URLSearchParams();
+  if (startTime) params.append('startTime', startTime);
+  if (endTime) params.append('endTime', endTime);
   
-  const res = await axios.get(`${API_BASE}/apr`, { params });
-  return res.data;
+  const response = await fetch(`/api/markets/${marketId}/apr-history?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch APR history');
+  return response.json();
 }
 
 export async function getBorrowHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalBorrowData[]> {
-  const params: Record<string, string> = { marketId };
-  if (startTime) params.startTime = startTime;
-  if (endTime) params.endTime = endTime;
-  const res = await axios.get(`${API_BASE}/borrow-history`, { params });
-  return res.data;
+  const params = new URLSearchParams();
+  if (startTime) params.append('startTime', startTime);
+  if (endTime) params.append('endTime', endTime);
+  
+  const response = await fetch(`/api/markets/${marketId}/borrow-history?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch borrow history');
+  return response.json();
 }
 
 export async function getSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalSupplyData[]> {
-  const params: Record<string, string> = { marketId };
-  if (startTime) params.startTime = startTime;
-  if (endTime) params.endTime = endTime;
-  const res = await axios.get(`${API_BASE}/supply-history`, { params });
-  return res.data;
+  const params = new URLSearchParams();
+  if (startTime) params.append('startTime', startTime);
+  if (endTime) params.append('endTime', endTime);
+  
+  const response = await fetch(`/api/markets/${marketId}/supply-history?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch supply history');
+  return response.json();
 }
 
 export async function getCollateralSupplyHistory(marketId: string, startTime?: string, endTime?: string): Promise<TotalCollateralSupplyData[]> {
-  const params: Record<string, string> = { marketId };
-  if (startTime) params.startTime = startTime;
-  if (endTime) params.endTime = endTime;
-  const res = await axios.get(`${API_BASE}/collateral-supply-history`, { params });
-  return res.data;
+  const params = new URLSearchParams();
+  if (startTime) params.append('startTime', startTime);
+  if (endTime) params.append('endTime', endTime);
+  
+  const response = await fetch(`/api/markets/${marketId}/collateral-supply-history?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch collateral supply history');
+  return response.json();
 }
 
 export async function getUtilizationHistory(marketId: string, startTime?: string, endTime?: string): Promise<UtilizationData[]> {
-  const params: Record<string, string> = { marketId };
-  if (startTime) params.startTime = startTime;
-  if (endTime) params.endTime = endTime;
+  const params = new URLSearchParams();
+  if (startTime) params.append('startTime', startTime);
+  if (endTime) params.append('endTime', endTime);
   
-  const res = await axios.get(`${API_BASE}/utilization-history`, { params });
-  return res.data;
+  const response = await fetch(`/api/markets/${marketId}/utilization-history?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch utilization history');
+  return response.json();
 }
 
 export async function getMarketSnapshots(
@@ -295,11 +163,12 @@ export async function getMarketSnapshots(
   startTime?: string,
   endTime?: string
 ): Promise<MarketSnapshot[]> {
-  const params: Record<string, string> = { marketId };
-  if (resolution) params.resolution = resolution;
-  if (startTime) params.startTime = startTime;
-  if (endTime) params.endTime = endTime;
+  const params = new URLSearchParams();
+  if (resolution) params.append('resolution', resolution);
+  if (startTime) params.append('startTime', startTime);
+  if (endTime) params.append('endTime', endTime);
   
-  const res = await axios.get(`${API_BASE}/snapshots`, { params });
-  return res.data;
+  const response = await fetch(`/api/markets/${marketId}/snapshots?${params}`);
+  if (!response.ok) throw new Error('Failed to fetch market snapshots');
+  return response.json();
 }

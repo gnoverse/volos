@@ -1,7 +1,7 @@
 "use client"
 
 import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
-import { MarketInfo, Position } from "@/app/types"
+import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

@@ -1,15 +1,14 @@
 "use client"
 
-import { getUserLoanHistory } from '@/app/services/api.service'
 import { useUserAddress } from "@/app/utils/address.utils"
 import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
-import { useHealthFactorQuery, useMarketQuery, usePositionQuery } from "../queries-mutations"
+import { useHealthFactorQuery, useMarketQuery, usePositionQuery, useUserLoanHistoryQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 const queryClient = new QueryClient()
@@ -22,21 +21,15 @@ function MarketPageContent() {
   const [tab, setTab] = useState("add-borrow")
   const { userAddress } = useUserAddress()
 
-  // Use the new market query
   const { data: marketInfo, isLoading: isMarketLoading } = useMarketQuery(marketId)
   const { data: positionData } = usePositionQuery(marketId, userAddress);
   const { data: healthFactorData } = useHealthFactorQuery(marketId, userAddress)
-
-  // Fetch user loan history using Tanstack Query
-  const { data: userLoanHistory = [] } = useQuery({
-    queryKey: ['userLoanHistory', userAddress],
-    queryFn: () => getUserLoanHistory(userAddress),
-    enabled: !!userAddress
-  });
+  const { data: userLoanHistory } = useUserLoanHistoryQuery(userAddress)
 
   // Take the latest value from the loan history (or 0 if empty)
-  const currentLoan = userLoanHistory.length > 0 ? userLoanHistory[userLoanHistory.length - 1].value : 0;
+  const currentLoan = userLoanHistory && userLoanHistory.length > 0 ? userLoanHistory[userLoanHistory.length - 1].value : 0;
 
+  //TODO
   const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
 
   return (

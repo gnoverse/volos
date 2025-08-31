@@ -1,4 +1,4 @@
-import { MarketHistory } from "@/app/services/api.service";
+import { MarketHistory } from "@/app/types";
 import { formatTimestamp } from "@/app/utils/format.utils";
 import { CopiableAddress } from "@/components/copiable-addess";
 import { Button } from "@/components/ui/button";
