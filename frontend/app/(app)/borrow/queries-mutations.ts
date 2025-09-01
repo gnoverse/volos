@@ -1,6 +1,7 @@
+import { apiGetPosition } from "@/app/services/abci";
 import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUtilizationHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
-import { HealthFactor, MarketInfo, Position } from "@/app/types";
+import { HealthFactor, MarketInfo } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const marketsQueryKey = ["markets"];
@@ -122,14 +123,7 @@ export function useMarketQuery(marketId: string) {
 export function usePositionQuery(marketId: string, user: string) {
   return useQuery({
     queryKey: positionQueryKey(marketId, user),
-    queryFn: async (): Promise<Position> => {
-      // TODO: Implement position fetching from API
-      return {
-        supplyShares: "0",
-        borrowShares: "0", 
-        collateral: "0"
-      };
-    },
+    queryFn: () => apiGetPosition(marketId, user),
     enabled: !!marketId && !!user,
   });
 }

@@ -3,6 +3,7 @@
 import { MarketInfo, Position } from "@/app/types"
 import { formatPercentage, formatTokenAmount } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { parseUnits } from "viem"
 import { HealthBar } from "./health-bar"
 import { PositionChartTabs } from "./position-chart-tabs"
 
@@ -10,8 +11,7 @@ interface MarketPositionProps {
   market: MarketInfo
   cardStyles: string
   healthFactor: string
-  currentLoan: string
-  positionData?: Position | null
+  positionData: Position
   caller: string
 }
 
@@ -19,15 +19,13 @@ export function MyPosition({
   market, 
   cardStyles, 
   healthFactor, 
-  currentLoan,
   positionData,
   caller
 }: MarketPositionProps) {
 
-
   const hasPosition = positionData && (
-    parseFloat(positionData.collateral) > 0 || 
-    parseFloat(positionData.borrowShares) > 0
+    BigInt(positionData.collateral) > BigInt(0) || 
+    BigInt(positionData.borrowShares) > BigInt(0)
   )
 
   if (!hasPosition) {
@@ -41,10 +39,13 @@ export function MyPosition({
     )
   }
 
-  const currentLoanFloat = parseFloat(currentLoan)
-  const currentCollateral = parseFloat(positionData?.collateral ?? "0")
-  const ltv = currentLoanFloat > 0 && currentCollateral > 0 
-    ? (currentLoanFloat / (currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18)))) 
+
+  const currentBorrowShares = BigInt(positionData.borrowShares)
+  const currentCollateralBigInt = BigInt(positionData.collateral)
+  const currentPriceBigInt = BigInt(market.currentPrice)
+  
+  const ltv = currentBorrowShares > BigInt(0) && currentCollateralBigInt > BigInt(0) 
+    ? Number(currentBorrowShares) / Number(currentCollateralBigInt * currentPriceBigInt / parseUnits("1", 18))
     : 0
 
   return (
@@ -58,11 +59,11 @@ export function MyPosition({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-200">
-              {currentLoan.toString()} 
+              {formatTokenAmount(positionData.borrowShares, market.loanTokenDecimals)} 
               <span className="text-gray-400 text-lg ml-2">{market.loanTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${(currentLoanFloat * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString()} USD
+              ≈ ${formatTokenAmount((currentBorrowShares * currentPriceBigInt).toString(), market.loanTokenDecimals + 18)} USD
             </div>
           </CardContent>
         </Card>
@@ -75,12 +76,12 @@ export function MyPosition({
           <CardContent className="items-center">
             <div className="text-3xl font-bold text-gray-200 flex flex-wrap items-baseline break-all ">
               <span className="break-all mr-2">
-                {currentCollateral.toString()}
+                {formatTokenAmount(positionData.collateral, market.collateralTokenDecimals)}
               </span>
               <span className="text-gray-400 text-lg">{market.collateralTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${(currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString()} USD
+              ≈ ${formatTokenAmount((currentCollateralBigInt * currentPriceBigInt).toString(), market.collateralTokenDecimals + 18)} USD
             </div>
           </CardContent>
         </Card>

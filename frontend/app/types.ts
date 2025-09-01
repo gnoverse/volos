@@ -220,6 +220,11 @@ export const PositionSchema = z.object({
   collateral: Uint256Schema,
 });
 
+export const BalanceSchema = z.object({
+  address: z.string(),
+  balance: z.number().int(),
+});
+
 // Type exports
 export type ChartData = z.infer<typeof ChartDataSchema>;
 export type MarketHistory = z.infer<typeof MarketHistorySchema>;
@@ -242,6 +247,7 @@ export type MarketInfo = z.infer<typeof MarketInfoSchema>;
 export type GovernanceUserInfo = z.infer<typeof GovernanceUserInfoSchema>;
 export type HealthFactor = z.infer<typeof HealthFactorSchema>;
 export type Position = z.infer<typeof PositionSchema>;
+export type Balance = z.infer<typeof BalanceSchema>;
 
 // Utility functions
 export function parseAndValidateJson<T>(jsonString: string, schema: z.ZodType<T>): T {
