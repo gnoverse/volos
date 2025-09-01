@@ -25,8 +25,8 @@ function MarketPageContent() {
   const { data: userLoanHistory } = useUserLoanHistoryQuery(userAddress)
   const { data: positionData } = usePositionQuery(marketId, userAddress)
 
-  // Take the latest value from the loan history (or 0 if empty)
-  const currentLoan = userLoanHistory && userLoanHistory.length > 0 ? userLoanHistory[userLoanHistory.length - 1].value : 0;
+  // Take the latest value from the loan history (or "0" if empty)
+  const currentLoan = userLoanHistory && userLoanHistory.length > 0 ? userLoanHistory[userLoanHistory.length - 1].value : "0";
 
   //TODO
   //const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
@@ -59,8 +59,8 @@ function MarketPageContent() {
               apyVariations={apyVariations} 
               cardStyles={CARD_STYLES}
               healthFactor={healthFactorData?.healthFactor ?? "0"}
-              currentCollateral={20}
-              currentLoan={currentLoan as number}
+              currentCollateral={0} // TODO: Get from position data
+              currentLoan={currentLoan}
               positionData={positionData}
               caller={userAddress}
             />
@@ -75,11 +75,11 @@ function MarketPageContent() {
             tab={tab}
             setTabAction={setTab}
             market={marketInfo}
-            supplyValue={100}
-            borrowValue={100}
+            supplyValue={0} // TODO: Get from position data
+            borrowValue={0} // TODO: Get from position data  
             healthFactor={healthFactorData?.healthFactor ?? "0"}
-            currentCollateral={20}
-            currentLoan={currentLoan as number}
+            currentCollateral={0} // TODO: Get from position data
+            currentLoan={currentLoan}
             ltv={marketInfo.lltv.toString()}
             collateralTokenDecimals={marketInfo.collateralTokenDecimals}
             loanTokenDecimals={marketInfo.loanTokenDecimals}

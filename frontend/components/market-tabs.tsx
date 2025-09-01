@@ -17,7 +17,7 @@ interface MarketTabsProps {
   cardStyles: string;
   healthFactor: string;
   currentCollateral: number;
-  currentLoan: number;
+  currentLoan: string;
   positionData?: Position | null;
   caller: string;
 }

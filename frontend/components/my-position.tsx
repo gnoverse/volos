@@ -1,7 +1,7 @@
 "use client"
 
 import { MarketInfo, Position } from "@/app/types"
-import { formatLTV, formatTokenAmount } from "@/app/utils/format.utils"
+import { formatPercentage, formatTokenAmount } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PositionChartTabs } from "./position-chart-tabs"
 import { HealthBar } from "./health-bar"
@@ -11,7 +11,7 @@ interface MarketPositionProps {
   cardStyles: string
   healthFactor: string
   currentCollateral: number
-  currentLoan: number
+  currentLoan: string
   positionData?: Position | null
   caller: string
 }
@@ -43,8 +43,9 @@ export function MyPosition({
     )
   }
 
-  const ltv = currentLoan > 0 && currentCollateral > 0 
-    ? (currentLoan / (currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18)))) 
+  const currentLoanFloat = parseFloat(currentLoan)
+  const ltv = currentLoanFloat > 0 && currentCollateral > 0 
+    ? (currentLoanFloat / (currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18)))) 
     : 0
 
   return (
@@ -62,7 +63,7 @@ export function MyPosition({
               <span className="text-gray-400 text-lg ml-2">{market.loanTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${(currentLoan * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString()} USD
+              ≈ ${(currentLoanFloat * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString()} USD
             </div>
           </CardContent>
         </Card>
@@ -95,7 +96,7 @@ export function MyPosition({
               <div>
                 <div className="text-sm text-gray-400 mb-1">Current LTV</div>
                 <div className="text-xl font-medium text-gray-200">
-                  {(ltv*100).toFixed(2)}% <span className="text-gray-400 text-sm">/ {formatLTV(market.lltv, 18)}</span>
+                  {(ltv*100).toFixed(2)}% <span className="text-gray-400 text-sm">/ {formatPercentage(market.lltv)}</span>
                 </div>
               </div>
               
