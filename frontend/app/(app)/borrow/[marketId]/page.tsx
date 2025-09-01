@@ -6,7 +6,7 @@ import { MarketTabs } from "@/components/market-tabs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useState } from "react"
-import { SidePanel } from "../../../../components/side-panel"
+//import { SidePanel } from "../../../../components/side-panel"
 import { useHealthFactorQuery, useMarketQuery, usePositionQuery, useUserLoanHistoryQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -17,7 +17,7 @@ function MarketPageContent() {
   const marketId = decodeURIComponent(params.marketId)
 
   const [apyVariations] = useState({ sevenDay: 0, ninetyDay: 0 })
-  const [tab, setTab] = useState("add-borrow")
+  //const [tab, setTab] = useState("add-borrow") side panel related
   const { userAddress } = useUserAddress()
 
   const { data: marketInfo, isLoading: isMarketLoading } = useMarketQuery(marketId)
@@ -27,9 +27,6 @@ function MarketPageContent() {
 
   // Take the latest value from the loan history (or "0" if empty)
   const currentLoan = userLoanHistory && userLoanHistory.length > 0 ? userLoanHistory[userLoanHistory.length - 1].value : "0";
-
-  //TODO
-  //const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
 
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
@@ -59,7 +56,6 @@ function MarketPageContent() {
               apyVariations={apyVariations} 
               cardStyles={CARD_STYLES}
               healthFactor={healthFactorData?.healthFactor ?? "0"}
-              currentCollateral={0} // TODO: Get from position data
               currentLoan={currentLoan}
               positionData={positionData}
               caller={userAddress}
@@ -69,7 +65,7 @@ function MarketPageContent() {
           )}
         </div>
 
-        {/* Right side - tabbed interface */}
+        {/* Right side - tabbed interface
         {!isMarketLoading && marketInfo ? (
           <SidePanel
             tab={tab}
@@ -87,7 +83,7 @@ function MarketPageContent() {
           />
         ) : (
           <div className="lg:col-span-3 h-174 bg-gray-700/60 rounded-3xl animate-pulse" />
-        )}
+        )} */}
       </div>
     </div>
   )

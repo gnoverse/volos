@@ -3,14 +3,13 @@
 import { MarketInfo, Position } from "@/app/types"
 import { formatPercentage, formatTokenAmount } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PositionChartTabs } from "./position-chart-tabs"
 import { HealthBar } from "./health-bar"
+import { PositionChartTabs } from "./position-chart-tabs"
 
 interface MarketPositionProps {
   market: MarketInfo
   cardStyles: string
   healthFactor: string
-  currentCollateral: number
   currentLoan: string
   positionData?: Position | null
   caller: string
@@ -20,7 +19,6 @@ export function MyPosition({
   market, 
   cardStyles, 
   healthFactor, 
-  currentCollateral, 
   currentLoan,
   positionData,
   caller
@@ -44,6 +42,7 @@ export function MyPosition({
   }
 
   const currentLoanFloat = parseFloat(currentLoan)
+  const currentCollateral = parseFloat(positionData?.collateral ?? "0")
   const ltv = currentLoanFloat > 0 && currentCollateral > 0 
     ? (currentLoanFloat / (currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18)))) 
     : 0
