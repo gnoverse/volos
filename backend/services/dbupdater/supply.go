@@ -3,7 +3,6 @@ package dbupdater
 import (
 	"context"
 	"log/slog"
-	"math/big"
 	"strings"
 	"time"
 	"volos-backend/services"
@@ -49,29 +48,8 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 			}
 		}
 
-		current := new(big.Int)
-		if dsnap != nil && dsnap.Exists() {
-			if s, err := dsnap.DataAt("total_supply"); err == nil {
-				if sStr, ok := s.(string); ok {
-					if _, ok := current.SetString(sStr, 10); !ok {
-						current.SetInt64(0)
-					}
-				}
-			}
-		}
-
-		updated := new(big.Int).Set(current)
-		if isSupply {
-			updated.Add(updated, amt)
-		} else {
-			if updated.Cmp(amt) < 0 {
-				updated.SetInt64(0)
-			} else {
-				updated.Sub(updated, amt)
-			}
-		}
-
-		updatedTotalStr = updated.String()
+		currentAmount := GetAmountFromDoc(dsnap, "total_supply")
+		updatedTotalStr = UpdateAmountInDoc(currentAmount, amt, isSupply)
 		updates := map[string]interface{}{
 			"total_supply": updatedTotalStr,
 		}

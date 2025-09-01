@@ -94,9 +94,6 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				dbupdater.UpdateTotalCollateralSupply(client, wcEvent.MarketID, wcEvent.Amount, wcEvent.Timestamp, caller, txHash, eventType)
 			}
 
-		case "AccrueInterest":
-			dbupdater.ProcessAccrueInterest(tx)
-
 		case "StorageDeposit":
 			continue
 		}

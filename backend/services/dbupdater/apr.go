@@ -41,14 +41,7 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPRWad, borrowAP
 		if err != nil && status.Code(err) != codes.NotFound {
 			return err
 		}
-		var cur time.Time
-		if dsnap != nil && dsnap.Exists() {
-			if v, err := dsnap.DataAt("apr_updated_at"); err == nil {
-				if t, ok := v.(time.Time); ok {
-					cur = t
-				}
-			}
-		}
+		cur := GetTimeFromDoc(dsnap, "apr_updated_at")
 		if eventTime.After(cur) {
 			return tx.Set(marketRef, map[string]interface{}{
 				"supply_apr":     supply,
