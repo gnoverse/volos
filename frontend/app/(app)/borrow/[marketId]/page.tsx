@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
-import { useHealthFactorQuery, useMarketQuery, useUserLoanHistoryQuery } from "../queries-mutations"
+import { useHealthFactorQuery, useMarketQuery, usePositionQuery, useUserLoanHistoryQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 const queryClient = new QueryClient()
@@ -23,6 +23,7 @@ function MarketPageContent() {
   const { data: marketInfo, isLoading: isMarketLoading } = useMarketQuery(marketId)
   const { data: healthFactorData } = useHealthFactorQuery(marketId, userAddress)
   const { data: userLoanHistory } = useUserLoanHistoryQuery(userAddress)
+  const { data: positionData } = usePositionQuery(marketId, userAddress)
 
   // Take the latest value from the loan history (or 0 if empty)
   const currentLoan = userLoanHistory && userLoanHistory.length > 0 ? userLoanHistory[userLoanHistory.length - 1].value : 0;
@@ -58,9 +59,9 @@ function MarketPageContent() {
               apyVariations={apyVariations} 
               cardStyles={CARD_STYLES}
               healthFactor={healthFactorData?.healthFactor ?? "0"}
-              currentCollateral={0}
+              currentCollateral={20}
               currentLoan={currentLoan as number}
-              positionData={null}
+              positionData={positionData}
               caller={userAddress}
             />
           ) : (
@@ -77,12 +78,12 @@ function MarketPageContent() {
             supplyValue={100}
             borrowValue={100}
             healthFactor={healthFactorData?.healthFactor ?? "0"}
-            currentCollateral={0}
+            currentCollateral={20}
             currentLoan={currentLoan as number}
             ltv={marketInfo.lltv.toString()}
             collateralTokenDecimals={marketInfo.collateralTokenDecimals}
             loanTokenDecimals={marketInfo.loanTokenDecimals}
-            positionData={null}
+            positionData={positionData}
           />
         ) : (
           <div className="lg:col-span-3 h-174 bg-gray-700/60 rounded-3xl animate-pulse" />
