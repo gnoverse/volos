@@ -138,8 +138,7 @@ type UserLoan struct {
 
 // UserMarketPosition represents per-market aggregates for a user stored under users/{address}/markets/{marketId}
 type UserMarketPosition struct {
-	MarketID         string `json:"marketId"`
-	Loan             string `json:"loan"`
-	Supply           string `json:"supply"`
-	CollateralSupply string `json:"collateral_supply"`
+	Loan             string  `json:"loan" firestore:"loan"`
+	Supply           string  `json:"supply" firestore:"supply"`
+	CollateralSupply string  `json:"collateral_supply" firestore:"collateral_supply"`
 }

@@ -16,6 +16,8 @@ interface SupplyBorrowChartProps {
   title?: string
   description?: string
   className?: string
+  loanDecimals: number
+  collateralDecimals: number
   symbol: string
 }
 
@@ -24,6 +26,8 @@ export function SupplyBorrowChart({
   title = "Supply & Borrow",
   description = "Compare total supply and borrow amounts over time",
   className,
+  loanDecimals,
+  //collateralDecimals,
   symbol,
 }: SupplyBorrowChartProps) {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
@@ -155,7 +159,7 @@ export function SupplyBorrowChart({
                 axisLine={false}
                 width={60}
                 tick={{ fill: 'rgb(156 163 175)' }}
-                tickFormatter={(value) => `${(value / 1000000).toFixed(1)} ${symbol}`}
+                tickFormatter={(value) => `${(value / 10**loanDecimals).toFixed(1)} ${symbol}`}
                 stroke="rgba(75, 85, 99, 0.3)"
               />
               
@@ -201,7 +205,7 @@ export function SupplyBorrowChart({
                   color: 'rgb(156 163 175)',
                 }} 
                 labelFormatter={(label) => formatTimestamp(label)}
-                formatter={(value) => `${(Number(value) / 1000000).toFixed(1)} ${symbol}`}
+                formatter={(value) => `${(Number(value) / 10**loanDecimals).toFixed(1)} ${symbol}`} // todo: use collateral decimals for collateral
               />
             </LineChart>
           </ResponsiveContainer>

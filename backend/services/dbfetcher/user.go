@@ -145,25 +145,14 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 func GetUserMarketPosition(client *firestore.Client, userAddress string, marketID string) (*model.UserMarketPosition, error) {
 	ctx := context.Background()
 
-	doc, err := client.Collection("users").Doc(userAddress).Collection("markets").Doc(strings.ReplaceAll(marketID, "/", "_")).Get(ctx)
+	dsnap, err := client.Collection("users").Doc(userAddress).Collection("markets").Doc(strings.ReplaceAll(marketID, "/", "_")).Get(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	getString := func(field string) string {
-		if v, err := doc.DataAt(field); err == nil {
-			if s, ok := v.(string); ok {
-				return s
-			}
-		}
-		return "0"
+	
+	var pos model.UserMarketPosition
+	if err := dsnap.DataTo(&pos); err != nil {
+		return nil, err
 	}
-
-	pos := &model.UserMarketPosition{
-		MarketID:         doc.Ref.ID,
-		Loan:             getString("loan"),
-		Supply:           getString("supply"),
-		CollateralSupply: getString("collateral_supply"),
-	}
-	return pos, nil
+	return &pos, nil
 }

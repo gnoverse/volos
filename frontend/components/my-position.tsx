@@ -3,7 +3,6 @@
 import { MarketInfo, Position } from "@/app/types"
 import { formatPercentage, formatTokenAmount } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { parseUnits } from "viem"
 import { HealthBar } from "./health-bar"
 import { PositionChartTabs } from "./position-chart-tabs"
 
@@ -39,14 +38,10 @@ export function MyPosition({
     )
   }
 
-
   const currentBorrowShares = BigInt(positionData.loan)
   const currentCollateralBigInt = BigInt(positionData.collateral_supply)
   const currentPriceBigInt = BigInt(market.currentPrice)
-  
-  const ltv = currentBorrowShares > BigInt(0) && currentCollateralBigInt > BigInt(0) 
-    ? Number(currentBorrowShares) / Number(currentCollateralBigInt * currentPriceBigInt / parseUnits("1", 18))
-    : 0
+  const ltv = 0 //positionData.ltv
 
   return (
     <div className="space-y-6">
@@ -96,7 +91,7 @@ export function MyPosition({
               <div>
                 <div className="text-sm text-gray-400 mb-1">Current LTV</div>
                 <div className="text-xl font-medium text-gray-200">
-                  {(ltv*100).toFixed(2)}% <span className="text-gray-400 text-sm">/ {formatPercentage(market.lltv)}</span>
+                  {formatPercentage(ltv)}<span className="text-gray-400 text-sm">/ {formatPercentage(market.lltv)}</span>
                 </div>
               </div>
               

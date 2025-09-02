@@ -93,7 +93,6 @@ export const UserLoanHistorySchema = z.object({
 });
 
 export const PositionSchema = z.object({
-  marketId: z.string(),
   loan: Uint256Schema,
   supply: Uint256Schema,
   collateral_supply: Uint256Schema,
