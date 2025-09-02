@@ -93,6 +93,12 @@ export async function getUserPendingUnstakes(userAddress: string): Promise<Pendi
   return response.json();
 }
 
+export async function getUserMarketPosition(user: string, marketId: string) {
+  const response = await fetch(`${API_BASE}/user-position?user=${encodeURIComponent(user)}&marketId=${encodeURIComponent(marketId)}`);
+  if (!response.ok) throw new Error('Failed to fetch user market position');
+  return response.json();
+}
+
 export async function getMarkets(limit?: number, lastId?: string): Promise<MarketsResponse> {
   const params = new URLSearchParams();
   if (limit) params.append('limit', limit.toString());

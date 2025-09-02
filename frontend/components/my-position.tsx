@@ -24,8 +24,8 @@ export function MyPosition({
 }: MarketPositionProps) {
 
   const hasPosition = positionData && (
-    BigInt(positionData.collateral) > BigInt(0) || 
-    BigInt(positionData.borrowShares) > BigInt(0)
+    BigInt(positionData.collateral_supply) > BigInt(0) || 
+    BigInt(positionData.loan) > BigInt(0)
   )
 
   if (!hasPosition) {
@@ -40,8 +40,8 @@ export function MyPosition({
   }
 
 
-  const currentBorrowShares = BigInt(positionData.borrowShares)
-  const currentCollateralBigInt = BigInt(positionData.collateral)
+  const currentBorrowShares = BigInt(positionData.loan)
+  const currentCollateralBigInt = BigInt(positionData.collateral_supply)
   const currentPriceBigInt = BigInt(market.currentPrice)
   
   const ltv = currentBorrowShares > BigInt(0) && currentCollateralBigInt > BigInt(0) 
@@ -59,7 +59,7 @@ export function MyPosition({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-200">
-              {formatTokenAmount(positionData.borrowShares, market.loanTokenDecimals)} 
+              {formatTokenAmount(positionData.loan, market.loanTokenDecimals)} 
               <span className="text-gray-400 text-lg ml-2">{market.loanTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
@@ -76,7 +76,7 @@ export function MyPosition({
           <CardContent className="items-center">
             <div className="text-3xl font-bold text-gray-200 flex flex-wrap items-baseline break-all ">
               <span className="break-all mr-2">
-                {formatTokenAmount(positionData.collateral, market.collateralTokenDecimals)}
+                {formatTokenAmount(positionData.collateral_supply, market.collateralTokenDecimals)}
               </span>
               <span className="text-gray-400 text-lg">{market.collateralTokenSymbol}</span>
             </div>

@@ -92,6 +92,13 @@ export const UserLoanHistorySchema = z.object({
   collateral_token_symbol: z.string(),
 });
 
+export const PositionSchema = z.object({
+  marketId: z.string(),
+  loan: Uint256Schema,
+  supply: Uint256Schema,
+  collateral_supply: Uint256Schema,
+});
+
 // Governance types
 export const ProposalSchema = z.object({
   id: z.string(),
@@ -214,12 +221,6 @@ export const HealthFactorSchema = z.object({
   healthFactor: z.string(),
 });
 
-export const PositionSchema = z.object({
-  supplyShares: Uint256Schema,
-  borrowShares: Uint256Schema,
-  collateral: Uint256Schema,
-});
-
 export const BalanceSchema = z.object({
   address: z.string(),
   balance: z.number().int(),
@@ -236,6 +237,7 @@ export type UtilizationData = z.infer<typeof UtilizationDataSchema>;
 export type MarketSnapshot = z.infer<typeof MarketSnapshotSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type UserLoan = z.infer<typeof UserLoanHistorySchema>;
+export type Position = z.infer<typeof PositionSchema>;
 export type Proposal = z.infer<typeof ProposalSchema>;
 export type ProposalsResponse = z.infer<typeof ProposalsResponseSchema>;
 export type UserVote = z.infer<typeof UserVoteSchema>;
@@ -246,7 +248,6 @@ export type MarketActivityResponse = z.infer<typeof MarketActivityResponseSchema
 export type MarketInfo = z.infer<typeof MarketInfoSchema>;
 export type GovernanceUserInfo = z.infer<typeof GovernanceUserInfoSchema>;
 export type HealthFactor = z.infer<typeof HealthFactorSchema>;
-export type Position = z.infer<typeof PositionSchema>;
 export type Balance = z.infer<typeof BalanceSchema>;
 
 // Utility functions
