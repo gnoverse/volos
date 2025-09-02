@@ -1,7 +1,7 @@
 "use client"
 
 
-import { formatPercentage, formatTimestamp, getXAxisFormatter } from "@/app/utils/format.utils"
+import { formatTimestamp, getXAxisFormatter } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -16,6 +16,9 @@ interface SupplyBorrowChartProps {
   title?: string
   description?: string
   className?: string
+  loanDecimals: number
+  collateralDecimals: number
+  symbol: string
 }
 
 export function SupplyBorrowChart({
@@ -23,6 +26,9 @@ export function SupplyBorrowChart({
   title = "Supply & Borrow",
   description = "Compare total supply and borrow amounts over time",
   className,
+  loanDecimals,
+  //collateralDecimals,
+  symbol,
 }: SupplyBorrowChartProps) {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
   const [selectedMetrics, setSelectedMetrics] = useLocalStorageState('supply-borrow-chart-metrics', {
@@ -153,7 +159,7 @@ export function SupplyBorrowChart({
                 axisLine={false}
                 width={60}
                 tick={{ fill: 'rgb(156 163 175)' }}
-                tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                tickFormatter={(value) => `${(value / 10**loanDecimals).toFixed(1)} ${symbol}`}
                 stroke="rgba(75, 85, 99, 0.3)"
               />
               
@@ -199,11 +205,7 @@ export function SupplyBorrowChart({
                   color: 'rgb(156 163 175)',
                 }} 
                 labelFormatter={(label) => formatTimestamp(label)}
-                formatter={(value) => {
-                  const base = Array.isArray(value) ? value[0] : value
-                  const num = typeof base === 'string' ? parseFloat(base) : (base as number)
-                  return [formatPercentage(num, 2)]
-                }}
+                formatter={(value) => `${(Number(value) / 10**loanDecimals).toFixed(1)} ${symbol}`} // todo: use collateral decimals for collateral
               />
             </LineChart>
           </ResponsiveContainer>

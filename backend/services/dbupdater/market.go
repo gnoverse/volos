@@ -21,6 +21,7 @@ func CreateMarket(client *firestore.Client,
 	collateralTokenSymbol string,
 	collateralTokenDecimals string,
 	timestamp string,
+	lltv string,
 ) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	timestampInt := utils.ParseTimestamp(timestamp, "market creation")
@@ -30,6 +31,7 @@ func CreateMarket(client *firestore.Client,
 
 	loanDecimals := utils.ParseInt64(loanTokenDecimals, "market creation loanTokenDecimals")
 	collDecimals := utils.ParseInt64(collateralTokenDecimals, "market creation collateralTokenDecimals")
+	lltvPercent := utils.WadToPercent(lltv, "market creation lltv")
 
 	marketData := map[string]interface{}{
 		"id":                        marketID,
@@ -42,6 +44,7 @@ func CreateMarket(client *firestore.Client,
 		"collateral_token_symbol":   collateralTokenSymbol,
 		"collateral_token_decimals": collDecimals,
 		"created_at":                time.Unix(timestampInt, 0),
+		"lltv":                      lltvPercent,
 	}
 
 	_, err := client.Collection("markets").Doc(sanitizedMarketID).Set(context.Background(), marketData)

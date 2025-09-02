@@ -481,8 +481,6 @@ func main() {
       ]
     };
 
-    console.log(gnoPackage.files[0].body)
-
     try {
       const tx = TransactionBuilder.create()
         .messages(

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"math/big"
-	"time"
+	"strings"
 
 	"volos-backend/model"
 	"volos-backend/services/utils"
@@ -18,15 +18,6 @@ func GetUser(client *firestore.Client, userAddress string) (*model.User, error) 
 
 	doc, err := client.Collection("users").Doc(userAddress).Get(ctx)
 	if err != nil {
-		// If user doesn't exist, return default user data - failsafe
-		if err.Error() == "not found" {
-			return &model.User{
-				Address:   userAddress,
-				DAOMember: false,
-				StakedVLS: make(map[string]int64),
-				CreatedAt: time.Time{},
-			}, nil
-		}
 		return nil, err
 	}
 
@@ -91,7 +82,7 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 			continue
 		}
 
-		amount := utils.ParseAmount(history.Value, "GetUserLoanHistory")
+		amount := utils.ParseAmount(history.Delta, "GetUserLoanHistory")
 		if amount.Sign() == 0 {
 			continue
 		}
@@ -148,4 +139,20 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 	}
 
 	return results, nil
+}
+
+// GetUserMarketPosition fetches a single per-market aggregate for a user from users/{address}/markets/{marketId}
+func GetUserMarketPosition(client *firestore.Client, userAddress string, marketID string) (*model.UserMarketPosition, error) {
+	ctx := context.Background()
+
+	dsnap, err := client.Collection("users").Doc(userAddress).Collection("markets").Doc(strings.ReplaceAll(marketID, "/", "_")).Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	var pos model.UserMarketPosition
+	if err := dsnap.DataTo(&pos); err != nil {
+		return nil, err
+	}
+	return &pos, nil
 }

@@ -43,6 +43,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 					createEvent.CollateralTokenSymbol,
 					createEvent.CollateralTokenDecimals,
 					createEvent.Timestamp,
+					createEvent.LLTV,
 				)
 			}
 
@@ -51,6 +52,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				dbupdater.UpdateTotalSupply(client, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Timestamp, caller, txHash, eventType)
 				dbupdater.UpdateAPRHistory(client, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, supplyEvent.MarketID, supplyEvent.Timestamp)
+				dbupdater.UpdateUserMarketSupply(client, supplyEvent.OnBehalf, supplyEvent.MarketID, supplyEvent.Amount, eventType)
 			}
 
 		case "Withdraw":
@@ -58,6 +60,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				dbupdater.UpdateTotalSupply(client, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Timestamp, caller, txHash, eventType)
 				dbupdater.UpdateAPRHistory(client, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, withdrawEvent.MarketID, withdrawEvent.Timestamp)
+				dbupdater.UpdateUserMarketSupply(client, withdrawEvent.OnBehalf, withdrawEvent.MarketID, withdrawEvent.Amount, eventType)
 			}
 
 		case "Borrow":
@@ -65,6 +68,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				dbupdater.UpdateTotalBorrow(client, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Timestamp, caller, txHash, eventType)
 				dbupdater.UpdateAPRHistory(client, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, borrowEvent.MarketID, borrowEvent.Timestamp)
+				dbupdater.UpdateUserMarketLoan(client, borrowEvent.OnBehalf, borrowEvent.MarketID, borrowEvent.Amount, eventType)
 			}
 
 		case "Repay":
@@ -72,6 +76,7 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				dbupdater.UpdateTotalBorrow(client, repayEvent.MarketID, repayEvent.Amount, repayEvent.Timestamp, caller, txHash, eventType)
 				dbupdater.UpdateAPRHistory(client, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, repayEvent.MarketID, repayEvent.Timestamp)
+				dbupdater.UpdateUserMarketLoan(client, repayEvent.OnBehalf, repayEvent.MarketID, repayEvent.Amount, eventType)
 			}
 
 		case "Liquidate":
@@ -81,20 +86,20 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 				//       Requires extra event data (e.g., bad_debt_assets) or a state read/reconciliation pass.
 				dbupdater.UpdateAPRHistory(client, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(client, liquidateEvent.MarketID, liquidateEvent.Timestamp)
+				dbupdater.UpdateUserMarketLoan(client, liquidateEvent.Borrower, liquidateEvent.MarketID, liquidateEvent.Amount, eventType)
 			}
 
 		case "SupplyCollateral":
 			if scEvent, ok := extractSupplyCollateralFields(event); ok {
 				dbupdater.UpdateTotalCollateralSupply(client, scEvent.MarketID, scEvent.Amount, scEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateUserMarketCollateralSupply(client, scEvent.OnBehalf, scEvent.MarketID, scEvent.Amount, eventType)
 			}
 
 		case "WithdrawCollateral":
 			if wcEvent, ok := extractWithdrawCollateralFields(event); ok {
 				dbupdater.UpdateTotalCollateralSupply(client, wcEvent.MarketID, wcEvent.Amount, wcEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateUserMarketCollateralSupply(client, wcEvent.OnBehalf, wcEvent.MarketID, wcEvent.Amount, eventType)
 			}
-
-		case "AccrueInterest":
-			dbupdater.ProcessAccrueInterest(tx)
 
 		case "StorageDeposit":
 			continue
@@ -114,6 +119,7 @@ func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent
 		"collateralTokenSymbol",
 		"collateralTokenDecimals",
 		"currentTimestamp",
+		"lltv",
 	}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
@@ -132,6 +138,7 @@ func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent
 		CollateralTokenSymbol:   fields["collateralTokenSymbol"],
 		CollateralTokenDecimals: fields["collateralTokenDecimals"],
 		Timestamp:               fields["currentTimestamp"],
+		LLTV:                    fields["lltv"],
 	}, true
 }
 

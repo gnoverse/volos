@@ -1,7 +1,7 @@
 import { apiGetUserInfo, apiGetXVLSBalance } from '@/app/services/abci';
-import { getActiveProposals, getProposal, getProposals, getUser, getUserPendingUnstakes, getUserVoteOnProposal, GovernanceUserInfo, PendingUnstake, Proposal, ProposalsResponse, type User, UserVote } from '@/app/services/api.service';
+import { getActiveProposals, getProposal, getProposals, getUser, getUserPendingUnstakes, getUserVoteOnProposal } from '@/app/services/api.service';
 import { TxService } from '@/app/services/tx.service';
-import { Balance } from '@/app/types';
+import { Balance, GovernanceUserInfo, PendingUnstake, Proposal, ProposalsResponse, User, UserVote } from '@/app/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const PROPOSALS_QUERY_KEY = 'proposals';

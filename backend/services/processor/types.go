@@ -14,6 +14,7 @@ type CreateMarketEvent struct {
 	CollateralTokenSymbol   string
 	CollateralTokenDecimals string
 	Timestamp               string
+	LLTV                    string
 }
 
 type SupplyEvent struct {

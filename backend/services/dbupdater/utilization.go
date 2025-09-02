@@ -37,17 +37,8 @@ func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp stri
 			return nil
 		}
 
-		var totalSupply, totalBorrow string
-		if s, err := dsnap.DataAt("total_supply"); err == nil {
-			if sStr, ok := s.(string); ok {
-				totalSupply = sStr
-			}
-		}
-		if b, err := dsnap.DataAt("total_borrow"); err == nil {
-			if bStr, ok := b.(string); ok {
-				totalBorrow = bStr
-			}
-		}
+		totalSupply := GetAmountFromDoc(dsnap, "total_supply")
+		totalBorrow := GetAmountFromDoc(dsnap, "total_borrow")
 
 		utilizationRate := calculateUtilizationRate(totalSupply, totalBorrow)
 
@@ -60,8 +51,8 @@ func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp stri
 
 		utilizationHistoryRef := marketRef.Collection("utilization").NewDoc()
 		historyData := map[string]interface{}{
-			"timestamp":        eventTime,
-			"value": utilizationRate,
+			"timestamp": eventTime,
+			"value":     utilizationRate,
 		}
 		if err := tx.Set(utilizationHistoryRef, historyData); err != nil {
 			return err

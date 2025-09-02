@@ -104,3 +104,25 @@ func GetUserLoanHistoryHandler(client *firestore.Client) http.HandlerFunc {
 		json.NewEncoder(w).Encode(loanHistory)
 	}
 }
+
+// GetUserMarketPositionHandler handles GET /user-market-position?user=ADDRESS&marketId=ID
+func GetUserMarketPositionHandler(client *firestore.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		user := r.URL.Query().Get("user")
+		marketID := r.URL.Query().Get("marketId")
+		if user == "" || marketID == "" {
+			http.Error(w, "user and marketId parameters are required", http.StatusBadRequest)
+			return
+		}
+
+		pos, err := dbfetcher.GetUserMarketPosition(client, user, marketID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(pos)
+	}
+}

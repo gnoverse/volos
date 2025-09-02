@@ -1,14 +1,12 @@
 "use client"
 
-import { getUserLoanHistory } from '@/app/services/api.service'
 import { useUserAddress } from "@/app/utils/address.utils"
-import { parseTokenAmount } from "@/app/utils/format.utils"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useState } from "react"
-import { SidePanel } from "../../../../components/side-panel"
+//import { SidePanel } from "../../../../components/side-panel"
 import { useHealthFactorQuery, useMarketQuery, usePositionQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -19,25 +17,12 @@ function MarketPageContent() {
   const marketId = decodeURIComponent(params.marketId)
 
   const [apyVariations] = useState({ sevenDay: 0, ninetyDay: 0 })
-  const [tab, setTab] = useState("add-borrow")
+  //const [tab, setTab] = useState("add-borrow") side panel related
   const { userAddress } = useUserAddress()
 
-  // Use the new market query
   const { data: marketInfo, isLoading: isMarketLoading } = useMarketQuery(marketId)
-  const { data: positionData } = usePositionQuery(marketId, userAddress);
   const { data: healthFactorData } = useHealthFactorQuery(marketId, userAddress)
-
-  // Fetch user loan history using Tanstack Query
-  const { data: userLoanHistory = [] } = useQuery({
-    queryKey: ['userLoanHistory', userAddress],
-    queryFn: () => getUserLoanHistory(userAddress),
-    enabled: !!userAddress
-  });
-
-  // Take the latest value from the loan history (or 0 if empty)
-  const currentLoan = userLoanHistory.length > 0 ? userLoanHistory[userLoanHistory.length - 1].value : 0;
-
-  const currentCollateral = positionData ? parseTokenAmount(positionData.collateral, 6) : 0 // 6 is just for demo purposes
+  const { data: positionData } = usePositionQuery(marketId, userAddress)
 
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
@@ -67,9 +52,7 @@ function MarketPageContent() {
               apyVariations={apyVariations} 
               cardStyles={CARD_STYLES}
               healthFactor={healthFactorData?.healthFactor ?? "0"}
-              currentCollateral={currentCollateral}
-              currentLoan={currentLoan}
-              positionData={positionData}
+              positionData={positionData!}
               caller={userAddress}
             />
           ) : (
@@ -77,25 +60,25 @@ function MarketPageContent() {
           )}
         </div>
 
-        {/* Right side - tabbed interface */}
+        {/* Right side - tabbed interface
         {!isMarketLoading && marketInfo ? (
           <SidePanel
             tab={tab}
             setTabAction={setTab}
             market={marketInfo}
-            supplyValue={100}
-            borrowValue={100}
+            supplyValue={0} // TODO: Get from position data
+            borrowValue={0} // TODO: Get from position data  
             healthFactor={healthFactorData?.healthFactor ?? "0"}
-            currentCollateral={currentCollateral}
+            currentCollateral={0} // TODO: Get from position data
             currentLoan={currentLoan}
-            ltv={marketInfo.lltv}
+            ltv={marketInfo.lltv.toString()}
             collateralTokenDecimals={marketInfo.collateralTokenDecimals}
             loanTokenDecimals={marketInfo.loanTokenDecimals}
             positionData={positionData}
           />
         ) : (
           <div className="lg:col-span-3 h-174 bg-gray-700/60 rounded-3xl animate-pulse" />
-        )}
+        )} */}
       </div>
     </div>
   )

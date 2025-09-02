@@ -16,9 +16,7 @@ interface MarketTabsProps {
   };
   cardStyles: string;
   healthFactor: string;
-  currentCollateral: number;
-  currentLoan: number;
-  positionData?: Position | null;
+  positionData: Position;
   caller: string;
 }
 
@@ -27,8 +25,6 @@ export function MarketTabs({
   apyVariations, 
   cardStyles,
   healthFactor,
-  currentCollateral,
-  currentLoan,
   positionData,
   caller
 }: MarketTabsProps) {
@@ -71,8 +67,6 @@ export function MarketTabs({
           market={market}
           cardStyles={cardStyles}
           healthFactor={healthFactor}
-          currentCollateral={currentCollateral}
-          currentLoan={currentLoan}
           positionData={positionData}
           caller={caller}
         />

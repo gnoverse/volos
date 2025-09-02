@@ -1,4 +1,4 @@
-import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUtilizationHistory } from "@/app/services/api.service";
+import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUserMarketPosition, getUtilizationHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,12 +31,12 @@ export function useMarketsQuery() {
         totalBorrowAssets: market.total_borrow,
         totalBorrowShares: "0", // TODO: Get from market data
         lastUpdate: Date.now(), // TODO: Get actual last update timestamp
-        fee: "0", // TODO: Get actual fee from market data
+        fee: 0, // TODO: Get actual fee from market data
         
         // Params fields
         poolPath: market.id, // TODO: Extract pool path from market ID
         irm: "default", // TODO: Get actual IRM from market data
-        lltv: "800000000000000000", // TODO: Get actual LLTV from market data (0.8 in WAD)
+        lltv: market.lltv,
         isToken0Loan: true, // TODO: Determine from market data
         
         // Additional fields
@@ -45,7 +45,7 @@ export function useMarketsQuery() {
         currentPrice: "0", // TODO: Get current price from oracle
         borrowAPR: market.borrow_apr,
         supplyAPR: market.supply_apr,
-        utilization: String(market.utilization_rate),
+        utilization: market.utilization_rate,
         
         // Token information fields
         loanTokenName: market.loan_token_name,
@@ -87,12 +87,12 @@ export function useMarketQuery(marketId: string) {
         totalBorrowAssets: market.total_borrow,
         totalBorrowShares: "0", // TODO: Get from market data
         lastUpdate: Date.now(), // TODO: Get actual last update timestamp
-        fee: "0", // TODO: Get actual fee from market data
+        fee: 0, // TODO: Get actual fee from market data
         
         // Params fields
         poolPath: market.id, // TODO: Extract pool path from market ID
         irm: "default", // TODO: Get actual IRM from market data
-        lltv: "800000000000000000", // TODO: Get actual LLTV from market data (0.8 in WAD)
+        lltv: market.lltv,
         isToken0Loan: true, // TODO: Determine from market data
         
         // Additional fields
@@ -101,7 +101,7 @@ export function useMarketQuery(marketId: string) {
         currentPrice: "0", // TODO: Get current price from oracle
         borrowAPR: market.borrow_apr,
         supplyAPR: market.supply_apr,
-        utilization: String(market.utilization_rate),
+        utilization: market.utilization_rate,
         
         // Token information fields
         loanTokenName: market.loan_token_name,
@@ -119,27 +119,21 @@ export function useMarketQuery(marketId: string) {
   });
 }
 
+export function usePositionQuery(marketId: string, user: string) {
+  return useQuery<Position>({
+    queryKey: positionQueryKey(marketId, user),
+    queryFn: () => getUserMarketPosition(user, marketId),
+    enabled: !!marketId && !!user,
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useHealthFactorQuery(marketId: string, user: string) {
   return useQuery({
     queryKey: healthFactorQueryKey(marketId, user),
     queryFn: async (): Promise<HealthFactor> => {
       // TODO: Implement health factor calculation or API call
       return { healthFactor: "0" };
-    },
-    enabled: !!marketId && !!user,
-  });
-}
-
-export function usePositionQuery(marketId: string, user: string) {
-  return useQuery({
-    queryKey: positionQueryKey(marketId, user),
-    queryFn: async (): Promise<Position> => {
-      // TODO: Implement position fetching from API
-      return {
-        supplyShares: "0",
-        borrowShares: "0", 
-        collateral: "0"
-      };
     },
     enabled: !!marketId && !!user,
   });

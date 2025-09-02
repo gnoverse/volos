@@ -1,8 +1,9 @@
 package model
 
 import (
-	"time"
 	"os"
+	"time"
+
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -17,7 +18,8 @@ var Rpc = func() string {
 	}
 	return "http://localhost:26657"
 }()
-const BlockHeightOnDeploy = 0                               // the block height of the deployment of the Volos contract
+
+const BlockHeightOnDeploy = 0 // the block height of the deployment of the Volos contract
 
 // Proposal represents the complete structure of a governance proposal document stored in Firestore.
 // This struct contains all fields that are persisted to the database when a proposal is created,
@@ -86,11 +88,12 @@ type Market struct {
 	CollateralTokenDecimals int64     `firestore:"collateral_token_decimals" json:"collateral_token_decimals"` // Collateral token decimals
 	TotalSupply             string    `firestore:"total_supply" json:"total_supply"`                           // Total supply amount (u256 string)
 	TotalBorrow             string    `firestore:"total_borrow" json:"total_borrow"`                           // Total borrow amount (u256 string)
-	SupplyAPR               float64   `firestore:"supply_apr" json:"supply_apr"`                             // Current supply APR (percentage)
-	BorrowAPR               float64   `firestore:"borrow_apr" json:"borrow_apr"`                             // Current borrow APR (percentage)
+	SupplyAPR               float64   `firestore:"supply_apr" json:"supply_apr"`                               // Current supply APR (percentage)
+	BorrowAPR               float64   `firestore:"borrow_apr" json:"borrow_apr"`                               // Current borrow APR (percentage)
 	UtilizationRate         float64   `firestore:"utilization_rate" json:"utilization_rate"`                   // Current utilization rate (borrow/supply) as percentage
 	CreatedAt               time.Time `firestore:"created_at" json:"created_at"`                               // When the market was created
 	UpdatedAt               time.Time `firestore:"updated_at" json:"updated_at"`                               // Last time market data was updated
+	LLTV                    float64   `firestore:"lltv" json:"lltv"`                                           // Liquidation Loan-to-Value ratio (WAD-scaled, e.g., 75% = 0.75 * 1e18)
 }
 
 // APRHistory represents a single APR history entry stored in the apr subcollection.
@@ -124,11 +127,18 @@ type UtilizationHistory struct {
 // UserLoan represents a single borrow/repay event for charting.
 // This struct contains user loan activity data suitable for time-series charts.
 type UserLoan struct {
-	Value     string    `json:"value"`     // Total value after the event (u256 string, USD value)
-	Timestamp time.Time `json:"timestamp"` // When the event occurred
-	MarketID  string    `json:"marketId"`  // Which market this event was in
-	EventType string    `json:"eventType"` // Type of event: "Borrow" or "Repay"
-	Operation string    `json:"operation"` // Operation: "+" for increases, "-" for decreases
-	LoanTokenSymbol string    `json:"loan_token_symbol"` // Loan token symbol
+	Value                 string    `json:"value"`                   // Total value after the event (u256 string, USD value)
+	Timestamp             time.Time `json:"timestamp"`               // When the event occurred
+	MarketID              string    `json:"marketId"`                // Which market this event was in
+	EventType             string    `json:"eventType"`               // Type of event: "Borrow" or "Repay"
+	Operation             string    `json:"operation"`               // Operation: "+" for increases, "-" for decreases
+	LoanTokenSymbol       string    `json:"loan_token_symbol"`       // Loan token symbol
 	CollateralTokenSymbol string    `json:"collateral_token_symbol"` // Collateral token symbol
+}
+
+// UserMarketPosition represents per-market aggregates for a user stored under users/{address}/markets/{marketId}
+type UserMarketPosition struct {
+	Loan             string  `json:"loan" firestore:"loan"`
+	Supply           string  `json:"supply" firestore:"supply"`
+	CollateralSupply string  `json:"collateral_supply" firestore:"collateral_supply"`
 }

@@ -1,18 +1,16 @@
 "use client"
 
 import { MarketInfo, Position } from "@/app/types"
-import { formatLTV, formatTokenAmount } from "@/app/utils/format.utils"
+import { formatPercentage, formatTokenAmount } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { PositionChartTabs } from "./position-chart-tabs"
 import { HealthBar } from "./health-bar"
+import { PositionChartTabs } from "./position-chart-tabs"
 
 interface MarketPositionProps {
   market: MarketInfo
   cardStyles: string
   healthFactor: string
-  currentCollateral: number
-  currentLoan: number
-  positionData?: Position | null
+  positionData: Position
   caller: string
 }
 
@@ -20,16 +18,13 @@ export function MyPosition({
   market, 
   cardStyles, 
   healthFactor, 
-  currentCollateral, 
-  currentLoan,
   positionData,
   caller
 }: MarketPositionProps) {
 
-
   const hasPosition = positionData && (
-    parseFloat(positionData.collateral) > 0 || 
-    parseFloat(positionData.borrowShares) > 0
+    BigInt(positionData.collateral_supply) > BigInt(0) || 
+    BigInt(positionData.loan) > BigInt(0)
   )
 
   if (!hasPosition) {
@@ -43,9 +38,10 @@ export function MyPosition({
     )
   }
 
-  const ltv = currentLoan > 0 && currentCollateral > 0 
-    ? (currentLoan / (currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18)))) 
-    : 0
+  const currentBorrowShares = BigInt(positionData.loan)
+  const currentCollateralBigInt = BigInt(positionData.collateral_supply)
+  const currentPriceBigInt = BigInt(market.currentPrice)
+  const ltv = 0 //positionData.ltv
 
   return (
     <div className="space-y-6">
@@ -58,11 +54,11 @@ export function MyPosition({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-200">
-              {currentLoan.toString()} 
+              {formatTokenAmount(positionData.loan, market.loanTokenDecimals)} 
               <span className="text-gray-400 text-lg ml-2">{market.loanTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${(currentLoan * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString()} USD
+              ≈ ${formatTokenAmount((currentBorrowShares * currentPriceBigInt).toString(), market.loanTokenDecimals + 18)} USD
             </div>
           </CardContent>
         </Card>
@@ -75,12 +71,12 @@ export function MyPosition({
           <CardContent className="items-center">
             <div className="text-3xl font-bold text-gray-200 flex flex-wrap items-baseline break-all ">
               <span className="break-all mr-2">
-                {currentCollateral.toString()}
+                {formatTokenAmount(positionData.collateral_supply, market.collateralTokenDecimals)}
               </span>
               <span className="text-gray-400 text-lg">{market.collateralTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${(currentCollateral * parseFloat(formatTokenAmount(market.currentPrice, 18))).toString()} USD
+              ≈ ${formatTokenAmount((currentCollateralBigInt * currentPriceBigInt).toString(), market.collateralTokenDecimals + 18)} USD
             </div>
           </CardContent>
         </Card>
@@ -95,7 +91,7 @@ export function MyPosition({
               <div>
                 <div className="text-sm text-gray-400 mb-1">Current LTV</div>
                 <div className="text-xl font-medium text-gray-200">
-                  {(ltv*100).toFixed(2)}% <span className="text-gray-400 text-sm">/ {formatLTV(market.lltv, 18)}</span>
+                  {formatPercentage(ltv)}<span className="text-gray-400 text-sm">/ {formatPercentage(market.lltv)}</span>
                 </div>
               </div>
               

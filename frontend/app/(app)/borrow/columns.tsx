@@ -1,7 +1,7 @@
 "use client"
 
 import { MarketInfo } from "@/app/types"
-import { formatLTV, parseTokenAmount } from "@/app/utils/format.utils"
+import { formatPercentage, parseTokenAmount } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
@@ -127,7 +127,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       return <div className="text-left">Max LTV</div>
     },
     cell: ({ row }) => {
-      return <div className="text-left font-medium">{formatLTV(row.original.lltv)}</div>
+      return <div className="text-left font-medium">{formatPercentage(row.original.lltv)}</div>
     },
   },
 ] 

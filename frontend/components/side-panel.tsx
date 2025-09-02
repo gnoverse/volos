@@ -20,7 +20,7 @@ interface SidePanelProps {
   borrowValue: number
   healthFactor: string
   currentCollateral?: number
-  currentLoan?: number
+  currentLoan?: string
   ltv: string
   collateralTokenDecimals: number
   loanTokenDecimals: number
