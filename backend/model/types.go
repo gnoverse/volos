@@ -135,3 +135,11 @@ type UserLoan struct {
 	LoanTokenSymbol       string    `json:"loan_token_symbol"`       // Loan token symbol
 	CollateralTokenSymbol string    `json:"collateral_token_symbol"` // Collateral token symbol
 }
+
+// UserMarketPosition represents per-market aggregates for a user stored under users/{address}/markets/{marketId}
+type UserMarketPosition struct {
+	MarketID         string `json:"marketId"`
+	Loan             string `json:"loan"`
+	Supply           string `json:"supply"`
+	CollateralSupply string `json:"collateral_supply"`
+}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"math/big"
-	"time"
+	"strings"
 
 	"volos-backend/model"
 	"volos-backend/services/utils"
@@ -18,15 +18,6 @@ func GetUser(client *firestore.Client, userAddress string) (*model.User, error) 
 
 	doc, err := client.Collection("users").Doc(userAddress).Get(ctx)
 	if err != nil {
-		// If user doesn't exist, return default user data - failsafe
-		if err.Error() == "not found" {
-			return &model.User{
-				Address:   userAddress,
-				DAOMember: false,
-				StakedVLS: make(map[string]int64),
-				CreatedAt: time.Time{},
-			}, nil
-		}
 		return nil, err
 	}
 
@@ -148,4 +139,31 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 	}
 
 	return results, nil
+}
+
+// GetUserMarketPosition fetches a single per-market aggregate for a user from users/{address}/markets/{marketId}
+func GetUserMarketPosition(client *firestore.Client, userAddress string, marketID string) (*model.UserMarketPosition, error) {
+	ctx := context.Background()
+
+	doc, err := client.Collection("users").Doc(userAddress).Collection("markets").Doc(strings.ReplaceAll(marketID, "/", "_")).Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	getString := func(field string) string {
+		if v, err := doc.DataAt(field); err == nil {
+			if s, ok := v.(string); ok {
+				return s
+			}
+		}
+		return "0"
+	}
+
+	pos := &model.UserMarketPosition{
+		MarketID:         doc.Ref.ID,
+		Loan:             getString("loan"),
+		Supply:           getString("supply"),
+		CollateralSupply: getString("collateral_supply"),
+	}
+	return pos, nil
 }
