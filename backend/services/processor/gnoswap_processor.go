@@ -2,6 +2,7 @@ package processor
 
 import (
 	"log/slog"
+	"volos-backend/services/dbupdater"
 
 	"cloud.google.com/go/firestore"
 )
@@ -14,8 +15,6 @@ func processGnoswapPoolTransaction(tx map[string]interface{}, client *firestore.
 		return
 	}
 
-	_, txHash := extractCallerAndHash(tx)
-
 	for _, eventInterface := range events {
 		event, eventType := getEventAndType(eventInterface)
 		if event == nil || eventType == "" {
@@ -23,9 +22,9 @@ func processGnoswapPoolTransaction(tx map[string]interface{}, client *firestore.
 		}
 
 		switch eventType {
-		case "CreatePool", "Swap":
-			if sqrt, ok := extractPrice(event); ok {
-				slog.Info("gnoswap sqrtPriceX96 extracted", "event_type", eventType, "sqrtPriceX96", sqrt, "tx_hash", txHash)
+		case "Swap":
+			if sqrt, poolPath, ok := extractPrice(event); ok {
+				dbupdater.UpdatePrice(client, sqrt, poolPath)
 			}
 		case "StorageDeposit":
 			continue
@@ -33,13 +32,13 @@ func processGnoswapPoolTransaction(tx map[string]interface{}, client *firestore.
 	}
 }
 
-// extractSqrtFromAttrs uses extractEventFields to read the price from event attrs.
-func extractPrice(event map[string]interface{}) (string, bool) {
-	fields, ok := extractEventFields(event, []string{}, []string{"sqrtPriceX96", "sqrt_price_x96"})
+// extractPrice extracts the "sqrtPriceX96" and "poolPath" attributes from an event payload.
+func extractPrice(event map[string]interface{}) (string, string, bool) {
+	fields, ok := extractEventFields(event, []string{}, []string{"sqrtPriceX96", "poolPath"})
 	if !ok {
 		slog.Error("failed to extract price", "event", event)
-		return "", false
+		return "", "", false
 	}
 
-	return fields["sqrtPriceX96"], true
+	return fields["sqrtPriceX96"], fields["poolPath"], true
 }
