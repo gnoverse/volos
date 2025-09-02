@@ -10,12 +10,14 @@ import (
 	"volos-backend/services/dbupdater"
 
 	"cloud.google.com/go/firestore"
+	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
+
 )
 
 // processCoreTransaction handles transactions from the core package, processing various
 // event types such as CreateMarket, Supply, Withdraw, Borrow, Repay, Liquidate,
 // AccrueInterest, SupplyCollateral, WithdrawCollateral.
-func processCoreTransaction(tx map[string]interface{}, client *firestore.Client) {
+func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestore.Client, gnoClient *gnoclient.Client) {
 	events := extractEventsFromTx(tx)
 	if events == nil {
 		return
@@ -32,7 +34,8 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 		switch eventType {
 		case "CreateMarket":
 			if createEvent, ok := extractCreateMarketFields(event); ok {
-				dbupdater.CreateMarket(client,
+				dbupdater.CreateMarket(firestoreClient,
+					gnoClient,
 					createEvent.MarketID,
 					createEvent.LoanToken,
 					createEvent.CollateralToken,
@@ -49,56 +52,56 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 
 		case "Supply":
 			if supplyEvent, ok := extractSupplyFields(event); ok {
-				dbupdater.UpdateTotalSupply(client, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateAPRHistory(client, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, supplyEvent.MarketID, supplyEvent.Timestamp)
-				dbupdater.UpdateUserMarketSupply(client, supplyEvent.OnBehalf, supplyEvent.MarketID, supplyEvent.Amount, eventType)
+				dbupdater.UpdateTotalSupply(firestoreClient, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateAPRHistory(firestoreClient, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, supplyEvent.MarketID, supplyEvent.Timestamp)
+				dbupdater.UpdateUserMarketSupply(firestoreClient, supplyEvent.OnBehalf, supplyEvent.MarketID, supplyEvent.Amount, eventType)
 			}
 
 		case "Withdraw":
 			if withdrawEvent, ok := extractWithdrawFields(event); ok {
-				dbupdater.UpdateTotalSupply(client, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateAPRHistory(client, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, withdrawEvent.MarketID, withdrawEvent.Timestamp)
-				dbupdater.UpdateUserMarketSupply(client, withdrawEvent.OnBehalf, withdrawEvent.MarketID, withdrawEvent.Amount, eventType)
+				dbupdater.UpdateTotalSupply(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateAPRHistory(firestoreClient, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Timestamp)
+				dbupdater.UpdateUserMarketSupply(firestoreClient, withdrawEvent.OnBehalf, withdrawEvent.MarketID, withdrawEvent.Amount, eventType)
 			}
 
 		case "Borrow":
 			if borrowEvent, ok := extractBorrowFields(event); ok {
-				dbupdater.UpdateTotalBorrow(client, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateAPRHistory(client, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, borrowEvent.MarketID, borrowEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(client, borrowEvent.OnBehalf, borrowEvent.MarketID, borrowEvent.Amount, eventType)
+				dbupdater.UpdateTotalBorrow(firestoreClient, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateAPRHistory(firestoreClient, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, borrowEvent.MarketID, borrowEvent.Timestamp)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, borrowEvent.OnBehalf, borrowEvent.MarketID, borrowEvent.Amount, eventType)
 			}
 
 		case "Repay":
 			if repayEvent, ok := extractRepayFields(event); ok {
-				dbupdater.UpdateTotalBorrow(client, repayEvent.MarketID, repayEvent.Amount, repayEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateAPRHistory(client, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, repayEvent.MarketID, repayEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(client, repayEvent.OnBehalf, repayEvent.MarketID, repayEvent.Amount, eventType)
+				dbupdater.UpdateTotalBorrow(firestoreClient, repayEvent.MarketID, repayEvent.Amount, repayEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateAPRHistory(firestoreClient, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, repayEvent.MarketID, repayEvent.Timestamp)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, repayEvent.OnBehalf, repayEvent.MarketID, repayEvent.Amount, eventType)
 			}
 
 		case "Liquidate":
 			if liquidateEvent, ok := extractLiquidateFields(event); ok {
-				dbupdater.UpdateTotalBorrow(client, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateTotalBorrow(firestoreClient, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Timestamp, caller, txHash, eventType)
 				// TODO: If borrower collateral becomes zero, also decrease total_supply and any additional bad-debt borrow reduction.
 				//       Requires extra event data (e.g., bad_debt_assets) or a state read/reconciliation pass.
-				dbupdater.UpdateAPRHistory(client, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, liquidateEvent.MarketID, liquidateEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(client, liquidateEvent.Borrower, liquidateEvent.MarketID, liquidateEvent.Amount, eventType)
+				dbupdater.UpdateAPRHistory(firestoreClient, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, liquidateEvent.MarketID, liquidateEvent.Timestamp)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, liquidateEvent.Borrower, liquidateEvent.MarketID, liquidateEvent.Amount, eventType)
 			}
 
 		case "SupplyCollateral":
 			if scEvent, ok := extractSupplyCollateralFields(event); ok {
-				dbupdater.UpdateTotalCollateralSupply(client, scEvent.MarketID, scEvent.Amount, scEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateUserMarketCollateralSupply(client, scEvent.OnBehalf, scEvent.MarketID, scEvent.Amount, eventType)
+				dbupdater.UpdateTotalCollateralSupply(firestoreClient, scEvent.MarketID, scEvent.Amount, scEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateUserMarketCollateralSupply(firestoreClient, scEvent.OnBehalf, scEvent.MarketID, scEvent.Amount, eventType)
 			}
 
 		case "WithdrawCollateral":
 			if wcEvent, ok := extractWithdrawCollateralFields(event); ok {
-				dbupdater.UpdateTotalCollateralSupply(client, wcEvent.MarketID, wcEvent.Amount, wcEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateUserMarketCollateralSupply(client, wcEvent.OnBehalf, wcEvent.MarketID, wcEvent.Amount, eventType)
+				dbupdater.UpdateTotalCollateralSupply(firestoreClient, wcEvent.MarketID, wcEvent.Amount, wcEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateUserMarketCollateralSupply(firestoreClient, wcEvent.OnBehalf, wcEvent.MarketID, wcEvent.Amount, eventType)
 			}
 
 		case "StorageDeposit":

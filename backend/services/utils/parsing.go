@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -65,4 +66,28 @@ func ParseTime(timeStr string, context string) time.Time {
 		return time.Time{}
 	}
 	return parsed
+}
+
+// ParseABCIstring parses an ABCI query response string to extract the value between quotes
+// Response format: ("79228162514264337593543950337" string)
+func ParseABCIstring(response string, context string) string {
+	if response == "" {
+		slog.Error("empty ABCI response", "context", context)
+		return ""
+	}
+
+	if !strings.HasPrefix(response, "(") || !strings.Contains(response, " string)") {
+		slog.Error("invalid ABCI response format", "context", context, "response", response)
+		return ""
+	}
+
+	start := strings.Index(response, "\"")
+	end := strings.LastIndex(response, "\"")
+	if start == -1 || end == -1 || start >= end {
+		slog.Error("failed to extract quoted value from ABCI response", "context", context, "response", response)
+		return ""
+	}
+
+	value := response[start+1 : end]
+	return value
 }

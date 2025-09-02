@@ -7,9 +7,23 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-// APIRouter handles all API routes with path-based routing
-func APIRouter(client *firestore.Client) http.HandlerFunc {
+// withCORS adds CORS headers to HTTP responses
+func withCORS(handler http.HandlerFunc, frontendURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", frontendURL)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		handler(w, r)
+	}
+}
+
+// APIRouter handles all API routes with path-based routing
+func APIRouter(client *firestore.Client, frontendURL string) http.HandlerFunc {
+	return withCORS(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
 		switch path {
@@ -54,5 +68,5 @@ func APIRouter(client *firestore.Client) http.HandlerFunc {
 				http.Error(w, "API endpoint not found", http.StatusNotFound)
 			}
 		}
-	}
+	}, frontendURL)
 }

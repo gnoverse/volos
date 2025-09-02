@@ -76,6 +76,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 									_or: [
 										{ pkg_path: { eq: "%s" } },
 										{ pkg_path: { eq: "%s" } },
+										{ pkg_path: { eq: "%s" } },
 										{ pkg_path: { eq: "%s" } }
 									]
 							}
@@ -85,7 +86,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 			) {
 				%s
 			}
-		}`, model.CorePkgPath, model.GovernancePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
+		}`, model.CorePkgPath, model.GovernancePkgPath, model.StakerPkgPath, model.GnoswapPool, indexer.UniversalTransactionFields)
 
 	if lastBlockHeight > 0 {
 		return fmt.Sprintf(`
@@ -100,10 +101,11 @@ func buildPollingQuery(lastBlockHeight int) string {
 							response: {
 								events: {
 									GnoEvent: {
-																_or: [
-										{ pkg_path: { eq: "%s" } },
-										{ pkg_path: { eq: "%s" } },
-										{ pkg_path: { eq: "%s" } }
+										_or: [
+											{ pkg_path: { eq: "%s" } },
+											{ pkg_path: { eq: "%s" } },
+											{ pkg_path: { eq: "%s" } },
+											{ pkg_path: { eq: "%s" } }
 										]
 									}
 								}
@@ -114,7 +116,7 @@ func buildPollingQuery(lastBlockHeight int) string {
 			) {
 				%s
 			}
-		}`, lastBlockHeight, model.CorePkgPath, model.GovernancePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
+		}`, lastBlockHeight, model.CorePkgPath, model.GovernancePkgPath, model.StakerPkgPath, model.GnoswapPool, indexer.UniversalTransactionFields)
 	}
 
 	return baseQuery
