@@ -147,6 +147,7 @@ export const MarketSchema = z.object({
   collateral_token_name: z.string(),
   collateral_token_symbol: z.string(),
   collateral_token_decimals: z.number(),
+  current_price: Uint256Schema,
   total_supply: Uint256Schema,
   total_borrow: Uint256Schema,
   total_collateral_supply: Uint256Schema,

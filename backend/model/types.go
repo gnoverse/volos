@@ -12,7 +12,7 @@ const GovernancePkgPath = "gno.land/r/volos/gov/governance" // the package path 
 const StakerPkgPath = "gno.land/r/volos/gov/staker"         // the package path of the Volos staker contract
 const VlsPkgPath = "gno.land/r/volos/gov/vls"               // the package path of the Volos vls contract
 const XvlsPkgPath = "gno.land/r/volos/gov/xvls"             // the package path of the Volos xvls contract
-const GnoswapPool = "gno.land/r/gnoswap/v1/pool"             // the package path of the Gnoswap pool contract
+const GnoswapPool = "gno.land/r/gnoswap/v1/pool"            // the package path of the Gnoswap pool contract
 
 var Rpc = func() string {
 	if url := os.Getenv("RPC_NODE_URL"); url != "" {
@@ -88,6 +88,7 @@ type Market struct {
 	CollateralTokenName     string    `firestore:"collateral_token_name" json:"collateral_token_name"`         // Collateral token name
 	CollateralTokenSymbol   string    `firestore:"collateral_token_symbol" json:"collateral_token_symbol"`     // Collateral token symbol
 	CollateralTokenDecimals int64     `firestore:"collateral_token_decimals" json:"collateral_token_decimals"` // Collateral token decimals
+	CurrentPrice            string    `firestore:"current_price" json:"current_price"`                         // Current price of the loan token in terms of collateral token (u256 string)
 	TotalSupply             string    `firestore:"total_supply" json:"total_supply"`                           // Total supply amount (u256 string)
 	TotalBorrow             string    `firestore:"total_borrow" json:"total_borrow"`                           // Total borrow amount (u256 string)
 	SupplyAPR               float64   `firestore:"supply_apr" json:"supply_apr"`                               // Current supply APR (percentage)
@@ -140,7 +141,7 @@ type UserLoan struct {
 
 // UserMarketPosition represents per-market aggregates for a user stored under users/{address}/markets/{marketId}
 type UserMarketPosition struct {
-	Loan             string  `json:"loan" firestore:"loan"`
-	Supply           string  `json:"supply" firestore:"supply"`
-	CollateralSupply string  `json:"collateral_supply" firestore:"collateral_supply"`
+	Loan             string `json:"loan" firestore:"loan"`
+	Supply           string `json:"supply" firestore:"supply"`
+	CollateralSupply string `json:"collateral_supply" firestore:"collateral_supply"`
 }
