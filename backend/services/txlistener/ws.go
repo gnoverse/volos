@@ -118,6 +118,7 @@ func buildWebSocketQuery() string {
 								_or: [
 									{ pkg_path: { eq: "%s" } },
 									{ pkg_path: { eq: "%s" } },
+									{ pkg_path: { eq: "%s" } },
 									{ pkg_path: { eq: "%s" } }
 								]
 							}
@@ -127,5 +128,5 @@ func buildWebSocketQuery() string {
 			) {
 				%s
 			}
-		}`, model.GovernancePkgPath, model.CorePkgPath, model.StakerPkgPath, indexer.UniversalTransactionFields)
+		}`, model.GovernancePkgPath, model.CorePkgPath, model.StakerPkgPath, model.GnoswapPool, indexer.UniversalTransactionFields)
 }

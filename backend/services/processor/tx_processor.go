@@ -167,6 +167,8 @@ func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 		processCoreTransaction(tx, client)
 	case model.GovernancePkgPath, model.StakerPkgPath, model.VlsPkgPath, model.XvlsPkgPath:
 		processGovernanceTransaction(tx, client)
+	case model.GnoswapPool:
+		processGnoswapPoolTransaction(tx, client)
 	}
 }
 

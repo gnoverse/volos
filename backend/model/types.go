@@ -12,6 +12,8 @@ const GovernancePkgPath = "gno.land/r/volos/gov/governance" // the package path 
 const StakerPkgPath = "gno.land/r/volos/gov/staker"         // the package path of the Volos staker contract
 const VlsPkgPath = "gno.land/r/volos/gov/vls"               // the package path of the Volos vls contract
 const XvlsPkgPath = "gno.land/r/volos/gov/xvls"             // the package path of the Volos xvls contract
+const GnoswapPool = "gno.land/r/gnoswap/v1/pool"             // the package path of the Gnoswap pool contract
+
 var Rpc = func() string {
 	if url := os.Getenv("RPC_NODE_URL"); url != "" {
 		return url
