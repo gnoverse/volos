@@ -15,45 +15,46 @@ import (
 	// Firestore
 	"google.golang.org/api/option"
 
-	_ "github.com/joho/godotenv/autoload"
 	"volos-backend/services/aggregator"
+
+	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
+	rpcclient "github.com/gnolang/gno/tm2/pkg/bft/rpc/client"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 var firestoreClient *firestore.Client
 var frontendURL string
+var gnoClient *gnoclient.Client
 
 func init() {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ // TODO: switch to JSON handler for production
-		Level: slog.LevelDebug, //dev only
-	}))
-	slog.SetDefault(logger)
+	initLogger()
 
-	ctx := context.Background()
-	projectID := "volos-f06d9"
-	serviceAccountPath := "firebase.json"
-	client, err := firestore.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountPath))
-	if err != nil {
+	if err := initFirebaseClient(); err != nil {
 		slog.Error("Failed to create Firestore client", "error", err)
 		os.Exit(1)
 	}
-	firestoreClient = client
+
+	if err := initGnoClient(); err != nil {
+		slog.Error("Failed to create Gno client", "error", err)
+		os.Exit(1)
+	}
 
 	frontendURL = func() string {
 		if url := os.Getenv("FRONTEND_URL"); url != "" {
 			return url
 		}
 		return "http://localhost:3000"
-}()
+	}()
 }
 
 func main() {
-	http.HandleFunc("/api/", withCORS(routes.APIRouter(firestoreClient)))
+	http.HandleFunc("/api/", routes.APIRouter(firestoreClient, frontendURL))
 
 	// Start transaction processing
 	go func() {
 		ctx := context.Background()
-		pool := processor.NewTransactionProcessorPool(8)
-		pool.Start(firestoreClient)
+		pool := processor.NewTransactionProcessorPool(8, gnoClient, firestoreClient)
+		pool.Start()
 		listener := txlistener.NewTransactionListener(pool)
 		listener.Start(ctx)
 	}()
@@ -71,15 +72,37 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
-func withCORS(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", frontendURL)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		handler(w, r)
+func initGnoClient() error {
+	remote := os.Getenv("RPC_NODE_URL")
+	if remote == "" {
+		remote = "127.0.0.1:26657"
 	}
+	rpcClient, err := rpcclient.NewHTTPClient(remote)
+	if err != nil {
+		return err
+	}
+
+	gnoClient = &gnoclient.Client{
+		RPCClient: rpcClient,
+	}
+	return nil
+}
+
+func initFirebaseClient() error {
+	ctx := context.Background()
+	projectID := "volos-f06d9"
+	serviceAccountPath := "firebase.json"
+	client, err := firestore.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountPath))
+	if err != nil {
+		return err
+	}
+	firestoreClient = client
+	return nil
+}
+
+func initLogger() {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ // TODO: switch to JSON handler for production
+		Level: slog.LevelDebug, //dev only
+	}))
+	slog.SetDefault(logger)
 }

@@ -9,7 +9,7 @@ import (
 
 // processGnoswapPoolTransaction handles transactions from the gnoswap pool package,
 // focusing only on CreatePool and Swap events, extracting the "sqrtPriceX96" attribute.
-func processGnoswapPoolTransaction(tx map[string]interface{}, client *firestore.Client) {
+func processGnoswapPoolTransaction(tx map[string]interface{}, firestoreClient *firestore.Client) {
 	events := extractEventsFromTx(tx)
 	if events == nil {
 		return
@@ -24,7 +24,7 @@ func processGnoswapPoolTransaction(tx map[string]interface{}, client *firestore.
 		switch eventType {
 		case "Swap":
 			if sqrt, poolPath, ok := extractPrice(event); ok {
-				dbupdater.UpdatePrice(client, sqrt, poolPath)
+				dbupdater.UpdatePrice(firestoreClient, sqrt, poolPath)
 			}
 		case "StorageDeposit":
 			continue

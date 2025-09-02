@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"math/big"
 	"time"
-	
+
 	"cloud.google.com/go/firestore"
 )
 
@@ -42,7 +42,7 @@ func GetAmountFromDoc(doc *firestore.DocumentSnapshot, fieldName string) string 
 	if doc == nil || !doc.Exists() {
 		return "0"
 	}
-	
+
 	if s, err := doc.DataAt(fieldName); err == nil {
 		if sStr, ok := s.(string); ok {
 			// Validate that it's a valid big.Int
@@ -51,7 +51,7 @@ func GetAmountFromDoc(doc *firestore.DocumentSnapshot, fieldName string) string 
 			}
 		}
 	}
-	
+
 	slog.Warn("invalid or missing amount field", "field", fieldName)
 	return "0"
 }
@@ -71,13 +71,46 @@ func GetTimeFromDoc(doc *firestore.DocumentSnapshot, fieldName string) time.Time
 	if doc == nil || !doc.Exists() {
 		return time.Time{}
 	}
-	
+
 	if v, err := doc.DataAt(fieldName); err == nil {
 		if t, ok := v.(time.Time); ok {
 			return t
 		}
 	}
-	
+
 	slog.Warn("invalid or missing time field", "field", fieldName)
 	return time.Time{}
+}
+
+// ExtractPriceFromSqrt extracts the actual price from sqrtPriceX96 using the same logic as the on-chain oracle
+func extractPriceFromSqrt(sqrtPriceX96 string, dontRevert bool) string {
+	sqrtPrice, ok := new(big.Int).SetString(sqrtPriceX96, 10)
+	if !ok {
+		slog.Error("failed to parse sqrtPriceX96 as big.Int", "sqrtPriceX96", sqrtPriceX96)
+		return ""
+	}
+
+	// Square the price to get price in Q192 (sqrtPriceX96²)
+	priceQ192 := new(big.Int).Mul(sqrtPrice, sqrtPrice)
+
+	// ORACLE_PRICE_SCALE = 1e36 (from consts.gno)
+	oraclePriceScale := new(big.Int).Exp(big.NewInt(10), big.NewInt(36), nil)
+
+	// Q192 = 2^192 (from consts.gno)
+	q192 := new(big.Int).Exp(big.NewInt(2), big.NewInt(192), nil)
+
+	// Calculate: (priceQ192 * ORACLE_PRICE_SCALE) / Q192
+	// This gives us the price with 36 decimal precision
+	numerator := new(big.Int).Mul(priceQ192, oraclePriceScale)
+	price := new(big.Int).Div(numerator, q192)
+
+	// If dontRevert is false, invert the price: ORACLE_PRICE_SCALE² / price
+	if !dontRevert {
+		// Calculate ORACLE_PRICE_SCALE²
+		oraclePriceScaleSquared := new(big.Int).Mul(oraclePriceScale, oraclePriceScale)
+		// Invert: ORACLE_PRICE_SCALE² / price
+		price = new(big.Int).Div(oraclePriceScaleSquared, price)
+	}
+
+	return price.String()
 }

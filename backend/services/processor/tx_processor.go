@@ -32,17 +32,21 @@ import (
 	"strconv"
 	"sync"
 
-	"cloud.google.com/go/firestore"
 	"volos-backend/model"
+
+	"cloud.google.com/go/firestore"
+	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
 )
 
 // TransactionProcessorPool processes transactions concurrently using a worker pool.
 // It handles transactions from both core and governance packages, routing them to
 // appropriate processing functions based on their package path.
 type TransactionProcessorPool struct {
-	jobs    chan map[string]interface{}
-	workers int
-	logger  *slog.Logger
+	jobs            chan map[string]interface{}
+	workers         int
+	logger          *slog.Logger
+	gnoClient       *gnoclient.Client
+	firestoreClient *firestore.Client
 
 	// seenMu guards concurrent access to the de-duplication fields below.
 	seenMu sync.Mutex
@@ -57,7 +61,7 @@ type TransactionProcessorPool struct {
 }
 
 // NewTransactionProcessorPool creates a new pool with the given number of workers.
-func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
+func NewTransactionProcessorPool(workers int, gnoClient *gnoclient.Client, firestoreClient *firestore.Client) *TransactionProcessorPool {
 	if workers <= 0 {
 		workers = 8
 	}
@@ -76,17 +80,19 @@ func NewTransactionProcessorPool(workers int) *TransactionProcessorPool {
 	}
 
 	return &TransactionProcessorPool{
-		jobs:      make(chan map[string]interface{}, 1000),
-		workers:   workers,
-		logger:    slog.Default().With("component", "TransactionProcessorPool"),
-		seen:      make(map[string]struct{}, defaultCap),
-		seenQueue: make([]string, 0, defaultCap),
-		seenCap:   defaultCap,
+		jobs:            make(chan map[string]interface{}, 1000),
+		workers:         workers,
+		logger:          slog.Default().With("component", "TransactionProcessorPool"),
+		gnoClient:       gnoClient,
+		firestoreClient: firestoreClient,
+		seen:            make(map[string]struct{}, defaultCap),
+		seenQueue:       make([]string, 0, defaultCap),
+		seenCap:         defaultCap,
 	}
 }
 
 // Start launches the worker goroutines that process transactions from both core and governance packages.
-func (p *TransactionProcessorPool) Start(client *firestore.Client) {
+func (p *TransactionProcessorPool) Start() {
 	p.logger.Info("starting transaction processor pool",
 		"workers", p.workers,
 		"queue_capacity", cap(p.jobs),
@@ -96,7 +102,7 @@ func (p *TransactionProcessorPool) Start(client *firestore.Client) {
 	for i := 0; i < p.workers; i++ {
 		go func() {
 			for tx := range p.jobs {
-				ProcessTransaction(tx, client)
+				ProcessTransaction(tx, p.firestoreClient, p.gnoClient)
 			}
 		}()
 	}
@@ -153,7 +159,7 @@ func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 
 // ProcessTransaction processes a single transaction JSON object by determining its package path
 // and routing it to the appropriate processor (core or governance).
-func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
+func ProcessTransaction(tx map[string]interface{}, firestoreClient *firestore.Client, gnoClient *gnoclient.Client) {
 	pkgPath, ok := getPackagePath(tx)
 	if !ok {
 		if h, _ := tx["hash"].(string); h != "" {
@@ -164,11 +170,11 @@ func ProcessTransaction(tx map[string]interface{}, client *firestore.Client) {
 
 	switch pkgPath {
 	case model.CorePkgPath:
-		processCoreTransaction(tx, client)
+		processCoreTransaction(tx, firestoreClient, gnoClient)
 	case model.GovernancePkgPath, model.StakerPkgPath, model.VlsPkgPath, model.XvlsPkgPath:
-		processGovernanceTransaction(tx, client)
+		processGovernanceTransaction(tx, firestoreClient)
 	case model.GnoswapPool:
-		processGnoswapPoolTransaction(tx, client)
+		processGnoswapPoolTransaction(tx, firestoreClient)
 	}
 }
 
