@@ -3,10 +3,14 @@ package dbupdater
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"time"
 	"volos-backend/model"
+	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // SetDAOMemberStatus updates the DAO membership status for a user
@@ -151,4 +155,84 @@ func DeletePendingUnstakesByIDs(client *firestore.Client, userAddress string, un
 		slog.Error("failed to delete pending unstakes", "user_address", userAddress, "unstake_ids", unstakeIDs, "error", err)
 		return
 	}
+}
+
+// UpdateUserMarketSupply updates users/{addr}/markets/{marketId}.supply
+// eventType: "Supply" adds, "Withdraw" subtracts.
+func UpdateUserMarketSupply(client *firestore.Client, userAddress, marketID, amount, eventType string) {
+	isAddition := eventType == "Supply"
+	updateUserMarketAmount(client, userAddress, marketID, "supply", amount, "user supply update", isAddition)
+}
+
+// UpdateUserMarketLoan updates users/{addr}/markets/{marketId}.loan
+// eventType: "Borrow" adds, "Repay" subtracts, "Liquidate" subtracts.
+func UpdateUserMarketLoan(client *firestore.Client, userAddress, marketID, amount, eventType string) {
+	isAddition := eventType == "Borrow"
+	updateUserMarketAmount(client, userAddress, marketID, "loan", amount, "user loan update", isAddition)
+}
+
+// UpdateUserMarketCollateralSupply updates users/{addr}/markets/{marketId}.collateral_supply
+// eventType: "SupplyCollateral" adds, "WithdrawCollateral" subtracts.
+func UpdateUserMarketCollateralSupply(client *firestore.Client, userAddress, marketID, amount, eventType string) {
+	isAddition := eventType == "SupplyCollateral"
+	updateUserMarketAmount(client, userAddress, marketID, "collateral_supply", amount, "user collateral supply update", isAddition)
+}
+
+// updateUserMarketAmount updates a single numeric aggregate field under users/{addr}/markets/{marketId}
+// using a Firestore transaction. Creates intermediate documents if missing.
+func updateUserMarketAmount(client *firestore.Client, userAddress, marketID, fieldName, amount, contextStr string, isAddition bool) {
+	ctx := context.Background()
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+
+	delta := utils.ParseAmount(amount, contextStr)
+	if delta.Sign() == 0 {
+		return
+	}
+
+	userRef := client.Collection("users").Doc(userAddress)
+	marketRef := userRef.Collection("markets").Doc(sanitizedMarketID)
+
+	if err := client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		usnap, err := tx.Get(userRef)
+		if err != nil {
+			if status.Code(err) != codes.NotFound {
+				return err
+			}
+		}
+
+		msnap, err := tx.Get(marketRef)
+		if err != nil {
+			if status.Code(err) != codes.NotFound {
+				return err
+			}
+		}
+
+		current := GetAmountFromDoc(msnap, fieldName)
+		updated := UpdateAmountInDoc(current, delta, isAddition)
+
+		if usnap == nil || !usnap.Exists() {
+			base := map[string]interface{}{
+				"address":    userAddress,
+				"dao_member": false,
+				"created_at": time.Now(),
+			}
+			if err := tx.Set(userRef, base, firestore.MergeAll); err != nil {
+				return err
+			}
+		}
+
+		updates := map[string]interface{}{
+			fieldName: updated,
+		}
+		return tx.Set(marketRef, updates, firestore.MergeAll)
+	}); err != nil {
+		slog.Error("failed to update user market amount", "user_address", userAddress, "market_id", marketID, "field", fieldName, "amount", amount, "is_addition", isAddition, "error", err)
+		return
+	}
+
+	op := "-"
+	if isAddition {
+		op = "+"
+	}
+	slog.Info("updated user market aggregate", "operation", op, "field", fieldName, "amount", amount, "user_address", userAddress, "market_id", marketID)
 }

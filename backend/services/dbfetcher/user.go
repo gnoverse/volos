@@ -91,7 +91,7 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 			continue
 		}
 
-		amount := utils.ParseAmount(history.Value, "GetUserLoanHistory")
+		amount := utils.ParseAmount(history.Delta, "GetUserLoanHistory")
 		if amount.Sign() == 0 {
 			continue
 		}
