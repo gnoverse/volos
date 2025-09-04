@@ -9,39 +9,16 @@ import { Input } from "@/components/ui/input"
 import { useQueryClient } from "@tanstack/react-query"
 import { ArrowDown, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { 
-  parseUint256, 
-  addUint256, 
-  subtractUint256, 
-  multiplyUint256ByNumber,
-  uint256ToNumber
-} from "@/app/utils/uint256.utils"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
 
 interface AddBorrowPanelProps {
   market: MarketInfo
-  supplyValue: string // Changed from number to string (uint256)
-  borrowValue: string // Changed from number to string (uint256)
-  healthFactor: string
-  currentCollateral?: string // Changed from number to string (uint256)
-  currentLoan?: string // Changed from number to string (uint256)
-  ltv: string
-  collateralTokenDecimals: number
-  loanTokenDecimals: number
-  positionData?: Position
+  positionData: Position
 }
 
 export function AddBorrowPanel({
   market,
-  supplyValue,
-  borrowValue,
-  healthFactor,
-  currentCollateral = "0",
-  currentLoan = "0",
-  ltv,
-  // collateralTokenDecimals,
-  // loanTokenDecimals,
   positionData,
 }: AddBorrowPanelProps) {
     const { register, setValue, watch, reset } = useForm({
@@ -58,31 +35,44 @@ export function AddBorrowPanel({
   const borrowMutation = useBorrowMutation()
   const approveTokenMutation = useApproveTokenMutation()
   
-  // Get current positions as uint256 strings
-  const positionCollateral = positionData?.collateral || currentCollateral;
-  const positionLoan = positionData?.borrowShares || currentLoan;
+  const currentCollateralBI = BigInt(positionData?.collateral_supply || "0")
+  const currentLoanBI = BigInt(positionData?.loan || "0")
 
   const supplyAmount = watch("supplyAmount");
   const borrowAmount = watch("borrowAmount");
 
-  // Convert user input to uint256 strings
-  const supplyAmountUint256 = supplyAmount ? parseUint256(supplyAmount, 6) : "0"; // Using 6 decimals for demo
-  const borrowAmountUint256 = borrowAmount ? parseUint256(borrowAmount, 6) : "0"; // Using 6 decimals for demo
-  
-  // Calculate total collateral after supply
-  const totalCollateral = addUint256(positionCollateral, supplyAmountUint256);
-  
-  // Convert LTV to number for calculation (it's already in WAD format)
-  const ltvFloat = uint256ToNumber(ltv, 18);
-  
-  // Calculate max borrowable: (totalCollateral * ltv) - currentLoan
-  const maxBorrowableCollateral = multiplyUint256ByNumber(totalCollateral, ltvFloat);
-  const maxBorrowable = subtractUint256(maxBorrowableCollateral, positionLoan);
-  
-  // Convert to numbers for display and comparison
-  const supplyAmountNum = uint256ToNumber(supplyAmountUint256, 6);
-  const borrowAmountNum = uint256ToNumber(borrowAmountUint256, 6);
-  const maxBorrowableNum = uint256ToNumber(maxBorrowable, 6);
+  // Helpers to convert UI input <-> bigint precisely
+  const toUnits = (v: string, decimals: number): bigint => {
+    const [intPart, fracRaw] = (v || "0").split(".")
+    const frac = (fracRaw || "").slice(0, decimals).padEnd(decimals, "0")
+    const cleaned = (intPart || "0").replace(/\D/g, "")
+    return BigInt(cleaned || "0") * BigInt(10) ** BigInt(decimals) + BigInt(frac || "0")
+  }
+  const fromUnits = (bi: bigint, decimals: number): string => {
+    const d = BigInt(decimals)
+    const base = BigInt(10) ** d
+    const intPart = bi / base
+    const fracPart = (bi % base).toString().padStart(decimals, '0')
+    return `${intPart}.${fracPart}`
+  }
+
+  const collateralDecimals = market.collateralTokenDecimals
+  const loanDecimals = market.loanTokenDecimals
+
+  const supplyAmountBI = toUnits(supplyAmount || "0", collateralDecimals)
+  const borrowAmountBI = toUnits(borrowAmount || "0", loanDecimals)
+
+  // totalCollateral = currentCollateral + supply
+  // const totalCollateralBI = currentCollateralBI + supplyAmountBI // kept for future bigint precise flows
+
+  // ltv is a float (0..1). Compute maxBorrowableNum for UI and validation only.
+  const ltvFloat = positionData?.ltv || 0
+  const currentCollateralNum = Number(fromUnits(currentCollateralBI, collateralDecimals))
+  const supplyAmountNum = Number(fromUnits(supplyAmountBI, collateralDecimals))
+  const totalCollateralNum = currentCollateralNum + supplyAmountNum
+  const currentLoanNum = Number(fromUnits(currentLoanBI, loanDecimals))
+  const borrowAmountNum = Number(fromUnits(borrowAmountBI, loanDecimals))
+  const maxBorrowableNum = Math.max(0, totalCollateralNum * ltvFloat - currentLoanNum)
 
   const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
   const supplyButtonMessage = isSupplyInputEmpty ? "Enter supply amount" : "Supply";
@@ -103,22 +93,19 @@ export function AddBorrowPanel({
     try {
       const collateralTokenPath = market?.collateralToken;
       
-      // Use uint256 string for approval amount (with 20% buffer)
-      const approvalAmountUint256 = multiplyUint256ByNumber(supplyAmountUint256, 1.2);
+      // Use 20% buffer for approval (number in token units for UI/API)
+      const approvalAmount = borrowAmountNum * 0 + Number((supplyAmount || "0")) * 1.2
       
       await approveTokenMutation.mutateAsync({
         tokenPath: collateralTokenPath!,
-        amount: uint256ToNumber(approvalAmountUint256, 6)
+        amount: approvalAmount
       });
 
-      console.log("collateralTokenPath", collateralTokenPath)
-      console.log("supplyAmountUint256", supplyAmountUint256)
-      console.log("supplyAmount", supplyAmount)
-      console.log("market.poolPath", market.poolPath)
+      // console logs removed
             
       supplyCollateralMutation.mutate({
         marketId: market.poolPath!,
-        amount: uint256ToNumber(supplyAmountUint256, 6)
+        amount: Number(supplyAmount || "0")
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
@@ -142,17 +129,17 @@ export function AddBorrowPanel({
     try {
       const loanTokenPath = market?.loanToken;
       
-      // Use uint256 string for approval amount (with 20% buffer)
-      const approvalAmountUint256 = multiplyUint256ByNumber(borrowAmountUint256, 1.2);
+      // Use 20% buffer for approval (number in token units for UI/API)
+      const approvalAmount = Number((borrowAmount || "0")) * 1.2
       
       await approveTokenMutation.mutateAsync({
         tokenPath: loanTokenPath!,
-        amount: uint256ToNumber(approvalAmountUint256, 6)
+        amount: approvalAmount
       });
             
       borrowMutation.mutate({
         marketId: market.poolPath!,
-        assets: uint256ToNumber(borrowAmountUint256, 6)
+        assets: Number(borrowAmount || "0")
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
@@ -191,9 +178,9 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${(uint256ToNumber(supplyValue, 6) * supplyAmountNum).toFixed(2)}</span>
+            <span className="text-xs text-gray-400">{Number(supplyAmount || "0").toFixed(2)} {market.collateralTokenSymbol}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
+              <span className="text-xs text-gray-400">{Number(fromUnits(currentCollateralBI, collateralDecimals)).toFixed(4)} {market.collateralTokenSymbol}</span>
               <Button
                 type="button"
                 variant="ghost"
@@ -237,9 +224,9 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${(borrowValue * borrowAmountNum).toFixed(2)}</span>
+            <span className="text-xs text-gray-400">{Number(borrowAmount || "0").toFixed(2)} {market.loanTokenSymbol}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
+              <span className="text-xs text-gray-400">{Number(fromUnits(currentLoanBI, loanDecimals)).toFixed(4)} {market.loanTokenSymbol}</span>
               <Button
                 type="button"
                 variant="ghost"
@@ -271,10 +258,10 @@ export function AddBorrowPanel({
         borrowAmount={borrowAmount}
         maxBorrowableAmount={maxBorrowableNum}
         isBorrowValid={borrowAmountNum <= maxBorrowableNum}
-        healthFactor={healthFactor}
-        currentCollateral={uint256ToNumber(currentCollateral, 6)}
-        currentLoan={uint256ToNumber(currentLoan, 6)}
-        ltv={ltv}
+        healthFactor={"-"}
+        currentCollateral={Number(fromUnits(currentCollateralBI, collateralDecimals))}
+        currentLoan={Number(fromUnits(currentLoanBI, loanDecimals))}
+        ltv={String(ltvFloat)}
       />
     </form>
   )
