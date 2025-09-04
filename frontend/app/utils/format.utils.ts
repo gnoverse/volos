@@ -24,45 +24,6 @@ export function formatTokenAmount(
   });
 }
 
-/**
- * Formats a rate (e.g., APY) as a percentage string with 2 decimals.
- */
-export function formatRate(
-  value: string | bigint,
-  decimals: number = 18,
-  multiplyBy100: boolean = false,
-  fractionDigits: number = 2
-): string {
-  let num 
-  if (multiplyBy100)
-     num = Number(formatUnits(BigInt(value), decimals - 2));
-  else
-     num = Number(formatUnits(BigInt(value), decimals));
-  return `${num.toFixed(fractionDigits)}%`;
-}
-
-/**
- * Formats a utilization value as a percentage string with 2 decimals.
- */
-export function formatUtilization(
-  value: string | bigint,
-  decimals: number = 18,
-  fractionDigits: number = 2
-): string {
-  const num = Number(formatUnits(BigInt(value), decimals)) * 100;
-  return `${num.toFixed(fractionDigits)}%`;
-}
-
-/**
- * Formats a Loan-to-Value (LTV) ratio as a percentage string with 0 decimals.
- */
-export function formatLTV(
-  value: string | bigint,
-  decimals: number = 18
-): string {
-  const num = Number(formatUnits(BigInt(value), decimals)) * 100;
-  return `${num.toFixed(0)}%`;
-}
 
 /**
  * Formats a plain number as a percentage string with fixed decimals.
@@ -227,7 +188,6 @@ export function getXAxisFormatter(period: "1 week" | "1 month" | "3 months" | "6
       return formatShortDate;
   }
 }
-
 
 
 

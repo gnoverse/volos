@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { useQueryClient } from "@tanstack/react-query"
 import { ArrowDown, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
+import { formatUnits, parseUnits } from "viem"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
 
@@ -19,7 +20,13 @@ interface AddBorrowPanelProps {
 
 export function AddBorrowPanel({
   market,
-  positionData,
+  positionData = {
+    collateral_supply: "0",
+    loan: "0",
+    supply: "0",
+    ltv: 0,
+    health_factor: 0
+  },
 }: AddBorrowPanelProps) {
     const { register, setValue, watch, reset } = useForm({
         defaultValues: {
@@ -35,34 +42,15 @@ export function AddBorrowPanel({
   const borrowMutation = useBorrowMutation()
   const approveTokenMutation = useApproveTokenMutation()
   
-  const currentCollateralBI = BigInt(positionData?.collateral_supply || "0")
-  const currentLoanBI = BigInt(positionData?.loan || "0")
+  const currentCollateralBI = BigInt(positionData.collateral_supply)
+  const currentLoanBI = BigInt(positionData.loan)
 
   const supplyAmount = watch("supplyAmount");
   const borrowAmount = watch("borrowAmount");
 
-  // Helpers to convert UI input <-> bigint precisely
-  const toUnits = (v: string, decimals: number): bigint => {
-    const [intPart, fracRaw] = (v || "0").split(".")
-    const frac = (fracRaw || "").slice(0, decimals).padEnd(decimals, "0")
-    const cleaned = (intPart || "0").replace(/\D/g, "")
-    return BigInt(cleaned || "0") * BigInt(10) ** BigInt(decimals) + BigInt(frac || "0")
-  }
-  const fromUnits = (bi: bigint, decimals: number): string => {
-    const d = BigInt(decimals)
-    const base = BigInt(10) ** d
-    const intPart = bi / base
-    const fracPart = (bi % base).toString().padStart(decimals, '0')
-    return `${intPart}.${fracPart}`
-  }
-  const formatUnits = (bi: bigint, decimals: number, fractionDigits: number): string => {
-    const full = fromUnits(bi, decimals)
-    const [i, f = ""] = full.split(".")
-    return fractionDigits > 0 ? `${i}.${f.slice(0, fractionDigits)}` : i
-  }
-
-  const supplyAmountBI = toUnits(supplyAmount || "0", market.collateralTokenDecimals)
-  const borrowAmountBI = toUnits(borrowAmount || "0", market.loanTokenDecimals)
+  // Convert user inputs to uint256 units for calculations
+  const supplyAmountBI = parseUnits(supplyAmount, market.collateralTokenDecimals)
+  const borrowAmountBI = parseUnits(borrowAmount, market.loanTokenDecimals)
 
   // LTV as scaled integer to avoid float math (fallback until API provides ltv_scaled)
   const LTV_SCALE = BigInt(1_000_000_000) // 1e9
@@ -73,11 +61,11 @@ export function AddBorrowPanel({
   let maxBorrowableBI = (totalCollateralBI * ltvScaled) / LTV_SCALE - currentLoanBI
   if (maxBorrowableBI < BigInt(0)) maxBorrowableBI = BigInt(0)
 
-  // Display strings (no Number casting)
+  // Display strings - format uint256 values from DB, keep user input as-is
   const supplyAmountDisplay = supplyAmount || "0"
-  const currentCollateralStr = formatUnits(currentCollateralBI, market.collateralTokenDecimals, 4)
-  const currentLoanStr = formatUnits(currentLoanBI, market.loanTokenDecimals, 4)
-  const maxBorrowableStr = formatUnits(maxBorrowableBI, market.loanTokenDecimals, 4)
+  const currentCollateralStr = formatUnits(currentCollateralBI, market.collateralTokenDecimals)
+  const currentLoanStr = formatUnits(currentLoanBI, market.loanTokenDecimals)
+  const maxBorrowableStr = formatUnits(maxBorrowableBI, market.loanTokenDecimals)
 
   const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
   const supplyButtonMessage = isSupplyInputEmpty ? "Enter supply amount" : "Supply";
