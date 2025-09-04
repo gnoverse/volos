@@ -142,6 +142,7 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 }
 
 // GetUserMarketPosition fetches a single per-market aggregate for a user from users/{address}/markets/{marketId}
+// and calculates maxBorrow and healthFactor based on the Gno contract logic
 func GetUserMarketPosition(client *firestore.Client, userAddress string, marketID string) (*model.UserMarketPosition, error) {
 	ctx := context.Background()
 
@@ -149,10 +150,68 @@ func GetUserMarketPosition(client *firestore.Client, userAddress string, marketI
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var pos model.UserMarketPosition
 	if err := dsnap.DataTo(&pos); err != nil {
 		return nil, err
 	}
+
+	marketDoc, err := client.Collection("markets").Doc(strings.ReplaceAll(marketID, "/", "_")).Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var market model.Market
+	if err := marketDoc.DataTo(&market); err != nil {
+		return nil, err
+	}
+
+	pos.MaxBorrow, pos.HealthFactor = calculateMaxBorrowAndHealthFactor(pos, market)
+
 	return &pos, nil
+}
+
+// calculateMaxBorrowAndHealthFactor calculates maxBorrow and healthFactor based on Gno contract logic
+func calculateMaxBorrowAndHealthFactor(pos model.UserMarketPosition, market model.Market) (string, float64) {
+	borrowAmount := utils.ParseAmount(pos.Borrow, "calculateMaxBorrowAndHealthFactor loan")
+	collateralAmount := utils.ParseAmount(pos.CollateralSupply, "calculateMaxBorrowAndHealthFactor collateral")
+	currentPrice := utils.ParseAmount(market.CurrentPrice, "calculateMaxBorrowAndHealthFactor price")
+
+	// Parse LLTV - convert percentage to WAD-scaled value
+	// market.LLTV is stored as percentage (e.g., 75 for 75%)
+	// Convert to WAD: 75% = 0.75 * 1e18 = 750000000000000000000
+	lltvPercentage := big.NewFloat(market.LLTV)
+	lltvWad := new(big.Float).Mul(lltvPercentage, big.NewFloat(1e16))
+
+	if collateralAmount.Sign() == 0 {
+		return "0", 0.0
+	}
+
+	// Calculate collateral value in loan token terms
+	// collateralValue = (collateralAmount * currentPrice) / ORACLE_PRICE_SCALE
+	oraclePriceScale := new(big.Int).Exp(big.NewInt(10), big.NewInt(36), nil)
+	collateralValue := new(big.Int).Mul(collateralAmount, currentPrice)
+	collateralValue = new(big.Int).Div(collateralValue, oraclePriceScale)
+
+	// Calculate maxBorrow = collateralValue * LLTV
+	// Convert LLTV from float64 to big.Int for calculation
+	lltvInt := new(big.Int)
+	lltvWad.Int(lltvInt) // This converts the WAD-scaled float to int
+	maxBorrow := new(big.Int).Mul(collateralValue, lltvInt)
+	maxBorrow = new(big.Int).Div(maxBorrow, new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)) // Divide by WAD
+
+	// Calculate healthFactor
+	// healthFactor = maxBorrow / loanAmount (if loanAmount > 0)
+	healthFactor := 0.0
+	if borrowAmount.Sign() > 0 {
+		maxBorrowFloat := new(big.Float).SetInt(maxBorrow)
+		borrowAmountFloat := new(big.Float).SetInt(borrowAmount)
+		healthRatio := new(big.Float).Quo(maxBorrowFloat, borrowAmountFloat)
+		healthFactor, _ = healthRatio.Float64()
+	} else {
+		// If no loan, healthFactor is infinite (represented as a large number)
+		healthFactor = 999999.0
+	}
+
+	return maxBorrow.String(), healthFactor
 }

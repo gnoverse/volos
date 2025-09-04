@@ -169,8 +169,8 @@ func UpdateUserMarketSupply(client *firestore.Client, userAddress, marketID, amo
 // eventType: "Borrow" adds, "Repay" subtracts, "Liquidate" subtracts.
 func UpdateUserMarketLoan(client *firestore.Client, userAddress, marketID, amount, shares, eventType string) {
 	isAddition := eventType == "Borrow"
-	updateUserMarketAmount(client, userAddress, marketID, "loan", amount, "user loan update", isAddition)
-	updateUserMarketAmount(client, userAddress, marketID, "loan_shares", shares, "user loan shares update", isAddition)
+	updateUserMarketAmount(client, userAddress, marketID, "borrow", amount, "user loan update", isAddition)
+	updateUserMarketAmount(client, userAddress, marketID, "borrow_shares", shares, "user loan shares update", isAddition)
 }
 
 // UpdateUserMarketCollateralSupply updates users/{addr}/markets/{marketId}.collateral_supply
