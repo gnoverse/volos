@@ -55,31 +55,36 @@ export function AddBorrowPanel({
     const fracPart = (bi % base).toString().padStart(decimals, '0')
     return `${intPart}.${fracPart}`
   }
+  const formatUnits = (bi: bigint, decimals: number, fractionDigits: number): string => {
+    const full = fromUnits(bi, decimals)
+    const [i, f = ""] = full.split(".")
+    return fractionDigits > 0 ? `${i}.${f.slice(0, fractionDigits)}` : i
+  }
 
-  const collateralDecimals = market.collateralTokenDecimals
-  const loanDecimals = market.loanTokenDecimals
+  const supplyAmountBI = toUnits(supplyAmount || "0", market.collateralTokenDecimals)
+  const borrowAmountBI = toUnits(borrowAmount || "0", market.loanTokenDecimals)
 
-  const supplyAmountBI = toUnits(supplyAmount || "0", collateralDecimals)
-  const borrowAmountBI = toUnits(borrowAmount || "0", loanDecimals)
+  // LTV as scaled integer to avoid float math (fallback until API provides ltv_scaled)
+  const LTV_SCALE = BigInt(1_000_000_000) // 1e9
+  const ltvScaled: bigint = BigInt(Math.round((positionData?.ltv ?? 0) * Number(LTV_SCALE)))
 
-  // totalCollateral = currentCollateral + supply
-  // const totalCollateralBI = currentCollateralBI + supplyAmountBI // kept for future bigint precise flows
+  const totalCollateralBI = currentCollateralBI + supplyAmountBI
+  // maxBorrowable = totalCollateral * ltv - currentLoan, in loan token denom units
+  let maxBorrowableBI = (totalCollateralBI * ltvScaled) / LTV_SCALE - currentLoanBI
+  if (maxBorrowableBI < BigInt(0)) maxBorrowableBI = BigInt(0)
 
-  // ltv is a float (0..1). Compute maxBorrowableNum for UI and validation only.
-  const ltvFloat = positionData?.ltv || 0
-  const currentCollateralNum = Number(fromUnits(currentCollateralBI, collateralDecimals))
-  const supplyAmountNum = Number(fromUnits(supplyAmountBI, collateralDecimals))
-  const totalCollateralNum = currentCollateralNum + supplyAmountNum
-  const currentLoanNum = Number(fromUnits(currentLoanBI, loanDecimals))
-  const borrowAmountNum = Number(fromUnits(borrowAmountBI, loanDecimals))
-  const maxBorrowableNum = Math.max(0, totalCollateralNum * ltvFloat - currentLoanNum)
+  // Display strings (no Number casting)
+  const supplyAmountDisplay = supplyAmount || "0"
+  const currentCollateralStr = formatUnits(currentCollateralBI, market.collateralTokenDecimals, 4)
+  const currentLoanStr = formatUnits(currentLoanBI, market.loanTokenDecimals, 4)
+  const maxBorrowableStr = formatUnits(maxBorrowableBI, market.loanTokenDecimals, 4)
 
   const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
   const supplyButtonMessage = isSupplyInputEmpty ? "Enter supply amount" : "Supply";
   const isSupplyPending = approveTokenMutation.isPending || supplyCollateralMutation.isPending;
 
   const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0";
-  const isBorrowOverMax = borrowAmountNum > maxBorrowableNum;
+  const isBorrowOverMax = borrowAmountBI > maxBorrowableBI;
   const borrowButtonMessage = isBorrowInputEmpty
     ? "Enter borrow amount"
     : isBorrowOverMax
@@ -93,15 +98,13 @@ export function AddBorrowPanel({
     try {
       const collateralTokenPath = market?.collateralToken;
       
-      // Use 20% buffer for approval (number in token units for UI/API)
-      const approvalAmount = borrowAmountNum * 0 + Number((supplyAmount || "0")) * 1.2
+      // UI approval buffer: convert string input to number of tokens for approval only
+      const approvalAmount = Number(supplyAmount || "0") * 1.2
       
       await approveTokenMutation.mutateAsync({
         tokenPath: collateralTokenPath!,
         amount: approvalAmount
       });
-
-      // console logs removed
             
       supplyCollateralMutation.mutate({
         marketId: market.poolPath!,
@@ -129,12 +132,9 @@ export function AddBorrowPanel({
     try {
       const loanTokenPath = market?.loanToken;
       
-      // Use 20% buffer for approval (number in token units for UI/API)
-      const approvalAmount = Number((borrowAmount || "0")) * 1.2
-      
       await approveTokenMutation.mutateAsync({
         tokenPath: loanTokenPath!,
-        amount: approvalAmount
+        amount: Number(borrowAmount || "0")
       });
             
       borrowMutation.mutate({
@@ -178,16 +178,16 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">{Number(supplyAmount || "0").toFixed(2)} {market.collateralTokenSymbol}</span>
+            <span className="text-xs text-gray-400">{supplyAmountDisplay} {market.collateralTokenSymbol}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{Number(fromUnits(currentCollateralBI, collateralDecimals)).toFixed(4)} {market.collateralTokenSymbol}</span>
+              <span className="text-xs text-gray-400">{currentCollateralStr} {market.collateralTokenSymbol}</span>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
                 onClick={() => {
-                  setValue("supplyAmount", maxBorrowableNum.toString());
+                  setValue("supplyAmount", maxBorrowableStr);
                 }}
               >
                 MAX
@@ -224,16 +224,16 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">{Number(borrowAmount || "0").toFixed(2)} {market.loanTokenSymbol}</span>
+            <span className="text-xs text-gray-400">{borrowAmount || "0"} {market.loanTokenSymbol}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{Number(fromUnits(currentLoanBI, loanDecimals)).toFixed(4)} {market.loanTokenSymbol}</span>
+              <span className="text-xs text-gray-400">{currentLoanStr} {market.loanTokenSymbol}</span>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
                 onClick={() => {
-                  setValue("borrowAmount", maxBorrowableNum.toString());
+                  setValue("borrowAmount", maxBorrowableStr);
                 }}
               >
                 MAX
@@ -256,12 +256,12 @@ export function AddBorrowPanel({
         market={market}
         supplyAmount={supplyAmount}
         borrowAmount={borrowAmount}
-        maxBorrowableAmount={maxBorrowableNum}
-        isBorrowValid={borrowAmountNum <= maxBorrowableNum}
+        maxBorrowableAmount={parseFloat(maxBorrowableStr)}
+        isBorrowValid={!isBorrowOverMax}
         healthFactor={"-"}
-        currentCollateral={Number(fromUnits(currentCollateralBI, collateralDecimals))}
-        currentLoan={Number(fromUnits(currentLoanBI, loanDecimals))}
-        ltv={String(ltvFloat)}
+        currentCollateral={parseFloat(currentCollateralStr)}
+        currentLoan={parseFloat(currentLoanStr)}
+        ltv={String(positionData?.ltv ?? 0)}
       />
     </form>
   )

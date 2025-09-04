@@ -18,8 +18,10 @@ func UpdatePrice(firestoreClient *firestore.Client, sqrtPriceX96, marketID strin
 
 	poolPath := strings.TrimSuffix(strings.TrimSuffix(marketID, ":0"), ":1")
 
-	dontRevert := strings.HasSuffix(marketID, ":0")
-	price := extractPriceFromSqrt(sqrtPriceX96, dontRevert)
+	revert := strings.HasSuffix(marketID, ":1")
+	price := extractPriceFromSqrt(sqrtPriceX96, revert)
+
+	
 	if price == "" {
 		slog.Error("failed to extract price from sqrtPriceX96", "sqrtPriceX96", sqrtPriceX96)
 		return

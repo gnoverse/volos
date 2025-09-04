@@ -83,7 +83,7 @@ func GetTimeFromDoc(doc *firestore.DocumentSnapshot, fieldName string) time.Time
 }
 
 // ExtractPriceFromSqrt extracts the actual price from sqrtPriceX96 using the same logic as the on-chain oracle
-func extractPriceFromSqrt(sqrtPriceX96 string, dontRevert bool) string {
+func extractPriceFromSqrt(sqrtPriceX96 string, revert bool) string {
 	sqrtPrice, ok := new(big.Int).SetString(sqrtPriceX96, 10)
 	if !ok {
 		slog.Error("failed to parse sqrtPriceX96 as big.Int", "sqrtPriceX96", sqrtPriceX96)
@@ -105,7 +105,7 @@ func extractPriceFromSqrt(sqrtPriceX96 string, dontRevert bool) string {
 	price := new(big.Int).Div(numerator, q192)
 
 	// If dontRevert is false, invert the price: ORACLE_PRICE_SCALE² / price
-	if !dontRevert {
+	if revert {
 		// Calculate ORACLE_PRICE_SCALE²
 		oraclePriceScaleSquared := new(big.Int).Mul(oraclePriceScale, oraclePriceScale)
 		// Invert: ORACLE_PRICE_SCALE² / price
