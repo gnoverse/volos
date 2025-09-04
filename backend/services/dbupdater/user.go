@@ -159,16 +159,18 @@ func DeletePendingUnstakesByIDs(client *firestore.Client, userAddress string, un
 
 // UpdateUserMarketSupply updates users/{addr}/markets/{marketId}.supply
 // eventType: "Supply" adds, "Withdraw" subtracts.
-func UpdateUserMarketSupply(client *firestore.Client, userAddress, marketID, amount, eventType string) {
+func UpdateUserMarketSupply(client *firestore.Client, userAddress, marketID, amount, shares, eventType string) {
 	isAddition := eventType == "Supply"
 	updateUserMarketAmount(client, userAddress, marketID, "supply", amount, "user supply update", isAddition)
+	updateUserMarketAmount(client, userAddress, marketID, "supply_shares", shares, "user supply shares update", isAddition)
 }
 
 // UpdateUserMarketLoan updates users/{addr}/markets/{marketId}.loan
 // eventType: "Borrow" adds, "Repay" subtracts, "Liquidate" subtracts.
-func UpdateUserMarketLoan(client *firestore.Client, userAddress, marketID, amount, eventType string) {
+func UpdateUserMarketLoan(client *firestore.Client, userAddress, marketID, amount, shares, eventType string) {
 	isAddition := eventType == "Borrow"
 	updateUserMarketAmount(client, userAddress, marketID, "loan", amount, "user loan update", isAddition)
+	updateUserMarketAmount(client, userAddress, marketID, "loan_shares", shares, "user loan shares update", isAddition)
 }
 
 // UpdateUserMarketCollateralSupply updates users/{addr}/markets/{marketId}.collateral_supply

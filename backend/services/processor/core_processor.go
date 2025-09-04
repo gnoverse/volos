@@ -55,7 +55,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 				dbupdater.UpdateTotalSupply(firestoreClient, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Timestamp, caller, txHash, eventType)
 				dbupdater.UpdateAPRHistory(firestoreClient, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, supplyEvent.MarketID, supplyEvent.Timestamp)
-				dbupdater.UpdateUserMarketSupply(firestoreClient, supplyEvent.OnBehalf, supplyEvent.MarketID, supplyEvent.Amount, eventType)
+				dbupdater.UpdateUserMarketSupply(firestoreClient, supplyEvent.OnBehalf, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Shares, eventType)
 			}
 
 		case "Withdraw":
@@ -63,7 +63,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 				dbupdater.UpdateTotalSupply(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Timestamp, caller, txHash, eventType)
 				dbupdater.UpdateAPRHistory(firestoreClient, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Timestamp)
-				dbupdater.UpdateUserMarketSupply(firestoreClient, withdrawEvent.OnBehalf, withdrawEvent.MarketID, withdrawEvent.Amount, eventType)
+				dbupdater.UpdateUserMarketSupply(firestoreClient, withdrawEvent.OnBehalf, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Shares, eventType)
 			}
 
 		case "Borrow":
@@ -71,7 +71,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 				dbupdater.UpdateTotalBorrow(firestoreClient, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Timestamp, caller, txHash, eventType)
 				dbupdater.UpdateAPRHistory(firestoreClient, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, borrowEvent.MarketID, borrowEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(firestoreClient, borrowEvent.OnBehalf, borrowEvent.MarketID, borrowEvent.Amount, eventType)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, borrowEvent.OnBehalf, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Shares, eventType)
 			}
 
 		case "Repay":
@@ -79,7 +79,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 				dbupdater.UpdateTotalBorrow(firestoreClient, repayEvent.MarketID, repayEvent.Amount, repayEvent.Timestamp, caller, txHash, eventType)
 				dbupdater.UpdateAPRHistory(firestoreClient, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, repayEvent.MarketID, repayEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(firestoreClient, repayEvent.OnBehalf, repayEvent.MarketID, repayEvent.Amount, eventType)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, repayEvent.OnBehalf, repayEvent.MarketID, repayEvent.Amount, repayEvent.Shares, eventType)
 			}
 
 		case "Liquidate":
@@ -89,7 +89,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 				//       Requires extra event data (e.g., bad_debt_assets) or a state read/reconciliation pass.
 				dbupdater.UpdateAPRHistory(firestoreClient, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, liquidateEvent.MarketID, liquidateEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(firestoreClient, liquidateEvent.Borrower, liquidateEvent.MarketID, liquidateEvent.Amount, eventType)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, liquidateEvent.Borrower, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Shares, eventType)
 			}
 
 		case "SupplyCollateral":
