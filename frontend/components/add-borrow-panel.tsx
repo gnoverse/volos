@@ -48,6 +48,15 @@ export function AddBorrowPanel({
   const supplyAmount = watch("supplyAmount");
   const borrowAmount = watch("borrowAmount");
 
+  // Helper to check if input has too many decimal places
+  const hasTooManyDecimals = (input: string, maxDecimals: number): boolean => {
+    if (!input || input === "0") return false
+    const decimalIndex = input.indexOf('.')
+    if (decimalIndex === -1) return false
+    const decimalPart = input.substring(decimalIndex + 1)
+    return decimalPart.length > maxDecimals
+  }
+
   // Convert user inputs to uint256 units for calculations
   const supplyAmountBI = parseUnits(supplyAmount, market.collateralTokenDecimals)
   const borrowAmountBI = parseUnits(borrowAmount, market.loanTokenDecimals)
@@ -68,20 +77,28 @@ export function AddBorrowPanel({
   const maxBorrowableStr = formatUnits(maxBorrowableBI, market.loanTokenDecimals)
 
   const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
-  const supplyButtonMessage = isSupplyInputEmpty ? "Enter supply amount" : "Supply";
+  const isSupplyTooManyDecimals = hasTooManyDecimals(supplyAmount, market.collateralTokenDecimals);
+  const supplyButtonMessage = isSupplyInputEmpty 
+    ? "Enter supply amount" 
+    : isSupplyTooManyDecimals 
+      ? "Too many decimals" 
+      : "Supply";
   const isSupplyPending = approveTokenMutation.isPending || supplyCollateralMutation.isPending;
 
   const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0";
+  const isBorrowTooManyDecimals = hasTooManyDecimals(borrowAmount, market.loanTokenDecimals);
   const isBorrowOverMax = borrowAmountBI > maxBorrowableBI;
   const borrowButtonMessage = isBorrowInputEmpty
     ? "Enter borrow amount"
-    : isBorrowOverMax
-      ? "Exceeds max borrow"
-      : "Borrow";
+    : isBorrowTooManyDecimals
+      ? "Too many decimals"
+      : isBorrowOverMax
+        ? "Exceeds max borrow"
+        : "Borrow";
   const isBorrowPending = approveTokenMutation.isPending || borrowMutation.isPending;
 
   const handleSupply = async () => {
-    if (isSupplyInputEmpty) return;
+    if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
     try {
       const collateralTokenPath = market?.collateralToken;
@@ -115,7 +132,7 @@ export function AddBorrowPanel({
   };
 
   const handleBorrow = async () => {
-    if (isBorrowInputEmpty || isBorrowOverMax) return;
+    if (isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax) return;
     
     try {
       const loanTokenPath = market?.loanToken;
@@ -185,7 +202,7 @@ export function AddBorrowPanel({
           <Button
             type="button"
             className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isSupplyInputEmpty || isSupplyPending}
+            disabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
             onClick={handleSupply}
           >
             {isSupplyPending ? "Processing..." : supplyButtonMessage}
@@ -231,7 +248,7 @@ export function AddBorrowPanel({
           <Button
             type="button"
             className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isBorrowInputEmpty || isBorrowOverMax || isBorrowPending}
+            disabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
             onClick={handleBorrow}
           >
             {isBorrowPending ? "Processing..." : borrowButtonMessage}
