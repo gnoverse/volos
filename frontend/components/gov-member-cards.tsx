@@ -1,7 +1,5 @@
 import { useApproveVLSMutation, useGovernanceUserInfo, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
-import { AdenaService } from "@/app/services/adena.service"
 import { STAKER_PKG_PATH } from "@/app/services/tx.service"
-import { useUserAddress } from "@/app/utils/address.utils"
 import { formatTokenAmount } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { cn } from "@/lib/utils"
 import { ChevronDown, ChevronUp, Info, Plus, WalletIcon } from "lucide-react"
 import { useState } from "react"
@@ -22,7 +21,7 @@ interface GovMemberCardsProps {
 export function GovMemberCards({ 
   cardStyles 
 }: GovMemberCardsProps) {
-  const { userAddress, isConnected } = useUserAddress()
+  const { userAddress, isConnected, handleWalletConnection } = useUserAddress()
   const [isStaking, setIsStaking] = useState(false)
   const [isStakeExpanded, setIsStakeExpanded] = useState(false)
   const [stakeAmount, setStakeAmount] = useState("")
@@ -30,20 +29,6 @@ export function GovMemberCards({
   const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
   const approveVLSMutation = useApproveVLSMutation()
   const stakeVLSMutation = useStakeVLSMutation()
-
-  const handleWalletConnection = async () => {
-    const adenaService = AdenaService.getInstance()
-    
-    if (isConnected) {
-      adenaService.disconnectWallet()
-    } else {
-      try {
-        await adenaService.connectWallet()
-      } catch (error) {
-        console.error("Failed to connect wallet:", error)
-      }
-    }
-  }
 
   const handleStakeVLS = async () => {
     if (!isConnected) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useUserAddress } from "@/app/utils/address.utils"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
