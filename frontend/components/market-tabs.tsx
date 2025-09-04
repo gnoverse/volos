@@ -16,7 +16,7 @@ interface MarketTabsProps {
   };
   cardStyles: string;
   healthFactor: string;
-  positionData: Position;
+  positionData?: Position;
   caller: string;
 }
 

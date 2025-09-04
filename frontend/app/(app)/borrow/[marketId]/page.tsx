@@ -51,7 +51,7 @@ function MarketPageContent() {
               apyVariations={apyVariations} 
               cardStyles={CARD_STYLES}
               healthFactor={"0"} // health factor to be received as part of the user position data
-              positionData={positionData!}
+              positionData={positionData}
               caller={userAddress}
             />
           ) : (
@@ -65,7 +65,7 @@ function MarketPageContent() {
             tab={tab}
             setTabAction={setTab}
             market={marketInfo}
-            positionData={positionData!}
+            positionData={positionData}
           />
         ) : (
           <div className="lg:col-span-3 h-174 bg-gray-700/60 rounded-3xl animate-pulse" />

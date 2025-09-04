@@ -16,7 +16,7 @@ interface SidePanelProps {
   tab: string
   setTabAction: (tab: string) => void
   market: MarketInfo
-  positionData: Position
+  positionData?: Position
 }
 
 export function SidePanel({

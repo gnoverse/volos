@@ -10,7 +10,7 @@ interface MarketPositionProps {
   market: MarketInfo
   cardStyles: string
   healthFactor: string
-  positionData: Position
+  positionData?: Position
   caller: string
 }
 

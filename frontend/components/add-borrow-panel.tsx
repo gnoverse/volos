@@ -15,18 +15,12 @@ const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
 
 interface AddBorrowPanelProps {
   market: MarketInfo
-  positionData: Position
+  positionData?: Position
 }
 
 export function AddBorrowPanel({
   market,
-  positionData = {
-    collateral_supply: "0",
-    loan: "0",
-    supply: "0",
-    ltv: 0,
-    health_factor: 0
-  },
+  positionData,
 }: AddBorrowPanelProps) {
     const { register, setValue, watch, reset } = useForm({
         defaultValues: {
@@ -42,8 +36,8 @@ export function AddBorrowPanel({
   const borrowMutation = useBorrowMutation()
   const approveTokenMutation = useApproveTokenMutation()
   
-  const currentCollateralBI = BigInt(positionData.collateral_supply)
-  const currentLoanBI = BigInt(positionData.loan)
+  const currentCollateralBI = BigInt(positionData?.collateral_supply ?? "0")
+  const currentLoanBI = BigInt(positionData?.loan ?? "0")
 
   const supplyAmount = watch("supplyAmount");
   const borrowAmount = watch("borrowAmount");
