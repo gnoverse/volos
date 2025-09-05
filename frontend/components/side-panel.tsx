@@ -1,6 +1,6 @@
 "use client"
 
-import { MarketInfo, Position } from "@/app/types"
+import { MarketInfo } from "@/app/types"
 import { AddBorrowPanel } from "@/components/add-borrow-panel"
 // import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
 // import { SupplyPanel } from "@/components/supply-panel"
@@ -19,14 +19,12 @@ interface SidePanelProps {
   tab: string
   setTabAction: (tab: string) => void
   market: MarketInfo
-  positionData?: Position
 }
 
 export function SidePanel({
   tab,
   setTabAction,
   market,
-  positionData,
 }: SidePanelProps) {
   const { userAddress, isConnected, handleWalletConnection } = useUserAddress()
 
@@ -112,7 +110,6 @@ export function SidePanel({
               <TabsContent value="add-borrow">
                 <AddBorrowPanel 
                   market={market}
-                  positionData={positionData}
                 />
               </TabsContent>
               

@@ -3,7 +3,7 @@ import { AdenaService } from './adena.service';
 
 const GAS_WANTED = 50000000;
 
-export const VOLOS_PKG_PATH = 'gno.land/r/volos';
+export const VOLOS_PKG_PATH = 'gno.land/r/volos/core';
 export const STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
 export const VLS_PKG_PATH = 'gno.land/r/volos/gov/vls';
 export const GOVERNANCE_PKG_PATH = 'gno.land/r/volos/gov/governance';

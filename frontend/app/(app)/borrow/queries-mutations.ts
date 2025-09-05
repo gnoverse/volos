@@ -42,7 +42,7 @@ export function useMarketsQuery() {
         // Additional fields
         loanToken: market.loan_token,
         collateralToken: market.collateral_token,
-        currentPrice: "0", // TODO: Get current price from oracle
+        currentPrice: market.current_price,
         borrowAPR: market.borrow_apr,
         supplyAPR: market.supply_apr,
         utilization: market.utilization_rate,
@@ -98,7 +98,7 @@ export function useMarketQuery(marketId: string) {
         // Additional fields
         loanToken: market.loan_token,
         collateralToken: market.collateral_token,
-        currentPrice: "0", // TODO: Get current price from oracle
+        currentPrice: market.current_price,
         borrowAPR: market.borrow_apr,
         supplyAPR: market.supply_apr,
         utilization: market.utilization_rate,
@@ -618,6 +618,84 @@ export function useSetFeeRecipientMutation() {
       } else {
         console.log("Set fee recipient transaction successful:", data);
       }
+    }
+  });
+}
+
+export function useSupplyCollateralWithApproval() {
+  const queryClient = useQueryClient();
+  const approveTokenMutation = useApproveTokenMutation();
+  const supplyCollateralMutation = useSupplyCollateralMutation();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      marketId,
+      collateralTokenPath,
+      amount,
+      collateralTokenDecimals
+    }: { 
+      marketId: string;
+      collateralTokenPath: string;
+      amount: number;
+      collateralTokenDecimals: number;
+    }) => {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: collateralTokenPath,
+        amount: amount * Math.pow(10, collateralTokenDecimals)
+      });
+      
+      return supplyCollateralMutation.mutateAsync({
+        marketId,
+        amount: amount * Math.pow(10, collateralTokenDecimals)
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
+    },
+    onError: (error) => {
+      console.error("Supply collateral transaction failed:", error);
+    }
+  });
+}
+
+export function useBorrowWithApproval() {
+  const queryClient = useQueryClient();
+  const approveTokenMutation = useApproveTokenMutation();
+  const borrowMutation = useBorrowMutation();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      marketId,
+      loanTokenPath,
+      amount,
+      loanTokenDecimals
+    }: { 
+      marketId: string;
+      loanTokenPath: string;
+      amount: number;
+      loanTokenDecimals: number;
+    }) => {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: loanTokenPath,
+        amount: amount * 10 ** loanTokenDecimals
+      });
+      
+      return borrowMutation.mutateAsync({
+        marketId,
+        assets: amount * 10 ** loanTokenDecimals
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
+    },
+    onError: (error) => {
+      console.error("Borrow transaction failed:", error);
     }
   });
 }

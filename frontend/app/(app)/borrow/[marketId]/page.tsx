@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
-import { useMarketQuery, usePositionQuery } from "../queries-mutations"
+import { useMarketQuery } from "../queries-mutations"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 const queryClient = new QueryClient()
@@ -21,7 +21,6 @@ function MarketPageContent() {
   const { userAddress } = useUserAddress()
 
   const { data: marketInfo, isLoading: isMarketLoading } = useMarketQuery(marketId)
-  const { data: positionData } = usePositionQuery(marketId, userAddress)
 
   return (
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
@@ -51,7 +50,6 @@ function MarketPageContent() {
               apyVariations={apyVariations} 
               cardStyles={CARD_STYLES}
               healthFactor={"0"} // health factor to be received as part of the user position data
-              positionData={positionData}
               caller={userAddress}
             />
           ) : (
@@ -65,7 +63,6 @@ function MarketPageContent() {
             tab={tab}
             setTabAction={setTab}
             market={marketInfo}
-            positionData={positionData}
           />
         ) : (
           <div className="lg:col-span-3 h-174 bg-gray-700/60 rounded-3xl animate-pulse" />

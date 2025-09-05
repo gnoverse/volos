@@ -1,149 +1,123 @@
 "use client"
 
-import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
-import { MarketInfo, Position } from "@/app/types"
+import { useBorrowWithApproval, usePositionQuery, useSupplyCollateralWithApproval } from "@/app/(app)/borrow/queries-mutations"
+import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useQueryClient } from "@tanstack/react-query"
+import { useFormValidation } from "@/hooks/use-form-validation"
+import { usePositionCalculations } from "@/hooks/use-position-calculations"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { formatUnits, parseUnits } from "viem"
+import { formatUnits } from "viem"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
 
 interface AddBorrowPanelProps {
   market: MarketInfo
-  positionData?: Position
 }
 
 export function AddBorrowPanel({
   market,
-  positionData,
 }: AddBorrowPanelProps) {
-    const { register, setValue, watch, reset } = useForm({
-        defaultValues: {
-            supplyAmount: "",
-            borrowAmount: "",
-            repayAmount: "",
-            withdrawAmount: ""
-        }
-    })
+  // Form setup
+  const { register, setValue, watch, reset } = useForm({
+    defaultValues: {
+      supplyAmount: "",
+      borrowAmount: "",
+      repayAmount: "",
+      withdrawAmount: ""
+    }
+  })
+
+  const { userAddress } = useUserAddress()
+  const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.poolPath!, userAddress)
   
-  const queryClient = useQueryClient()
-  const supplyCollateralMutation = useSupplyCollateralMutation()
-  const borrowMutation = useBorrowMutation()
-  const approveTokenMutation = useApproveTokenMutation()
-  
-  const currentCollateralBI = BigInt(positionData?.collateral_supply ?? "0")
-  const currentLoanBI = BigInt(positionData?.borrow ?? "0")
+  const {
+    positionMetrics,
+    currentCollateralStr,
+    currentLoanStr,
+    maxBorrowableStr,
+    calculateMaxBorrowable
+  } = usePositionCalculations(positionData ?? {
+    borrow: "0",
+    supply: "0",
+    collateral_supply: "0"
+  }, market)
 
-  const supplyAmount = watch("supplyAmount");
-  const borrowAmount = watch("borrowAmount");
+  const {
+    isSupplyInputEmpty,
+    isSupplyTooManyDecimals,
+    supplyButtonMessage,
+    isBorrowInputEmpty,
+    isBorrowTooManyDecimals,
+    isBorrowOverMax,
+    borrowButtonMessage
+  } = useFormValidation(
+    watch("supplyAmount"),
+    watch("borrowAmount"),
+    market,
+    positionMetrics.maxBorrow
+  )
 
-  // Helper to check if input has too many decimal places
-  const hasTooManyDecimals = (input: string, maxDecimals: number): boolean => {
-    if (!input || input === "0") return false
-    const decimalIndex = input.indexOf('.')
-    if (decimalIndex === -1) return false
-    const decimalPart = input.substring(decimalIndex + 1)
-    return decimalPart.length > maxDecimals
-  }
+  const supplyCollateralMutation = useSupplyCollateralWithApproval()
+  const borrowMutation = useBorrowWithApproval()
 
-  // Convert user inputs to uint256 units for calculations
-  const borrowAmountBI = parseUnits(borrowAmount, market.loanTokenDecimals)
-
-  // Display strings - format uint256 values from DB, keep user input as-is
+  const supplyAmount = watch("supplyAmount")
+  const borrowAmount = watch("borrowAmount")
   const supplyAmountDisplay = supplyAmount || "0"
-  const currentCollateralStr = formatUnits(currentCollateralBI, market.collateralTokenDecimals)
-  const currentLoanStr = formatUnits(currentLoanBI, market.loanTokenDecimals)
-  const maxBorrowableStr = formatUnits(BigInt(positionData?.max_borrow ?? "0"), market.loanTokenDecimals)
 
-  const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
-  const isSupplyTooManyDecimals = hasTooManyDecimals(supplyAmount, market.collateralTokenDecimals);
-  const supplyButtonMessage = isSupplyInputEmpty 
-    ? "Enter supply amount" 
-    : isSupplyTooManyDecimals 
-      ? "Too many decimals" 
-      : "Supply";
-  const isSupplyPending = approveTokenMutation.isPending || supplyCollateralMutation.isPending;
+  const isSupplyPending = supplyCollateralMutation.isPending
+  const isBorrowPending = borrowMutation.isPending
 
-  const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0";
-  const isBorrowTooManyDecimals = hasTooManyDecimals(borrowAmount, market.loanTokenDecimals);
-  const isBorrowOverMax = borrowAmountBI > BigInt(positionData?.max_borrow ?? "0");
-  const borrowButtonMessage = isBorrowInputEmpty
-    ? "Enter borrow amount"
-    : isBorrowTooManyDecimals
-      ? "Too many decimals"
-      : isBorrowOverMax
-        ? "Exceeds max borrow"
-        : "Borrow";
-  const isBorrowPending = approveTokenMutation.isPending || borrowMutation.isPending;
+  const handleMaxBorrow = async () => {
+    try {
+      const { data: latestPosition } = await refetchPosition()
+      
+      if (latestPosition) {
+        const maxBorrowable = calculateMaxBorrowable(latestPosition)
+        const maxBorrowableStr = formatUnits(maxBorrowable, market.loanTokenDecimals)
+        setValue("borrowAmount", maxBorrowableStr)
+      }
+    } catch (error) {
+      console.error("Failed to fetch latest position:", error)
+    }
+  }
 
   const handleSupply = async () => {
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
-    try {
-      const collateralTokenPath = market?.collateralToken;
-      
-      // UI approval buffer: convert string input to number of tokens for approval only
-      const approvalAmount = Number(supplyAmount || "0") * 1.2
-      
-      await approveTokenMutation.mutateAsync({
-        tokenPath: collateralTokenPath!,
-        amount: approvalAmount
-      });
-            
-      supplyCollateralMutation.mutate({
-        marketId: market.poolPath!,
-        amount: Number(supplyAmount || "0")
-      }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
-          reset();
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to supply collateral: ${error.message}`);
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to approve token: ${(error as Error).message}`);
-    }
+    const supplyAmountInTokens = Number(supplyAmount || "0");
+    
+    supplyCollateralMutation.mutate({
+      marketId: market.poolPath!,
+      collateralTokenPath: market.collateralToken!,
+      amount: supplyAmountInTokens,
+      collateralTokenDecimals: market.collateralTokenDecimals
+    }, {
+      onSuccess: () => {
+        reset();
+      }
+    });
   };
 
   const handleBorrow = async () => {
     if (isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax) return;
     
-    try {
-      const loanTokenPath = market?.loanToken;
-      
-      await approveTokenMutation.mutateAsync({
-        tokenPath: loanTokenPath!,
-        amount: Number(borrowAmount || "0")
-      });
-            
-      borrowMutation.mutate({
-        marketId: market.poolPath!,
-        assets: Number(borrowAmount || "0")
-      }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
-          reset();
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to borrow: ${error.message}`);
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to approve token: ${(error as Error).message}`);
-    }
+    const borrowAmountInTokens = Number(borrowAmount || "0");
+    
+    borrowMutation.mutate({
+      marketId: market.poolPath!,
+      loanTokenPath: market.loanToken!,
+      amount: borrowAmountInTokens,
+      loanTokenDecimals: market.loanTokenDecimals
+    }, {
+      onSuccess: () => {
+        reset();
+      }
+    });
   };
 
   return (
@@ -221,9 +195,7 @@ export function AddBorrowPanel({
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={() => {
-                  setValue("borrowAmount", maxBorrowableStr);
-                }}
+                onClick={handleMaxBorrow}
               >
                 MAX
               </Button>
@@ -250,7 +222,7 @@ export function AddBorrowPanel({
         healthFactor={"-"}
         currentCollateral={parseFloat(currentCollateralStr)}
         currentLoan={parseFloat(currentLoanStr)}
-        ltv={String(positionData?.max_borrow ?? 0)}
+        ltv={String(positionMetrics.ltv * 100)}
       />
     </form>
   )

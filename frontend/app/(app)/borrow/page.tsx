@@ -1,6 +1,6 @@
 "use client"
 
-import { useUserAddress } from "@/app/utils/address.utils"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { formatCurrency } from "@/app/utils/format.utils"
 import { TimePeriod } from "@/components/chart-dropdown"
 import { LoansChart } from "@/components/loans-chart"

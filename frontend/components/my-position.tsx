@@ -1,16 +1,18 @@
 "use client"
 
-import { MarketInfo, Position } from "@/app/types"
+import { MarketInfo } from "@/app/types"
 import { formatPercentage, formatTokenAmount } from "@/app/utils/format.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { HealthBar } from "./health-bar"
 import { PositionChartTabs } from "./position-chart-tabs"
+import { calculatePositionMetrics } from "@/app/utils/position.utils"
+import { usePositionQuery } from "@/app/(app)/borrow/queries-mutations"
+import { useUserAddress } from "@/hooks/use-user-address"
 
 interface MarketPositionProps {
   market: MarketInfo
   cardStyles: string
   healthFactor: string
-  positionData?: Position
   caller: string
 }
 
@@ -18,9 +20,10 @@ export function MyPosition({
   market, 
   cardStyles, 
   healthFactor, 
-  positionData,
   caller
 }: MarketPositionProps) {
+  const { userAddress } = useUserAddress()
+  const { data: positionData } = usePositionQuery(market.poolPath!, userAddress!)
 
   const hasPosition = positionData && (
     BigInt(positionData.collateral_supply) > BigInt(0) || 
@@ -41,7 +44,7 @@ export function MyPosition({
   const currentBorrowShares = BigInt(positionData.borrow)
   const currentCollateralBigInt = BigInt(positionData.collateral_supply)
   const currentPriceBigInt = BigInt(market.currentPrice)
-  const ltv = positionData.ltv
+  const positionMetrics = calculatePositionMetrics(positionData, market)
 
   return (
     <div className="space-y-6">
@@ -91,7 +94,7 @@ export function MyPosition({
               <div>
                 <div className="text-sm text-gray-400 mb-1">Current LTV</div>
                 <div className="text-xl font-medium text-gray-200">
-                  {formatPercentage(ltv)}<span className="text-gray-400 text-sm">/ {formatPercentage(market.lltv)}</span>
+                  {formatPercentage(positionMetrics.ltv)}<span className="text-gray-400 text-sm">/ {formatPercentage(market.lltv)}</span>
                 </div>
               </div>
               
