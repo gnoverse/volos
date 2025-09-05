@@ -166,13 +166,13 @@ func GetUserMarketPosition(client *firestore.Client, userAddress string, marketI
 		return nil, err
 	}
 
-	pos.MaxBorrow, pos.HealthFactor = calculateMaxBorrowAndHealthFactor(pos, market)
+	pos.MaxBorrow, pos.HealthFactor, pos.LTV = calculateMaxBorrowAndHealthFactor(pos, market)
 
 	return &pos, nil
 }
 
 // calculateMaxBorrowAndHealthFactor calculates maxBorrow and healthFactor based on Gno contract logic
-func calculateMaxBorrowAndHealthFactor(pos model.UserMarketPosition, market model.Market) (string, float64) {
+func calculateMaxBorrowAndHealthFactor(pos model.UserMarketPosition, market model.Market) (string, float64, float64) {
 	borrowAmount := utils.ParseAmount(pos.Borrow, "calculateMaxBorrowAndHealthFactor loan")
 	collateralAmount := utils.ParseAmount(pos.CollateralSupply, "calculateMaxBorrowAndHealthFactor collateral")
 	currentPrice := utils.ParseAmount(market.CurrentPrice, "calculateMaxBorrowAndHealthFactor price")
@@ -184,7 +184,7 @@ func calculateMaxBorrowAndHealthFactor(pos model.UserMarketPosition, market mode
 	lltvWad := new(big.Float).Mul(lltvPercentage, big.NewFloat(1e16))
 
 	if collateralAmount.Sign() == 0 {
-		return "0", 0.0
+		return "0", 0.0, 0.0
 	}
 
 	// Calculate collateral value in loan token terms
@@ -198,7 +198,15 @@ func calculateMaxBorrowAndHealthFactor(pos model.UserMarketPosition, market mode
 	lltvInt := new(big.Int)
 	lltvWad.Int(lltvInt) // This converts the WAD-scaled float to int
 
-	//ltv := new(big.Int).Div(borrowAmount, collateralValue) and convert to percentage
+	// Calculate LTV (Loan-to-Value) as percentage
+	// LTV = (borrowAmount / collateralValue) * 100
+	ltv := big.NewFloat(0)
+	if collateralValue.Sign() > 0 {
+		borrowFloat := new(big.Float).SetInt(borrowAmount)
+		collateralFloat := new(big.Float).SetInt(collateralValue)
+		ltv = new(big.Float).Quo(borrowFloat, collateralFloat)
+		ltv = new(big.Float).Mul(ltv, big.NewFloat(100)) 
+	}
 
 	maxBorrow := new(big.Int).Mul(collateralValue, lltvInt)
 	maxBorrow = new(big.Int).Div(maxBorrow, new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)) // Divide by WAD
@@ -216,5 +224,6 @@ func calculateMaxBorrowAndHealthFactor(pos model.UserMarketPosition, market mode
 		healthFactor = 999999.0
 	}
 
-	return maxBorrow.String(), healthFactor
+	ltvFloat, _ := ltv.Float64()
+	return maxBorrow.String(), healthFactor, ltvFloat
 }

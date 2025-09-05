@@ -146,4 +146,5 @@ type UserMarketPosition struct {
 	CollateralSupply string  `json:"collateral_supply" firestore:"collateral_supply"`
 	MaxBorrow        string  `json:"max_borrow" firestore:"max_borrow"`
 	HealthFactor     float64 `json:"health_factor" firestore:"health_factor"`
+	LTV              float64 `json:"ltv" firestore:"ltv"`
 }

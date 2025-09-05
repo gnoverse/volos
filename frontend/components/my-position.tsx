@@ -41,7 +41,7 @@ export function MyPosition({
   const currentBorrowShares = BigInt(positionData.borrow)
   const currentCollateralBigInt = BigInt(positionData.collateral_supply)
   const currentPriceBigInt = BigInt(market.currentPrice)
-  const ltv = 0 //positionData.ltv
+  const ltv = positionData.ltv
 
   return (
     <div className="space-y-6">

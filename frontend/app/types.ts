@@ -98,6 +98,7 @@ export const PositionSchema = z.object({
   collateral_supply: Uint256Schema,
   max_borrow: Uint256Schema,
   health_factor: z.number(),
+  ltv: z.number(),
 });
 
 // Governance types
