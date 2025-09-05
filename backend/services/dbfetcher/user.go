@@ -197,6 +197,9 @@ func calculateMaxBorrowAndHealthFactor(pos model.UserMarketPosition, market mode
 	// Convert LLTV from float64 to big.Int for calculation
 	lltvInt := new(big.Int)
 	lltvWad.Int(lltvInt) // This converts the WAD-scaled float to int
+
+	//ltv := new(big.Int).Div(borrowAmount, collateralValue) and convert to percentage
+
 	maxBorrow := new(big.Int).Mul(collateralValue, lltvInt)
 	maxBorrow = new(big.Int).Div(maxBorrow, new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)) // Divide by WAD
 
