@@ -1,13 +1,16 @@
 "use client"
 
-import { useUserAddress } from "@/hooks/use-user-address"
 import { MarketDashboard } from "@/components/market-dashboard"
 import { MarketTabs } from "@/components/market-tabs"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
 import { useMarketQuery } from "../queries-mutations"
+
+// Disable static generation for this route since it depends on client-side wallet functionality
+export const dynamic = 'force-dynamic'
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 const queryClient = new QueryClient()

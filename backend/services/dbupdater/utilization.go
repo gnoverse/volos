@@ -27,6 +27,7 @@ func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp stri
 	eventTime := time.Unix(sec, 0)
 
 	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
+	var utilizationRate float64
 	err := client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		dsnap, err := tx.Get(marketRef)
 		if err != nil {
@@ -40,7 +41,7 @@ func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp stri
 		totalSupply := GetAmountFromDoc(dsnap, "total_supply")
 		totalBorrow := GetAmountFromDoc(dsnap, "total_borrow")
 
-		utilizationRate := calculateUtilizationRate(totalSupply, totalBorrow)
+		utilizationRate = calculateUtilizationRate(totalSupply, totalBorrow)
 
 		updates := map[string]interface{}{
 			"utilization_rate": utilizationRate,
@@ -66,7 +67,7 @@ func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp stri
 		return
 	}
 
-	slog.Info("utilization history updated", "market_id", marketID, "timestamp", timestamp)
+	slog.Info("utilization history updated", "market_id", marketID, "timestamp", timestamp, "utilization_rate", utilizationRate)
 }
 
 // calculateUtilizationRate calculates the utilization rate as a percentage

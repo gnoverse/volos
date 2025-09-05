@@ -99,6 +99,7 @@ func extractEventsFromTx(tx map[string]interface{}) []interface{} {
 		slog.Error("transaction missing or empty 'events' array", "response", response)
 		return nil
 	}
+
 	return events
 }
 

@@ -1,7 +1,8 @@
 import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUserMarketPosition, getUtilizationHistory } from "@/app/services/api.service";
-import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
+import { TxService } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { VOLOS_ADDRESS } from "@/app/services/tx.service";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
@@ -222,7 +223,7 @@ export function useApproveTokenMutation() {
       tokenPath: string; 
       amount: number;
     }) => {
-      return txService.approveToken(tokenPath, amount, VOLOS_PKG_PATH);
+      return txService.approveToken(tokenPath, amount, VOLOS_ADDRESS);
     },
     onError: (error) => {
       console.error("Token approval failed:", error);

@@ -179,7 +179,7 @@ func ProcessTransaction(tx map[string]interface{}, firestoreClient *firestore.Cl
 }
 
 // getPackagePath extracts the package path from the transaction structure by navigating
-// through the events array to find the pkg_path field in GnoEvent, ignoring StorageDeposit events.
+// through the events array to find the pkg_path field in GnoEvent, ignoring StorageDeposit and UnlockDeposit events.
 func getPackagePath(tx map[string]interface{}) (string, bool) {
 	response, ok := tx["response"].(map[string]interface{})
 	if !ok {
@@ -202,7 +202,7 @@ func getPackagePath(tx map[string]interface{}) (string, bool) {
 			continue
 		}
 
-		if eventType == "StorageDeposit" {
+		if eventType == "StorageDeposit" || eventType == "UnlockDeposit" {
 			continue
 		}
 
