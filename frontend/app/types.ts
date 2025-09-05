@@ -93,11 +93,11 @@ export const UserLoanHistorySchema = z.object({
 });
 
 export const PositionSchema = z.object({
-  loan: Uint256Schema,
-  supply: Uint256Schema,
+  borrow: Uint256Schema,
+  supply: Uint256Schema,  
   collateral_supply: Uint256Schema,
-  ltv: z.number().optional(),
-  health_factor: z.number().optional(),
+  max_borrow: Uint256Schema,
+  health_factor: z.number(),
 });
 
 // Governance types

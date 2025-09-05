@@ -37,7 +37,7 @@ export function AddBorrowPanel({
   const approveTokenMutation = useApproveTokenMutation()
   
   const currentCollateralBI = BigInt(positionData?.collateral_supply ?? "0")
-  const currentLoanBI = BigInt(positionData?.loan ?? "0")
+  const currentLoanBI = BigInt(positionData?.borrow ?? "0")
 
   const supplyAmount = watch("supplyAmount");
   const borrowAmount = watch("borrowAmount");
@@ -52,23 +52,13 @@ export function AddBorrowPanel({
   }
 
   // Convert user inputs to uint256 units for calculations
-  const supplyAmountBI = parseUnits(supplyAmount, market.collateralTokenDecimals)
   const borrowAmountBI = parseUnits(borrowAmount, market.loanTokenDecimals)
-
-  // LTV as scaled integer to avoid float math (fallback until API provides ltv_scaled)
-  const LTV_SCALE = BigInt(1_000_000_000) // 1e9
-  const ltvScaled: bigint = BigInt(Math.round((positionData?.ltv ?? 0) * Number(LTV_SCALE)))
-
-  const totalCollateralBI = currentCollateralBI + supplyAmountBI
-  // maxBorrowable = totalCollateral * ltv - currentLoan, in loan token denom units
-  let maxBorrowableBI = (totalCollateralBI * ltvScaled) / LTV_SCALE - currentLoanBI
-  if (maxBorrowableBI < BigInt(0)) maxBorrowableBI = BigInt(0)
 
   // Display strings - format uint256 values from DB, keep user input as-is
   const supplyAmountDisplay = supplyAmount || "0"
   const currentCollateralStr = formatUnits(currentCollateralBI, market.collateralTokenDecimals)
   const currentLoanStr = formatUnits(currentLoanBI, market.loanTokenDecimals)
-  const maxBorrowableStr = formatUnits(maxBorrowableBI, market.loanTokenDecimals)
+  const maxBorrowableStr = formatUnits(BigInt(positionData?.max_borrow ?? "0"), market.loanTokenDecimals)
 
   const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
   const isSupplyTooManyDecimals = hasTooManyDecimals(supplyAmount, market.collateralTokenDecimals);
@@ -81,7 +71,7 @@ export function AddBorrowPanel({
 
   const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0";
   const isBorrowTooManyDecimals = hasTooManyDecimals(borrowAmount, market.loanTokenDecimals);
-  const isBorrowOverMax = borrowAmountBI > maxBorrowableBI;
+  const isBorrowOverMax = borrowAmountBI > BigInt(positionData?.max_borrow ?? "0");
   const borrowButtonMessage = isBorrowInputEmpty
     ? "Enter borrow amount"
     : isBorrowTooManyDecimals
@@ -260,7 +250,7 @@ export function AddBorrowPanel({
         healthFactor={"-"}
         currentCollateral={parseFloat(currentCollateralStr)}
         currentLoan={parseFloat(currentLoanStr)}
-        ltv={String(positionData?.ltv ?? 0)}
+        ltv={String(positionData?.max_borrow ?? 0)}
       />
     </form>
   )

@@ -24,7 +24,7 @@ export function MyPosition({
 
   const hasPosition = positionData && (
     BigInt(positionData.collateral_supply) > BigInt(0) || 
-    BigInt(positionData.loan) > BigInt(0)
+    BigInt(positionData.borrow) > BigInt(0)
   )
 
   if (!hasPosition) {
@@ -38,7 +38,7 @@ export function MyPosition({
     )
   }
 
-  const currentBorrowShares = BigInt(positionData.loan)
+  const currentBorrowShares = BigInt(positionData.borrow)
   const currentCollateralBigInt = BigInt(positionData.collateral_supply)
   const currentPriceBigInt = BigInt(market.currentPrice)
   const ltv = 0 //positionData.ltv
@@ -54,7 +54,7 @@ export function MyPosition({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-200">
-              {formatTokenAmount(positionData.loan, market.loanTokenDecimals)} 
+              {formatTokenAmount(positionData.borrow, market.loanTokenDecimals)} 
               <span className="text-gray-400 text-lg ml-2">{market.loanTokenSymbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
