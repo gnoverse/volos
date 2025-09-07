@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"volos-backend/services/txlistener"
 
 	"cloud.google.com/go/firestore"
+	firebase "firebase.google.com/go"
 
 	// Firestore
 	"google.golang.org/api/option"
@@ -90,12 +92,21 @@ func initGnoClient() error {
 
 func initFirebaseClient() error {
 	ctx := context.Background()
-	projectID := "volos-f06d9"
 	serviceAccountPath := "firebase.json"
-	client, err := firestore.NewClient(ctx, projectID, option.WithCredentialsFile(serviceAccountPath))
+
+	// Initialize Firebase Admin SDK
+	opt := option.WithCredentialsFile(serviceAccountPath)
+	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
-		return err
+		return fmt.Errorf("error initializing app: %v", err)
 	}
+
+	// Get Firestore client from Firebase app
+	client, err := app.Firestore(ctx)
+	if err != nil {
+		return fmt.Errorf("error initializing Firestore: %v", err)
+	}
+
 	firestoreClient = client
 	return nil
 }
