@@ -91,20 +91,20 @@ type Market struct {
 	CurrentPrice            string    `firestore:"current_price" json:"current_price"`                         // Current price of the loan token in terms of collateral token (u256 string)
 	TotalSupply             string    `firestore:"total_supply" json:"total_supply"`                           // Total supply amount (u256 string)
 	TotalBorrow             string    `firestore:"total_borrow" json:"total_borrow"`                           // Total borrow amount (u256 string)
-	SupplyAPR               float64   `firestore:"supply_apr" json:"supply_apr"`                               // Current supply APR (percentage)
-	BorrowAPR               float64   `firestore:"borrow_apr" json:"borrow_apr"`                               // Current borrow APR (percentage)
-	UtilizationRate         float64   `firestore:"utilization_rate" json:"utilization_rate"`                   // Current utilization rate (borrow/supply) as percentage
+	SupplyAPR               string   `firestore:"supply_apr" json:"supply_apr"`                               // Current supply APR (percentage)
+	BorrowAPR               string   `firestore:"borrow_apr" json:"borrow_apr"`                               // Current borrow APR (percentage)
+	UtilizationRate         string   `firestore:"utilization_rate" json:"utilization_rate"`                   // Current utilization rate (borrow/supply) as percentage
 	CreatedAt               time.Time `firestore:"created_at" json:"created_at"`                               // When the market was created
 	UpdatedAt               time.Time `firestore:"updated_at" json:"updated_at"`                               // Last time market data was updated
-	LLTV                    float64   `firestore:"lltv" json:"lltv"`                                           // Liquidation Loan-to-Value ratio (WAD-scaled, e.g., 75% = 0.75 * 1e18)
+	LLTV                    string   `firestore:"lltv" json:"lltv"`                                           // Liquidation Loan-to-Value ratio (WAD-scaled, e.g., 75% = 0.75 * 1e18)
 }
 
 // APRHistory represents a single APR history entry stored in the apr subcollection.
 // This struct contains the supply and borrow APRs at a specific point in time.
 type APRHistory struct {
 	Timestamp time.Time `firestore:"timestamp" json:"timestamp"`   // When this APR snapshot was taken
-	SupplyAPR float64   `firestore:"supply_apr" json:"supply_apr"` // Supply APR at this timestamp (percentage)
-	BorrowAPR float64   `firestore:"borrow_apr" json:"borrow_apr"` // Borrow APR at this timestamp (percentage)
+	SupplyAPR string   `firestore:"supply_apr" json:"supply_apr"` // Supply APR at this timestamp (percentage)
+	BorrowAPR string   `firestore:"borrow_apr" json:"borrow_apr"` // Borrow APR at this timestamp (percentage)
 }
 
 // MarketHistory represents a single market history entry stored in the market_history subcollection.
@@ -124,7 +124,7 @@ type MarketHistory struct {
 // This struct contains the utilization rate at a specific point in time.
 type UtilizationHistory struct {
 	Timestamp time.Time `firestore:"timestamp" json:"timestamp"` // When this utilization snapshot was taken
-	Value     float64   `firestore:"value" json:"value"`         // Utilization rate as percentage
+	Value     string   `firestore:"value" json:"value"`         // Utilization rate as percentage
 }
 
 // UserLoan represents a single borrow/repay event for charting.

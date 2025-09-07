@@ -3,7 +3,6 @@ package dbupdater
 import (
 	"context"
 	"log/slog"
-	"math/big"
 	"strings"
 	"time"
 	"volos-backend/services/utils"
@@ -27,7 +26,7 @@ func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp stri
 	eventTime := time.Unix(sec, 0)
 
 	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
-	var utilizationRate float64
+	var utilizationRate string
 	err := client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		dsnap, err := tx.Get(marketRef)
 		if err != nil {
@@ -70,17 +69,17 @@ func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp stri
 	slog.Info("utilization history updated", "market_id", marketID, "timestamp", timestamp, "utilization_rate", utilizationRate)
 }
 
-// calculateUtilizationRate calculates the utilization rate as a percentage
-// Utilization rate = (total borrow / total supply) * 100
-func calculateUtilizationRate(totalSupply, totalBorrow string) float64 {
+// calculateUtilizationRate calculates the utilization rate in WAD format
+// Utilization rate = (total borrow * WAD) / total supply
+func calculateUtilizationRate(totalSupply, totalBorrow string) string {
 	supply := utils.ParseAmount(totalSupply, "utilization calculation")
 	borrow := utils.ParseAmount(totalBorrow, "utilization calculation")
 
 	if supply.Sign() == 0 {
-		return 0
+		return "0"
 	}
 
-	utilization := new(big.Rat).SetFrac(borrow, supply)
-	utilizationFloat, _ := utilization.Float64()
-	return utilizationFloat * 100
+	// Calculate (borrow * WAD) / supply using WDivDown for rounding down
+	utilization := utils.WDivDown(borrow, supply)
+	return utilization.String()
 }

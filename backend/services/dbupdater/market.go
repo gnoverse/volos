@@ -52,8 +52,6 @@ func CreateMarket(client *firestore.Client,
 		return
 	}
 
-	lltvPercent := utils.WadToPercent(lltv, "market creation lltv")
-
 	marketData := map[string]interface{}{
 		"id":                        marketID,
 		"loan_token":                loanToken,
@@ -65,7 +63,7 @@ func CreateMarket(client *firestore.Client,
 		"collateral_token_symbol":   collateralTokenSymbol,
 		"collateral_token_decimals": collDecimals,
 		"created_at":                time.Unix(timestampInt, 0),
-		"lltv":                      lltvPercent,
+		"lltv":                      lltv,
 	}
 
 	if currentPrice != "" {

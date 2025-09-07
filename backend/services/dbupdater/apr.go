@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPRWad, borrowAPRWad, timestamp string) {
+func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPR, borrowAPR, timestamp string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -22,13 +22,10 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPRWad, borrowAP
 	}
 	eventTime := time.Unix(sec, 0)
 
-	supply := utils.WadToPercent(supplyAPRWad, "supply apr")
-	borrow := utils.WadToPercent(borrowAPRWad, "borrow apr")
-
 	_, _, err := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").Add(ctx, map[string]interface{}{
 		"timestamp":  eventTime,
-		"supply_apr": supply,
-		"borrow_apr": borrow,
+		"supply_apr": supplyAPR,
+		"borrow_apr": borrowAPR,
 	})
 	if err != nil {
 		slog.Error("failed to write apr history", "market_id", marketID, "error", err)
@@ -44,8 +41,8 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPRWad, borrowAP
 		cur := GetTimeFromDoc(dsnap, "apr_updated_at")
 		if eventTime.After(cur) {
 			return tx.Set(marketRef, map[string]interface{}{
-				"supply_apr":     supply,
-				"borrow_apr":     borrow,
+				"supply_apr":     supplyAPR,
+				"borrow_apr":     borrowAPR,
 				"apr_updated_at": eventTime,
 			}, firestore.MergeAll)
 		}
@@ -56,5 +53,5 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPRWad, borrowAP
 		return
 	}
 
-	slog.Info("apr history updated", "market_id", marketID, "supply_apr", supply, "borrow_apr", borrow, "timestamp", timestamp)
+	slog.Info("apr history updated", "market_id", marketID, "supply_apr", supplyAPR, "borrow_apr", borrowAPR, "timestamp", timestamp)
 }

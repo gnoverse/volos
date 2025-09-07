@@ -58,13 +58,17 @@ func (ma *MarketAggregator) calculateAveragesFromSnapshots(snapshots []MarketSna
 		return nil, nil
 	}
 
-	var totalSupplyAPR, totalBorrowAPR, totalUtilization float64
+	var totalSupplyAPR, totalBorrowAPR, totalUtilization *big.Int = big.NewInt(0), big.NewInt(0), big.NewInt(0)
 	var totalSupplySum, totalBorrowSum, totalCollateralSupplySum *big.Int = big.NewInt(0), big.NewInt(0), big.NewInt(0)
 
 	for _, snapshot := range snapshots {
-		totalSupplyAPR += snapshot.SupplyAPR
-		totalBorrowAPR += snapshot.BorrowAPR
-		totalUtilization += snapshot.UtilizationRate
+		supplyAPR := utils.ParseAmount(snapshot.SupplyAPR, "snapshot average calculation")
+		borrowAPR := utils.ParseAmount(snapshot.BorrowAPR, "snapshot average calculation")
+		utilization := utils.ParseAmount(snapshot.UtilizationRate, "snapshot average calculation")
+
+		totalSupplyAPR.Add(totalSupplyAPR, supplyAPR)
+		totalBorrowAPR.Add(totalBorrowAPR, borrowAPR)
+		totalUtilization.Add(totalUtilization, utilization)
 
 		supply := utils.ParseAmount(snapshot.TotalSupply, "snapshot average calculation")
 		borrow := utils.ParseAmount(snapshot.TotalBorrow, "snapshot average calculation")
@@ -75,19 +79,20 @@ func (ma *MarketAggregator) calculateAveragesFromSnapshots(snapshots []MarketSna
 		totalCollateralSupplySum.Add(totalCollateralSupplySum, collateral)
 	}
 
-	count := float64(len(snapshots))
-	avgSupplyAPR := totalSupplyAPR / count
-	avgBorrowAPR := totalBorrowAPR / count
-	avgUtilization := totalUtilization / count
+	count := big.NewInt(int64(len(snapshots)))
 
-	avgSupply := new(big.Int).Div(totalSupplySum, big.NewInt(int64(len(snapshots))))
-	avgBorrow := new(big.Int).Div(totalBorrowSum, big.NewInt(int64(len(snapshots))))
-	avgCollateralSupply := new(big.Int).Div(totalCollateralSupplySum, big.NewInt(int64(len(snapshots))))
+	avgSupplyAPRWAD := new(big.Int).Div(totalSupplyAPR, count)
+	avgBorrowAPRWAD := new(big.Int).Div(totalBorrowAPR, count)
+	avgUtilizationWAD := new(big.Int).Div(totalUtilization, count)
+
+	avgSupply := new(big.Int).Div(totalSupplySum, count)
+	avgBorrow := new(big.Int).Div(totalBorrowSum, count)
+	avgCollateralSupply := new(big.Int).Div(totalCollateralSupplySum, count)
 
 	return &MarketAverages{
-		SupplyAPR:             avgSupplyAPR,
-		BorrowAPR:             avgBorrowAPR,
-		UtilizationRate:       avgUtilization,
+		SupplyAPR:             avgSupplyAPRWAD.String(),
+		BorrowAPR:             avgBorrowAPRWAD.String(),
+		UtilizationRate:       avgUtilizationWAD.String(),
 		TotalSupply:           avgSupply.String(),
 		TotalBorrow:           avgBorrow.String(),
 		TotalCollateralSupply: avgCollateralSupply.String(),
@@ -95,15 +100,15 @@ func (ma *MarketAggregator) calculateAveragesFromSnapshots(snapshots []MarketSna
 }
 
 // calculateAPRAverages calculates average APR from transaction history
-func (ma *MarketAggregator) calculateAPRAverages(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (float64, float64, error) {
+func (ma *MarketAggregator) calculateAPRAverages(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (string, string, error) {
 	aprIter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").
 		Where("timestamp", ">=", startTime).
 		Where("timestamp", "<=", endTime).
 		OrderBy("timestamp", firestore.Asc).
 		Documents(ctx)
 
-	var totalSupplyAPR, totalBorrowAPR float64
-	var aprCount int
+	var totalSupplyAPR, totalBorrowAPR *big.Int = big.NewInt(0), big.NewInt(0)
+	var aprCount int64
 
 	for {
 		doc, err := aprIter.Next()
@@ -116,22 +121,29 @@ func (ma *MarketAggregator) calculateAPRAverages(ctx context.Context, sanitizedM
 			continue
 		}
 
-		totalSupplyAPR += aprHistory.SupplyAPR
-		totalBorrowAPR += aprHistory.BorrowAPR
+		supplyAPR := utils.ParseAmount(aprHistory.SupplyAPR, "APR average calculation")
+		borrowAPR := utils.ParseAmount(aprHistory.BorrowAPR, "APR average calculation")
+
+		totalSupplyAPR.Add(totalSupplyAPR, supplyAPR)
+		totalBorrowAPR.Add(totalBorrowAPR, borrowAPR)
 		aprCount++
 	}
 
-	var avgSupplyAPR, avgBorrowAPR float64
+	var avgSupplyAPR, avgBorrowAPR string
 	if aprCount > 0 {
-		avgSupplyAPR = totalSupplyAPR / float64(aprCount)
-		avgBorrowAPR = totalBorrowAPR / float64(aprCount)
+		avgSupplyAPRWAD := new(big.Int).Div(totalSupplyAPR, big.NewInt(aprCount))
+		avgBorrowAPRWAD := new(big.Int).Div(totalBorrowAPR, big.NewInt(aprCount))
+
+		avgSupplyAPR = avgSupplyAPRWAD.String()
+		avgBorrowAPR = avgBorrowAPRWAD.String()
 	} else {
 		lastSupplyAPR, lastBorrowAPR, err := ma.getLastKnownAPR(ctx, sanitizedMarketID, startTime)
 		if err != nil {
 			slog.Info("no APR data found, using defaults", "market_id", sanitizedMarketID, "start_time", startTime)
-			avgSupplyAPR, avgBorrowAPR = 0, 0
+			avgSupplyAPR, avgBorrowAPR = "0", "0"
 		} else {
-			avgSupplyAPR, avgBorrowAPR = lastSupplyAPR, lastBorrowAPR
+			avgSupplyAPR = lastSupplyAPR.String()
+			avgBorrowAPR = lastBorrowAPR.String()
 		}
 	}
 
@@ -139,14 +151,14 @@ func (ma *MarketAggregator) calculateAPRAverages(ctx context.Context, sanitizedM
 }
 
 // calculateUtilizationAverages calculates average utilization from transaction history
-func (ma *MarketAggregator) calculateUtilizationAverages(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (float64, error) {
+func (ma *MarketAggregator) calculateUtilizationAverages(ctx context.Context, sanitizedMarketID string, startTime, endTime time.Time) (string, error) {
 	utilIter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("utilization").
 		Where("timestamp", ">=", startTime).
 		Where("timestamp", "<=", endTime).
 		OrderBy("timestamp", firestore.Asc).
 		Documents(ctx)
 
-	var totalUtilization float64
+	var totalUtilization *big.Int = big.NewInt(0)
 	var utilCount int
 
 	for {
@@ -160,20 +172,22 @@ func (ma *MarketAggregator) calculateUtilizationAverages(ctx context.Context, sa
 			continue
 		}
 
-		totalUtilization += utilHistory.Value
+		utilization := utils.ParseAmount(utilHistory.Value, "utilization average calculation")
+		totalUtilization.Add(totalUtilization, utilization)
 		utilCount++
 	}
 
-	var avgUtilization float64
+	var avgUtilization string
 	if utilCount > 0 {
-		avgUtilization = totalUtilization / float64(utilCount)
+		avgUtilizationWAD := new(big.Int).Div(totalUtilization, big.NewInt(int64(utilCount)))
+		avgUtilization = avgUtilizationWAD.String()
 	} else {
 		lastUtilization, err := ma.getLastKnownUtilization(ctx, sanitizedMarketID, startTime)
 		if err != nil {
 			slog.Info("no utilization data found, using default", "market_id", sanitizedMarketID, "start_time", startTime)
-			avgUtilization = 0
+			avgUtilization = "0"
 		} else {
-			avgUtilization = lastUtilization
+			avgUtilization = lastUtilization.String()
 		}
 	}
 
@@ -312,7 +326,7 @@ func (ma *MarketAggregator) calculateBorrowAverages(ctx context.Context, sanitiz
 }
 
 // getLastKnownAPR retrieves the most recent APR values before the specified time.
-func (ma *MarketAggregator) getLastKnownAPR(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (float64, float64, error) {
+func (ma *MarketAggregator) getLastKnownAPR(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (*big.Int, *big.Int, error) {
 	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").
 		Where("timestamp", "<", beforeTime).
 		OrderBy("timestamp", firestore.Desc).
@@ -321,19 +335,22 @@ func (ma *MarketAggregator) getLastKnownAPR(ctx context.Context, sanitizedMarket
 
 	doc, err := iter.Next()
 	if err != nil {
-		return 0, 0, err
+		return big.NewInt(0), big.NewInt(0), err
 	}
 
 	var aprHistory model.APRHistory
 	if err := doc.DataTo(&aprHistory); err != nil {
-		return 0, 0, err
+		return big.NewInt(0), big.NewInt(0), err
 	}
 
-	return aprHistory.SupplyAPR, aprHistory.BorrowAPR, nil
+	supplyAPR := utils.ParseAmount(aprHistory.SupplyAPR, "getLastKnownAPR")
+	borrowAPR := utils.ParseAmount(aprHistory.BorrowAPR, "getLastKnownAPR")
+
+	return supplyAPR, borrowAPR, nil
 }
 
 // getLastKnownUtilization retrieves the most recent utilization value before the specified time.
-func (ma *MarketAggregator) getLastKnownUtilization(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (float64, error) {
+func (ma *MarketAggregator) getLastKnownUtilization(ctx context.Context, sanitizedMarketID string, beforeTime time.Time) (*big.Int, error) {
 	iter := ma.client.Collection("markets").Doc(sanitizedMarketID).Collection("utilization").
 		Where("timestamp", "<", beforeTime).
 		OrderBy("timestamp", firestore.Desc).
@@ -342,15 +359,16 @@ func (ma *MarketAggregator) getLastKnownUtilization(ctx context.Context, sanitiz
 
 	doc, err := iter.Next()
 	if err != nil {
-		return 0, err
+		return big.NewInt(0), err
 	}
 
 	var utilHistory model.UtilizationHistory
 	if err := doc.DataTo(&utilHistory); err != nil {
-		return 0, err
+		return big.NewInt(0), err
 	}
 
-	return utilHistory.Value, nil
+	utilization := utils.ParseAmount(utilHistory.Value, "getLastKnownUtilization")
+	return utilization, nil
 }
 
 // getLastKnownSupply retrieves the most recent total supply value before the specified time.
