@@ -2,6 +2,7 @@ package processor
 
 import (
 	"log/slog"
+	"strconv"
 )
 
 // extractEventFields is a universal function that extracts specified fields from an event's attributes.
@@ -52,23 +53,29 @@ func extractEventFields(event map[string]interface{}, requiredFields []string, o
 
 // extractCallerAndHash extracts the caller and tx hash from the transaction object.
 // Uses only the first message from the array-based messages shape. Logs errors and returns empty strings on failure.
-func extractCallerAndHash(tx map[string]interface{}) (string, string) {
+func extractTxInfo(tx map[string]interface{}) (string, string, string) {
 	msgs, ok := tx["messages"].([]interface{})
 	if !ok || len(msgs) == 0 {
 		slog.Error("transaction messages missing or empty", "tx", tx)
-		return "", ""
+		return "", "", ""
+	}
+
+	index, ok := tx["index"].(float64)
+	if !ok {
+		slog.Error("transaction index missing", "tx", tx)
+		return "", "", ""
 	}
 
 	first, ok := msgs[0].(map[string]interface{})
 	if !ok {
 		slog.Error("first message is not a map", "messages[0]", msgs[0])
-		return "", ""
+		return "", "", ""
 	}
 
 	value, ok := first["value"].(map[string]interface{})
 	if !ok {
 		slog.Error("message value is not a map", "message", first)
-		return "", ""
+		return "", "", ""
 	}
 
 	caller, ok := value["caller"].(string)
@@ -82,7 +89,7 @@ func extractCallerAndHash(tx map[string]interface{}) (string, string) {
 		slog.Error("transaction hash missing", "tx", tx)
 	}
 
-	return caller, hash
+	return caller, hash, strconv.Itoa(int(index))
 }
 
 // Top-level parse helpers for core processor

@@ -142,10 +142,17 @@ export function SupplyBorrowChart({
               margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
             >
               <XAxis 
-                dataKey="timestamp"
+                dataKey="index"
                 fontSize={10}
                 tickLine={false}
-                tickFormatter={getXAxisFormatter(selectedTimePeriod)}
+                tickFormatter={(index) => {
+                  // Find the corresponding timestamp for this index
+                  const dataPoint = transformedData.find(d => d.index === index)
+                  if (dataPoint) {
+                    return getXAxisFormatter(selectedTimePeriod)(dataPoint.timestamp)
+                  }
+                  return index
+                }}
                 height={50}
                 interval={7}
                 tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}

@@ -17,7 +17,7 @@ import (
 // and appends a history sample to the unified market_history collection.
 // Amounts are stored as strings (u256). Arithmetic is done with big.Int.
 // eventType determines whether this is a collateral supply event (adds to total) or withdraw collateral event (subtracts from total).
-func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string) {
+func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string, index string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -70,6 +70,7 @@ func UpdateTotalCollateralSupply(client *firestore.Client, marketID, amount, tim
 		"tx_hash":    txHash,
 		"event_type": eventType,
 		"loan_price": services.GetTokenPrice(marketID),
+		"index":      index,
 	}
 
 	if _, err := marketRef.Collection("market_history").NewDoc().Set(ctx, history); err != nil {

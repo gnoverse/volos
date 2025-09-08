@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPR, borrowAPR, timestamp string) {
+func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPR, borrowAPR, timestamp string, index string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -22,34 +22,38 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPR, borrowAPR, 
 	}
 	eventTime := time.Unix(sec, 0)
 
-	_, _, err := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").Add(ctx, map[string]interface{}{
-		"timestamp":  eventTime,
-		"supply_apr": supplyAPR,
-		"borrow_apr": borrowAPR,
-	})
-	if err != nil {
-		slog.Error("failed to write apr history", "market_id", marketID, "error", err)
-		return
-	}
-
 	marketRef := client.Collection("markets").Doc(sanitizedMarketID)
-	err = client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+	err := client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		dsnap, err := tx.Get(marketRef)
 		if err != nil && status.Code(err) != codes.NotFound {
 			return err
 		}
+
 		cur := GetTimeFromDoc(dsnap, "apr_updated_at")
 		if eventTime.After(cur) {
-			return tx.Set(marketRef, map[string]interface{}{
+			if err := tx.Set(marketRef, map[string]interface{}{
 				"supply_apr":     supplyAPR,
 				"borrow_apr":     borrowAPR,
 				"apr_updated_at": eventTime,
-			}, firestore.MergeAll)
+			}, firestore.MergeAll); err != nil {
+				return err
+			}
 		}
+
+		aprHistoryRef := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").NewDoc()
+		if err := tx.Set(aprHistoryRef, map[string]interface{}{
+			"timestamp":  eventTime,
+			"supply_apr": supplyAPR,
+			"borrow_apr": borrowAPR,
+			"index":      index,
+		}); err != nil {
+			return err
+		}
+
 		return nil
 	})
 	if err != nil {
-		slog.Error("failed to update current apr", "market_id", marketID, "error", err)
+		slog.Error("failed to update apr in transaction", "market_id", marketID, "error", err)
 		return
 	}
 

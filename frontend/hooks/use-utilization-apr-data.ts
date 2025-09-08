@@ -14,6 +14,7 @@ interface ChartDataPoint {
   utilization?: string
   supplyApr?: string
   borrowApr?: string
+  index?: string
 }
 
 /**
@@ -59,23 +60,29 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
 
   const transformedData = useMemo((): ChartDataPoint[] => {
     if (useHistory) {
-      const dataMap = new Map<number, ChartDataPoint>()
+      const dataMap = new Map<string, ChartDataPoint>()
 
       utilizationHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
+        const index = item.index
+        if (!dataMap.has(index)) {
+          dataMap.set(index, { 
+            timestamp: new Date(item.timestamp).getTime(),
+            index: index
+          })
         }
-        dataMap.get(timestamp)!.utilization = item.value
+        dataMap.get(index)!.utilization = item.value
       })
 
       aprHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
+        const index = item.index
+        if (!dataMap.has(index)) {
+          dataMap.set(index, { 
+            timestamp: new Date(item.timestamp).getTime(),
+            index: index
+          })
         }
-        dataMap.get(timestamp)!.supplyApr = item.supply_apr
-        dataMap.get(timestamp)!.borrowApr = item.borrow_apr
+        dataMap.get(index)!.supplyApr = item.supply_apr
+        dataMap.get(index)!.borrowApr = item.borrow_apr
       })
 
       return Array.from(dataMap.values())
@@ -85,7 +92,7 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
           if (selectedMetrics.borrowApr && item.borrowApr !== undefined) return true;
           return false;
         })
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .sort((a, b) => parseInt(a.index || "0") - parseInt(b.index || "0"))
     } else {
       return snapshotData && snapshotData
         .map(snapshot => ({

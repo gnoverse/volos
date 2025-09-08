@@ -14,6 +14,7 @@ interface ChartDataPoint {
   supply?: number
   borrow?: number
   collateral?: number
+  index?: string
 }
 
 /**
@@ -64,31 +65,40 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
 
   const transformedData = useMemo((): ChartDataPoint[] => {
     if (useHistory) {
-      const dataMap = new Map<number, ChartDataPoint>()
+      const dataMap = new Map<string, ChartDataPoint>()
 
       supplyHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
+        const index = item.index
+        if (!dataMap.has(index)) {
+          dataMap.set(index, { 
+            timestamp: new Date(item.timestamp).getTime(),
+            index: index
+          })
         }
-        dataMap.get(timestamp)!.supply = Number(item.value)
+        dataMap.get(index)!.supply = Number(item.value)
       })
 
       borrowHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
+        const index = item.index
+        if (!dataMap.has(index)) {
+          dataMap.set(index, { 
+            timestamp: new Date(item.timestamp).getTime(),
+            index: index
+          })
         }
-        dataMap.get(timestamp)!.borrow = Number(item.value)
+        dataMap.get(index)!.borrow = Number(item.value)
       })
 
       if (selectedMetrics.collateral) {
         collateralHistoryData.forEach(item => {
-          const timestamp = new Date(item.timestamp).getTime()
-          if (!dataMap.has(timestamp)) {
-            dataMap.set(timestamp, { timestamp })
+          const index = item.index
+          if (!dataMap.has(index)) {
+            dataMap.set(index, { 
+              timestamp: new Date(item.timestamp).getTime(),
+              index: index
+            })
           }
-          dataMap.get(timestamp)!.collateral = Number(item.value)
+          dataMap.get(index)!.collateral = Number(item.value)
         })
       }
 
@@ -99,7 +109,7 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
           if (selectedMetrics.collateral && item.collateral !== undefined) return true;
           return false;
         })
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .sort((a, b) => parseInt(a.index || "0") - parseInt(b.index || "0"))
     } else {
       return snapshotData && snapshotData
         .map(snapshot => ({

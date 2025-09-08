@@ -118,6 +118,7 @@ type MarketHistory struct {
 	TxHash    string    `firestore:"tx_hash" json:"tx_hash"`       // Transaction hash that caused this event
 	EventType string    `firestore:"event_type" json:"event_type"` // Type of event: "Supply", "Withdraw", "Borrow", "Repay", "Liquidate", "SupplyCollateral", "WithdrawCollateral"
 	LoanPrice float64   `firestore:"loan_price" json:"loan_price"` // Price of the loan token at the time of the event
+	Index     string    `firestore:"index" json:"index"`           // Index of the transaction in the block
 }
 
 // UtilizationHistory represents a single utilization history entry stored in the utilization subcollection.

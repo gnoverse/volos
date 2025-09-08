@@ -13,7 +13,7 @@ import (
 // UpdateUtilizationHistory updates the utilization rate for a market and stores it in the utilization history.
 // This function should be called whenever total supply or total borrow changes.
 // It accepts the utilization rate as a pre-calculated WAD format string.
-func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp, utilizationRate string) {
+func UpdateUtilizationHistory(client *firestore.Client, marketID, timestamp, utilizationRate string, index string) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
