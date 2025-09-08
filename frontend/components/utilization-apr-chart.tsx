@@ -136,19 +136,18 @@ export function UtilizationAPRChart({
               margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
             >
               <XAxis 
-                dataKey="index"
+                dataKey="key"
                 fontSize={10}
                 tickLine={false}
-                tickFormatter={(index) => {
-                  // Find the corresponding timestamp for this index
-                  const dataPoint = transformedData.find(d => d.index === index)
+                tickFormatter={(key) => {
+                  const dataPoint = transformedData.find(d => d.key === key)
                   if (dataPoint) {
                     return getXAxisFormatter(selectedTimePeriod)(dataPoint.timestamp)
                   }
-                  return index
+                  return key
                 }}
                 height={50}
-                interval={7}
+                interval={0}
                 tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}
                 tickMargin={5}
                 stroke="rgba(75, 85, 99, 0.3)"
@@ -205,9 +204,12 @@ export function UtilizationAPRChart({
                   borderRadius: '0.5rem',
                   color: 'rgb(156 163 175)',
                 }}
-                labelFormatter={(label) => formatTimestamp(label)}
+                labelFormatter={(key) => {
+                  const dataPoint = transformedData.find(d => d.key === key)
+                  return dataPoint ? formatTimestamp(dataPoint.timestamp) : String(key)
+                }}
                 formatter={(value, name) => {
-                  return [value.toString(), name]
+                  return [formatPercentage(wadToPercentage(String(value))), name]
                 }}
               />
             </LineChart>

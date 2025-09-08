@@ -14,7 +14,9 @@ interface ChartDataPoint {
   supply?: number
   borrow?: number
   collateral?: number
-  index?: string
+  index?: number
+  blockHeight?: number
+  key?: string
 }
 
 /**
@@ -68,37 +70,49 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
       const dataMap = new Map<string, ChartDataPoint>()
 
       supplyHistoryData.forEach(item => {
+        const blockHeight = item.block_height
         const index = item.index
-        if (!dataMap.has(index)) {
-          dataMap.set(index, { 
+        const key = `${blockHeight}:${index}`
+        if (!dataMap.has(key)) {
+          dataMap.set(key, { 
             timestamp: new Date(item.timestamp).getTime(),
-            index: index
+            index,
+            blockHeight,
+            key,
           })
         }
-        dataMap.get(index)!.supply = Number(item.value)
+        dataMap.get(key)!.supply = Number(item.value)
       })
 
       borrowHistoryData.forEach(item => {
+        const blockHeight = item.block_height
         const index = item.index
-        if (!dataMap.has(index)) {
-          dataMap.set(index, { 
+        const key = `${blockHeight}:${index}`
+        if (!dataMap.has(key)) {
+          dataMap.set(key, { 
             timestamp: new Date(item.timestamp).getTime(),
-            index: index
+            index,
+            blockHeight,
+            key,
           })
         }
-        dataMap.get(index)!.borrow = Number(item.value)
+        dataMap.get(key)!.borrow = Number(item.value)
       })
 
       if (selectedMetrics.collateral) {
         collateralHistoryData.forEach(item => {
+          const blockHeight = item.block_height
           const index = item.index
-          if (!dataMap.has(index)) {
-            dataMap.set(index, { 
+          const key = `${blockHeight}:${index}`
+          if (!dataMap.has(key)) {
+            dataMap.set(key, { 
               timestamp: new Date(item.timestamp).getTime(),
-              index: index
+              index,
+              blockHeight,
+              key,
             })
           }
-          dataMap.get(index)!.collateral = Number(item.value)
+          dataMap.get(key)!.collateral = Number(item.value)
         })
       }
 
@@ -109,7 +123,12 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
           if (selectedMetrics.collateral && item.collateral !== undefined) return true;
           return false;
         })
-        .sort((a, b) => parseInt(a.index || "0") - parseInt(b.index || "0"))
+        .sort((a, b) => {
+          if ((a.blockHeight ?? 0) !== (b.blockHeight ?? 0)) {
+            return (a.blockHeight ?? 0) - (b.blockHeight ?? 0)
+          }
+          return (a.index ?? 0) - (b.index ?? 0)
+        })
     } else {
       return snapshotData && snapshotData
         .map(snapshot => ({

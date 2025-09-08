@@ -24,7 +24,8 @@ export const APRDataSchema = z.object({
   timestamp: z.date(),
   supply_apr: Uint256Schema,
   borrow_apr: Uint256Schema,
-  index: z.string(),
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const TotalSupplyDataSchema = z.object({
@@ -35,7 +36,8 @@ export const TotalSupplyDataSchema = z.object({
   value: Uint256Schema,
   caller: z.string(),
   tx_hash: z.string(),
-  index: z.string(),
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const TotalBorrowDataSchema = z.object({
@@ -46,7 +48,8 @@ export const TotalBorrowDataSchema = z.object({
   value: Uint256Schema,
   caller: z.string(),
   tx_hash: z.string(),
-  index: z.string(),
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const TotalCollateralSupplyDataSchema = z.object({
@@ -57,13 +60,15 @@ export const TotalCollateralSupplyDataSchema = z.object({
   value: Uint256Schema,
   caller: z.string(),
   tx_hash: z.string(),
-  index: z.string(),
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const UtilizationDataSchema = z.object({
   timestamp: z.date(),
   value: Uint256Schema,
-  index: z.string(),
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const MarketSnapshotSchema = z.object({

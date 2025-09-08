@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPR, borrowAPR, timestamp string, index string) {
+func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPR, borrowAPR, timestamp string, index float64, blockHeight float64) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -42,10 +42,11 @@ func UpdateAPRHistory(client *firestore.Client, marketID, supplyAPR, borrowAPR, 
 
 		aprHistoryRef := client.Collection("markets").Doc(sanitizedMarketID).Collection("apr").NewDoc()
 		if err := tx.Set(aprHistoryRef, map[string]interface{}{
-			"timestamp":  eventTime,
-			"supply_apr": supplyAPR,
-			"borrow_apr": borrowAPR,
-			"index":      index,
+			"timestamp":    eventTime,
+			"supply_apr":   supplyAPR,
+			"borrow_apr":   borrowAPR,
+			"index":        index,
+			"block_height": blockHeight,
 		}); err != nil {
 			return err
 		}

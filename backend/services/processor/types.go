@@ -18,65 +18,65 @@ type CreateMarketEvent struct {
 }
 
 type SupplyEvent struct {
-	MarketID  string
-	User      string
-	OnBehalf  string
-	Amount    string
-	Shares    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	OnBehalf    string
+	Amount      string
+	Shares      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
 	Utilization string
 }
 
 type WithdrawEvent struct {
-	MarketID  string
-	User      string
-	OnBehalf  string
-	Receiver  string
-	Amount    string
-	Shares    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	OnBehalf    string
+	Receiver    string
+	Amount      string
+	Shares      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
 	Utilization string
 }
 
 type BorrowEvent struct {
-	MarketID  string
-	User      string
-	OnBehalf  string
-	Receiver  string
-	Amount    string
-	Shares    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	OnBehalf    string
+	Receiver    string
+	Amount      string
+	Shares      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
 	Utilization string
 }
 
 type RepayEvent struct {
-	MarketID  string
-	User      string
-	OnBehalf  string
-	Amount    string
-	Shares    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	OnBehalf    string
+	Amount      string
+	Shares      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
 	Utilization string
 }
 
 type LiquidateEvent struct {
-	MarketID  string
-	User      string
-	Borrower  string
-	Amount    string
-	Shares    string
-	Seized    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	Borrower    string
+	Amount      string
+	Shares      string
+	Seized      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
 	Utilization string
 }
 
@@ -98,8 +98,8 @@ type WithdrawCollateralEvent struct {
 }
 
 type AccrueInterestEvent struct {
-	MarketID  string
-	Timestamp string
+	MarketID    string
+	Timestamp   string
 	Utilization string
 }
 
@@ -153,4 +153,13 @@ type BeginUnstakeEvent struct {
 type GovernanceWithdrawEvent struct {
 	Staker       string
 	WithdrawnIDs []string
+}
+
+// TX metadata
+
+type TxMetadata struct {
+	Caller      string
+	Hash        string
+	BlockHeight float64
+	Index       float64
 }

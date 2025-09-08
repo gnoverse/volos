@@ -1,4 +1,5 @@
 import { MarketInfo, Position } from "@/app/types";
+import { WAD } from "./format.utils";
 
 /**
  * Calculates maxBorrow, healthFactor, and LTV based on user position and market data.
@@ -21,8 +22,7 @@ export function calculatePositionMetrics(position: Position, market: MarketInfo)
   // Parse LLTV - convert percentage to WAD-scaled value
   // market.LLTV is stored as percentage (e.g., 75 for 75%)
   // Convert to WAD: 75% = 0.75 * 1e18 = 750000000000000000000
-  const lltvPercentage = market.lltv;
-  const lltvWad = BigInt(Math.floor(lltvPercentage * 1e16)); // Convert percentage to WAD
+  const lltvWad = BigInt(market.lltv);  
 
   // If no collateral, return zero values
   if (collateralAmount === BigInt(0)) {
@@ -39,7 +39,7 @@ export function calculatePositionMetrics(position: Position, market: MarketInfo)
   const collateralValue = (collateralAmount * currentPrice) / oraclePriceScale;
 
   // Calculate maxBorrow = collateralValue * LLTV
-  const maxBorrow = (collateralValue * lltvWad) / (BigInt(10) ** BigInt(18)); // Divide by WAD
+  const maxBorrow = (collateralValue * lltvWad) / WAD; // Divide by WAD
 
   // Calculate LTV (Loan-to-Value) as percentage
   // LTV = (borrowAmount / collateralValue) * 100

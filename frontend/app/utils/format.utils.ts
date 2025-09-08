@@ -1,6 +1,6 @@
 import { formatUnits } from "viem";
 
-const WAD = BigInt(10 ** 18);
+export const WAD = BigInt(10 ** 18);
 
 /**
  * Performs BigInt division with precision preservation
@@ -240,7 +240,6 @@ export function getXAxisFormatter(period: "1 week" | "1 month" | "3 months" | "6
       return formatShortDate;
   }
 }
-
 
 
 

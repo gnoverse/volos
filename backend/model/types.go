@@ -91,41 +91,46 @@ type Market struct {
 	CurrentPrice            string    `firestore:"current_price" json:"current_price"`                         // Current price of the loan token in terms of collateral token (u256 string)
 	TotalSupply             string    `firestore:"total_supply" json:"total_supply"`                           // Total supply amount (u256 string)
 	TotalBorrow             string    `firestore:"total_borrow" json:"total_borrow"`                           // Total borrow amount (u256 string)
-	SupplyAPR               string   `firestore:"supply_apr" json:"supply_apr"`                               // Current supply APR (percentage)
-	BorrowAPR               string   `firestore:"borrow_apr" json:"borrow_apr"`                               // Current borrow APR (percentage)
-	UtilizationRate         string   `firestore:"utilization_rate" json:"utilization_rate"`                   // Current utilization rate (borrow/supply) as percentage
+	SupplyAPR               string    `firestore:"supply_apr" json:"supply_apr"`                               // Current supply APR (percentage)
+	BorrowAPR               string    `firestore:"borrow_apr" json:"borrow_apr"`                               // Current borrow APR (percentage)
+	UtilizationRate         string    `firestore:"utilization_rate" json:"utilization_rate"`                   // Current utilization rate (borrow/supply) as percentage
 	CreatedAt               time.Time `firestore:"created_at" json:"created_at"`                               // When the market was created
 	UpdatedAt               time.Time `firestore:"updated_at" json:"updated_at"`                               // Last time market data was updated
-	LLTV                    string   `firestore:"lltv" json:"lltv"`                                           // Liquidation Loan-to-Value ratio (WAD-scaled, e.g., 75% = 0.75 * 1e18)
+	LLTV                    string    `firestore:"lltv" json:"lltv"`                                           // Liquidation Loan-to-Value ratio (WAD-scaled, e.g., 75% = 0.75 * 1e18)
 }
 
 // APRHistory represents a single APR history entry stored in the apr subcollection.
 // This struct contains the supply and borrow APRs at a specific point in time.
 type APRHistory struct {
-	Timestamp time.Time `firestore:"timestamp" json:"timestamp"`   // When this APR snapshot was taken
-	SupplyAPR string   `firestore:"supply_apr" json:"supply_apr"` // Supply APR at this timestamp (percentage)
-	BorrowAPR string   `firestore:"borrow_apr" json:"borrow_apr"` // Borrow APR at this timestamp (percentage)
+	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this APR snapshot was taken
+	SupplyAPR   string    `firestore:"supply_apr" json:"supply_apr"`     // Supply APR at this timestamp (percentage)
+	BorrowAPR   string    `firestore:"borrow_apr" json:"borrow_apr"`     // Borrow APR at this timestamp (percentage)
+	Index       float64   `firestore:"index" json:"index"`               // Index of the transaction in the block
+	BlockHeight float64   `firestore:"block_height" json:"block_height"` // Block height of the transaction
 }
 
 // MarketHistory represents a single market history entry stored in the market_history subcollection.
 // This struct contains the change in market totals at a specific point in time for any event type.
 type MarketHistory struct {
-	Timestamp time.Time `firestore:"timestamp" json:"timestamp"`   // When this event occurred
-	Value     string    `firestore:"value" json:"value"`           // Total amount after this change (u256 string)
-	Delta     string    `firestore:"delta" json:"delta"`           // Change in amount (u256 string)
-	Operation string    `firestore:"operation" json:"operation"`   // "+" for increases, "-" for decreases
-	Caller    string    `firestore:"caller" json:"caller"`         // Address of the user who triggered this event
-	TxHash    string    `firestore:"tx_hash" json:"tx_hash"`       // Transaction hash that caused this event
-	EventType string    `firestore:"event_type" json:"event_type"` // Type of event: "Supply", "Withdraw", "Borrow", "Repay", "Liquidate", "SupplyCollateral", "WithdrawCollateral"
-	LoanPrice float64   `firestore:"loan_price" json:"loan_price"` // Price of the loan token at the time of the event
-	Index     string    `firestore:"index" json:"index"`           // Index of the transaction in the block
+	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this event occurred
+	Value       string    `firestore:"value" json:"value"`               // Total amount after this change (u256 string)
+	Delta       string    `firestore:"delta" json:"delta"`               // Change in amount (u256 string)
+	Operation   string    `firestore:"operation" json:"operation"`       // "+" for increases, "-" for decreases
+	Caller      string    `firestore:"caller" json:"caller"`             // Address of the user who triggered this event
+	TxHash      string    `firestore:"tx_hash" json:"tx_hash"`           // Transaction hash that caused this event
+	EventType   string    `firestore:"event_type" json:"event_type"`     // Type of event: "Supply", "Withdraw", "Borrow", "Repay", "Liquidate", "SupplyCollateral", "WithdrawCollateral"
+	LoanPrice   float64   `firestore:"loan_price" json:"loan_price"`     // Price of the loan token at the time of the event
+	Index       float64     `firestore:"index" json:"index"`               // Index of the transaction in the block
+	BlockHeight float64   `firestore:"block_height" json:"block_height"` // Block height of the transaction
 }
 
 // UtilizationHistory represents a single utilization history entry stored in the utilization subcollection.
 // This struct contains the utilization rate at a specific point in time.
 type UtilizationHistory struct {
-	Timestamp time.Time `firestore:"timestamp" json:"timestamp"` // When this utilization snapshot was taken
-	Value     string   `firestore:"value" json:"value"`         // Utilization rate as percentage
+	Timestamp   time.Time `firestore:"timestamp" json:"timestamp"`       // When this utilization snapshot was taken
+	Value       string    `firestore:"value" json:"value"`               // Utilization rate as percentage
+	Index       float64   `firestore:"index" json:"index"`               // Index of the transaction in the block
+	BlockHeight float64   `firestore:"block_height" json:"block_height"` // Block height of the transaction
 }
 
 // UserLoan represents a single borrow/repay event for charting.
@@ -142,7 +147,7 @@ type UserLoan struct {
 
 // UserMarketPosition represents per-market aggregates for a user stored under users/{address}/markets/{marketId}
 type UserMarketPosition struct {
-	Borrow           string  `json:"borrow" firestore:"borrow"`
-	Supply           string  `json:"supply" firestore:"supply"`
-	CollateralSupply string  `json:"collateral_supply" firestore:"collateral_supply"`
+	Borrow           string `json:"borrow" firestore:"borrow"`
+	Supply           string `json:"supply" firestore:"supply"`
+	CollateralSupply string `json:"collateral_supply" firestore:"collateral_supply"`
 }

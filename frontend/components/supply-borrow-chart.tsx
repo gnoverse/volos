@@ -142,19 +142,18 @@ export function SupplyBorrowChart({
               margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
             >
               <XAxis 
-                dataKey="index"
+                dataKey="key"
                 fontSize={10}
                 tickLine={false}
-                tickFormatter={(index) => {
-                  // Find the corresponding timestamp for this index
-                  const dataPoint = transformedData.find(d => d.index === index)
+                tickFormatter={(key) => {
+                  const dataPoint = transformedData.find(d => d.key === String(key))
                   if (dataPoint) {
                     return getXAxisFormatter(selectedTimePeriod)(dataPoint.timestamp)
                   }
-                  return index
+                  return String(key)
                 }}
                 height={50}
-                interval={7}
+                interval="preserveStartEnd"
                 tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}
                 tickMargin={5}
                 stroke="rgba(75, 85, 99, 0.3)"
@@ -211,8 +210,11 @@ export function SupplyBorrowChart({
                   borderRadius: '0.5rem',
                   color: 'rgb(156 163 175)',
                 }} 
-                labelFormatter={(label) => formatTimestamp(label)}
-                formatter={(value) => `${(Number(value) / 10**loanDecimals).toFixed(1)} ${symbol}`} // todo: use collateral decimals for collateral
+                labelFormatter={(key) => {
+                  const dataPoint = transformedData.find(d => d.key === String(key))
+                  return dataPoint ? formatTimestamp(dataPoint.timestamp) : String(key)
+                }}
+                formatter={(value) => `${(Number(value) / 10**loanDecimals).toFixed(1)} ${symbol}`}
               />
             </LineChart>
           </ResponsiveContainer>

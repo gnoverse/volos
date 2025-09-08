@@ -20,7 +20,7 @@ import (
 // eventType determines whether this is a supply event (adds to total) or withdraw event (subtracts from total).
 // For supply events, the amount is added to the total supply.
 // For withdraw events, the amount is subtracted from the total supply.
-func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string, index string) {
+func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string, index float64, blockHeight float64) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -65,15 +65,16 @@ func UpdateTotalSupply(client *firestore.Client, marketID, amount, timestamp str
 	}
 
 	history := map[string]interface{}{
-		"timestamp":  eventTime,
-		"value":      updatedTotalStr,
-		"delta":      amount,
-		"operation":  operation, // "+" for supply, "-" for withdraw (redundant with event_type but kept for clarity)
-		"caller":     caller,
-		"tx_hash":    txHash,
-		"event_type": eventType,
-		"loan_price": services.GetTokenPrice(marketID),
-		"index":      index,
+		"timestamp":    eventTime,
+		"value":        updatedTotalStr,
+		"delta":        amount,
+		"operation":    operation, // "+" for supply, "-" for withdraw (redundant with event_type but kept for clarity)
+		"caller":       caller,
+		"tx_hash":      txHash,
+		"event_type":   eventType,
+		"loan_price":   services.GetTokenPrice(marketID),
+		"index":        index,
+		"block_height": blockHeight,
 	}
 	if _, err := marketRef.Collection("market_history").NewDoc().Set(ctx, history); err != nil {
 		slog.Error("failed to add market history entry", "market_id", marketID, "error", err)

@@ -14,7 +14,9 @@ interface ChartDataPoint {
   utilization?: string
   supplyApr?: string
   borrowApr?: string
-  index?: string
+  index?: number
+  blockHeight?: number
+  key?: string
 }
 
 /**
@@ -63,26 +65,34 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
       const dataMap = new Map<string, ChartDataPoint>()
 
       utilizationHistoryData.forEach(item => {
+        const blockHeight = item.block_height
         const index = item.index
-        if (!dataMap.has(index)) {
-          dataMap.set(index, { 
+        const key = `${blockHeight}:${index}`
+        if (!dataMap.has(key)) {
+          dataMap.set(key, { 
             timestamp: new Date(item.timestamp).getTime(),
-            index: index
+            index,
+            blockHeight,
+            key,
           })
         }
-        dataMap.get(index)!.utilization = item.value
+        dataMap.get(key)!.utilization = item.value
       })
 
       aprHistoryData.forEach(item => {
+        const blockHeight = item.block_height
         const index = item.index
-        if (!dataMap.has(index)) {
-          dataMap.set(index, { 
+        const key = `${blockHeight}:${index}`
+        if (!dataMap.has(key)) {
+          dataMap.set(key, { 
             timestamp: new Date(item.timestamp).getTime(),
-            index: index
+            index,
+            blockHeight,
+            key,
           })
         }
-        dataMap.get(index)!.supplyApr = item.supply_apr
-        dataMap.get(index)!.borrowApr = item.borrow_apr
+        dataMap.get(key)!.supplyApr = item.supply_apr
+        dataMap.get(key)!.borrowApr = item.borrow_apr
       })
 
       return Array.from(dataMap.values())
@@ -92,14 +102,20 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
           if (selectedMetrics.borrowApr && item.borrowApr !== undefined) return true;
           return false;
         })
-        .sort((a, b) => parseInt(a.index || "0") - parseInt(b.index || "0"))
+        .sort((a, b) => {
+          if ((a.blockHeight ?? 0) !== (b.blockHeight ?? 0)) {
+            return (a.blockHeight ?? 0) - (b.blockHeight ?? 0)
+          }
+          return (a.index ?? 0) - (b.index ?? 0)
+        })
     } else {
       return snapshotData && snapshotData
-        .map(snapshot => ({
+        .map((snapshot, index) => ({
           timestamp: new Date(snapshot.timestamp).getTime(),
           utilization: selectedMetrics.utilization ? snapshot.utilization_rate : undefined,
           supplyApr: selectedMetrics.supplyApr ? snapshot.supply_apr : undefined,
           borrowApr: selectedMetrics.borrowApr ? snapshot.borrow_apr : undefined,
+          key: `snapshot-${index}`,
         }))
         .filter(item => {
           if (selectedMetrics.utilization && item.utilization !== undefined) return true;
