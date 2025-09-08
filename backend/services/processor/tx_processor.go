@@ -1,27 +1,27 @@
-// Package processor provides concurrent transaction processing utilities for the backend.
+// Package processor provides sequential transaction processing utilities for the backend.
 //
-// This package defines a TransactionProcessorPool, which enables high-throughput, thread-safe
+// This package defines a TransactionProcessorQueue, which enables ordered, thread-safe
 // processing of Volos protocol transactions received from both WebSocket and polling sources.
 // The processor handles transactions from both core and governance packages, routing them
 // to appropriate handlers based on their package path.
 //
-// The TransactionProcessorPool uses a buffered channel as a job queue and a configurable
-// number of worker goroutines to process transactions in parallel. Transactions are submitted
-// to the pool via the Submit method, and each worker calls ProcessTransaction to handle the
-// transaction logic based on its package path and event type.
+// The TransactionProcessorQueue uses a buffered channel as a job queue and processes
+// transactions sequentially in a single goroutine to maintain proper ordering and data consistency.
+// Transactions are submitted to the queue via the Submit method, and the processor calls
+// ProcessTransaction to handle the transaction logic based on its package path and event type.
 //
-// This design ensures that transaction processing keeps up with real-time data ingestion,
-// prevents bottlenecks, and provides a scalable foundation for implementing custom event
-// handling logic for each transaction type from both core and governance packages.
+// This design ensures that transaction processing maintains data consistency by processing
+// transactions in the order they are received, preventing race conditions and ensuring
+// that state changes are applied in the correct sequence.
 //
 // Usage:
 //
-//	pool := processor.NewTransactionProcessorPool(8)
-//	pool.Start()
+//	queue := processor.NewTransactionProcessorQueue(gnoClient, firestoreClient)
+//	queue.Start()
 //	...
-//	pool.Submit(tx)
+//	queue.Submit(tx)
 //
-// Both WebSocket and polling ingestion should submit transactions to the same pool for unified processing.
+// Both WebSocket and polling ingestion should submit transactions to the same queue for unified processing.
 // The processor automatically routes transactions to core or governance handlers based on package path.
 package processor
 
@@ -38,12 +38,11 @@ import (
 	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
 )
 
-// TransactionProcessorPool processes transactions concurrently using a worker pool.
+// TransactionProcessorQueue processes transactions sequentially to maintain proper ordering.
 // It handles transactions from both core and governance packages, routing them to
 // appropriate processing functions based on their package path.
-type TransactionProcessorPool struct {
+type TransactionProcessorQueue struct {
 	jobs            chan map[string]interface{}
-	workers         int
 	logger          *slog.Logger
 	gnoClient       *gnoclient.Client
 	firestoreClient *firestore.Client
@@ -60,12 +59,8 @@ type TransactionProcessorPool struct {
 	seenCap int
 }
 
-// NewTransactionProcessorPool creates a new pool with the given number of workers.
-func NewTransactionProcessorPool(workers int, gnoClient *gnoclient.Client, firestoreClient *firestore.Client) *TransactionProcessorPool {
-	if workers <= 0 {
-		workers = 8
-	}
-
+// NewTransactionProcessorQueue creates a new sequential processor.
+func NewTransactionProcessorQueue(gnoClient *gnoclient.Client, firestoreClient *firestore.Client) *TransactionProcessorQueue {
 	// TODO: configure de-dup capacity via env (VOLOS_TX_DEDUP_SEEN_CAP), default to 1024
 	defaultCap := 1024
 	if env := os.Getenv("VOLOS_TX_DEDUP_SEEN_CAP"); env != "" {
@@ -79,10 +74,9 @@ func NewTransactionProcessorPool(workers int, gnoClient *gnoclient.Client, fires
 		}
 	}
 
-	return &TransactionProcessorPool{
+	return &TransactionProcessorQueue{
 		jobs:            make(chan map[string]interface{}, 1000),
-		workers:         workers,
-		logger:          slog.Default().With("component", "TransactionProcessorPool"),
+		logger:          slog.Default().With("component", "TransactionProcessorQueue"),
 		gnoClient:       gnoClient,
 		firestoreClient: firestoreClient,
 		seen:            make(map[string]struct{}, defaultCap),
@@ -91,21 +85,18 @@ func NewTransactionProcessorPool(workers int, gnoClient *gnoclient.Client, fires
 	}
 }
 
-// Start launches the worker goroutines that process transactions from both core and governance packages.
-func (p *TransactionProcessorPool) Start() {
-	p.logger.Info("starting transaction processor pool",
-		"workers", p.workers,
-		"queue_capacity", cap(p.jobs),
-		"dedup_capacity", p.seenCap,
+// Start launches a single goroutine that processes transactions sequentially from both core and governance packages.
+func (q *TransactionProcessorQueue) Start() {
+	q.logger.Info("starting sequential transaction processor",
+		"queue_capacity", cap(q.jobs),
+		"dedup_capacity", q.seenCap,
 	)
 
-	for i := 0; i < p.workers; i++ {
-		go func() {
-			for tx := range p.jobs {
-				ProcessTransaction(tx, p.firestoreClient, p.gnoClient)
-			}
-		}()
-	}
+	go func() {
+		for tx := range q.jobs {
+			ProcessTransaction(tx, q.firestoreClient, q.gnoClient)
+		}
+	}()
 }
 
 // Submit adds a transaction to the processing queue. The transaction will be routed
@@ -115,7 +106,7 @@ func (p *TransactionProcessorPool) Start() {
 // resumes slightly before). To avoid double-processing the same transaction, we keep a
 // bounded in-memory set of recently seen transaction keys (prefer hash; fallback to
 // block_height:index). If a key is already present, the submission is dropped.
-func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
+func (q *TransactionProcessorQueue) Submit(tx map[string]interface{}) {
 	var key string
 	if h, ok := tx["hash"].(string); ok && h != "" {
 		key = h
@@ -131,28 +122,28 @@ func (p *TransactionProcessorPool) Submit(tx map[string]interface{}) {
 	}
 
 	if key != ":" && key != "" {
-		p.seenMu.Lock()
-		if _, exists := p.seen[key]; exists {
-			p.seenMu.Unlock()
+		q.seenMu.Lock()
+		if _, exists := q.seen[key]; exists {
+			q.seenMu.Unlock()
 			return
 		}
-		p.seen[key] = struct{}{}
-		p.seenQueue = append(p.seenQueue, key)
-		if len(p.seenQueue) > p.seenCap {
-			oldest := p.seenQueue[0]
-			p.seenQueue = p.seenQueue[1:]
-			delete(p.seen, oldest)
+		q.seen[key] = struct{}{}
+		q.seenQueue = append(q.seenQueue, key)
+		if len(q.seenQueue) > q.seenCap {
+			oldest := q.seenQueue[0]
+			q.seenQueue = q.seenQueue[1:]
+			delete(q.seen, oldest)
 		}
-		p.seenMu.Unlock()
+		q.seenMu.Unlock()
 	}
 
 	select {
-	case p.jobs <- tx:
+	case q.jobs <- tx:
 		// Transaction submitted successfully
 	default:
-		p.logger.Warn("transaction processor job queue full, dropping transaction",
+		q.logger.Warn("transaction processor job queue full, dropping transaction",
 			"tx_key", key,
-			"queue_capacity", cap(p.jobs),
+			"queue_capacity", cap(q.jobs),
 		)
 	}
 }

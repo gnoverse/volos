@@ -11,9 +11,9 @@ interface ChartMetrics {
 
 interface ChartDataPoint {
   timestamp: number
-  utilization?: number
-  supplyApr?: number
-  borrowApr?: number
+  utilization?: string
+  supplyApr?: string
+  borrowApr?: string
 }
 
 /**
@@ -66,7 +66,7 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
         if (!dataMap.has(timestamp)) {
           dataMap.set(timestamp, { timestamp })
         }
-        dataMap.get(timestamp)!.utilization = Number(item.value)
+        dataMap.get(timestamp)!.utilization = item.value
       })
 
       aprHistoryData.forEach(item => {
@@ -74,8 +74,8 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
         if (!dataMap.has(timestamp)) {
           dataMap.set(timestamp, { timestamp })
         }
-        dataMap.get(timestamp)!.supplyApr = Number(item.supply_apr)
-        dataMap.get(timestamp)!.borrowApr = Number(item.borrow_apr)
+        dataMap.get(timestamp)!.supplyApr = item.supply_apr
+        dataMap.get(timestamp)!.borrowApr = item.borrow_apr
       })
 
       return Array.from(dataMap.values())

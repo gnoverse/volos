@@ -26,6 +26,7 @@ type SupplyEvent struct {
 	Timestamp string
 	SupplyAPR string
 	BorrowAPR string
+	Utilization string
 }
 
 type WithdrawEvent struct {
@@ -38,6 +39,7 @@ type WithdrawEvent struct {
 	Timestamp string
 	SupplyAPR string
 	BorrowAPR string
+	Utilization string
 }
 
 type BorrowEvent struct {
@@ -50,6 +52,7 @@ type BorrowEvent struct {
 	Timestamp string
 	SupplyAPR string
 	BorrowAPR string
+	Utilization string
 }
 
 type RepayEvent struct {
@@ -61,6 +64,7 @@ type RepayEvent struct {
 	Timestamp string
 	SupplyAPR string
 	BorrowAPR string
+	Utilization string
 }
 
 type LiquidateEvent struct {
@@ -73,6 +77,7 @@ type LiquidateEvent struct {
 	Timestamp string
 	SupplyAPR string
 	BorrowAPR string
+	Utilization string
 }
 
 type SupplyCollateralEvent struct {
@@ -90,6 +95,12 @@ type WithdrawCollateralEvent struct {
 	Receiver  string
 	Amount    string
 	Timestamp string
+}
+
+type AccrueInterestEvent struct {
+	MarketID  string
+	Timestamp string
+	Utilization string
 }
 
 // governance events

@@ -55,7 +55,7 @@ func main() {
 	// Start transaction processing
 	go func() {
 		ctx := context.Background()
-		pool := processor.NewTransactionProcessorPool(8, gnoClient, firestoreClient)
+		pool := processor.NewTransactionProcessorQueue(gnoClient, firestoreClient)
 		pool.Start()
 		listener := txlistener.NewTransactionListener(pool)
 		listener.Start(ctx)

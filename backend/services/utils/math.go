@@ -5,8 +5,9 @@ import (
 	"math/big"
 )
 
-// WAD constant (1e18) for fixed-point arithmetic
 var WAD = big.NewInt(1e18)
+var VIRTUAL_SHARES = big.NewInt(1e9) // 1 billion virtual shares
+var VIRTUAL_ASSETS = big.NewInt(1)   // 1 base unit
 
 // WMulDown returns (x * y) / WAD rounded down
 func WMulDown(x, y *big.Int) *big.Int {
@@ -69,4 +70,40 @@ func MulDivUp(a, b, denominator *big.Int) *big.Int {
 	}
 
 	return quotient
+}
+
+// ToSharesDown converts assets to shares, rounding down (used for supply)
+// This is used when a user supplies assets and we need to calculate how many shares they receive
+func ToSharesDown(assets, totalAssets, totalShares *big.Int) *big.Int {
+	if assets == nil || totalAssets == nil || totalShares == nil {
+		slog.Error("nil input to ToSharesDown")
+		return big.NewInt(0)
+	}
+
+	totalSharesWithVirtual := new(big.Int).Add(totalShares, VIRTUAL_SHARES)
+	totalAssetsWithVirtual := new(big.Int).Add(totalAssets, VIRTUAL_ASSETS)
+
+	return MulDivDown(
+		assets,
+		totalSharesWithVirtual,
+		totalAssetsWithVirtual,
+	)
+}
+
+// ToSharesUp converts assets to shares, rounding up (used for borrow)
+// This is used when a user borrows assets and we need to calculate how many shares they need
+func ToSharesUp(assets, totalAssets, totalShares *big.Int) *big.Int {
+	if assets == nil || totalAssets == nil || totalShares == nil {
+		slog.Error("nil input to ToSharesUp")
+		return big.NewInt(0)
+	}
+
+	totalSharesWithVirtual := new(big.Int).Add(totalShares, VIRTUAL_SHARES)
+	totalAssetsWithVirtual := new(big.Int).Add(totalAssets, VIRTUAL_ASSETS)
+
+	return MulDivUp(
+		assets,
+		totalSharesWithVirtual,
+		totalAssetsWithVirtual,
+	)
 }
