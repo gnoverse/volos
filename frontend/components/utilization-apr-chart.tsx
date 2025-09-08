@@ -1,7 +1,7 @@
 "use client"
 
 
-import { formatTimestamp, getXAxisFormatter } from "@/app/utils/format.utils"
+import { formatPercentage, formatTimestamp, getXAxisFormatter, wadToPercentage } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -153,7 +153,7 @@ export function UtilizationAPRChart({
                 axisLine={false}
                 width={60}
                 tick={{ fill: 'rgb(156 163 175)' }}
-                tickFormatter={(value) => `${value}%`}
+                tickFormatter={(value) => formatPercentage(wadToPercentage(value.toString()))}
                 stroke="rgba(75, 85, 99, 0.3)"
               />
               
@@ -200,9 +200,7 @@ export function UtilizationAPRChart({
                 }}
                 labelFormatter={(label) => formatTimestamp(label)}
                 formatter={(value, name) => {
-                  const base = Array.isArray(value) ? value[0] : value
-                  const num = typeof base === 'string' ? parseFloat(base) : (base as number)
-                  return [`${num.toFixed(2)}%`, name]
+                  return [formatPercentage(wadToPercentage(value.toString())), name]
                 }}
               />
             </LineChart>
