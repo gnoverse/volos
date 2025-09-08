@@ -1,5 +1,5 @@
 import { AdenaService } from '@/app/services/adena.service'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface UseUserAddressOptions {
   /**
@@ -14,7 +14,7 @@ interface UseUserAddressOptions {
  * Automatically updates when the user connects/disconnects their wallet.
  * 
  * @param options Configuration options for the hook
- * @returns Object containing userAddress and isConnected state
+ * @returns Object containing userAddress, isConnected state, and wallet connection handler
  */
 export function useUserAddress(options: UseUserAddressOptions = {}) {
   const [userAddress, setUserAddress] = useState<string>("")
@@ -62,5 +62,20 @@ export function useUserAddress(options: UseUserAddressOptions = {}) {
     }
   }, [validateConnection])
 
-  return { userAddress, isConnected }
+  const handleWalletConnection = useCallback(async () => {
+    const adenaService = AdenaService.getInstance()
+    
+    if (isConnected) {
+      adenaService.disconnectWallet()
+    } else {
+      try {
+        await adenaService.connectWallet()
+      } catch (error) {
+        console.error("Failed to connect wallet:", error)
+        throw error
+      }
+    }
+  }, [isConnected])
+
+  return { userAddress, isConnected, handleWalletConnection }
 }

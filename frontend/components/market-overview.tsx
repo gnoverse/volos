@@ -2,6 +2,7 @@ import { MarketInfo } from "@/app/types";
 import { InfoCard } from "@/components/info-card";
 import { SupplyBorrowChart } from "./supply-borrow-chart";
 import { UtilizationAPRChart } from "./utilization-apr-chart";
+import { formatPercentage, wadToPercentage } from "@/app/utils/format.utils";
 
 interface MarketOverviewProps {
   market: MarketInfo;
@@ -44,15 +45,15 @@ export function MarketOverview({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <InfoCard
           title="7D APY"
-          value={market.borrowAPR}
+          value={formatPercentage(wadToPercentage(market.borrowAPR))}
         />
         <InfoCard
           title="30D APY"
-          value={market.borrowAPR}
+          value={formatPercentage(wadToPercentage(market.borrowAPR))}
         />
         <InfoCard
           title="90D APY"
-          value={market.borrowAPR}
+          value={formatPercentage(wadToPercentage(market.borrowAPR))}
         />
       </div>
     </>

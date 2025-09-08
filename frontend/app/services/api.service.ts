@@ -88,7 +88,7 @@ export async function getUserVoteOnProposal(proposalId: string, userAddress: str
 }
 
 export async function getUserPendingUnstakes(userAddress: string): Promise<PendingUnstake[]> {
-  const response = await fetch(`${API_BASE}/user-pending-unstakes?address=${userAddress}`);
+  const response = await fetch(`${API_BASE}/user-pending-unstakes?userAddress=${userAddress}`);
   if (!response.ok) throw new Error('Failed to fetch pending unstakes');
   return response.json();
 }

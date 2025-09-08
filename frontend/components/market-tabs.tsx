@@ -1,7 +1,7 @@
 "use client"
 
 import { useMarketActivityQuery } from "@/app/(app)/borrow/queries-mutations"
-import { MarketInfo, Position } from "@/app/types"
+import { MarketInfo } from "@/app/types"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,8 +15,6 @@ interface MarketTabsProps {
     ninetyDay: number;
   };
   cardStyles: string;
-  healthFactor: string;
-  positionData: Position;
   caller: string;
 }
 
@@ -24,8 +22,6 @@ export function MarketTabs({
   market, 
   apyVariations, 
   cardStyles,
-  healthFactor,
-  positionData,
   caller
 }: MarketTabsProps) {
 
@@ -64,10 +60,8 @@ export function MarketTabs({
       
       <TabsContent value="position" className="mt-0">
         <MyPosition
-          market={market}
+          marketId={market.marketId!}
           cardStyles={cardStyles}
-          healthFactor={healthFactor}
-          positionData={positionData}
           caller={caller}
         />
       </TabsContent>

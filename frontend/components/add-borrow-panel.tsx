@@ -1,173 +1,123 @@
 "use client"
 
-import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
-import { MarketInfo, Position } from "@/app/types"
+import { useBorrowWithApproval, usePositionQuery, useSupplyCollateralWithApproval } from "@/app/(app)/borrow/queries-mutations"
+import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useQueryClient } from "@tanstack/react-query"
+import { useFormValidation } from "@/hooks/use-form-validation"
+import { usePositionCalculations } from "@/hooks/use-position-calculations"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { 
-  parseUint256, 
-  addUint256, 
-  subtractUint256, 
-  multiplyUint256ByNumber,
-  uint256ToNumber
-} from "@/app/utils/uint256.utils"
+import { formatUnits } from "viem"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
 
 interface AddBorrowPanelProps {
   market: MarketInfo
-  supplyValue: string // Changed from number to string (uint256)
-  borrowValue: string // Changed from number to string (uint256)
-  healthFactor: string
-  currentCollateral?: string // Changed from number to string (uint256)
-  currentLoan?: string // Changed from number to string (uint256)
-  ltv: string
-  collateralTokenDecimals: number
-  loanTokenDecimals: number
-  positionData?: Position
 }
 
 export function AddBorrowPanel({
   market,
-  supplyValue,
-  borrowValue,
-  healthFactor,
-  currentCollateral = "0",
-  currentLoan = "0",
-  ltv,
-  // collateralTokenDecimals,
-  // loanTokenDecimals,
-  positionData,
 }: AddBorrowPanelProps) {
-    const { register, setValue, watch, reset } = useForm({
-        defaultValues: {
-            supplyAmount: "",
-            borrowAmount: "",
-            repayAmount: "",
-            withdrawAmount: ""
-        }
-    })
-  
-  const queryClient = useQueryClient()
-  const supplyCollateralMutation = useSupplyCollateralMutation()
-  const borrowMutation = useBorrowMutation()
-  const approveTokenMutation = useApproveTokenMutation()
-  
-  // Get current positions as uint256 strings
-  const positionCollateral = positionData?.collateral || currentCollateral;
-  const positionLoan = positionData?.borrowShares || currentLoan;
+  // Form setup
+  const { register, setValue, watch, reset } = useForm({
+    defaultValues: {
+      supplyAmount: "",
+      borrowAmount: "",
+      repayAmount: "",
+      withdrawAmount: ""
+    }
+  })
 
-  const supplyAmount = watch("supplyAmount");
-  const borrowAmount = watch("borrowAmount");
+  const { userAddress } = useUserAddress()
+  const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.poolPath!, userAddress)
+  
+  const {
+    positionMetrics,
+    currentCollateral,
+    currentBorrowAssets,
+    maxBorrow,
+    calculateMaxBorrowable,
+    healthFactor
+  } = usePositionCalculations(positionData ?? {
+    borrow_shares: "0",
+    supply_shares: "0",
+    collateral_supply: "0"
+  }, market)
 
-  // Convert user input to uint256 strings
-  const supplyAmountUint256 = supplyAmount ? parseUint256(supplyAmount, 6) : "0"; // Using 6 decimals for demo
-  const borrowAmountUint256 = borrowAmount ? parseUint256(borrowAmount, 6) : "0"; // Using 6 decimals for demo
-  
-  // Calculate total collateral after supply
-  const totalCollateral = addUint256(positionCollateral, supplyAmountUint256);
-  
-  // Convert LTV to number for calculation (it's already in WAD format)
-  const ltvFloat = uint256ToNumber(ltv, 18);
-  
-  // Calculate max borrowable: (totalCollateral * ltv) - currentLoan
-  const maxBorrowableCollateral = multiplyUint256ByNumber(totalCollateral, ltvFloat);
-  const maxBorrowable = subtractUint256(maxBorrowableCollateral, positionLoan);
-  
-  // Convert to numbers for display and comparison
-  const supplyAmountNum = uint256ToNumber(supplyAmountUint256, 6);
-  const borrowAmountNum = uint256ToNumber(borrowAmountUint256, 6);
-  const maxBorrowableNum = uint256ToNumber(maxBorrowable, 6);
+  const {
+    isSupplyInputEmpty,
+    isSupplyTooManyDecimals,
+    supplyButtonMessage,
+    isBorrowInputEmpty,
+    isBorrowTooManyDecimals,
+    isBorrowOverMax,
+    borrowButtonMessage
+  } = useFormValidation(
+    watch("supplyAmount"),
+    watch("borrowAmount"),
+    market,
+    positionMetrics.maxBorrow
+  )
 
-  const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
-  const supplyButtonMessage = isSupplyInputEmpty ? "Enter supply amount" : "Supply";
-  const isSupplyPending = approveTokenMutation.isPending || supplyCollateralMutation.isPending;
+  const supplyCollateralMutation = useSupplyCollateralWithApproval()
+  const borrowMutation = useBorrowWithApproval()
 
-  const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0";
-  const isBorrowOverMax = borrowAmountNum > maxBorrowableNum;
-  const borrowButtonMessage = isBorrowInputEmpty
-    ? "Enter borrow amount"
-    : isBorrowOverMax
-      ? "Exceeds max borrow"
-      : "Borrow";
-  const isBorrowPending = approveTokenMutation.isPending || borrowMutation.isPending;
+  const supplyAmount = watch("supplyAmount")
+  const borrowAmount = watch("borrowAmount")
+
+  const isSupplyPending = supplyCollateralMutation.isPending
+  const isBorrowPending = borrowMutation.isPending
+
+  const handleMaxBorrow = async () => {
+    try {
+      const { data: latestPosition } = await refetchPosition()
+      
+      if (latestPosition) {
+        const maxBorrowable = calculateMaxBorrowable(latestPosition)
+        const maxBorrowableStr = formatUnits(maxBorrowable, market.loanTokenDecimals)
+        setValue("borrowAmount", maxBorrowableStr)
+      }
+    } catch (error) {
+      console.error("Failed to fetch latest position:", error)
+    }
+  }
 
   const handleSupply = async () => {
-    if (isSupplyInputEmpty) return;
+    if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
-    try {
-      const collateralTokenPath = market?.collateralToken;
-      
-      // Use uint256 string for approval amount (with 20% buffer)
-      const approvalAmountUint256 = multiplyUint256ByNumber(supplyAmountUint256, 1.2);
-      
-      await approveTokenMutation.mutateAsync({
-        tokenPath: collateralTokenPath!,
-        amount: uint256ToNumber(approvalAmountUint256, 6)
-      });
-
-      console.log("collateralTokenPath", collateralTokenPath)
-      console.log("supplyAmountUint256", supplyAmountUint256)
-      console.log("supplyAmount", supplyAmount)
-      console.log("market.poolPath", market.poolPath)
-            
-      supplyCollateralMutation.mutate({
-        marketId: market.poolPath!,
-        amount: uint256ToNumber(supplyAmountUint256, 6)
-      }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
-          reset();
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to supply collateral: ${error.message}`);
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to approve token: ${(error as Error).message}`);
-    }
+    const supplyAmountInTokens = Number(supplyAmount || "0");
+    
+    supplyCollateralMutation.mutate({
+      marketId: market.poolPath!,
+      collateralTokenPath: market.collateralToken!,
+      amount: supplyAmountInTokens,
+      collateralTokenDecimals: market.collateralTokenDecimals
+    }, {
+      onSuccess: () => {
+        reset();
+      }
+    });
   };
 
   const handleBorrow = async () => {
-    if (isBorrowInputEmpty || isBorrowOverMax) return;
+    if (isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax) return;
     
-    try {
-      const loanTokenPath = market?.loanToken;
-      
-      // Use uint256 string for approval amount (with 20% buffer)
-      const approvalAmountUint256 = multiplyUint256ByNumber(borrowAmountUint256, 1.2);
-      
-      await approveTokenMutation.mutateAsync({
-        tokenPath: loanTokenPath!,
-        amount: uint256ToNumber(approvalAmountUint256, 6)
-      });
-            
-      borrowMutation.mutate({
-        marketId: market.poolPath!,
-        assets: uint256ToNumber(borrowAmountUint256, 6)
-      }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
-          reset();
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to borrow: ${error.message}`);
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to approve token: ${(error as Error).message}`);
-    }
+    const borrowAmountInTokens = Number(borrowAmount || "0");
+    
+    borrowMutation.mutate({
+      marketId: market.poolPath!,
+      loanTokenPath: market.loanToken!,
+      amount: borrowAmountInTokens,
+      loanTokenDecimals: market.loanTokenDecimals
+    }, {
+      onSuccess: () => {
+        reset();
+      }
+    });
   };
 
   return (
@@ -191,16 +141,16 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${(uint256ToNumber(supplyValue, 6) * supplyAmountNum).toFixed(2)}</span>
+            <span className="text-xs text-gray-400">{supplyAmount} {market.collateralTokenSymbol}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
+              <span className="text-xs text-gray-400">{formatUnits(currentCollateral, market.collateralTokenDecimals)} {market.collateralTokenSymbol}</span>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
                 onClick={() => {
-                  setValue("supplyAmount", maxBorrowableNum.toString());
+                  setValue("supplyAmount", formatUnits(maxBorrow, market.loanTokenDecimals));
                 }}
               >
                 MAX
@@ -209,8 +159,8 @@ export function AddBorrowPanel({
           </div>
           <Button
             type="button"
-            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isSupplyInputEmpty || isSupplyPending}
+            className="w-full mt-1 bg-midnightPurple-900/60 hover:bg-midnightPurple-900/50 text-gray-400 h-8 text-sm"
+            disabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
             onClick={handleSupply}
           >
             {isSupplyPending ? "Processing..." : supplyButtonMessage}
@@ -237,17 +187,15 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${(borrowValue * borrowAmountNum).toFixed(2)}</span>
+            <span className="text-xs text-gray-400">{borrowAmount || "0"} {market.loanTokenSymbol}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
+              <span className="text-xs text-gray-400">{currentBorrowAssets} {market.loanTokenSymbol}</span>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={() => {
-                  setValue("borrowAmount", maxBorrowableNum.toString());
-                }}
+                onClick={handleMaxBorrow}
               >
                 MAX
               </Button>
@@ -255,8 +203,8 @@ export function AddBorrowPanel({
           </div>
           <Button
             type="button"
-            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isBorrowInputEmpty || isBorrowOverMax || isBorrowPending}
+            className="w-full mt-1 bg-midnightPurple-900/60 hover:bg-midnightPurple-900/50 text-gray-400 h-8 text-sm"
+            disabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
             onClick={handleBorrow}
           >
             {isBorrowPending ? "Processing..." : borrowButtonMessage}
@@ -269,12 +217,11 @@ export function AddBorrowPanel({
         market={market}
         supplyAmount={supplyAmount}
         borrowAmount={borrowAmount}
-        maxBorrowableAmount={maxBorrowableNum}
-        isBorrowValid={borrowAmountNum <= maxBorrowableNum}
+        maxBorrow={formatUnits(maxBorrow, market.loanTokenDecimals)}
+        isBorrowValid={!isBorrowOverMax}
         healthFactor={healthFactor}
-        currentCollateral={uint256ToNumber(currentCollateral, 6)}
-        currentLoan={uint256ToNumber(currentLoan, 6)}
-        ltv={ltv}
+        currentCollateral={formatUnits(currentCollateral, market.collateralTokenDecimals)}
+        currentBorrowAssets={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}
       />
     </form>
   )

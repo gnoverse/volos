@@ -22,8 +22,10 @@ export const MarketHistorySchema = z.object({
 
 export const APRDataSchema = z.object({
   timestamp: z.date(),
-  supply_apr: z.number(),
-  borrow_apr: z.number(),
+  supply_apr: Uint256Schema,
+  borrow_apr: Uint256Schema,
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const TotalSupplyDataSchema = z.object({
@@ -34,6 +36,8 @@ export const TotalSupplyDataSchema = z.object({
   value: Uint256Schema,
   caller: z.string(),
   tx_hash: z.string(),
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const TotalBorrowDataSchema = z.object({
@@ -44,6 +48,8 @@ export const TotalBorrowDataSchema = z.object({
   value: Uint256Schema,
   caller: z.string(),
   tx_hash: z.string(),
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const TotalCollateralSupplyDataSchema = z.object({
@@ -54,23 +60,27 @@ export const TotalCollateralSupplyDataSchema = z.object({
   value: Uint256Schema,
   caller: z.string(),
   tx_hash: z.string(),
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const UtilizationDataSchema = z.object({
   timestamp: z.date(),
-  value: z.number(),
+  value: Uint256Schema,
+  index: z.number(),
+  block_height: z.number(),
 });
 
 export const MarketSnapshotSchema = z.object({
   market_id: z.string(),
   timestamp: z.date(),
   resolution: z.enum(['4hour', 'daily', 'weekly']),
-  supply_apr: z.number(),
-  borrow_apr: z.number(),
+  supply_apr: Uint256Schema,
+  borrow_apr: Uint256Schema,
   total_supply: Uint256Schema,
   total_collateral_supply: Uint256Schema,
   total_borrow: Uint256Schema,
-  utilization_rate: z.number(),
+  utilization_rate: Uint256Schema,
   created_at: z.date(),
 });
 
@@ -93,8 +103,8 @@ export const UserLoanHistorySchema = z.object({
 });
 
 export const PositionSchema = z.object({
-  loan: Uint256Schema,
-  supply: Uint256Schema,
+  borrow_shares: Uint256Schema,
+  supply_shares: Uint256Schema,  
   collateral_supply: Uint256Schema,
 });
 
@@ -151,12 +161,14 @@ export const MarketSchema = z.object({
   total_supply: Uint256Schema,
   total_borrow: Uint256Schema,
   total_collateral_supply: Uint256Schema,
-  supply_apr: z.number(),
-  borrow_apr: z.number(),
-  utilization_rate: z.number(),
+  supply_apr: Uint256Schema,
+  borrow_apr: Uint256Schema,
+  utilization_rate: Uint256Schema,
+  total_borrow_shares: Uint256Schema,
+  total_supply_shares: Uint256Schema,
   created_at: z.string(),
   updated_at: z.string(),
-  lltv: z.number(),
+  lltv: Uint256Schema,
 });
 
 export const MarketsResponseSchema = z.object({
@@ -179,21 +191,20 @@ export const MarketInfoSchema = z.object({
   totalBorrowAssets: Uint256Schema,
   totalBorrowShares: Uint256Schema,
   lastUpdate: z.number().int(),
-  fee: z.number(),
+  fee: Uint256Schema,
   
   // Params fields
   poolPath: z.string(),
   irm: z.string(),
-  lltv: z.number(),
-  isToken0Loan: z.boolean(),
-  
+  lltv: Uint256Schema,
+    
   // Additional fields
   loanToken: z.string(),
   collateralToken: z.string(),
   currentPrice: z.string(),
-  borrowAPR: z.number(),
-  supplyAPR: z.number(),
-  utilization: z.number(),
+  borrowAPR: Uint256Schema,
+  supplyAPR: Uint256Schema,
+  utilization: Uint256Schema,
   
   // Token information fields
   loanTokenName: z.string(),

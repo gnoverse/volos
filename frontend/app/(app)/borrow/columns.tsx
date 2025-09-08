@@ -1,7 +1,7 @@
 "use client"
 
 import { MarketInfo } from "@/app/types"
-import { formatPercentage, parseTokenAmount } from "@/app/utils/format.utils"
+import { formatPercentage, parseTokenAmount, wadToPercentage } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
@@ -98,7 +98,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       )
     },
     cell: ({ row }) => {
-      return <div className="text-left font-medium px-3">{row.original.supplyAPR}</div>
+      return <div className="text-left font-medium px-3">{formatPercentage(wadToPercentage(row.original.supplyAPR))}</div>
     },
   },
   {
@@ -118,7 +118,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       )
     },
     cell: ({ row }) => {
-      return <div className="text-left font-medium px-3">{row.original.borrowAPR}</div>
+      return <div className="text-left font-medium px-3">{formatPercentage(wadToPercentage(row.original.borrowAPR))}</div>
     },
   },
   {
@@ -127,7 +127,7 @@ export const columns: ColumnDef<MarketInfo>[] = [
       return <div className="text-left">Max LTV</div>
     },
     cell: ({ row }) => {
-      return <div className="text-left font-medium">{formatPercentage(row.original.lltv)}</div>
+      return <div className="text-left font-medium">{formatPercentage(wadToPercentage(row.original.lltv))}</div>
     },
   },
 ] 

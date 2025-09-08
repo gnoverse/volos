@@ -1,7 +1,8 @@
 import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUserMarketPosition, getUtilizationHistory } from "@/app/services/api.service";
-import { TxService, VOLOS_PKG_PATH } from "@/app/services/tx.service";
+import { TxService } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { VOLOS_ADDRESS } from "@/app/services/tx.service";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
@@ -27,22 +28,21 @@ export function useMarketsQuery() {
       const markets: MarketInfo[] = response.markets.map(market => ({
         // Market fields
         totalSupplyAssets: market.total_supply,
-        totalSupplyShares: "0", // TODO: Get from market data
+        totalSupplyShares: market.total_supply_shares,
         totalBorrowAssets: market.total_borrow,
-        totalBorrowShares: "0", // TODO: Get from market data
+        totalBorrowShares: market.total_borrow_shares,
         lastUpdate: Date.now(), // TODO: Get actual last update timestamp
-        fee: 0, // TODO: Get actual fee from market data
+        fee: "0", // TODO: Get actual fee from market data
         
         // Params fields
         poolPath: market.id, // TODO: Extract pool path from market ID
         irm: "default", // TODO: Get actual IRM from market data
         lltv: market.lltv,
-        isToken0Loan: true, // TODO: Determine from market data
         
         // Additional fields
         loanToken: market.loan_token,
         collateralToken: market.collateral_token,
-        currentPrice: "0", // TODO: Get current price from oracle
+        currentPrice: market.current_price,
         borrowAPR: market.borrow_apr,
         supplyAPR: market.supply_apr,
         utilization: market.utilization_rate,
@@ -83,22 +83,21 @@ export function useMarketQuery(marketId: string) {
       return {
         // Market fields
         totalSupplyAssets: market.total_supply,
-        totalSupplyShares: "0", // TODO: Get from market data
+        totalSupplyShares: market.total_supply_shares,
         totalBorrowAssets: market.total_borrow,
-        totalBorrowShares: "0", // TODO: Get from market data
+        totalBorrowShares: market.total_borrow_shares,
         lastUpdate: Date.now(), // TODO: Get actual last update timestamp
-        fee: 0, // TODO: Get actual fee from market data
+        fee: "0", // TODO: Get actual fee from market data
         
         // Params fields
         poolPath: market.id, // TODO: Extract pool path from market ID
         irm: "default", // TODO: Get actual IRM from market data
         lltv: market.lltv,
-        isToken0Loan: true, // TODO: Determine from market data
         
         // Additional fields
         loanToken: market.loan_token,
         collateralToken: market.collateral_token,
-        currentPrice: "0", // TODO: Get current price from oracle
+        currentPrice: market.current_price,
         borrowAPR: market.borrow_apr,
         supplyAPR: market.supply_apr,
         utilization: market.utilization_rate,
@@ -222,7 +221,7 @@ export function useApproveTokenMutation() {
       tokenPath: string; 
       amount: number;
     }) => {
-      return txService.approveToken(tokenPath, amount, VOLOS_PKG_PATH);
+      return txService.approveToken(tokenPath, amount, VOLOS_ADDRESS);
     },
     onError: (error) => {
       console.error("Token approval failed:", error);
@@ -618,6 +617,84 @@ export function useSetFeeRecipientMutation() {
       } else {
         console.log("Set fee recipient transaction successful:", data);
       }
+    }
+  });
+}
+
+export function useSupplyCollateralWithApproval() {
+  const queryClient = useQueryClient();
+  const approveTokenMutation = useApproveTokenMutation();
+  const supplyCollateralMutation = useSupplyCollateralMutation();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      marketId,
+      collateralTokenPath,
+      amount,
+      collateralTokenDecimals
+    }: { 
+      marketId: string;
+      collateralTokenPath: string;
+      amount: number;
+      collateralTokenDecimals: number;
+    }) => {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: collateralTokenPath,
+        amount: amount * Math.pow(10, collateralTokenDecimals)
+      });
+      
+      return supplyCollateralMutation.mutateAsync({
+        marketId,
+        amount: amount * Math.pow(10, collateralTokenDecimals)
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
+    },
+    onError: (error) => {
+      console.error("Supply collateral transaction failed:", error);
+    }
+  });
+}
+
+export function useBorrowWithApproval() {
+  const queryClient = useQueryClient();
+  const approveTokenMutation = useApproveTokenMutation();
+  const borrowMutation = useBorrowMutation();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      marketId,
+      loanTokenPath,
+      amount,
+      loanTokenDecimals
+    }: { 
+      marketId: string;
+      loanTokenPath: string;
+      amount: number;
+      loanTokenDecimals: number;
+    }) => {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: loanTokenPath,
+        amount: amount * 10 ** loanTokenDecimals
+      });
+      
+      return borrowMutation.mutateAsync({
+        marketId,
+        assets: amount * 10 ** loanTokenDecimals
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
+    },
+    onError: (error) => {
+      console.error("Borrow transaction failed:", error);
     }
   });
 }

@@ -36,11 +36,13 @@ func CreateMarket(client *firestore.Client,
 	}
 
 	sqrtPriceX96 := utils.ParseABCIstring(res, "market creation")
+	loanDecimals := utils.ParseInt64(loanTokenDecimals, "market creation loanTokenDecimals")
+	collDecimals := utils.ParseInt64(collateralTokenDecimals, "market creation collateralTokenDecimals")
 
 	var currentPrice string
 	if sqrtPriceX96 != "" {
-		dontRevert := strings.HasSuffix(marketID, ":0")
-		currentPrice = extractPriceFromSqrt(sqrtPriceX96, dontRevert)
+		revert := strings.HasSuffix(marketID, ":1")
+		currentPrice = extractPriceFromSqrt(sqrtPriceX96, revert, loanDecimals, collDecimals)
 		if currentPrice == "" {
 			slog.Error("failed to extract price from sqrtPriceX96", "sqrtPriceX96", sqrtPriceX96, "marketID", marketID)
 		}
@@ -49,10 +51,6 @@ func CreateMarket(client *firestore.Client,
 	if timestampInt == 0 {
 		return
 	}
-
-	loanDecimals := utils.ParseInt64(loanTokenDecimals, "market creation loanTokenDecimals")
-	collDecimals := utils.ParseInt64(collateralTokenDecimals, "market creation collateralTokenDecimals")
-	lltvPercent := utils.WadToPercent(lltv, "market creation lltv")
 
 	marketData := map[string]interface{}{
 		"id":                        marketID,
@@ -65,7 +63,7 @@ func CreateMarket(client *firestore.Client,
 		"collateral_token_symbol":   collateralTokenSymbol,
 		"collateral_token_decimals": collDecimals,
 		"created_at":                time.Unix(timestampInt, 0),
-		"lltv":                      lltvPercent,
+		"lltv":                      lltv,
 	}
 
 	if currentPrice != "" {

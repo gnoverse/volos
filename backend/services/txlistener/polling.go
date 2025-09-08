@@ -30,7 +30,7 @@ import (
 // pollNewTransactions executes a GraphQL query to fetch new transactions from both
 // core and governance packages that occurred after the last known block height.
 // It uses a logical OR condition to include transactions from either package path
-// and submits all found transactions to the processor pool.
+// and submits all found transactions to the processor queue.
 func (tl *TransactionListener) pollNewTransactions() {
 	query := buildPollingQuery(tl.LastBlockHeight)
 	response, err := indexer.FetchIndexerData(query, "VolosTxQuery")
@@ -50,7 +50,7 @@ func (tl *TransactionListener) pollNewTransactions() {
 			if len(transactions) > 0 {
 				for _, tx := range transactions {
 					if txMap, ok := tx.(map[string]interface{}); ok {
-						tl.pool.Submit(txMap)
+						tl.queue.Submit(txMap)
 						if blockHeight, ok := txMap["block_height"].(float64); ok {
 							if int(blockHeight) > tl.LastBlockHeight {
 								tl.LastBlockHeight = int(blockHeight)

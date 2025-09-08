@@ -27,10 +27,10 @@ type TransactionListener struct {
 	RetryInterval   time.Duration
 	wsCtx           context.Context
 	wsCancel        context.CancelFunc
-	pool            *processor.TransactionProcessorPool
+	queue            *processor.TransactionProcessorQueue
 }
 
-func NewTransactionListener(pool *processor.TransactionProcessorPool) *TransactionListener {
+func NewTransactionListener(queue *processor.TransactionProcessorQueue) *TransactionListener {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &TransactionListener{
 		LastBlockHeight: model.BlockHeightOnDeploy,
@@ -38,7 +38,7 @@ func NewTransactionListener(pool *processor.TransactionProcessorPool) *Transacti
 		RetryInterval:   1 * time.Hour,
 		wsCtx:           ctx,
 		wsCancel:        cancel,
-		pool:            pool,
+		queue:            queue,
 	}
 }
 
@@ -63,7 +63,7 @@ func (tl *TransactionListener) startWebSocketListener(ctx context.Context) {
 			// Attempt to establish WebSocket connection and process transactions in real-time.
 			// If successful, updates LastBlockHeight with a safety lag of 1 block to avoid
 			// missing transactions if websocket connection is lost mid-block.
-			err := StartVolosTransactionListener(wsCtx, tl.pool, func(bh int) {
+			err := StartVolosTransactionListener(wsCtx, tl.queue, func(bh int) {
 				const safetyLag = 1
 				adjusted := bh - safetyLag
 				if adjusted < 0 {

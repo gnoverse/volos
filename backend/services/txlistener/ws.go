@@ -39,8 +39,8 @@ var wsURL = func() string {
 // StartVolosTransactionListener establishes a WebSocket connection to the GraphQL endpoint
 // and subscribes to real-time transactions from both core and governance packages.
 // It uses a logical OR condition to listen to transactions from either package path
-// and submits all received transactions to the provided processor pool.
-func StartVolosTransactionListener(ctx context.Context, pool *processor.TransactionProcessorPool, onBlockHeight func(int)) error {
+// and submits all received transactions to the provided processor queue.
+func StartVolosTransactionListener(ctx context.Context, queue *processor.TransactionProcessorQueue, onBlockHeight func(int)) error {
 	opts := &websocket.DialOptions{
 		Subprotocols: []string{protocol},
 	}
@@ -91,7 +91,7 @@ func StartVolosTransactionListener(ctx context.Context, pool *processor.Transact
 			if payload, ok := msg["payload"].(map[string]interface{}); ok {
 				if data, ok := payload["data"].(map[string]interface{}); ok {
 					if tx, ok := data["getTransactions"].(map[string]interface{}); ok {
-						pool.Submit(tx)
+						queue.Submit(tx)
 						if bh, ok := tx["block_height"].(float64); ok && onBlockHeight != nil {
 							onBlockHeight(int(bh))
 						}

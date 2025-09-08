@@ -1,7 +1,5 @@
-import { formatHealthFactor } from "@/app/utils/format.utils";
-
 interface HealthBarProps {
-  healthFactor: string
+    healthFactor: number
 }
 
 export function HealthBar({ healthFactor }: HealthBarProps) {
@@ -22,7 +20,7 @@ export function HealthBar({ healthFactor }: HealthBarProps) {
         />
         {/* Marker & Value */}
         {(() => {
-          const rawHf = parseFloat(formatHealthFactor(healthFactor) || "0");
+          const rawHf = healthFactor;
           const hfNum = Math.max(1, Math.min(3, rawHf));
           const markerPercent = ((hfNum - 1) / 2) * 100;
           let valueLeft = `calc(${markerPercent}% - 18px)`;
@@ -61,7 +59,7 @@ export function HealthBar({ healthFactor }: HealthBarProps) {
                   textAlign: "center",
                 }}
               >
-                {formatHealthFactor(healthFactor)}
+                {healthFactor.toFixed(2)}
               </div>
             </>
           );

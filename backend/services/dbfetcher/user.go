@@ -142,6 +142,7 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 }
 
 // GetUserMarketPosition fetches a single per-market aggregate for a user from users/{address}/markets/{marketId}
+// and calculates maxBorrow and healthFactor based on the Gno contract logic
 func GetUserMarketPosition(client *firestore.Client, userAddress string, marketID string) (*model.UserMarketPosition, error) {
 	ctx := context.Background()
 
@@ -149,10 +150,21 @@ func GetUserMarketPosition(client *firestore.Client, userAddress string, marketI
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var pos model.UserMarketPosition
 	if err := dsnap.DataTo(&pos); err != nil {
 		return nil, err
 	}
+
+	marketDoc, err := client.Collection("markets").Doc(strings.ReplaceAll(marketID, "/", "_")).Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var market model.Market
+	if err := marketDoc.DataTo(&market); err != nil {
+		return nil, err
+	}
+
 	return &pos, nil
 }

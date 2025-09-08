@@ -1,9 +1,10 @@
 "use client"
 
-import { MarketInfo, Position } from "@/app/types"
+import { MarketInfo } from "@/app/types"
 import { AddBorrowPanel } from "@/components/add-borrow-panel"
-import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
-import { SupplyPanel } from "@/components/supply-panel"
+// import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
+// import { SupplyPanel } from "@/components/supply-panel"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Tooltip,
@@ -11,36 +12,46 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useUserAddress } from "@/hooks/use-user-address"
+import { WalletIcon } from "lucide-react"
 
 interface SidePanelProps {
   tab: string
   setTabAction: (tab: string) => void
   market: MarketInfo
-  supplyValue: number
-  borrowValue: number
-  healthFactor: string
-  currentCollateral?: number
-  currentLoan?: string
-  ltv: string
-  collateralTokenDecimals: number
-  loanTokenDecimals: number
-  positionData?: Position
 }
 
 export function SidePanel({
   tab,
   setTabAction,
   market,
-  supplyValue,
-  borrowValue,
-  healthFactor,
-  currentCollateral,
-  currentLoan,
-  ltv,
-  collateralTokenDecimals,
-  loanTokenDecimals,
-  positionData,
 }: SidePanelProps) {
+  const { userAddress, isConnected, handleWalletConnection } = useUserAddress()
+
+  if (!userAddress || !isConnected) {
+    return (
+      <div className="col-span-1 lg:col-span-3 lg:sticky top-0 self-start pr-2">
+        <div className="w-full sticky top-0 z-10 backdrop-blur-sm">
+          <div className="bg-gray-700/60 border-none rounded-3xl py-8 px-6">
+            <div className="text-center space-y-4">
+              <h3 className="text-xl font-semibold text-logo-500">Connect Wallet</h3>
+              <p className="text-gray-400 text-sm mb-4">
+                Connect your wallet to interact with the market. You&apos;ll be able to supply collateral, borrow assets, and manage your positions.
+              </p>
+              <Button 
+                variant="ghost" 
+                className="bg-gray-800 text-gray-400 rounded-full text-lg hover:bg-gray-800 hover:text-logo-500"
+                onClick={handleWalletConnection}
+              >
+                <WalletIcon className="w-4 h-4 mr-2" />
+                Connect Wallet
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="col-span-1 lg:col-span-3 lg:sticky top-0 self-start pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
@@ -99,27 +110,13 @@ export function SidePanel({
               <TabsContent value="add-borrow">
                 <AddBorrowPanel 
                   market={market}
-                  supplyValue={supplyValue}
-                  borrowValue={borrowValue}
-                  healthFactor={healthFactor}
-                  currentCollateral={currentCollateral}
-                  currentLoan={currentLoan}
-                  positionData={positionData}
-                  ltv={ltv}
-                  collateralTokenDecimals={collateralTokenDecimals}
-                  loanTokenDecimals={loanTokenDecimals}
                 />
               </TabsContent>
               
-              <TabsContent value="repay-withdraw">
+              {/* <TabsContent value="repay-withdraw">
                 <RepayWithdrawPanel 
                   market={market}
-                  supplyValue={supplyValue}
-                  borrowValue={borrowValue}
-                  healthFactor={healthFactor}
-                  currentCollateral={currentCollateral}
-                  currentLoan={currentLoan}
-                  ltv={ltv}
+                  positionData={positionData}
                   collateralTokenDecimals={collateralTokenDecimals}
                   loanTokenDecimals={loanTokenDecimals}
                 />
@@ -128,15 +125,11 @@ export function SidePanel({
               <TabsContent value="supply-only">
                 <SupplyPanel 
                   market={market}
-                  supplyValue={supplyValue}
-                  healthFactor={healthFactor}
-                  currentCollateral={currentCollateral}
-                  currentLoan={currentLoan}
-                  ltv={ltv}
+                  positionData={positionData}
                   collateralTokenDecimals={collateralTokenDecimals}
                   loanTokenDecimals={loanTokenDecimals}
                 />
-              </TabsContent>
+              </TabsContent> */}
             </div>
           </div>
         </Tabs>

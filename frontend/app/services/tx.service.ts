@@ -1,12 +1,17 @@
-import { BroadcastType, TransactionBuilder, makeMsgCallMessage, makeMsgRunMessage } from "@adena-wallet/sdk";
+import { BroadcastType, TransactionBuilder, makeMsgCallMessage } from "@adena-wallet/sdk";
 import { AdenaService } from './adena.service';
 
 const GAS_WANTED = 50000000;
 
-export const VOLOS_PKG_PATH = 'gno.land/r/volos';
+export const VOLOS_PKG_PATH = 'gno.land/r/volos/core';
 export const STAKER_PKG_PATH = 'gno.land/r/volos/gov/staker';
 export const VLS_PKG_PATH = 'gno.land/r/volos/gov/vls';
 export const GOVERNANCE_PKG_PATH = 'gno.land/r/volos/gov/governance';
+
+export const VOLOS_ADDRESS = 'g1aaqgmqg85mksser0c5q8mez3nc3ssd93rme8f3';
+export const STAKER_ADDRESS = 'g1xgaa5n8qtgl6z97aug8nvrtvm0l9ahvtghru5l';
+export const VLS_ADDRESS = 'g1z43vp9lqf6uqfpkrjy578uvnhc3gsjxhcvq0sk';
+export const GOVERNANCE_ADDRESS = 'g1kp52puf7vuqptdg2kdqjmy45v70sh2s6g984f8';
 
 export class TxService {
   private static instance: TxService;
@@ -34,7 +39,8 @@ export class TxService {
             send: "1000000ugnot",
             pkg_path: VOLOS_PKG_PATH,
             func: "Supply",
-            args: [marketId, assets.toString(), shares.toString()]
+            args: [marketId, assets.toString(), shares.toString()],
+            max_deposit: ""
           })
         )
         .fee(100000, 'ugnot')
@@ -70,7 +76,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "Withdraw",
-            args: [marketId, assets.toString(), shares.toString()]
+            args: [marketId, assets.toString(), shares.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -106,7 +113,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "Borrow",
-            args: [marketId, assets.toString(), shares.toString()]
+            args: [marketId, assets.toString(), shares.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -142,7 +150,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "Repay",
-            args: [marketId, assets.toString(), shares.toString()]
+            args: [marketId, assets.toString(), shares.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -178,7 +187,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "SupplyCollateral",
-            args: [marketId, amount.toString()]
+            args: [marketId, amount.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -214,7 +224,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "WithdrawCollateral",
-            args: [marketId, amount.toString()]
+            args: [marketId, amount.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -250,7 +261,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "Liquidate",
-            args: [marketId, borrower, seizedAssets.toString(), repaidShares.toString()]
+            args: [marketId, borrower, seizedAssets.toString(), repaidShares.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -286,7 +298,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "AccrueInterest",
-            args: [marketId]
+            args: [marketId],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -322,7 +335,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "CreateMarket",
-            args: [poolPath, isToken0Loan.toString(), irm, lltv.toString()]
+            args: [poolPath, isToken0Loan.toString(), irm, lltv.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -358,7 +372,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "EnableIRM",
-            args: [irm]
+            args: [irm],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -394,7 +409,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "EnableLLTV",
-            args: [lltv]
+            args: [lltv],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -430,7 +446,8 @@ export class TxService {
             send: "",
             pkg_path: VOLOS_PKG_PATH,
             func: "SetFeeRecipient",
-            args: [address]
+            args: [address],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -451,43 +468,23 @@ export class TxService {
     }
   }
 
-  public async approveToken(tokenPath: string, amount: number, pkgPath: string) {
+  public async approveToken(tokenPath: string, amount: number, spenderAddress: string) {
     const adenaService = AdenaService.getInstance();
     
     if (!adenaService.isConnected()) {
       throw new Error("Wallet not connected");
     }
 
-    const gnoPackage = {
-      name: "main",
-      path: "",
-      files: [
-        {
-          name: "main.gno",
-          body: `package main
-
-import (
-    "std"
-    "gno.land/r/demo/grc20reg"
-)
-
-func main() {
-    addr := std.DerivePkgAddr("${pkgPath}")
-    token := grc20reg.MustGet("${tokenPath}")
-    teller := token.CallerTeller()
-    teller.Approve(addr, ${amount})
-}`
-        }
-      ]
-    };
-
     try {
       const tx = TransactionBuilder.create()
         .messages(
-          makeMsgRunMessage({
+          makeMsgCallMessage({
             caller: adenaService.getAddress(),
             send: "",
-            package: gnoPackage,
+            pkg_path: tokenPath,
+            func: "Approve",
+            args: [spenderAddress, amount.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -528,7 +525,8 @@ func main() {
             send: "",
             pkg_path: VLS_PKG_PATH,
             func: "Approve",
-            args: [spender, amount.toString()]
+            args: [spender, amount.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -569,7 +567,8 @@ func main() {
             send: "",
             pkg_path: VLS_PKG_PATH,
             func: "ApproveRealm",
-            args: [spender, amount.toString()]
+            args: [spender, amount.toString()],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -610,7 +609,8 @@ func main() {
             send: "",
             pkg_path: STAKER_PKG_PATH,
             func: "Stake",
-            args: [amount.toString(), delegatee]
+            args: [amount.toString(), delegatee],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -646,7 +646,8 @@ func main() {
             send: "",
             pkg_path: STAKER_PKG_PATH,
             func: "BeginUnstake",
-            args: [amount.toString(), delegatee]
+            args: [amount.toString(), delegatee],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -686,7 +687,8 @@ func main() {
             send: "",
             pkg_path: STAKER_PKG_PATH,
             func: "WithdrawUnstaked",
-            args: []
+            args: [],
+            max_deposit: ""
           })
         )
         .fee(1000000, 'ugnot')
@@ -723,7 +725,8 @@ func main() {
             send: "",
             pkg_path: GOVERNANCE_PKG_PATH,
             func: "Vote",
-              args: [proposalId, choice, reason]
+            args: [proposalId, choice, reason],
+            max_deposit: ""
           })
         )
         .fee(100000, 'ugnot')
@@ -763,7 +766,8 @@ func main() {
             send: "",
             pkg_path: GOVERNANCE_PKG_PATH,
             func: "Execute",
-            args: [proposalId]
+            args: [proposalId],
+            max_deposit: ""
           })
         )
         .fee(100000, 'ugnot')

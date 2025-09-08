@@ -83,33 +83,34 @@ func GetTimeFromDoc(doc *firestore.DocumentSnapshot, fieldName string) time.Time
 }
 
 // ExtractPriceFromSqrt extracts the actual price from sqrtPriceX96 using the same logic as the on-chain oracle
-func extractPriceFromSqrt(sqrtPriceX96 string, dontRevert bool) string {
+// The price is returned as sqrtPriceX96e36 (36 decimals) in terms of loan token per collateral token
+func extractPriceFromSqrt(sqrtPriceX96 string, isToken0Loan bool, loanTokenDecimals int64, collateralTokenDecimals int64) string {
 	sqrtPrice, ok := new(big.Int).SetString(sqrtPriceX96, 10)
 	if !ok {
 		slog.Error("failed to parse sqrtPriceX96 as big.Int", "sqrtPriceX96", sqrtPriceX96)
 		return ""
 	}
 
-	// Square the price to get price in Q192 (sqrtPriceX96²)
+	// Square the price to get the actual price in Q192
 	priceQ192 := new(big.Int).Mul(sqrtPrice, sqrtPrice)
 
-	// ORACLE_PRICE_SCALE = 1e36 (from consts.gno)
-	oraclePriceScale := new(big.Int).Exp(big.NewInt(10), big.NewInt(36), nil)
+	// Calculate decimal-adjusted scale factor: 10^(36 + loanDecimals - collateralDecimals)
+	scaleFactor := new(big.Int).Exp(big.NewInt(10), big.NewInt(36+loanTokenDecimals-collateralTokenDecimals), nil)
 
 	// Q192 = 2^192 (from consts.gno)
 	q192 := new(big.Int).Exp(big.NewInt(2), big.NewInt(192), nil)
 
-	// Calculate: (priceQ192 * ORACLE_PRICE_SCALE) / Q192
-	// This gives us the price with 36 decimal precision
-	numerator := new(big.Int).Mul(priceQ192, oraclePriceScale)
+	// Finally divide by Q192 to get the actual price ratio with adjusted precision
+	// price = (priceQ192 * scaleFactor) / Q192
+	numerator := new(big.Int).Mul(priceQ192, scaleFactor)
 	price := new(big.Int).Div(numerator, q192)
 
-	// If dontRevert is false, invert the price: ORACLE_PRICE_SCALE² / price
-	if !dontRevert {
-		// Calculate ORACLE_PRICE_SCALE²
-		oraclePriceScaleSquared := new(big.Int).Mul(oraclePriceScale, oraclePriceScale)
-		// Invert: ORACLE_PRICE_SCALE² / price
-		price = new(big.Int).Div(oraclePriceScaleSquared, price)
+	// If token0 is the loan token, we need to invert the price
+	// because Gnoswap's price is always token1/token0
+	if isToken0Loan {
+		// Invert price: scaleFactor² / price
+		scaleFactorSquared := new(big.Int).Mul(scaleFactor, scaleFactor)
+		price = new(big.Int).Div(scaleFactorSquared, price)
 	}
 
 	return price.String()
