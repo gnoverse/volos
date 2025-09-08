@@ -52,7 +52,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 
 		case "Supply":
 			if supplyEvent, ok := extractSupplyFields(event); ok {
-				dbupdater.UpdateTotalSupply(firestoreClient, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateTotalSupply(firestoreClient, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Shares, supplyEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateAPRHistory(firestoreClient, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, supplyEvent.MarketID, supplyEvent.Timestamp, supplyEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUserMarketSupply(firestoreClient, supplyEvent.OnBehalf, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Shares, eventType)
@@ -60,7 +60,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 
 		case "Withdraw":
 			if withdrawEvent, ok := extractWithdrawFields(event); ok {
-				dbupdater.UpdateTotalSupply(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateTotalSupply(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Shares, withdrawEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateAPRHistory(firestoreClient, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Timestamp, withdrawEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUserMarketSupply(firestoreClient, withdrawEvent.OnBehalf, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Shares, eventType)
@@ -68,7 +68,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 
 		case "Borrow":
 			if borrowEvent, ok := extractBorrowFields(event); ok {
-				dbupdater.UpdateTotalBorrow(firestoreClient, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateTotalBorrow(firestoreClient, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Shares, borrowEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateAPRHistory(firestoreClient, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, borrowEvent.MarketID, borrowEvent.Timestamp, borrowEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUserMarketLoan(firestoreClient, borrowEvent.OnBehalf, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Shares, eventType)
@@ -76,7 +76,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 
 		case "Repay":
 			if repayEvent, ok := extractRepayFields(event); ok {
-				dbupdater.UpdateTotalBorrow(firestoreClient, repayEvent.MarketID, repayEvent.Amount, repayEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateTotalBorrow(firestoreClient, repayEvent.MarketID, repayEvent.Amount, repayEvent.Shares, repayEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateAPRHistory(firestoreClient, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUtilizationHistory(firestoreClient, repayEvent.MarketID, repayEvent.Timestamp, repayEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUserMarketLoan(firestoreClient, repayEvent.OnBehalf, repayEvent.MarketID, repayEvent.Amount, repayEvent.Shares, eventType)
@@ -84,7 +84,7 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 
 		case "Liquidate":
 			if liquidateEvent, ok := extractLiquidateFields(event); ok {
-				dbupdater.UpdateTotalBorrow(firestoreClient, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateTotalBorrow(firestoreClient, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Shares, liquidateEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
 				// TODO: If borrower collateral becomes zero, also decrease total_supply and any additional bad-debt borrow reduction.
 				//       Requires extra event data (e.g., bad_debt_assets) or a state read/reconciliation pass.
 				dbupdater.UpdateAPRHistory(firestoreClient, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)

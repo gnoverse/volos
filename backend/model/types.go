@@ -90,6 +90,8 @@ type Market struct {
 	CollateralTokenDecimals int64     `firestore:"collateral_token_decimals" json:"collateral_token_decimals"` // Collateral token decimals
 	CurrentPrice            string    `firestore:"current_price" json:"current_price"`                         // Current price of the loan token in terms of collateral token (u256 string)
 	TotalSupply             string    `firestore:"total_supply" json:"total_supply"`                           // Total supply amount (u256 string)
+	TotalSupplyShares		string    `firestore:"total_supply_shares" json:"total_supply_shares"`             // Total supply shares (u256 string)
+	TotalBorrowShares       string    `firestore:"total_borrow_shares" json:"total_borrow_shares"`             // Total borrow shares (u256 string)
 	TotalBorrow             string    `firestore:"total_borrow" json:"total_borrow"`                           // Total borrow amount (u256 string)
 	SupplyAPR               string    `firestore:"supply_apr" json:"supply_apr"`                               // Current supply APR (percentage)
 	BorrowAPR               string    `firestore:"borrow_apr" json:"borrow_apr"`                               // Current borrow APR (percentage)
@@ -147,7 +149,7 @@ type UserLoan struct {
 
 // UserMarketPosition represents per-market aggregates for a user stored under users/{address}/markets/{marketId}
 type UserMarketPosition struct {
-	Borrow           string `json:"borrow" firestore:"borrow"`
-	Supply           string `json:"supply" firestore:"supply"`
+	BorrowShares           string `json:"borrow_shares" firestore:"borrow_shares"`
+	SupplyShares           string `json:"supply_shares" firestore:"supply_shares"`
 	CollateralSupply string `json:"collateral_supply" firestore:"collateral_supply"`
 }

@@ -52,7 +52,6 @@ function MarketPageContent() {
               market={marketInfo} 
               apyVariations={apyVariations} 
               cardStyles={CARD_STYLES}
-              healthFactor={"0"} // health factor to be received as part of the user position data
               caller={userAddress}
             />
           ) : (

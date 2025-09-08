@@ -15,7 +15,6 @@ interface MarketTabsProps {
     ninetyDay: number;
   };
   cardStyles: string;
-  healthFactor: string;
   caller: string;
 }
 
@@ -23,7 +22,6 @@ export function MarketTabs({
   market, 
   apyVariations, 
   cardStyles,
-  healthFactor,
   caller
 }: MarketTabsProps) {
 
@@ -62,9 +60,8 @@ export function MarketTabs({
       
       <TabsContent value="position" className="mt-0">
         <MyPosition
-          market={market}
+          marketId={market.marketId!}
           cardStyles={cardStyles}
-          healthFactor={healthFactor}
           caller={caller}
         />
       </TabsContent>

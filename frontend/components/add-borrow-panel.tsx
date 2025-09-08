@@ -37,13 +37,14 @@ export function AddBorrowPanel({
   
   const {
     positionMetrics,
-    currentCollateralStr,
-    currentLoanStr,
-    maxBorrowableStr,
-    calculateMaxBorrowable
+    currentCollateral,
+    currentBorrowAssets,
+    maxBorrow,
+    calculateMaxBorrowable,
+    healthFactor
   } = usePositionCalculations(positionData ?? {
-    borrow: "0",
-    supply: "0",
+    borrow_shares: "0",
+    supply_shares: "0",
     collateral_supply: "0"
   }, market)
 
@@ -67,7 +68,6 @@ export function AddBorrowPanel({
 
   const supplyAmount = watch("supplyAmount")
   const borrowAmount = watch("borrowAmount")
-  const supplyAmountDisplay = supplyAmount || "0"
 
   const isSupplyPending = supplyCollateralMutation.isPending
   const isBorrowPending = borrowMutation.isPending
@@ -141,16 +141,16 @@ export function AddBorrowPanel({
             placeholder="0.00"
           />
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">{supplyAmountDisplay} {market.collateralTokenSymbol}</span>
+            <span className="text-xs text-gray-400">{supplyAmount} {market.collateralTokenSymbol}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{currentCollateralStr} {market.collateralTokenSymbol}</span>
+              <span className="text-xs text-gray-400">{formatUnits(currentCollateral, market.collateralTokenDecimals)} {market.collateralTokenSymbol}</span>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
                 onClick={() => {
-                  setValue("supplyAmount", maxBorrowableStr);
+                  setValue("supplyAmount", formatUnits(maxBorrow, market.loanTokenDecimals));
                 }}
               >
                 MAX
@@ -159,7 +159,7 @@ export function AddBorrowPanel({
           </div>
           <Button
             type="button"
-            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
+            className="w-full mt-1 bg-midnightPurple-900/60 hover:bg-midnightPurple-900/50 text-gray-400 h-8 text-sm"
             disabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
             onClick={handleSupply}
           >
@@ -189,7 +189,7 @@ export function AddBorrowPanel({
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-400">{borrowAmount || "0"} {market.loanTokenSymbol}</span>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{currentLoanStr} {market.loanTokenSymbol}</span>
+              <span className="text-xs text-gray-400">{currentBorrowAssets} {market.loanTokenSymbol}</span>
               <Button
                 type="button"
                 variant="ghost"
@@ -203,7 +203,7 @@ export function AddBorrowPanel({
           </div>
           <Button
             type="button"
-            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
+            className="w-full mt-1 bg-midnightPurple-900/60 hover:bg-midnightPurple-900/50 text-gray-400 h-8 text-sm"
             disabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
             onClick={handleBorrow}
           >
@@ -217,12 +217,11 @@ export function AddBorrowPanel({
         market={market}
         supplyAmount={supplyAmount}
         borrowAmount={borrowAmount}
-        maxBorrowableAmount={parseFloat(maxBorrowableStr)}
+        maxBorrow={formatUnits(maxBorrow, market.loanTokenDecimals)}
         isBorrowValid={!isBorrowOverMax}
-        healthFactor={"-"}
-        currentCollateral={parseFloat(currentCollateralStr)}
-        currentLoan={parseFloat(currentLoanStr)}
-        ltv={String(positionMetrics.ltv * 100)}
+        healthFactor={healthFactor}
+        currentCollateral={formatUnits(currentCollateral, market.collateralTokenDecimals)}
+        currentBorrowAssets={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}
       />
     </form>
   )

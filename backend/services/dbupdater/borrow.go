@@ -15,7 +15,7 @@ import (
 
 // UpdateTotalBorrow updates the total_borrow aggregate for a market and appends a history entry to the unified market_history collection.
 // Amounts are u256 stored as strings; arithmetic uses big.Int. eventType determines whether this adds (borrow) or subtracts (repay/liquidate).
-func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp string, caller string, txHash string, eventType string, index float64, blockHeight float64) {
+func UpdateTotalBorrow(client *firestore.Client, marketID, amount, shares, timestamp string, caller string, txHash string, eventType string, index float64, blockHeight float64) {
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 	ctx := context.Background()
 
@@ -27,6 +27,11 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 
 	amt := utils.ParseAmount(amount, "total borrow update")
 	if amt.Sign() == 0 {
+		return
+	}
+
+	shrs := utils.ParseAmount(shares, "total borrow update")
+	if shrs.Sign() == 0 {
 		return
 	}
 
@@ -45,8 +50,13 @@ func UpdateTotalBorrow(client *firestore.Client, marketID, amount, timestamp str
 
 		currentAmount := GetAmountFromDoc(dsnap, "total_borrow")
 		updatedTotalStr = UpdateAmountInDoc(currentAmount, amt, isBorrow)
+
+		currentShares := GetAmountFromDoc(dsnap, "total_borrow_shares")
+		updatedSharesStr := UpdateAmountInDoc(currentShares, shrs, isBorrow)
+
 		updates := map[string]interface{}{
 			"total_borrow": updatedTotalStr,
+			"total_borrow_shares": updatedSharesStr,
 		}
 		return tx.Set(marketRef, updates, firestore.MergeAll)
 	}); err != nil {

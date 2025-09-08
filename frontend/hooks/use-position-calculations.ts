@@ -1,27 +1,32 @@
 import { MarketInfo, Position } from "@/app/types"
-import { calculateMaxBorrowable, calculatePositionMetrics } from "@/app/utils/position.utils"
-import { formatUnits } from "viem"
+import { calculateMaxBorrowable, calculatePositionMetrics, toAssetsUp } from "@/app/utils/position.utils"
 
 /**
  * Custom hook that provides position calculations and formatted display values
  */
 export function usePositionCalculations(positionData: Position, market: MarketInfo) {
-  const currentCollateralBI = BigInt(positionData.collateral_supply)
-  const currentLoanBI = BigInt(positionData.borrow)
-  
+  const currentCollateral = BigInt(positionData.collateral_supply || "0")
+  const currentBorrowSharesBI = BigInt(positionData.borrow_shares || "0")
+
   const positionMetrics = calculatePositionMetrics(positionData, market)
 
-  const currentCollateralStr = formatUnits(currentCollateralBI, market.collateralTokenDecimals)
-  const currentLoanStr = formatUnits(currentLoanBI, market.loanTokenDecimals)
-  const maxBorrowableStr = formatUnits(positionMetrics.maxBorrow, market.loanTokenDecimals)
+  const currentBorrowAssets = currentBorrowSharesBI > BigInt(0) && market.totalBorrowShares && market.totalBorrowAssets
+    ? toAssetsUp(
+        currentBorrowSharesBI,
+        BigInt(market.totalBorrowAssets),
+        BigInt(market.totalBorrowShares)
+      )
+    : BigInt(0)
+
+  const healthFactor = positionMetrics.healthFactor
+  const maxBorrow = positionMetrics.maxBorrow
 
   return {
     positionMetrics,
-    currentCollateralBI,
-    currentLoanBI,
-    currentCollateralStr,
-    currentLoanStr,
-    maxBorrowableStr,
+    currentCollateral,
+    currentBorrowAssets,
+    maxBorrow,
+    healthFactor,
     calculateMaxBorrowable: (position: Position) => calculateMaxBorrowable(position, market)
   }
 }

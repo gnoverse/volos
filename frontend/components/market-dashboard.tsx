@@ -155,13 +155,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
                 <div 
                   className="h-2 rounded-full" 
                   style={{ 
-                    width: `${formatPercentage(wadToPercentage(market.utilization))}`, //TODO: use risk level
+                    width: `${formatPercentage(100-wadToPercentage(market.utilization))}`, //TODO: use risk level
                     background: "linear-gradient(to right, #10b981, #f59e0b, #ef4444)"
                   }}
                 ></div>
               </div>
               <span className="text-xs font-semibold text-gray-200 whitespace-nowrap">
-                {formatPercentage(wadToPercentage(market.utilization))} {/* TODO: use risk level */}
+                {formatPercentage(100-wadToPercentage(market.utilization))} {/* TODO: use risk level */}
               </span>
             </div>
           </div>

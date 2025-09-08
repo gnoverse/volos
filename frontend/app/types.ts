@@ -103,8 +103,8 @@ export const UserLoanHistorySchema = z.object({
 });
 
 export const PositionSchema = z.object({
-  borrow: Uint256Schema,
-  supply: Uint256Schema,  
+  borrow_shares: Uint256Schema,
+  supply_shares: Uint256Schema,  
   collateral_supply: Uint256Schema,
 });
 
@@ -164,6 +164,8 @@ export const MarketSchema = z.object({
   supply_apr: Uint256Schema,
   borrow_apr: Uint256Schema,
   utilization_rate: Uint256Schema,
+  total_borrow_shares: Uint256Schema,
+  total_supply_shares: Uint256Schema,
   created_at: z.string(),
   updated_at: z.string(),
   lltv: Uint256Schema,
@@ -195,8 +197,7 @@ export const MarketInfoSchema = z.object({
   poolPath: z.string(),
   irm: z.string(),
   lltv: Uint256Schema,
-  isToken0Loan: z.boolean(),
-  
+    
   // Additional fields
   loanToken: z.string(),
   collateralToken: z.string(),

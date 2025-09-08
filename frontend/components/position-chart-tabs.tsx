@@ -3,10 +3,9 @@
 import { getUserBorrowHistory, getUserCollateralHistory } from '@/app/services/api.service'
 import { MarketInfo } from '@/app/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { useQuery } from '@tanstack/react-query'
-import { Chart } from './universal-chart'
 
 interface PositionChartTabsProps {
   caller: string
@@ -98,7 +97,7 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
         </TabsList>
       </CardHeader>
       <CardContent className="items-center">
-        {mappedCollateral.length > 0 && (
+        {/* {mappedCollateral.length > 0 && (
           <TabsContent value="collateral" className="mt-0">
             <Chart
               title=""
@@ -128,7 +127,7 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
             color="rgba(99, 102, 241, 0.95)"
             className="pt-6"
           />
-        </TabsContent>
+        </TabsContent> */}
       </CardContent>
       </Tabs>
     </Card>

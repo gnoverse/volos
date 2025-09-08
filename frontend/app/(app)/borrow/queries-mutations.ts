@@ -28,9 +28,9 @@ export function useMarketsQuery() {
       const markets: MarketInfo[] = response.markets.map(market => ({
         // Market fields
         totalSupplyAssets: market.total_supply,
-        totalSupplyShares: "0", // TODO: Get from market data
+        totalSupplyShares: market.total_supply_shares,
         totalBorrowAssets: market.total_borrow,
-        totalBorrowShares: "0", // TODO: Get from market data
+        totalBorrowShares: market.total_borrow_shares,
         lastUpdate: Date.now(), // TODO: Get actual last update timestamp
         fee: "0", // TODO: Get actual fee from market data
         
@@ -38,7 +38,6 @@ export function useMarketsQuery() {
         poolPath: market.id, // TODO: Extract pool path from market ID
         irm: "default", // TODO: Get actual IRM from market data
         lltv: market.lltv,
-        isToken0Loan: true, // TODO: Determine from market data
         
         // Additional fields
         loanToken: market.loan_token,
@@ -84,9 +83,9 @@ export function useMarketQuery(marketId: string) {
       return {
         // Market fields
         totalSupplyAssets: market.total_supply,
-        totalSupplyShares: "0", // TODO: Get from market data
+        totalSupplyShares: market.total_supply_shares,
         totalBorrowAssets: market.total_borrow,
-        totalBorrowShares: "0", // TODO: Get from market data
+        totalBorrowShares: market.total_borrow_shares,
         lastUpdate: Date.now(), // TODO: Get actual last update timestamp
         fee: "0", // TODO: Get actual fee from market data
         
@@ -94,7 +93,6 @@ export function useMarketQuery(marketId: string) {
         poolPath: market.id, // TODO: Extract pool path from market ID
         irm: "default", // TODO: Get actual IRM from market data
         lltv: market.lltv,
-        isToken0Loan: true, // TODO: Determine from market data
         
         // Additional fields
         loanToken: market.loan_token,
