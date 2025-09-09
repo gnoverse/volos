@@ -1,6 +1,6 @@
 "use client"
 
-import { usePositionQuery, useRepayWithApproval, useWithdrawCollateralWithApproval } from "@/app/(app)/borrow/queries-mutations"
+import { useApproveTokenMutation, usePositionQuery, useRepayMutation, useWithdrawCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
 import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -38,8 +38,9 @@ export function RepayWithdrawPanel({
     collateral_supply: "0"
   }, market)
   
-  const repayWithApprovalMutation = useRepayWithApproval()
-  const withdrawCollateralWithApprovalMutation = useWithdrawCollateralWithApproval()
+  const approveTokenMutation = useApproveTokenMutation()
+  const repayMutation = useRepayMutation()
+  const withdrawCollateralMutation = useWithdrawCollateralMutation()
 
   const repayAmount = watch("repayAmount");
   const withdrawAmount = watch("withdrawAmount");
@@ -61,24 +62,30 @@ export function RepayWithdrawPanel({
     currentCollateral
   );
 
-  const isRepayPending = repayWithApprovalMutation.isPending;
-  const isWithdrawPending = withdrawCollateralWithApprovalMutation.isPending;
+  const isRepayPending = repayMutation.isPending || approveTokenMutation.isPending;
+  const isWithdrawPending = withdrawCollateralMutation.isPending || approveTokenMutation.isPending;
 
   const handleRepay = async () => {
     if (isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax) return;
     
     const repayAmountInTokens = Number(repayAmount || "0");
     
-    repayWithApprovalMutation.mutate({
-      marketId: market.poolPath!,
-      loanTokenPath: market.loanToken!,
-      amount: repayAmountInTokens,
-      loanTokenDecimals: market.loanTokenDecimals
-    }, {
-      onSuccess: () => {
-        reset();
-      }
-    });
+    try {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loanToken!,
+        amount: repayAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+      });
+      
+      await repayMutation.mutateAsync({
+        marketId: market.poolPath!,
+        userAddress: userAddress!,
+        assets: repayAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+      });
+      
+      reset();
+    } catch (error) {
+      console.error("Repay transaction failed:", error);
+    }
   };
 
   const handleWithdraw = async () => {
@@ -86,16 +93,22 @@ export function RepayWithdrawPanel({
     
     const withdrawAmountInTokens = Number(withdrawAmount || "0");
     
-    withdrawCollateralWithApprovalMutation.mutate({
-      marketId: market.poolPath!,
-      collateralTokenPath: market.collateralToken!,
-      amount: withdrawAmountInTokens,
-      collateralTokenDecimals: market.collateralTokenDecimals
-    }, {
-      onSuccess: () => {
-        reset();
-      }
-    });
+    try {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.collateralToken!,
+        amount: withdrawAmountInTokens * Math.pow(10, market.collateralTokenDecimals)
+      });
+      
+      await withdrawCollateralMutation.mutateAsync({
+        marketId: market.poolPath!,
+        userAddress: userAddress!,
+        amount: withdrawAmountInTokens * Math.pow(10, market.collateralTokenDecimals)
+      });
+      
+      reset();
+    } catch (error) {
+      console.error("Withdraw collateral transaction failed:", error);
+    }
   };
 
   return (
@@ -143,7 +156,6 @@ export function RepayWithdrawPanel({
         market={market}
         repayAmount={repayAmount}
         withdrawAmount={withdrawAmount}
-        isBorrowValid={!isWithdrawOverMax && !isRepayOverMax}
         healthFactor={healthFactor}
         currentCollateral={formatUnits(currentCollateral, market.collateralTokenDecimals)}
         currentBorrowAssets={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}

@@ -1,6 +1,6 @@
 "use client"
 
-import { usePositionQuery, useSupplyWithApproval, useWithdrawWithApproval } from "@/app/(app)/borrow/queries-mutations"
+import { useApproveTokenMutation, usePositionQuery, useSupplyMutation, useWithdrawMutation } from "@/app/(app)/borrow/queries-mutations"
 import { MarketInfo } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -33,10 +33,11 @@ export function SupplyPanel({
     collateral_supply: "0"
   }, market)
   
-  const supplyWithApprovalMutation = useSupplyWithApproval()
-  const withdrawWithApprovalMutation = useWithdrawWithApproval()
+  const approveTokenMutation = useApproveTokenMutation()
+  const supplyMutation = useSupplyMutation()
+  const withdrawMutation = useWithdrawMutation()
     
-    const supplyAmount = watch("supplyAmount");
+  const supplyAmount = watch("supplyAmount");
   const withdrawAmount = watch("withdrawAmount");
 
   const {
@@ -54,24 +55,30 @@ export function SupplyPanel({
     maxWithdrawable
   );
 
-  const isSupplyPending = supplyWithApprovalMutation.isPending;
-  const isWithdrawPending = withdrawWithApprovalMutation.isPending;
+  const isSupplyPending = supplyMutation.isPending || approveTokenMutation.isPending;
+  const isWithdrawPending = withdrawMutation.isPending || approveTokenMutation.isPending;
     
     const handleSupply = async () => {
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
     const supplyAmountInTokens = Number(supplyAmount || "0");
     
-    supplyWithApprovalMutation.mutate({
-      marketId: market.poolPath!,
-      loanTokenPath: market.loanToken!,
-      amount: supplyAmountInTokens,
-      loanTokenDecimals: market.loanTokenDecimals
-    }, {
-      onSuccess: () => {
-        reset();
-      }
-    });
+    try {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loanToken!,
+        amount: supplyAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+      });
+      
+      await supplyMutation.mutateAsync({
+        marketId: market.poolPath!,
+        userAddress: userAddress!,
+        assets: supplyAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+      });
+      
+      reset();
+    } catch (error) {
+      console.error("Supply transaction failed:", error);
+    }
   };
 
   const handleWithdraw = async () => {
@@ -79,17 +86,23 @@ export function SupplyPanel({
     
     const withdrawAmountInTokens = Number(withdrawAmount || "0");
     
-    withdrawWithApprovalMutation.mutate({
-          marketId: market.poolPath!,
-      loanTokenPath: market.loanToken!,
-      amount: withdrawAmountInTokens,
-      loanTokenDecimals: market.loanTokenDecimals
-        }, {
-          onSuccess: () => {
-            reset();
-          }
-        });
-    };
+    try {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loanToken!,
+        amount: withdrawAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+      });
+      
+      await withdrawMutation.mutateAsync({
+        marketId: market.poolPath!,
+        userAddress: userAddress!,
+        assets: withdrawAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+      });
+      
+      reset();
+    } catch (error) {
+      console.error("Withdraw transaction failed:", error);
+    }
+  };
     
     return (
         <form className="space-y-3">
@@ -106,7 +119,7 @@ export function SupplyPanel({
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
         onMaxClickAction={() => {
-          // For supply, we don't have a max amount since user can supply any amount
+          // TODO: use ABCI
           setValue("supplyAmount", "0");
         }}
         onSubmitAction={handleSupply}
@@ -131,7 +144,6 @@ export function SupplyPanel({
         onSubmitAction={handleWithdraw}
         inputValue={withdrawAmount}
       />
-
         </form>
     )
 } 

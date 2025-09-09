@@ -10,8 +10,6 @@ export interface PositionCardProps {
   borrowAmount?: string
   repayAmount?: string
   withdrawAmount?: string
-  maxBorrow?: string
-  isBorrowValid: boolean
   healthFactor: number
   currentCollateral: string
   currentBorrowAssets: string
@@ -36,7 +34,7 @@ export function PositionCard({
   
   const projectedCollateral = parseFloat(currentCollateral) + supplyDelta - withdrawDelta
   const projectedLoan = parseFloat(currentBorrowAssets) + borrowDelta - repayDelta
-
+  
   return (
     <Card className={CARD_STYLES}>
       <CardContent className="space-y-3 -mt-2">
@@ -48,7 +46,7 @@ export function PositionCard({
               <>
                 {" "}
                 <span className="text-gray-400">→</span>{" "}
-                <span className="text-red-400">{projectedLoan}</span>
+                <span className={projectedLoan > parseFloat(currentBorrowAssets) ? "text-red-400" : "text-green-400"}>{projectedLoan}</span>
               </>
             )}
           </div>
@@ -61,7 +59,7 @@ export function PositionCard({
               <>
                 {" "}
                 <span className="text-gray-400">→</span>{" "}
-                <span className="text-green-300">{projectedCollateral}</span>
+                <span className={projectedCollateral > parseFloat(currentCollateral) ? "text-green-400" : "text-red-400"}>{projectedCollateral}</span>
               </>
             )}
           </div>

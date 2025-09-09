@@ -1,6 +1,6 @@
 "use client"
 
-import { useBorrowWithApproval, usePositionQuery, useSupplyCollateralWithApproval } from "@/app/(app)/borrow/queries-mutations"
+import { useApproveTokenMutation, useBorrowMutation, usePositionQuery, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
 import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -59,14 +59,15 @@ export function AddBorrowPanel({
     positionMetrics.maxBorrow
   )
 
-  const supplyCollateralMutation = useSupplyCollateralWithApproval()
-  const borrowMutation = useBorrowWithApproval()
+  const approveTokenMutation = useApproveTokenMutation()
+  const supplyCollateralMutation = useSupplyCollateralMutation()
+  const borrowMutation = useBorrowMutation()
 
   const supplyAmount = watch("supplyAmount")
   const borrowAmount = watch("borrowAmount")
 
-  const isSupplyPending = supplyCollateralMutation.isPending
-  const isBorrowPending = borrowMutation.isPending
+  const isSupplyPending = supplyCollateralMutation.isPending || approveTokenMutation.isPending
+  const isBorrowPending = borrowMutation.isPending || approveTokenMutation.isPending
 
   const handleMaxBorrow = async () => {
     try {
@@ -87,16 +88,22 @@ export function AddBorrowPanel({
     
     const supplyAmountInTokens = Number(supplyAmount || "0");
     
-    supplyCollateralMutation.mutate({
-      marketId: market.poolPath!,
-      collateralTokenPath: market.collateralToken!,
-      amount: supplyAmountInTokens,
-      collateralTokenDecimals: market.collateralTokenDecimals
-    }, {
-      onSuccess: () => {
-        reset();
-      }
-    });
+    try {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.collateralToken!,
+        amount: supplyAmountInTokens * Math.pow(10, market.collateralTokenDecimals)
+      });
+      
+      await supplyCollateralMutation.mutateAsync({
+        marketId: market.poolPath!,
+        userAddress: userAddress!,
+        amount: supplyAmountInTokens * Math.pow(10, market.collateralTokenDecimals)
+      });
+      
+      reset();
+    } catch (error) {
+      console.error("Supply collateral transaction failed:", error);
+    }
   };
 
   const handleBorrow = async () => {
@@ -104,16 +111,22 @@ export function AddBorrowPanel({
     
     const borrowAmountInTokens = Number(borrowAmount || "0");
     
-    borrowMutation.mutate({
-      marketId: market.poolPath!,
-      loanTokenPath: market.loanToken!,
-      amount: borrowAmountInTokens,
-      loanTokenDecimals: market.loanTokenDecimals
-    }, {
-      onSuccess: () => {
-        reset();
-      }
-    });
+    try {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loanToken!,
+        amount: borrowAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+      });
+      
+      await borrowMutation.mutateAsync({
+        marketId: market.poolPath!,
+        userAddress: userAddress!,
+        assets: borrowAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+      });
+      
+      reset();
+    } catch (error) {
+      console.error("Borrow transaction failed:", error);
+    }
   };
 
   return (
@@ -159,8 +172,6 @@ export function AddBorrowPanel({
         market={market}
         supplyAmount={supplyAmount}
         borrowAmount={borrowAmount}
-        maxBorrow={formatUnits(maxBorrow, market.loanTokenDecimals)}
-        isBorrowValid={!isBorrowOverMax}
         healthFactor={healthFactor}
         currentCollateral={formatUnits(currentCollateral, market.collateralTokenDecimals)}
         currentBorrowAssets={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}
