@@ -2,8 +2,8 @@
 
 import { MarketInfo } from "@/app/types"
 import { AddBorrowPanel } from "@/components/add-borrow-panel"
-// import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
-// import { SupplyPanel } from "@/components/supply-panel"
+import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
+import { SupplyPanel } from "@/components/supply-panel"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -64,12 +64,12 @@ export function SidePanel({
                   <TooltipTrigger asChild>
                     <TabsTrigger 
                       value="add-borrow" 
-                      className={`flex-1 py-1 transition-all duration-200 ${tab === "add-borrow" ? "shadow-md text-white bg-gray-600/70 font-medium" : ""}`}
+                      className={`flex-1 py-1 transition-all duration-200 ${tab === "add-borrow" ? "shadow-lg text-white font-medium" : ""}`}
                     >
                       Borrow
                     </TabsTrigger>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent side="top" align="center" sideOffset={8} className="bg-customGray-800/60 text-gray-300 border border-none">
                     <p>Borrow/Supply collateral</p>
                   </TooltipContent>
                 </Tooltip>
@@ -78,12 +78,12 @@ export function SidePanel({
                   <TooltipTrigger asChild>
                     <TabsTrigger 
                       value="repay-withdraw" 
-                      className={`flex-1 py-1 transition-all duration-200 ${tab === "repay-withdraw" ? "shadow-md text-white bg-gray-600/70 font-medium" : ""}`}
+                      className={`flex-1 py-1 transition-all duration-200 ${tab === "repay-withdraw" ? "shadow-lg text-white font-medium" : ""}`}
                     >
                       Repay
                     </TabsTrigger>
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent side="top" align="center" sideOffset={8} className="bg-customGray-800/60 text-gray-300 border border-none">
                     <p>Repay/Withdraw collateral</p>
                   </TooltipContent>
                 </Tooltip>
@@ -92,13 +92,13 @@ export function SidePanel({
                   <TooltipTrigger asChild>
                     <TabsTrigger 
                       value="supply-only" 
-                      className={`flex-1 py-1 transition-all duration-200 ${tab === "supply-only" ? "shadow-md text-white bg-gray-600/70 font-medium" : ""}`}
+                      className={`flex-1 py-1 transition-all duration-200 ${tab === "supply-only" ? "shadow-lg text-white font-medium" : ""}`}
                     >
                       Supply
                     </TabsTrigger>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Supply loan token to the market</p>
+                  <TooltipContent side="top" align="center" sideOffset={8} className="bg-customGray-800/60 text-gray-300 border border-none">
+                    <p>Supply loan token</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -113,23 +113,17 @@ export function SidePanel({
                 />
               </TabsContent>
               
-              {/* <TabsContent value="repay-withdraw">
+               <TabsContent value="repay-withdraw">
                 <RepayWithdrawPanel 
                   market={market}
-                  positionData={positionData}
-                  collateralTokenDecimals={collateralTokenDecimals}
-                  loanTokenDecimals={loanTokenDecimals}
                 />
               </TabsContent>
               
-              <TabsContent value="supply-only">
+             <TabsContent value="supply-only">
                 <SupplyPanel 
                   market={market}
-                  positionData={positionData}
-                  collateralTokenDecimals={collateralTokenDecimals}
-                  loanTokenDecimals={loanTokenDecimals}
                 />
-              </TabsContent> */}
+              </TabsContent>
             </div>
           </div>
         </Tabs>

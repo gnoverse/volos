@@ -149,9 +149,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           
           {/* Health Factor Indicator */}
           <div className="mt-1 pt-1 border-t border-gray-700/50">
-            <div className="text-xs text-gray-400 mb-0.5">Risk Level</div>
+           {/* <div className="text-xs text-gray-400 mb-0.5">Risk Level:
+               <span className="font-bold text-gray-200">
+                  {formatPercentage(100-wadToPercentage(market.utilization))}
+                </span>
+            </div>
             <div className="flex items-center gap-2">
-              <div className="w-full bg-gray-800 rounded-full h-2">
+               <div className="w-full bg-gray-800 rounded-full h-2">
                 <div 
                   className="h-2 rounded-full" 
                   style={{ 
@@ -159,11 +163,11 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
                     background: "linear-gradient(to right, #10b981, #f59e0b, #ef4444)"
                   }}
                 ></div>
-              </div>
+              </div> 
               <span className="text-xs font-semibold text-gray-200 whitespace-nowrap">
-                {formatPercentage(100-wadToPercentage(market.utilization))} {/* TODO: use risk level */}
+                {formatPercentage(100-wadToPercentage(market.utilization))} {/* TODO: use risk level *}
               </span>
-            </div>
+            </div>*/}
           </div>
         </CardContent>
       </Card>

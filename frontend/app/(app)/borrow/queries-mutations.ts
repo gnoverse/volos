@@ -1,8 +1,7 @@
 import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUserMarketPosition, getUtilizationHistory } from "@/app/services/api.service";
-import { TxService } from "@/app/services/tx.service";
+import { TxService, VOLOS_ADDRESS } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { VOLOS_ADDRESS } from "@/app/services/tx.service";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
@@ -221,7 +220,13 @@ export function useApproveTokenMutation() {
       tokenPath: string; 
       amount: number;
     }) => {
-      return txService.approveToken(tokenPath, amount, VOLOS_ADDRESS);
+      const response = await txService.approveToken(tokenPath, amount, VOLOS_ADDRESS);
+      
+      if (response.status === 'failure') {
+        throw new Error(`Token approval failed: ${response.message || 'Unknown error'}`);
+      }
+      
+      return response;
     },
     onError: (error) => {
       console.error("Token approval failed:", error);
@@ -243,29 +248,28 @@ export function useSupplyMutation() {
       shares = 0 
     }: { 
       marketId: string; 
+      userAddress: string;
       assets: number; 
       shares?: number;
     }) => {
       return txService.supply(marketId, assets, shares);
     },
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: marketQueryKey(variables.marketId) });
-      
-      const previousMarketData = queryClient.getQueryData(marketQueryKey(variables.marketId));
-      
-      return { previousMarketData };
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
+      ]);
     },
-    onError: (error, variables, context) => {
-      if (context?.previousMarketData) {
-        queryClient.setQueryData(marketQueryKey(variables.marketId), context.previousMarketData);
-      }
+    onError: (error) => {
       console.error("Supply transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Supply transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -281,27 +285,28 @@ export function useWithdrawMutation() {
       shares = 0 
     }: { 
       marketId: string; 
+      userAddress: string;
       assets: number; 
       shares?: number;
     }) => {
       return txService.withdraw(marketId, assets, shares);
     },
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: marketQueryKey(variables.marketId) });
-      const previousMarketData = queryClient.getQueryData(marketQueryKey(variables.marketId));
-      return { previousMarketData };
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
+      ]);
     },
-    onError: (error, variables, context) => {
-      if (context?.previousMarketData) {
-        queryClient.setQueryData(marketQueryKey(variables.marketId), context.previousMarketData);
-      }
+    onError: (error) => {
       console.error("Withdraw transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Withdraw transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -317,27 +322,28 @@ export function useBorrowMutation() {
       shares = 0 
     }: { 
       marketId: string; 
+      userAddress: string;
       assets: number; 
       shares?: number;
     }) => {
       return txService.borrow(marketId, assets, shares);
     },
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: marketQueryKey(variables.marketId) });
-      const previousMarketData = queryClient.getQueryData(marketQueryKey(variables.marketId));
-      return { previousMarketData };
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
+      ]);
     },
-    onError: (error, variables, context) => {
-      if (context?.previousMarketData) {
-        queryClient.setQueryData(marketQueryKey(variables.marketId), context.previousMarketData);
-      }
+    onError: (error) => {
       console.error("Borrow transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Borrow transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -353,27 +359,28 @@ export function useRepayMutation() {
       shares = 0 
     }: { 
       marketId: string; 
+      userAddress: string;
       assets: number; 
       shares?: number;
     }) => {
       return txService.repay(marketId, assets, shares);
     },
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: marketQueryKey(variables.marketId) });
-      const previousMarketData = queryClient.getQueryData(marketQueryKey(variables.marketId));
-      return { previousMarketData };
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
+      ]);
     },
-    onError: (error, variables, context) => {
-      if (context?.previousMarketData) {
-        queryClient.setQueryData(marketQueryKey(variables.marketId), context.previousMarketData);
-      }
+    onError: (error) => {
       console.error("Repay transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Repay transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -388,26 +395,27 @@ export function useSupplyCollateralMutation() {
       amount 
     }: { 
       marketId: string; 
+      userAddress: string;
       amount: number;
     }) => {
       return txService.supplyCollateral(marketId, amount);
     },
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: marketQueryKey(variables.marketId) });
-      const previousMarketData = queryClient.getQueryData(marketQueryKey(variables.marketId));
-      return { previousMarketData };
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
+      ]);
     },
-    onError: (error, variables, context) => {
-      if (context?.previousMarketData) {
-        queryClient.setQueryData(marketQueryKey(variables.marketId), context.previousMarketData);
-      }
+    onError: (error) => {
       console.error("Supply collateral transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Supply collateral transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -422,26 +430,27 @@ export function useWithdrawCollateralMutation() {
       amount 
     }: { 
       marketId: string; 
+      userAddress: string;
       amount: number;
     }) => {
       return txService.withdrawCollateral(marketId, amount);
     },
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: marketQueryKey(variables.marketId) });
-      const previousMarketData = queryClient.getQueryData(marketQueryKey(variables.marketId));
-      return { previousMarketData };
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
+      ]);
     },
-    onError: (error, variables, context) => {
-      if (context?.previousMarketData) {
-        queryClient.setQueryData(marketQueryKey(variables.marketId), context.previousMarketData);
-      }
+    onError: (error) => {
       console.error("Withdraw collateral transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Withdraw collateral transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -617,84 +626,6 @@ export function useSetFeeRecipientMutation() {
       } else {
         console.log("Set fee recipient transaction successful:", data);
       }
-    }
-  });
-}
-
-export function useSupplyCollateralWithApproval() {
-  const queryClient = useQueryClient();
-  const approveTokenMutation = useApproveTokenMutation();
-  const supplyCollateralMutation = useSupplyCollateralMutation();
-  
-  return useMutation({
-    mutationFn: async ({ 
-      marketId,
-      collateralTokenPath,
-      amount,
-      collateralTokenDecimals
-    }: { 
-      marketId: string;
-      collateralTokenPath: string;
-      amount: number;
-      collateralTokenDecimals: number;
-    }) => {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: collateralTokenPath,
-        amount: amount * Math.pow(10, collateralTokenDecimals)
-      });
-      
-      return supplyCollateralMutation.mutateAsync({
-        marketId,
-        amount: amount * Math.pow(10, collateralTokenDecimals)
-      });
-    },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
-      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
-      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
-      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
-    },
-    onError: (error) => {
-      console.error("Supply collateral transaction failed:", error);
-    }
-  });
-}
-
-export function useBorrowWithApproval() {
-  const queryClient = useQueryClient();
-  const approveTokenMutation = useApproveTokenMutation();
-  const borrowMutation = useBorrowMutation();
-  
-  return useMutation({
-    mutationFn: async ({ 
-      marketId,
-      loanTokenPath,
-      amount,
-      loanTokenDecimals
-    }: { 
-      marketId: string;
-      loanTokenPath: string;
-      amount: number;
-      loanTokenDecimals: number;
-    }) => {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: loanTokenPath,
-        amount: amount * 10 ** loanTokenDecimals
-      });
-      
-      return borrowMutation.mutateAsync({
-        marketId,
-        assets: amount * 10 ** loanTokenDecimals
-      });
-    },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
-      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
-      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
-      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
-    },
-    onError: (error) => {
-      console.error("Borrow transaction failed:", error);
     }
   });
 }

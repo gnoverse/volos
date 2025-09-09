@@ -5,9 +5,9 @@ import { formatPercentage, wadToPercentage } from "@/app/utils/format.utils"
 import { calculatePositionMetrics, toAssetsUp } from "@/app/utils/position.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useUserAddress } from "@/hooks/use-user-address"
+import { formatUnits } from "viem"
 import { HealthBar } from "./health-bar"
 import { PositionChartTabs } from "./position-chart-tabs"
-import { formatUnits } from "viem"
 
 
 interface MarketPositionProps {
