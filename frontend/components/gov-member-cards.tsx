@@ -1,5 +1,6 @@
 import { useApproveVLSMutation, useGovernanceUserInfo, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
-import { STAKER_PKG_PATH } from "@/app/services/tx.service"
+import { getAllowance } from "@/app/services/abci"
+import { STAKER_PKG_PATH, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { formatTokenAmount } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,10 +54,14 @@ export function GovMemberCards({
 
     setIsStaking(true)
     try {
-      await approveVLSMutation.mutateAsync({
-        spender: STAKER_PKG_PATH,
-        amount: amountInDenom
-      })
+      const currentAllowance = BigInt(await getAllowance(VLS_PKG_PATH, userAddress!))
+      
+      if (currentAllowance < BigInt(amountInDenom)) {
+        await approveVLSMutation.mutateAsync({
+          spender: STAKER_PKG_PATH,
+          amount: amountInDenom
+        })
+      }
 
       await stakeVLSMutation.mutateAsync({
         amount: amountInDenom,

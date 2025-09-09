@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser, useUserPendingUnstakes, useWithdrawUnstakedVLSMutation } from "@/app/(app)/governance/queries-mutations"
-import { useUserAddress } from "@/app/utils/address.utils"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { DelegateForm } from "@/components/delegate-form"
 import { DelegateeCard } from "@/components/delegatee-card"
 import { PendingUnstakeCard } from "@/components/pending-unstake-card"

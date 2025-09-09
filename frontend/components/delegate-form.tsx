@@ -2,7 +2,7 @@
 
 import { useApproveVLSMutation, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
 import { STAKER_PKG_PATH } from "@/app/services/tx.service"
-import { useUserAddress } from "@/app/utils/address.utils"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ChevronDown, ChevronUp, Plus } from "lucide-react"

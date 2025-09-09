@@ -1,7 +1,7 @@
 "use client"
 
 import { useApproveTokenMutation, useBorrowMutation, usePositionQuery, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
-import { getTokenBalance } from "@/app/services/abci"
+import { getAllowance, getTokenBalance } from "@/app/services/abci"
 import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -87,17 +87,22 @@ export function AddBorrowPanel({
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
     const supplyAmountInTokens = Number(supplyAmount || "0");
+    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.collateralTokenDecimals);
     
     try {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: market.collateralToken!,
-        amount: supplyAmountInTokens * Math.pow(10, market.collateralTokenDecimals)
-      });
+      const currentAllowance = BigInt(await getAllowance(market.collateralToken!, userAddress!));
+      
+      if (currentAllowance < BigInt(supplyAmountInDenom)) {
+        await approveTokenMutation.mutateAsync({
+          tokenPath: market.collateralToken!,
+          amount: supplyAmountInDenom
+        });
+      }
       
       await supplyCollateralMutation.mutateAsync({
         marketId: market.poolPath!,
         userAddress: userAddress!,
-        amount: supplyAmountInTokens * Math.pow(10, market.collateralTokenDecimals)
+        amount: supplyAmountInDenom
       });
       
       reset();
@@ -110,17 +115,22 @@ export function AddBorrowPanel({
     if (isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax) return;
     
     const borrowAmountInTokens = Number(borrowAmount || "0");
+    const borrowAmountInDenom = borrowAmountInTokens * Math.pow(10, market.loanTokenDecimals);
     
     try {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: market.loanToken!,
-        amount: borrowAmountInTokens * Math.pow(10, market.loanTokenDecimals)
-      });
+      const currentAllowance = BigInt(await getAllowance(market.loanToken!, userAddress!));
+      
+      if (currentAllowance < BigInt(borrowAmountInDenom)) {
+        await approveTokenMutation.mutateAsync({
+          tokenPath: market.loanToken!,
+          amount: borrowAmountInDenom
+        });
+      }
       
       await borrowMutation.mutateAsync({
         marketId: market.poolPath!,
         userAddress: userAddress!,
-        assets: borrowAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+        assets: borrowAmountInDenom
       });
       
       reset();

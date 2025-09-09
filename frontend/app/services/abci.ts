@@ -6,6 +6,7 @@ import {
 } from "../types"
 import { parseABCIResponse, parseValidatedJsonResult } from "../utils/parsing.utils"
 import { GnoService } from "./abci.service"
+import { VOLOS_ADDRESS } from "./tx.service"
 
 const GOVERNANCE_REALM_PATH = "gno.land/r/volos/gov/governance"
 const XVLS_REALM_PATH = "gno.land/r/volos/gov/xvls"
@@ -46,6 +47,19 @@ export async function getTokenBalance(tokenPath: string, userAddress: string): P
     const result = await gnoService.evaluateExpression(
       tokenPath,
       `BalanceOf("${userAddress}")`,
+    )
+    return parseABCIResponse(result, 'int64')
+  } catch (error) {
+    console.error('Error fetching token balance:', error)
+    throw error
+  }
+}
+
+export async function getAllowance(tokenPath: string, userAddress: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      tokenPath,
+      `Allowance("${userAddress}", "${VOLOS_ADDRESS}")`,
     )
     return parseABCIResponse(result, 'int64')
   } catch (error) {

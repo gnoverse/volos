@@ -1,6 +1,7 @@
 "use client"
 
 import { useApproveTokenMutation, usePositionQuery, useRepayMutation, useWithdrawCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
+import { getAllowance } from "@/app/services/abci"
 import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -69,17 +70,22 @@ export function RepayWithdrawPanel({
     if (isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax) return;
     
     const repayAmountInTokens = Number(repayAmount || "0");
+    const repayAmountInDenom = repayAmountInTokens * Math.pow(10, market.loanTokenDecimals);
     
     try {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: market.loanToken!,
-        amount: repayAmountInTokens * Math.pow(10, market.loanTokenDecimals)
-      });
+      const currentAllowance = BigInt(await getAllowance(market.loanToken!, userAddress!));
+      
+      if (currentAllowance < BigInt(repayAmountInDenom)) {
+        await approveTokenMutation.mutateAsync({
+          tokenPath: market.loanToken!,
+          amount: repayAmountInDenom
+        });
+      }
       
       await repayMutation.mutateAsync({
         marketId: market.poolPath!,
         userAddress: userAddress!,
-        assets: repayAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+        assets: repayAmountInDenom
       });
       
       reset();
@@ -92,17 +98,22 @@ export function RepayWithdrawPanel({
     if (isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax) return;
     
     const withdrawAmountInTokens = Number(withdrawAmount || "0");
+    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.collateralTokenDecimals);
     
     try {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: market.collateralToken!,
-        amount: withdrawAmountInTokens * Math.pow(10, market.collateralTokenDecimals)
-      });
+      const currentAllowance = BigInt(await getAllowance(market.collateralToken!, userAddress!));
+      
+      if (currentAllowance < BigInt(withdrawAmountInDenom)) {
+        await approveTokenMutation.mutateAsync({
+          tokenPath: market.collateralToken!,
+          amount: withdrawAmountInDenom
+        });
+      }
       
       await withdrawCollateralMutation.mutateAsync({
         marketId: market.poolPath!,
         userAddress: userAddress!,
-        amount: withdrawAmountInTokens * Math.pow(10, market.collateralTokenDecimals)
+        amount: withdrawAmountInDenom
       });
       
       reset();
