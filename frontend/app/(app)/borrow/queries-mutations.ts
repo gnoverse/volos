@@ -220,7 +220,13 @@ export function useApproveTokenMutation() {
       tokenPath: string; 
       amount: number;
     }) => {
-      return txService.approveToken(tokenPath, amount, VOLOS_ADDRESS);
+      const response = await txService.approveToken(tokenPath, amount, VOLOS_ADDRESS);
+      
+      if (response.status === 'failure') {
+        throw new Error(`Token approval failed: ${response.message || 'Unknown error'}`);
+      }
+      
+      return response;
     },
     onError: (error) => {
       console.error("Token approval failed:", error);
