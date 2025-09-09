@@ -9,10 +9,10 @@ QUX_PATH := gno.land/r/gnoswap/test_token/qux
 FOO_PATH := gno.land/r/gnoswap/test_token/foo
 
 ADDR_TEST_ADMIN := g1e9mkmle8rgx4jy2398dal9320uul7g00tkyh42
-ADDR_USER_1 := g1yupktql2l6jd8tkxu8c4rv4uc5l7cv3y70d7ln
-ADDR_USER_2 := g194zxz7ahvkhj3p3hlxkc5axe4exe9ra0yzmhqd
-ADDR_USER_3 := g1uf7c8tsuhsp5la6hepp5p6yjy390k6rcee8hg5
-ADDR_USER_4 := g133mzul2d7c43vr87s58797pkj6l7vpx30jcn9p
+ADDR_USER_1 := g149gwxltsfg6dghhq0txu8kam7chfpt9amnx4yx
+ADDR_USER_2 := g170akkhclm6dzv67sxpandkjyvtv92kvyzyd2q9
+ADDR_USER_3 := g135ut9uh8l3f092r46z52qwa3wgfa5q8qcjlehy
+ADDR_USER_4 := g1upryqylqstmy9wfpq2jz6ep0udj9mau8st8hf2
 
 .PHONY: transfer-base-token
 transfer-base-token: transfer-ugnot transfer-gns transfer-usdc transfer-baz transfer-bar transfer-obl transfer-qux transfer-foo
