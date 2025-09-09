@@ -249,7 +249,6 @@ export function useSupplyMutation() {
       return txService.supply(marketId, assets, shares);
     },
     onMutate: async (variables) => {
-      // Optimistic refetch: immediately invalidate and refetch active queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
@@ -260,7 +259,6 @@ export function useSupplyMutation() {
       console.error("Supply transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      // Final invalidation to ensure consistency
       queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
@@ -289,7 +287,6 @@ export function useWithdrawMutation() {
       return txService.withdraw(marketId, assets, shares);
     },
     onMutate: async (variables) => {
-      // Optimistic refetch: immediately invalidate and refetch active queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
@@ -300,7 +297,6 @@ export function useWithdrawMutation() {
       console.error("Withdraw transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      // Final invalidation to ensure consistency
       queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
@@ -329,7 +325,6 @@ export function useBorrowMutation() {
       return txService.borrow(marketId, assets, shares);
     },
     onMutate: async (variables) => {
-      // Optimistic refetch: immediately invalidate and refetch active queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
@@ -340,7 +335,6 @@ export function useBorrowMutation() {
       console.error("Borrow transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      // Final invalidation to ensure consistency
       queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
@@ -369,7 +363,6 @@ export function useRepayMutation() {
       return txService.repay(marketId, assets, shares);
     },
     onMutate: async (variables) => {
-      // Optimistic refetch: immediately invalidate and refetch active queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
@@ -380,7 +373,6 @@ export function useRepayMutation() {
       console.error("Repay transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      // Final invalidation to ensure consistency
       queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
@@ -407,7 +399,6 @@ export function useSupplyCollateralMutation() {
       return txService.supplyCollateral(marketId, amount);
     },
     onMutate: async (variables) => {
-      // Optimistic refetch: immediately invalidate and refetch active queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
@@ -418,7 +409,6 @@ export function useSupplyCollateralMutation() {
       console.error("Supply collateral transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      // Final invalidation to ensure consistency
       queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
@@ -445,7 +435,6 @@ export function useWithdrawCollateralMutation() {
       return txService.withdrawCollateral(marketId, amount);
     },
     onMutate: async (variables) => {
-      // Optimistic refetch: immediately invalidate and refetch active queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
@@ -456,7 +445,6 @@ export function useWithdrawCollateralMutation() {
       console.error("Withdraw collateral transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      // Final invalidation to ensure consistency
       queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
       queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
