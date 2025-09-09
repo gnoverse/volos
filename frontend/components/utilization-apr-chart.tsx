@@ -147,7 +147,7 @@ export function UtilizationAPRChart({
                   return key
                 }}
                 height={50}
-                interval={0}
+                interval={3}
                 tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}
                 tickMargin={5}
                 stroke="rgba(75, 85, 99, 0.3)"
