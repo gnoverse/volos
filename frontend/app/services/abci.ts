@@ -1,10 +1,10 @@
 import {
-  GovernanceUserInfo,
-  GovernanceUserInfoSchema,
   Balance,
   BalanceSchema,
+  GovernanceUserInfo,
+  GovernanceUserInfoSchema,
 } from "../types"
-import { parseValidatedJsonResult } from "../utils/parsing.utils"
+import { parseABCIResponse, parseValidatedJsonResult } from "../utils/parsing.utils"
 import { GnoService } from "./abci.service"
 
 const GOVERNANCE_REALM_PATH = "gno.land/r/volos/gov/governance"
@@ -37,6 +37,19 @@ export async function apiGetXVLSBalance(userAddr: string): Promise<Balance> {
     return balanceData
   } catch (error) {
     console.error('Error fetching xVLS balance:', error)
+    throw error
+  }
+}
+
+export async function getTokenBalance(tokenPath: string, userAddress: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      tokenPath,
+      `BalanceOf("${userAddress}")`,
+    )
+    return parseABCIResponse(result, 'int64')
+  } catch (error) {
+    console.error('Error fetching token balance:', error)
     throw error
   }
 }

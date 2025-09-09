@@ -1,6 +1,7 @@
 "use client"
 
 import { useApproveTokenMutation, useBorrowMutation, usePositionQuery, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
+import { getTokenBalance } from "@/app/services/abci"
 import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -35,7 +36,6 @@ export function AddBorrowPanel({
     positionMetrics,
     currentCollateral,
     currentBorrowAssets,
-    maxBorrow,
     calculateMaxBorrowable,
     healthFactor
   } = usePositionCalculations(positionData ?? {
@@ -160,8 +160,14 @@ export function AddBorrowPanel({
         buttonMessage={supplyButtonMessage}
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
-        onMaxClickAction={() => {
-          setValue("supplyAmount", formatUnits(maxBorrow, market.loanTokenDecimals));
+        onMaxClickAction={async () => {
+          try {
+            const balance = await getTokenBalance(market.collateralToken!, userAddress!);
+            const balanceFormatted = formatUnits(BigInt(balance), market.collateralTokenDecimals);
+            setValue("supplyAmount", balanceFormatted);
+          } catch (error) {
+            console.error("Failed to fetch collateral balance:", error);
+          }
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}

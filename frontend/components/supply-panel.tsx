@@ -1,6 +1,7 @@
 "use client"
 
 import { useApproveTokenMutation, usePositionQuery, useSupplyMutation, useWithdrawMutation } from "@/app/(app)/borrow/queries-mutations"
+import { getTokenBalance } from "@/app/services/abci"
 import { MarketInfo } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -118,9 +119,14 @@ export function SupplyPanel({
         buttonMessage={supplyButtonMessage}
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
-        onMaxClickAction={() => {
-          // TODO: use ABCI
-          setValue("supplyAmount", "0");
+        onMaxClickAction={async () => {
+          try {
+            const balance = await getTokenBalance(market.loanToken!, userAddress!);
+            const balanceFormatted = formatUnits(BigInt(balance), market.loanTokenDecimals);
+            setValue("supplyAmount", balanceFormatted);
+          } catch (error) {
+            console.error("Failed to fetch loan balance:", error);
+          }
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}
