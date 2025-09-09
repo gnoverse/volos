@@ -12,9 +12,6 @@ const GOVERNANCE_REALM_PATH = "gno.land/r/volos/gov/governance"
 const XVLS_REALM_PATH = "gno.land/r/volos/gov/xvls"
 const gnoService = GnoService.getInstance()
 
-
-// GOVERNANCE API QUERIES
-
 export async function apiGetUserInfo(userAddr: string): Promise<GovernanceUserInfo> {
   try {
     const result = await gnoService.evaluateExpression(
