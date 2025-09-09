@@ -64,6 +64,7 @@ func CreateMarket(client *firestore.Client,
 		"collateral_token_decimals": collDecimals,
 		"created_at":                time.Unix(timestampInt, 0),
 		"lltv":                      lltv,
+		"fee":                       "0",
 	}
 
 	if currentPrice != "" {

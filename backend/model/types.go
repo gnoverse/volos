@@ -99,6 +99,7 @@ type Market struct {
 	CreatedAt               time.Time `firestore:"created_at" json:"created_at"`                               // When the market was created
 	UpdatedAt               time.Time `firestore:"updated_at" json:"updated_at"`                               // Last time market data was updated
 	LLTV                    string    `firestore:"lltv" json:"lltv"`                                           // Liquidation Loan-to-Value ratio (WAD-scaled, e.g., 75% = 0.75 * 1e18)
+	Fee                     string    `firestore:"fee" json:"fee"`                                             // Market fee (u256 string)
 }
 
 // APRHistory represents a single APR history entry stored in the apr subcollection.
