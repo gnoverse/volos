@@ -79,3 +79,21 @@ func CreateMarket(client *firestore.Client,
 
 	slog.Info("market created", "market_id", marketID)
 }
+
+// UpdateMarketFee updates the fee field for a specific market in the Firestore database.
+func UpdateMarketFee(client *firestore.Client, marketID, fee string) {
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+
+	_, err := client.Collection("markets").Doc(sanitizedMarketID).Update(context.Background(), []firestore.Update{
+		{
+			Path:  "fee",
+			Value: fee,
+		},
+	})
+	if err != nil {
+		slog.Error("failed to update market fee in database", "market_id", marketID, "fee", fee, "error", err)
+		return
+	}
+
+	slog.Info("market fee updated", "market_id", marketID, "fee", fee)
+}

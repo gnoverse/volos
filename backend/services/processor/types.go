@@ -103,6 +103,12 @@ type AccrueInterestEvent struct {
 	Utilization string
 }
 
+type SetFeeEvent struct {
+	MarketID  string
+	Fee       string
+	Timestamp string
+}
+
 // governance events
 
 type ProposalCreatedEvent struct {
