@@ -42,17 +42,17 @@ func (mp *MarketParams) ID() string {
 // GetLoanToken returns the loan token path from the pool path
 func (mp *MarketParams) GetLoanToken() string {
 	if mp.IsToken0Loan {
-		return pl.PoolGetToken0Path(mp.PoolPath)
+		return pl.GetToken0Path(mp.PoolPath)
 	}
-	return pl.PoolGetToken1Path(mp.PoolPath)
+	return pl.GetToken1Path(mp.PoolPath)
 }
 
 // GetCollateralToken returns the collateral token path from the pool path
 func (mp *MarketParams) GetCollateralToken() string {
 	if mp.IsToken0Loan {
-		return pl.PoolGetToken1Path(mp.PoolPath)
+		return pl.GetToken1Path(mp.PoolPath)
 	}
-	return pl.PoolGetToken0Path(mp.PoolPath)
+	return pl.GetToken0Path(mp.PoolPath)
 }
 
 // IRM is the interface that all interest rate models must implement

@@ -3,7 +3,7 @@ package mocks
 import (
 	"std"
 
-	"gno.land/r/demo/grc20reg"
+	"gno.land/r/demo/defi/grc20reg"
 	volos "gno.land/r/volos/core"
 )
 

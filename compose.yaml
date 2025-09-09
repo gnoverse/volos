@@ -1,7 +1,7 @@
 services:
   gnodev:
     build: ./contract/
-    command: gnodev -paths gno.land/r/volos/**,gno.land/r/gnoswap/** -node-rpc-listener 0.0.0.0:26657 -web-listener 0.0.0.0:8888
+    command: gnodev -paths gno.land/r/volos/**,gno.land/r/gnoswap/** -deploy-key g1e9mkmle8rgx4jy2398dal9320uul7g00tkyh42 -node-rpc-listener 0.0.0.0:26657 -web-listener 0.0.0.0:8888
     develop:
       watch:
         - action: sync
