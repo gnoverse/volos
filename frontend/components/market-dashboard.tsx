@@ -147,7 +147,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             </div>
           </div>
           
-          {/* Health Factor Indicator */}
+          {/* Risk Factor Indicator */}
           <div className="mt-1 pt-1 border-t border-gray-700/50">
            {/* <div className="text-xs text-gray-400 mb-0.5">Risk Level:
                <span className="font-bold text-gray-200">

@@ -30,8 +30,7 @@ export function useMarketsQuery() {
         totalSupplyShares: market.total_supply_shares,
         totalBorrowAssets: market.total_borrow,
         totalBorrowShares: market.total_borrow_shares,
-        lastUpdate: Date.now(), // TODO: Get actual last update timestamp
-        fee: "0", // TODO: Get actual fee from market data
+        fee: market.fee,
         
         // Params fields
         poolPath: market.id, // TODO: Extract pool path from market ID
@@ -85,8 +84,7 @@ export function useMarketQuery(marketId: string) {
         totalSupplyShares: market.total_supply_shares,
         totalBorrowAssets: market.total_borrow,
         totalBorrowShares: market.total_borrow_shares,
-        lastUpdate: Date.now(), // TODO: Get actual last update timestamp
-        fee: "0", // TODO: Get actual fee from market data
+        fee: market.fee,
         
         // Params fields
         poolPath: market.id, // TODO: Extract pool path from market ID

@@ -108,6 +108,11 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 			// if accrueEvent, ok := extractAccrueInterestFields(event); ok {
 			// 	dbupdater.UpdateUtilizationHistory(firestoreClient, accrueEvent.MarketID, accrueEvent.Timestamp, accrueEvent.Utilization)
 			// }
+		
+		case "SetFee":
+			if setFeeEvent, ok := extractSetFeeFields(event); ok {
+				dbupdater.UpdateMarketFee(firestoreClient, setFeeEvent.MarketID, setFeeEvent.Fee)
+			}
 
 		case "StorageDeposit":
 			continue
@@ -129,6 +134,7 @@ func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent
 		"currentTimestamp",
 		"lltv",
 	}
+
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		slog.Error("failed to extract create market fields", "event", event)
@@ -265,6 +271,7 @@ func extractSupplyCollateralFields(event map[string]interface{}) (*SupplyCollate
 		slog.Error("failed to extract supply collateral fields", "event", event)
 		return nil, false
 	}
+
 	return &SupplyCollateralEvent{
 		MarketID:  fields["market_id"],
 		User:      fields["user"],
@@ -281,6 +288,7 @@ func extractWithdrawCollateralFields(event map[string]interface{}) (*WithdrawCol
 		slog.Error("failed to extract withdraw collateral fields", "event", event)
 		return nil, false
 	}
+
 	return &WithdrawCollateralEvent{
 		MarketID:  fields["market_id"],
 		User:      fields["user"],
@@ -299,9 +307,25 @@ func extractAccrueInterestFields(event map[string]interface{}) (*AccrueInterestE
 		slog.Error("failed to extract accrue interest fields", "event", event)
 		return nil, false
 	}
+
 	return &AccrueInterestEvent{
 		MarketID:  fields["market_id"],
 		Timestamp: fields["currentTimestamp"],
 		Utilization: fields["utilization"],
+	}, true
+}
+
+func extractSetFeeFields(event map[string]interface{}) (*SetFeeEvent, bool) {
+	requiredFields := []string{"market_id", "fee", "currentTimestamp"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract set fee fields", "event", event)
+		return nil, false
+	}
+
+	return &SetFeeEvent{
+		MarketID:  fields["market_id"],
+		Fee:       fields["fee"],
+		Timestamp: fields["currentTimestamp"],
 	}, true
 }

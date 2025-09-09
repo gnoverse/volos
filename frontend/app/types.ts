@@ -4,7 +4,6 @@ const Uint256Schema = z.string().regex(/^\d+$/, {
   message: "Must be a valid uint256 string representation",
 });
 
-// Chart and history data types
 export const ChartDataSchema = z.object({
   value: z.number(),
   timestamp: z.date(),
@@ -84,7 +83,6 @@ export const MarketSnapshotSchema = z.object({
   created_at: z.date(),
 });
 
-// User types
 export const UserSchema = z.object({
   address: z.string(),
   dao_member: z.boolean(),
@@ -108,7 +106,6 @@ export const PositionSchema = z.object({
   collateral_supply: Uint256Schema,
 });
 
-// Governance types
 export const ProposalSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -146,7 +143,6 @@ export const PendingUnstakeSchema = z.object({
   unlock_at: z.string(),
 });
 
-// Market types
 export const MarketSchema = z.object({
   id: z.string(),
   loan_token: z.string(),
@@ -169,6 +165,7 @@ export const MarketSchema = z.object({
   created_at: z.string(),
   updated_at: z.string(),
   lltv: Uint256Schema,
+  fee: Uint256Schema,
 });
 
 export const MarketsResponseSchema = z.object({
@@ -183,22 +180,17 @@ export const MarketActivityResponseSchema = z.object({
   last_id: z.string(),
 });
 
-// Updated to match RpcMarketInfo structure from json.gno
 export const MarketInfoSchema = z.object({
-  // Market fields
   totalSupplyAssets: Uint256Schema,
   totalSupplyShares: Uint256Schema,
   totalBorrowAssets: Uint256Schema,
   totalBorrowShares: Uint256Schema,
-  lastUpdate: z.number().int(),
   fee: Uint256Schema,
   
-  // Params fields
   poolPath: z.string(),
   irm: z.string(),
   lltv: Uint256Schema,
     
-  // Additional fields
   loanToken: z.string(),
   collateralToken: z.string(),
   currentPrice: z.string(),
@@ -206,7 +198,6 @@ export const MarketInfoSchema = z.object({
   supplyAPR: Uint256Schema,
   utilization: Uint256Schema,
   
-  // Token information fields
   loanTokenName: z.string(),
   loanTokenSymbol: z.string(),
   loanTokenDecimals: z.number().int(),
@@ -215,10 +206,9 @@ export const MarketInfoSchema = z.object({
   collateralTokenSymbol: z.string(),
   collateralTokenDecimals: z.number().int(),
   
-  marketId: z.string().optional(), //todo when implemented
+  marketId: z.string().optional(),
 });
 
-// Governance User Info
 export const GovernanceUserInfoSchema = z.object({
   address: z.string(),
   vlsBalance: z.number(),
@@ -227,7 +217,6 @@ export const GovernanceUserInfoSchema = z.object({
   isMember: z.boolean(),
 });
 
-// -------------- listing responses & parsing functions for them
 export const HealthFactorSchema = z.object({
   healthFactor: z.string(),
 });
@@ -237,7 +226,6 @@ export const BalanceSchema = z.object({
   balance: z.number().int(),
 });
 
-// Type exports
 export type ChartData = z.infer<typeof ChartDataSchema>;
 export type MarketHistory = z.infer<typeof MarketHistorySchema>;
 export type APRData = z.infer<typeof APRDataSchema>;
@@ -261,7 +249,6 @@ export type GovernanceUserInfo = z.infer<typeof GovernanceUserInfoSchema>;
 export type HealthFactor = z.infer<typeof HealthFactorSchema>;
 export type Balance = z.infer<typeof BalanceSchema>;
 
-// Utility functions
 export function parseAndValidateJson<T>(jsonString: string, schema: z.ZodType<T>): T {
   try {
     const parsed = JSON.parse(jsonString);
