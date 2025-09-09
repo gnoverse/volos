@@ -122,6 +122,50 @@ export function AddBorrowPanel({
 
   return (
     <form className="space-y-3">
+      {/* Borrow Card */}
+      <Card className={CARD_STYLES}>
+        <CardHeader className="px-4 -mb-4">
+          <div className="flex items-center gap-2">
+            <ArrowDown size={16} className="text-purple-400" />
+            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
+              Borrow {market.loanTokenSymbol}
+            </CardTitle>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-1 pt-0 px-4">
+          <Input
+            type="number"
+            {...register("borrowAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
+            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
+            placeholder="0.00"
+          />
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-400">{borrowAmount || "0"} {market.loanTokenSymbol}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-400">{currentBorrowAssets} {market.loanTokenSymbol}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
+                onClick={handleMaxBorrow}
+              >
+                MAX
+              </Button>
+            </div>
+          </div>
+          <Button
+            type="button"
+            className="w-full mt-1 bg-midnightPurple-900/60 hover:bg-midnightPurple-900/50 text-gray-400 h-8 text-sm"
+            disabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
+            onClick={handleBorrow}
+          >
+            {isBorrowPending ? "Processing..." : borrowButtonMessage}
+          </Button>
+        </CardContent>
+      </Card>
+      
       {/* Supply Card */}
       <Card className={CARD_STYLES}>
         <CardHeader className="px-4 -mb-4">
@@ -168,50 +212,6 @@ export function AddBorrowPanel({
         </CardContent>
       </Card>
 
-      {/* Borrow Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader className="px-4 -mb-4">
-          <div className="flex items-center gap-2">
-            <ArrowDown size={16} className="text-purple-400" />
-            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
-              Borrow {market.loanTokenSymbol}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-1 pt-0 px-4">
-          <Input
-            type="number"
-            {...register("borrowAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">{borrowAmount || "0"} {market.loanTokenSymbol}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{currentBorrowAssets} {market.loanTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={handleMaxBorrow}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-1 bg-midnightPurple-900/60 hover:bg-midnightPurple-900/50 text-gray-400 h-8 text-sm"
-            disabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
-            onClick={handleBorrow}
-          >
-            {isBorrowPending ? "Processing..." : borrowButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
-      
       {/* Position Card */}
       <PositionCard 
         market={market}
