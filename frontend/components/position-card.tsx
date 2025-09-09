@@ -41,20 +41,6 @@ export function PositionCard({
     <Card className={CARD_STYLES}>
       <CardContent className="space-y-3 -mt-2">
         <div>
-          <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
-          <div className="text-xl font-semibold text-gray-200">
-            {currentCollateral}
-            {(supplyDelta > 0 || withdrawDelta > 0) && (
-              <>
-                {" "}
-                <span className="text-gray-400">→</span>{" "}
-                <span className="text-green-300">{projectedCollateral}</span>
-              </>
-            )}
-          </div>
-        </div>
-        
-        <div>
           <div className="text-sm text-gray-400">My loan position ({market.loanTokenSymbol})</div>
           <div className="text-xl font-semibold text-gray-200">
             {currentBorrowAssets}
@@ -63,6 +49,19 @@ export function PositionCard({
                 {" "}
                 <span className="text-gray-400">→</span>{" "}
                 <span className="text-red-400">{projectedLoan}</span>
+              </>
+            )}
+          </div>
+        </div>
+        <div>
+          <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
+          <div className="text-xl font-semibold text-gray-200">
+            {currentCollateral}
+            {(supplyDelta > 0 || withdrawDelta > 0) && (
+              <>
+                {" "}
+                <span className="text-gray-400">→</span>{" "}
+                <span className="text-green-300">{projectedCollateral}</span>
               </>
             )}
           </div>

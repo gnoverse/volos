@@ -85,7 +85,7 @@ export default function BorrowPage() {
                   <div className="min-h-[100px] rounded-md mt-6">
                     {isUserLoanLoading ? (
                       <div className="h-32 flex items-center justify-center">
-                        <span className="animate-pulse text-muted-foreground">Loading loan history...</span>
+                        <span className="animate-pulse text-gray-400">Loading loan history...</span>
                       </div>
                     ) : (
                       userLoanHistory && userLoanHistory.length > 0 && (
@@ -121,7 +121,7 @@ export default function BorrowPage() {
       
       <h1 className="text-2xl font-bold mb-6 text-logo-600">Borrow Assets</h1>
       {isLoading ? (
-        <div className="flex justify-center items-center h-32 text-muted-foreground">Loading markets data...</div>
+        <div className="flex justify-center items-center h-32 text-gray-400 animate-pulse">Loading markets data...</div>
       ) : (
         <DataTable 
           columns={columns} 
