@@ -1,8 +1,7 @@
 import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUserMarketPosition, getUtilizationHistory } from "@/app/services/api.service";
-import { TxService } from "@/app/services/tx.service";
+import { TxService, VOLOS_ADDRESS } from "@/app/services/tx.service";
 import { HealthFactor, MarketInfo, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { VOLOS_ADDRESS } from "@/app/services/tx.service";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
@@ -695,6 +694,162 @@ export function useBorrowWithApproval() {
     },
     onError: (error) => {
       console.error("Borrow transaction failed:", error);
+    }
+  });
+}
+
+export function useRepayWithApproval() {
+  const queryClient = useQueryClient();
+  const approveTokenMutation = useApproveTokenMutation();
+  const repayMutation = useRepayMutation();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      marketId,
+      loanTokenPath,
+      amount,
+      loanTokenDecimals
+    }: { 
+      marketId: string;
+      loanTokenPath: string;
+      amount: number;
+      loanTokenDecimals: number;
+    }) => {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: loanTokenPath,
+        amount: amount * 10 ** loanTokenDecimals
+      });
+      
+      return repayMutation.mutateAsync({
+        marketId,
+        assets: amount * 10 ** loanTokenDecimals
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
+    },
+    onError: (error) => {
+      console.error("Repay transaction failed:", error);
+    }
+  });
+}
+
+export function useWithdrawCollateralWithApproval() {
+  const queryClient = useQueryClient();
+  const approveTokenMutation = useApproveTokenMutation();
+  const withdrawCollateralMutation = useWithdrawCollateralMutation();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      marketId,
+      collateralTokenPath,
+      amount,
+      collateralTokenDecimals
+    }: { 
+      marketId: string;
+      collateralTokenPath: string;
+      amount: number;
+      collateralTokenDecimals: number;
+    }) => {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: collateralTokenPath,
+        amount: amount * 10 ** collateralTokenDecimals
+      });
+      
+      return withdrawCollateralMutation.mutateAsync({
+        marketId,
+        amount: amount * 10 ** collateralTokenDecimals
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
+    },
+    onError: (error) => {
+      console.error("Withdraw collateral transaction failed:", error);
+    }
+  });
+}
+
+export function useSupplyWithApproval() {
+  const queryClient = useQueryClient();
+  const approveTokenMutation = useApproveTokenMutation();
+  const supplyMutation = useSupplyMutation();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      marketId,
+      loanTokenPath,
+      amount,
+      loanTokenDecimals
+    }: { 
+      marketId: string;
+      loanTokenPath: string;
+      amount: number;
+      loanTokenDecimals: number;
+    }) => {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: loanTokenPath,
+        amount: amount * 10 ** loanTokenDecimals
+      });
+      
+      return supplyMutation.mutateAsync({
+        marketId,
+        assets: amount * 10 ** loanTokenDecimals
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
+    },
+    onError: (error) => {
+      console.error("Supply transaction failed:", error);
+    }
+  });
+}
+
+export function useWithdrawWithApproval() {
+  const queryClient = useQueryClient();
+  const approveTokenMutation = useApproveTokenMutation();
+  const withdrawMutation = useWithdrawMutation();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      marketId,
+      loanTokenPath,
+      amount,
+      loanTokenDecimals
+    }: { 
+      marketId: string;
+      loanTokenPath: string;
+      amount: number;
+      loanTokenDecimals: number;
+    }) => {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: loanTokenPath,
+        amount: amount * 10 ** loanTokenDecimals
+      });
+      
+      return withdrawMutation.mutateAsync({
+        marketId,
+        assets: amount * 10 ** loanTokenDecimals
+      });
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['position', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['loanAmount', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['healthFactor', variables.marketId] });
+      queryClient.invalidateQueries({ queryKey: ['market', variables.marketId] });
+    },
+    onError: (error) => {
+      console.error("Withdraw transaction failed:", error);
     }
   });
 }

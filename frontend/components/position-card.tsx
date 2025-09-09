@@ -6,11 +6,11 @@ const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
 export interface PositionCardProps {
   market: MarketInfo
-  supplyAmount: string
-  borrowAmount: string
+  supplyAmount?: string
+  borrowAmount?: string
   repayAmount?: string
   withdrawAmount?: string
-  maxBorrow: string
+  maxBorrow?: string
   isBorrowValid: boolean
   healthFactor: number
   currentCollateral: string
@@ -29,9 +29,9 @@ export function PositionCard({
 }: PositionCardProps) {
 
 
-  const supplyDelta = parseFloat(supplyAmount)
+  const supplyDelta = parseFloat(supplyAmount || "0")
   const withdrawDelta = parseFloat(withdrawAmount || "0")
-  const borrowDelta = parseFloat(borrowAmount)
+  const borrowDelta = parseFloat(borrowAmount || "0")
   const repayDelta = parseFloat(repayAmount || "0")
   
   const projectedCollateral = parseFloat(currentCollateral) + supplyDelta - withdrawDelta

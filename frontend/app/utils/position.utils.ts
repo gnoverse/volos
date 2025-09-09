@@ -147,3 +147,27 @@ export function calculateMaxBorrowable(position: Position, market: MarketInfo | 
   
   return maxBorrowable > BigInt(0) ? maxBorrowable : BigInt(0);
 }
+
+/**
+ * Calculates the maximum withdrawable amount for a user from their supply shares.
+ * This converts the user's supply_shares to assets using toAssetsUp for maximum precision.
+ * 
+ * @param position User position data
+ * @param market Market information
+ * @returns Maximum withdrawable amount as BigInt
+ */
+export function calculateMaxWithdrawable(position: Position, market: MarketInfo | undefined): bigint {
+  if (!market) {
+    return BigInt(0);
+  }
+  
+  const supplyShares = BigInt(position.supply_shares || "0");
+  const totalSupplyAssets = BigInt(market.totalSupplyAssets || "0");
+  const totalSupplyShares = BigInt(market.totalSupplyShares || "0");
+  
+  if (supplyShares === BigInt(0) || totalSupplyShares === BigInt(0)) {
+    return BigInt(0);
+  }
+  
+  return toAssetsUp(supplyShares, totalSupplyAssets, totalSupplyShares);
+}

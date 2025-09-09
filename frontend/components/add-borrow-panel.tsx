@@ -3,17 +3,13 @@
 import { useBorrowWithApproval, usePositionQuery, useSupplyCollateralWithApproval } from "@/app/(app)/borrow/queries-mutations"
 import { MarketInfo } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { useFormValidation } from "@/hooks/use-form-validation"
+import { SidePanelCard } from "@/components/side-panel-card"
+import { useFormValidation } from "@/hooks/use-borrow-validation"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
-
-const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
 
 interface AddBorrowPanelProps {
   market: MarketInfo
@@ -123,94 +119,40 @@ export function AddBorrowPanel({
   return (
     <form className="space-y-3">
       {/* Borrow Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader className="px-4 -mb-4">
-          <div className="flex items-center gap-2">
-            <ArrowDown size={16} className="text-purple-400" />
-            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
-              Borrow {market.loanTokenSymbol}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-1 pt-0 px-4">
-          <Input
-            type="number"
-            {...register("borrowAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">{borrowAmount || "0"} {market.loanTokenSymbol}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{currentBorrowAssets} {market.loanTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={handleMaxBorrow}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-1 bg-midnightPurple-900/60 hover:bg-midnightPurple-900/50 text-gray-400 h-8 text-sm"
-            disabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
-            onClick={handleBorrow}
-          >
-            {isBorrowPending ? "Processing..." : borrowButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
+      <SidePanelCard
+        icon={ArrowDown}
+        iconColor="text-purple-400"
+        title={`Borrow ${market.loanTokenSymbol}`}
+        register={register}
+        fieldName="borrowAmount"
+        tokenSymbol={market.loanTokenSymbol}
+        currentBalanceFormatted={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}
+        buttonMessage={borrowButtonMessage}
+        isButtonDisabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
+        isButtonPending={isBorrowPending}
+        onMaxClickAction={handleMaxBorrow}
+        onSubmitAction={handleBorrow}
+        inputValue={borrowAmount}
+      />
       
       {/* Supply Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader className="px-4 -mb-4">
-          <div className="flex items-center gap-2">
-            <Plus size={16} className="text-blue-400" />
-            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
-              Supply Collateral {market.collateralTokenSymbol}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-1 pt-0 px-4">
-          <Input
-            type="number"
-            {...register("supplyAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">{supplyAmount} {market.collateralTokenSymbol}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{formatUnits(currentCollateral, market.collateralTokenDecimals)} {market.collateralTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={() => {
-                  setValue("supplyAmount", formatUnits(maxBorrow, market.loanTokenDecimals));
-                }}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-1 bg-midnightPurple-900/60 hover:bg-midnightPurple-900/50 text-gray-400 h-8 text-sm"
-            disabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
-            onClick={handleSupply}
-          >
-            {isSupplyPending ? "Processing..." : supplyButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
+      <SidePanelCard
+        icon={Plus}
+        iconColor="text-blue-400"
+        title={`Supply Collateral ${market.collateralTokenSymbol}`}
+        register={register}
+        fieldName="supplyAmount"
+        tokenSymbol={market.collateralTokenSymbol}
+        currentBalanceFormatted={formatUnits(currentCollateral, market.collateralTokenDecimals)}
+        buttonMessage={supplyButtonMessage}
+        isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
+        isButtonPending={isSupplyPending}
+        onMaxClickAction={() => {
+          setValue("supplyAmount", formatUnits(maxBorrow, market.loanTokenDecimals));
+        }}
+        onSubmitAction={handleSupply}
+        inputValue={supplyAmount}
+      />
 
       {/* Position Card */}
       <PositionCard 

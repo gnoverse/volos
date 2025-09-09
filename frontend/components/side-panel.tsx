@@ -2,8 +2,8 @@
 
 import { MarketInfo } from "@/app/types"
 import { AddBorrowPanel } from "@/components/add-borrow-panel"
-// import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
-// import { SupplyPanel } from "@/components/supply-panel"
+import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
+import { SupplyPanel } from "@/components/supply-panel"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -113,23 +113,17 @@ export function SidePanel({
                 />
               </TabsContent>
               
-              {/* <TabsContent value="repay-withdraw">
+               <TabsContent value="repay-withdraw">
                 <RepayWithdrawPanel 
                   market={market}
-                  positionData={positionData}
-                  collateralTokenDecimals={collateralTokenDecimals}
-                  loanTokenDecimals={loanTokenDecimals}
                 />
               </TabsContent>
               
-              <TabsContent value="supply-only">
+             <TabsContent value="supply-only">
                 <SupplyPanel 
                   market={market}
-                  positionData={positionData}
-                  collateralTokenDecimals={collateralTokenDecimals}
-                  loanTokenDecimals={loanTokenDecimals}
                 />
-              </TabsContent> */}
+              </TabsContent>
             </div>
           </div>
         </Tabs>
