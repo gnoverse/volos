@@ -259,12 +259,11 @@ export function useSupplyMutation() {
       console.error("Supply transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Supply transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -297,12 +296,11 @@ export function useWithdrawMutation() {
       console.error("Withdraw transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Withdraw transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -335,12 +333,11 @@ export function useBorrowMutation() {
       console.error("Borrow transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Borrow transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -373,12 +370,11 @@ export function useRepayMutation() {
       console.error("Repay transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Repay transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -409,12 +405,11 @@ export function useSupplyCollateralMutation() {
       console.error("Supply collateral transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Supply collateral transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
@@ -445,12 +440,11 @@ export function useWithdrawCollateralMutation() {
       console.error("Withdraw collateral transaction failed:", error);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
-      queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      if (!error) {
-        console.log("Withdraw collateral transaction successful:", data);
-      }
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
+        queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
+      }, 1500);
     }
   });
 }
