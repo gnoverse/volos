@@ -36,7 +36,6 @@ export function AddBorrowPanel({
     positionMetrics,
     currentCollateral,
     currentBorrowAssets,
-    calculateMaxBorrowable,
     healthFactor
   } = usePositionCalculations(positionData ?? {
     borrow_shares: "0",
@@ -74,8 +73,7 @@ export function AddBorrowPanel({
       const { data: latestPosition } = await refetchPosition()
       
       if (latestPosition) {
-        const maxBorrowable = calculateMaxBorrowable(latestPosition)
-        const maxBorrowableStr = formatUnits(maxBorrowable, market.loanTokenDecimals)
+        const maxBorrowableStr = formatUnits(positionMetrics.maxBorrow, market.loanTokenDecimals)
         setValue("borrowAmount", maxBorrowableStr)
       }
     } catch (error) {

@@ -3,7 +3,7 @@ import { WAD } from "./format.utils";
 
 // Virtual amounts for share/asset calculations (matching contract values)
 const VIRTUAL_SHARES = BigInt("1000000000"); // 1 billion shares
-const VIRTUAL_ASSETS = BigInt("1000000000"); // 1 billion base units
+const VIRTUAL_ASSETS = BigInt("1"); // 1 billion base units
 
 /**
  * Converts shares to assets using the same logic as the contract's ToAssetsDown function.
