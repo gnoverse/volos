@@ -6,6 +6,7 @@ import (
 	"gno.land/p/nt/commondao"
 	"gno.land/p/moul/md"
 	"gno.land/p/moul/mdtable"
+	"gno.land/p/nt/avl/pager"
 )
 
 // TODO: avl tree + pager
@@ -14,9 +15,7 @@ func listActiveProposals() string {
 
 	out += activeProposalsCount()
 
-	table := mdtable.Table{
-		Headers: []string{"Id", "Title", "Count", "Choice", "Deadline"},
-	}
+	p := pager.NewPager(20, true)
 	volosGovernance.ActiveProposals().Iterate(
 		0,
 		volosGovernance.ActiveProposals().Size(),
