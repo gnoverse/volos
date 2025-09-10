@@ -24,7 +24,7 @@ export function useMarketsQuery() {
       const response = await getMarkets();
       
       // Transform API Market to MarketInfo format
-      const markets: MarketInfo[] = response.markets.map(market => ({
+      const markets: MarketInfo[] = (response.markets || []).map(market => ({
         // Market fields
         totalSupplyAssets: market.total_supply,
         totalSupplyShares: market.total_supply_shares,

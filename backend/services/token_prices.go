@@ -10,8 +10,8 @@ var TokenPrices = map[string]float64{
 	//
 	// Mock prices are set to $100 per whole token for development.
 	// In the future, these prices will be fetched from real price feeds.
-	"gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/gns:3000:0":            10.0, // Example market ID for GNOT token
-	"gno.land/r/demo/wugnot:gno.land/r/gnoswap/v1/test_token/bar:3000:0": 10.0, // Example market ID for test token
+	"gno.land/r/gnoland/wugnot:gno.land/r/gnoswap/gns:3000:0":            10.0, // Example market ID for GNOT token
+	"gno.land/r/gnoland/wugnot:gno.land/r/gnoswap/test_token/bar:3000:0": 10.0, // Example market ID for test token
 }
 
 // GetTokenPrice returns the fiat price for a given market ID.
