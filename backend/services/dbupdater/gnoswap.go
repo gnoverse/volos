@@ -12,6 +12,12 @@ import (
 // poolPath is extracted from the provided marketID by removing the ":0" or ":1" suffix
 // Uses Firestore transaction to atomically fetch markets, get token decimals, and update prices
 func UpdatePrice(firestoreClient *firestore.Client, sqrtPriceX96, marketID string) {
+	println("==========================")
+	println("UpdatePrice called")
+	println("sqrtPriceX96:", sqrtPriceX96)
+	println("marketID:", marketID)
+	println("==========================")
+
 	if sqrtPriceX96 == "" || marketID == "" {
 		slog.Error("missing sqrtPriceX96 or marketID for price update", "sqrtPriceX96", sqrtPriceX96, "marketID", marketID)
 		return
@@ -20,10 +26,15 @@ func UpdatePrice(firestoreClient *firestore.Client, sqrtPriceX96, marketID strin
 	poolPath := strings.TrimSuffix(strings.TrimSuffix(marketID, ":0"), ":1")
 	revert := strings.HasSuffix(marketID, ":1")
 
+	println("==========================")
+	println("poolPath:", poolPath)
+	println("revert:", revert)
+	println("==========================")
+
 	ctx := context.Background()
 	marketsRef := firestoreClient.Collection("markets")
 
-	iter := marketsRef.Where("poolPath", "==", poolPath).Documents(ctx)
+	iter := marketsRef.Where("pool_path", "==", poolPath).Documents(ctx)
 	defer iter.Stop()
 
 	var marketDocs []*firestore.DocumentSnapshot
@@ -35,8 +46,16 @@ func UpdatePrice(firestoreClient *firestore.Client, sqrtPriceX96, marketID strin
 		marketDocs = append(marketDocs, doc)
 	}
 
+	println("==========================")
+	println("Found", len(marketDocs), "market documents")
+	println("==========================")
+
 	err := firestoreClient.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		for _, marketDoc := range marketDocs {
+			println("==========================")
+			println("Processing market:", marketDoc.Ref.ID)
+			println("==========================")
+
 			loanTokenDecimals, err := marketDoc.DataAt("loan_token_decimals")
 			if err != nil {
 				slog.Error("failed to get loan_token_decimals", "market_id", marketDoc.Ref.ID, "error", err)
@@ -49,11 +68,20 @@ func UpdatePrice(firestoreClient *firestore.Client, sqrtPriceX96, marketID strin
 				continue
 			}
 
+			println("==========================")
+			println("loanTokenDecimals:", loanTokenDecimals)
+			println("collateralTokenDecimals:", collateralTokenDecimals)
+			println("==========================")
+
 			price := extractPriceFromSqrt(sqrtPriceX96, revert, loanTokenDecimals.(int64), collateralTokenDecimals.(int64))
 			if price == "" {
 				slog.Error("failed to extract price", "sqrtPriceX96", sqrtPriceX96, "market_id", marketDoc.Ref.ID)
 				continue
 			}
+
+			println("==========================")
+			println("Calculated price:", price)
+			println("==========================")
 
 			if err := tx.Update(marketDoc.Ref, []firestore.Update{{Path: "current_price", Value: price}}); err != nil {
 				slog.Error("failed to update market price", "market_id", marketDoc.Ref.ID, "error", err)
@@ -67,7 +95,14 @@ func UpdatePrice(firestoreClient *firestore.Client, sqrtPriceX96, marketID strin
 	})
 
 	if err != nil {
+		println("==========================")
+		println("Transaction failed:", err.Error())
+		println("==========================")
 		slog.Error("transaction failed for price update", "poolPath", poolPath, "marketID", marketID, "error", err)
 		return
 	}
+
+	println("==========================")
+	println("UpdatePrice completed successfully")
+	println("==========================")
 }

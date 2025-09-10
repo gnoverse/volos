@@ -54,6 +54,7 @@ func CreateMarket(client *firestore.Client,
 
 	marketData := map[string]interface{}{
 		"id":                        marketID,
+		"pool_path":                 poolPath,
 		"loan_token":                loanToken,
 		"collateral_token":          collateralToken,
 		"loan_token_name":           loanTokenName,
