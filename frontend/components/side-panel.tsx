@@ -1,6 +1,6 @@
 "use client"
 
-import { MarketInfo } from "@/app/types"
+import { Market } from "@/app/types"
 import { AddBorrowPanel } from "@/components/add-borrow-panel"
 import { RepayWithdrawPanel } from "@/components/repay-withdraw-panel"
 import { SupplyPanel } from "@/components/supply-panel"
@@ -18,7 +18,7 @@ import { WalletIcon } from "lucide-react"
 interface SidePanelProps {
   tab: string
   setTabAction: (tab: string) => void
-  market: MarketInfo
+  market: Market
 }
 
 export function SidePanel({

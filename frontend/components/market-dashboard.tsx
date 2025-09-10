@@ -1,8 +1,8 @@
-import { MarketInfo } from "@/app/types";
+import { Market } from "@/app/types";
 import { formatPercentage, formatTokenAmount, wadToPercentage } from "@/app/utils/format.utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 interface MarketDashboardProps {
-  market: MarketInfo;
+  market: Market;
   cardStyles: string;
 }
 
@@ -21,13 +21,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           {/* Loan Token */}
           <div className="flex items-center">
             <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-3">
-              <span className="text-blue-400 font-bold">{market.loanTokenSymbol.charAt(0)}</span>
+              <span className="text-blue-400 font-bold">{market.loan_token_symbol.charAt(0)}</span>
             </div>
             <div className="flex-1">
               <div className="text-xs text-gray-400">Loan Token</div>
               <div className="font-medium text-gray-200 flex items-center">
-                {market.loanTokenName} 
-                <span className="ml-1 text-gray-400 text-[10px]">({market.loanTokenSymbol})</span>
+                {market.loan_token_name} 
+                <span className="ml-1 text-gray-400 text-[10px]">({market.loan_token_symbol})</span>
               </div>
             </div>
           </div>
@@ -35,13 +35,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           {/* Collateral Token */}
           <div className="flex items-center">
             <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center mr-3">
-              <span className="text-purple-400 font-bold">{market.collateralTokenSymbol.charAt(0)}</span>
+              <span className="text-purple-400 font-bold">{market.collateral_token_symbol.charAt(0)}</span>
             </div>
             <div className="flex-1">
               <div className="text-xs text-gray-400">Collateral Token</div>
               <div className="font-medium text-gray-200 flex items-center">
-                {market.collateralTokenName}
-                <span className="ml-1 text-gray-400 text-[10px]">({market.collateralTokenSymbol})</span>
+                {market.collateral_token_name}
+                <span className="ml-1 text-gray-400 text-[10px]">({market.collateral_token_symbol})</span>
               </div>
             </div>
           </div>
@@ -51,12 +51,12 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             <div className="flex items-center gap-2">
               <div className="text-xs text-gray-400">Current Price</div>
               <span className="text-[10px] font-light text-gray-400">
-                ({market.loanTokenSymbol} / {market.collateralTokenSymbol})
+                ({market.loan_token_symbol} / {market.collateral_token_symbol})
               </span>
             </div>
             <div className="flex items-baseline flex-wrap">
               <span className="text-2xl font-bold text-gray-200 break-all">
-                {formatTokenAmount(market.currentPrice, 36, 2, 6)}
+                {formatTokenAmount(market.current_price, 36, 2, 6)}
               </span>
             </div>
           </div>
@@ -76,7 +76,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           <div>
             <div className="text-xs text-gray-400 mb-0.5">Total Supply</div>
             <div className="text-2xl font-bold text-gray-200">
-              {formatTokenAmount(market.totalSupplyAssets, market.loanTokenDecimals)} <span className="text-gray-400 text-base">{market.loanTokenSymbol}</span>
+              {formatTokenAmount(market.total_supply, market.loan_token_decimals)} <span className="text-gray-400 text-base">{market.loan_token_symbol}</span>
             </div>
           </div>
           
@@ -84,7 +84,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           <div>
             <div className="text-xs text-gray-400 mb-0.5">Total Borrow</div>
             <div className="text-2xl font-bold text-gray-200">
-              {formatTokenAmount(market.totalBorrowAssets, market.loanTokenDecimals)} <span className="text-gray-400 text-base">{market.loanTokenSymbol}</span>
+              {formatTokenAmount(market.total_borrow, market.loan_token_decimals)} <span className="text-gray-400 text-base">{market.loan_token_symbol}</span>
             </div>
           </div>
           
@@ -120,13 +120,13 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             <div>
               <div className="text-xs text-gray-400 mb-0.5">Supply APR</div>
               <div className="text-2xl text-gray-200">
-                {formatPercentage(wadToPercentage(market.supplyAPR, 2))}
+                {formatPercentage(wadToPercentage(market.supply_apr, 2))}
               </div>
             </div>
             <div>
               <div className="text-xs text-gray-400 mb-0.5">Borrow APR</div>
               <div className="text-2xl text-gray-200">
-                {formatPercentage(wadToPercentage(market.borrowAPR, 2))}
+                {formatPercentage(wadToPercentage(market.borrow_apr, 2))}
               </div>
             </div>
           </div>

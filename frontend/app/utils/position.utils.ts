@@ -1,4 +1,4 @@
-import { MarketInfo, Position } from "@/app/types";
+import { Market, Position } from "@/app/types";
 import { WAD } from "./format.utils";
 
 // Virtual amounts for share/asset calculations (matching contract values)
@@ -40,7 +40,7 @@ export function toAssetsUp(shares: bigint, totalAssets: bigint, totalShares: big
  * @param market Market information
  * @returns Object containing maxBorrow (as BigInt), healthFactor, and LTV (both as numbers)
  */
-export function calculatePositionMetrics(position: Position, market: MarketInfo | undefined): {
+export function calculatePositionMetrics(position: Position, market: Market | undefined): {
   maxBorrow: bigint;
   healthFactor: number;
   ltv: number;
@@ -56,15 +56,15 @@ export function calculatePositionMetrics(position: Position, market: MarketInfo 
   const borrowShares = BigInt(position.borrow_shares || "0");
   const collateralAmount = BigInt(position.collateral_supply || "0");
   
-  const totalBorrowAssets = BigInt(market.totalBorrowAssets || "0");
-  const totalBorrowShares = BigInt(market.totalBorrowShares || "0");
+  const totalBorrowAssets = BigInt(market.total_borrow || "0");
+  const totalBorrowShares = BigInt(market.total_borrow_shares || "0");
   
   // Calculate actual borrow amount from shares
   const borrowAmount = borrowShares > BigInt(0) && totalBorrowShares > BigInt(0) 
     ? toAssetsDown(borrowShares, totalBorrowAssets, totalBorrowShares)
     : BigInt(0);
   
-  const currentPrice = BigInt(market.currentPrice || "0");
+  const currentPrice = BigInt(market.current_price || "0");
 
   // Parse LLTV - convert percentage to WAD-scaled value
   // market.LLTV is stored as percentage (e.g., 75 for 75%)
@@ -127,7 +127,7 @@ export function calculatePositionMetrics(position: Position, market: MarketInfo 
  * @param market Market information
  * @returns Maximum borrowable amount as BigInt
  */
-export function calculateMaxBorrowable(position: Position, market: MarketInfo | undefined): bigint {
+export function calculateMaxBorrowable(position: Position, market: Market | undefined): bigint {
   const { maxBorrow } = calculatePositionMetrics(position, market);
   
   if (!market) {
@@ -135,8 +135,8 @@ export function calculateMaxBorrowable(position: Position, market: MarketInfo | 
   }
   
   const borrowShares = BigInt(position.borrow_shares || "0");
-  const totalBorrowAssets = BigInt(market.totalBorrowAssets || "0");
-  const totalBorrowShares = BigInt(market.totalBorrowShares || "0");
+  const totalBorrowAssets = BigInt(market.total_borrow || "0");
+  const totalBorrowShares = BigInt(market.total_borrow_shares || "0");
   
   const currentBorrow = borrowShares > BigInt(0) && totalBorrowShares > BigInt(0) 
     ? toAssetsDown(borrowShares, totalBorrowAssets, totalBorrowShares)
@@ -156,14 +156,14 @@ export function calculateMaxBorrowable(position: Position, market: MarketInfo | 
  * @param market Market information
  * @returns Maximum withdrawable amount as BigInt
  */
-export function calculateMaxWithdrawable(position: Position, market: MarketInfo | undefined): bigint {
+export function calculateMaxWithdrawable(position: Position, market: Market | undefined): bigint {
   if (!market) {
     return BigInt(0);
   }
   
   const supplyShares = BigInt(position.supply_shares || "0");
-  const totalSupplyAssets = BigInt(market.totalSupplyAssets || "0");
-  const totalSupplyShares = BigInt(market.totalSupplyShares || "0");
+  const totalSupplyAssets = BigInt(market.total_supply || "0");
+  const totalSupplyShares = BigInt(market.total_supply_shares || "0");
   
   if (supplyShares === BigInt(0) || totalSupplyShares === BigInt(0)) {
     return BigInt(0);

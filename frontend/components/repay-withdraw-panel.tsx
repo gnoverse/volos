@@ -2,7 +2,7 @@
 
 import { useApproveTokenMutation, usePositionQuery, useRepayMutation, useWithdrawCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
 import { getAllowance } from "@/app/services/abci"
-import { MarketInfo } from "@/app/types"
+import { Market } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
 
 interface RepayWithdrawPanelProps {
-  market: MarketInfo
+  market: Market
 }
 
 export function RepayWithdrawPanel({
@@ -70,20 +70,20 @@ export function RepayWithdrawPanel({
     if (isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax) return;
     
     const repayAmountInTokens = Number(repayAmount || "0");
-    const repayAmountInDenom = repayAmountInTokens * Math.pow(10, market.loanTokenDecimals);
+    const repayAmountInDenom = repayAmountInTokens * Math.pow(10, market.loan_token_decimals);
     
     try {
-      const currentAllowance = BigInt(await getAllowance(market.loanToken!, userAddress!));
+      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
       
       if (currentAllowance < BigInt(repayAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
-          tokenPath: market.loanToken!,
+          tokenPath: market.loan_token,
           amount: repayAmountInDenom
         });
       }
       
       await repayMutation.mutateAsync({
-        marketId: market.poolPath!,
+        marketId: market.pool_path,
         userAddress: userAddress!,
         assets: repayAmountInDenom
       });
@@ -98,20 +98,20 @@ export function RepayWithdrawPanel({
     if (isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax) return;
     
     const withdrawAmountInTokens = Number(withdrawAmount || "0");
-    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.collateralTokenDecimals);
+    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.collateral_token_decimals);
     
     try {
-      const currentAllowance = BigInt(await getAllowance(market.collateralToken!, userAddress!));
+      const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
       
       if (currentAllowance < BigInt(withdrawAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
-          tokenPath: market.collateralToken!,
+          tokenPath: market.collateral_token,
           amount: withdrawAmountInDenom
         });
       }
       
       await withdrawCollateralMutation.mutateAsync({
-        marketId: market.poolPath!,
+        marketId: market.pool_path,
         userAddress: userAddress!,
         amount: withdrawAmountInDenom
       });
@@ -128,16 +128,16 @@ export function RepayWithdrawPanel({
       <SidePanelCard
         icon={ArrowUp}
         iconColor="text-blue-400"
-        title={`Repay Loan ${market.loanTokenSymbol}`}
+        title={`Repay Loan ${market.loan_token_symbol}`}
         register={register}
         fieldName="repayAmount"
-        tokenSymbol={market.loanTokenSymbol}
-        currentBalanceFormatted={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}
+        tokenSymbol={market.loan_token_symbol}
+        currentBalanceFormatted={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
         buttonMessage={repayButtonMessage}
         isButtonDisabled={isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax || isRepayPending}
         isButtonPending={isRepayPending}
         onMaxClickAction={() => {
-          setValue("repayAmount", formatUnits(currentBorrowAssets, market.loanTokenDecimals));
+          setValue("repayAmount", formatUnits(currentBorrowAssets, market.loan_token_decimals));
         }}
         onSubmitAction={handleRepay}
         inputValue={repayAmount}
@@ -147,16 +147,16 @@ export function RepayWithdrawPanel({
       <SidePanelCard
         icon={Minus}
         iconColor="text-purple-400"
-        title={`Withdraw Collateral ${market.collateralTokenSymbol}`}
+        title={`Withdraw Collateral ${market.collateral_token_symbol}`}
         register={register}
         fieldName="withdrawAmount"
-        tokenSymbol={market.collateralTokenSymbol}
-        currentBalanceFormatted={formatUnits(currentCollateral, market.collateralTokenDecimals)}
+        tokenSymbol={market.collateral_token_symbol}
+        currentBalanceFormatted={formatUnits(currentCollateral, market.collateral_token_decimals)}
         buttonMessage={withdrawButtonMessage}
         isButtonDisabled={isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax || isWithdrawPending}
         isButtonPending={isWithdrawPending}
         onMaxClickAction={() => {
-          setValue("withdrawAmount", formatUnits(currentCollateral, market.collateralTokenDecimals));
+          setValue("withdrawAmount", formatUnits(currentCollateral, market.collateral_token_decimals));
         }}
         onSubmitAction={handleWithdraw}
         inputValue={withdrawAmount}
@@ -168,8 +168,8 @@ export function RepayWithdrawPanel({
         repayAmount={repayAmount}
         withdrawAmount={withdrawAmount}
         healthFactor={healthFactor}
-        currentCollateral={formatUnits(currentCollateral, market.collateralTokenDecimals)}
-        currentBorrowAssets={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}
+        currentCollateral={formatUnits(currentCollateral, market.collateral_token_decimals)}
+        currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
     </form>
   )

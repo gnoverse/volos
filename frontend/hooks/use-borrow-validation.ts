@@ -1,4 +1,4 @@
-import { MarketInfo } from "@/app/types"
+import { Market } from "@/app/types"
 import { parseUnits } from "viem"
 
 /**
@@ -7,7 +7,7 @@ import { parseUnits } from "viem"
 export function useFormValidation(
   supplyAmount: string,
   borrowAmount: string,
-  market: MarketInfo,
+  market: Market,
   maxBorrow: bigint
 ) {
   const hasTooManyDecimals = (input: string, maxDecimals: number): boolean => {
@@ -18,10 +18,10 @@ export function useFormValidation(
     return decimalPart.length > maxDecimals
   }
 
-  const borrowAmountBI = parseUnits(borrowAmount || "0", market.loanTokenDecimals)
+  const borrowAmountBI = parseUnits(borrowAmount || "0", market.loan_token_decimals)
 
   const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0"
-  const isSupplyTooManyDecimals = hasTooManyDecimals(supplyAmount, market.collateralTokenDecimals)
+  const isSupplyTooManyDecimals = hasTooManyDecimals(supplyAmount, market.collateral_token_decimals)
   const supplyButtonMessage = isSupplyInputEmpty 
     ? "Enter supply amount" 
     : isSupplyTooManyDecimals 
@@ -29,7 +29,7 @@ export function useFormValidation(
       : "Supply"
 
   const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0"
-  const isBorrowTooManyDecimals = hasTooManyDecimals(borrowAmount, market.loanTokenDecimals)
+  const isBorrowTooManyDecimals = hasTooManyDecimals(borrowAmount, market.loan_token_decimals)
   const isBorrowOverMax = borrowAmountBI > maxBorrow
   const borrowButtonMessage = isBorrowInputEmpty
     ? "Enter borrow amount"

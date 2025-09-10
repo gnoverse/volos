@@ -100,6 +100,7 @@ type Market struct {
 	UpdatedAt               time.Time `firestore:"updated_at" json:"updated_at"`                               // Last time market data was updated
 	LLTV                    string    `firestore:"lltv" json:"lltv"`                                           // Liquidation Loan-to-Value ratio (WAD-scaled, e.g., 75% = 0.75 * 1e18)
 	Fee                     string    `firestore:"fee" json:"fee"`                                             // Market fee (u256 string)
+	PoolPath                string    `firestore:"pool_path" json:"pool_path"`                                 // Gnoswap pool id (e.g. "token0:token1:3000")
 }
 
 // APRHistory represents a single APR history entry stored in the apr subcollection.

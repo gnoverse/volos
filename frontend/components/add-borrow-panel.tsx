@@ -2,7 +2,7 @@
 
 import { useApproveTokenMutation, useBorrowMutation, usePositionQuery, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
-import { MarketInfo } from "@/app/types"
+import { Market } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { useFormValidation } from "@/hooks/use-borrow-validation"
@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
 
 interface AddBorrowPanelProps {
-  market: MarketInfo
+  market: Market
 }
 
 export function AddBorrowPanel({
@@ -30,7 +30,7 @@ export function AddBorrowPanel({
   })
 
   const { userAddress } = useUserAddress()
-  const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.poolPath!, userAddress)
+  const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.pool_path, userAddress)
   
   const {
     positionMetrics,
@@ -73,7 +73,7 @@ export function AddBorrowPanel({
       const { data: latestPosition } = await refetchPosition()
       
       if (latestPosition) {
-        const maxBorrowableStr = formatUnits(positionMetrics.maxBorrow, market.loanTokenDecimals)
+        const maxBorrowableStr = formatUnits(positionMetrics.maxBorrow, market.loan_token_decimals)
         setValue("borrowAmount", maxBorrowableStr)
       }
     } catch (error) {
@@ -85,20 +85,20 @@ export function AddBorrowPanel({
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
     const supplyAmountInTokens = Number(supplyAmount || "0");
-    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.collateralTokenDecimals);
+    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.collateral_token_decimals);
     
     try {
-      const currentAllowance = BigInt(await getAllowance(market.collateralToken!, userAddress!));
+      const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
       
       if (currentAllowance < BigInt(supplyAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
-          tokenPath: market.collateralToken!,
+          tokenPath: market.collateral_token,
           amount: supplyAmountInDenom
         });
       }
       
       await supplyCollateralMutation.mutateAsync({
-        marketId: market.poolPath!,
+        marketId: market.pool_path,
         userAddress: userAddress!,
         amount: supplyAmountInDenom
       });
@@ -113,20 +113,20 @@ export function AddBorrowPanel({
     if (isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax) return;
     
     const borrowAmountInTokens = Number(borrowAmount || "0");
-    const borrowAmountInDenom = borrowAmountInTokens * Math.pow(10, market.loanTokenDecimals);
+    const borrowAmountInDenom = borrowAmountInTokens * Math.pow(10, market.loan_token_decimals);
     
     try {
-      const currentAllowance = BigInt(await getAllowance(market.loanToken!, userAddress!));
+      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
       
       if (currentAllowance < BigInt(borrowAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
-          tokenPath: market.loanToken!,
+          tokenPath: market.loan_token,
           amount: borrowAmountInDenom
         });
       }
       
       await borrowMutation.mutateAsync({
-        marketId: market.poolPath!,
+        marketId: market.pool_path,
         userAddress: userAddress!,
         assets: borrowAmountInDenom
       });
@@ -143,11 +143,11 @@ export function AddBorrowPanel({
       <SidePanelCard
         icon={ArrowDown}
         iconColor="text-purple-400"
-        title={`Borrow ${market.loanTokenSymbol}`}
+        title={`Borrow ${market.loan_token_symbol}`}
         register={register}
         fieldName="borrowAmount"
-        tokenSymbol={market.loanTokenSymbol}
-        currentBalanceFormatted={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}
+        tokenSymbol={market.loan_token_symbol}
+        currentBalanceFormatted={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
         buttonMessage={borrowButtonMessage}
         isButtonDisabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
         isButtonPending={isBorrowPending}
@@ -160,18 +160,18 @@ export function AddBorrowPanel({
       <SidePanelCard
         icon={Plus}
         iconColor="text-blue-400"
-        title={`Supply Collateral ${market.collateralTokenSymbol}`}
+        title={`Supply Collateral ${market.collateral_token_symbol}`}
         register={register}
         fieldName="supplyAmount"
-        tokenSymbol={market.collateralTokenSymbol}
-        currentBalanceFormatted={formatUnits(currentCollateral, market.collateralTokenDecimals)}
+        tokenSymbol={market.collateral_token_symbol}
+        currentBalanceFormatted={formatUnits(currentCollateral, market.collateral_token_decimals)}
         buttonMessage={supplyButtonMessage}
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
         onMaxClickAction={async () => {
           try {
-            const balance = await getTokenBalance(market.collateralToken!, userAddress!);
-            const balanceFormatted = formatUnits(BigInt(balance), market.collateralTokenDecimals);
+            const balance = await getTokenBalance(market.collateral_token, userAddress!);
+            const balanceFormatted = formatUnits(BigInt(balance), market.collateral_token_decimals);
             setValue("supplyAmount", balanceFormatted);
           } catch (error) {
             console.error("Failed to fetch collateral balance:", error);
@@ -187,8 +187,8 @@ export function AddBorrowPanel({
         supplyAmount={supplyAmount}
         borrowAmount={borrowAmount}
         healthFactor={healthFactor}
-        currentCollateral={formatUnits(currentCollateral, market.collateralTokenDecimals)}
-        currentBorrowAssets={formatUnits(currentBorrowAssets, market.loanTokenDecimals)}
+        currentCollateral={formatUnits(currentCollateral, market.collateral_token_decimals)}
+        currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
     </form>
   )

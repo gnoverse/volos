@@ -159,13 +159,14 @@ export const MarketSchema = z.object({
   total_collateral_supply: Uint256Schema,
   supply_apr: Uint256Schema,
   borrow_apr: Uint256Schema,
-  utilization_rate: Uint256Schema,
+  utilization: Uint256Schema,
   total_borrow_shares: Uint256Schema,
   total_supply_shares: Uint256Schema,
   created_at: z.string(),
   updated_at: z.string(),
   lltv: Uint256Schema,
   fee: Uint256Schema,
+  pool_path: z.string(),
 });
 
 export const MarketsResponseSchema = z.object({
@@ -180,34 +181,6 @@ export const MarketActivityResponseSchema = z.object({
   last_id: z.string(),
 });
 
-export const MarketInfoSchema = z.object({
-  totalSupplyAssets: Uint256Schema,
-  totalSupplyShares: Uint256Schema,
-  totalBorrowAssets: Uint256Schema,
-  totalBorrowShares: Uint256Schema,
-  fee: Uint256Schema,
-  
-  poolPath: z.string(),
-  irm: z.string(),
-  lltv: Uint256Schema,
-    
-  loanToken: z.string(),
-  collateralToken: z.string(),
-  currentPrice: z.string(),
-  borrowAPR: Uint256Schema,
-  supplyAPR: Uint256Schema,
-  utilization: Uint256Schema,
-  
-  loanTokenName: z.string(),
-  loanTokenSymbol: z.string(),
-  loanTokenDecimals: z.number().int(),
-  
-  collateralTokenName: z.string(),
-  collateralTokenSymbol: z.string(),
-  collateralTokenDecimals: z.number().int(),
-  
-  marketId: z.string().optional(),
-});
 
 export const GovernanceUserInfoSchema = z.object({
   address: z.string(),
@@ -244,7 +217,6 @@ export type PendingUnstake = z.infer<typeof PendingUnstakeSchema>;
 export type Market = z.infer<typeof MarketSchema>;
 export type MarketsResponse = z.infer<typeof MarketsResponseSchema>;
 export type MarketActivityResponse = z.infer<typeof MarketActivityResponseSchema>;
-export type MarketInfo = z.infer<typeof MarketInfoSchema>;
 export type GovernanceUserInfo = z.infer<typeof GovernanceUserInfoSchema>;
 export type HealthFactor = z.infer<typeof HealthFactorSchema>;
 export type Balance = z.infer<typeof BalanceSchema>;
