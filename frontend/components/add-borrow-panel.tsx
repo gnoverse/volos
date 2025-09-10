@@ -30,8 +30,8 @@ export function AddBorrowPanel({
   })
 
   const { userAddress } = useUserAddress()
-  const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.pool_path, userAddress)
-  
+  const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.id, userAddress)
+
   const {
     positionMetrics,
     currentCollateral,
@@ -98,7 +98,7 @@ export function AddBorrowPanel({
       }
       
       await supplyCollateralMutation.mutateAsync({
-        marketId: market.pool_path,
+        marketId: market.id,
         userAddress: userAddress!,
         amount: supplyAmountInDenom
       });
@@ -126,7 +126,7 @@ export function AddBorrowPanel({
       }
       
       await borrowMutation.mutateAsync({
-        marketId: market.pool_path,
+        marketId: market.id,
         userAddress: userAddress!,
         assets: borrowAmountInDenom
       });

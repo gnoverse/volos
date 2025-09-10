@@ -52,7 +52,7 @@ export function HealthBar({ healthFactor, projectedHealthFactor }: HealthBarProp
               />
               {/* Current Value label below marker */}
               <div
-                className={`absolute text-lg font-bold transition-all ${labelColor}`}
+                className={`absolute text-lg font-bold ${labelColor}`}
                 style={{
                   left: valueLeft,
                   top: "36px",

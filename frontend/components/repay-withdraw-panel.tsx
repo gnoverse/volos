@@ -27,7 +27,7 @@ export function RepayWithdrawPanel({
   })
 
   const { userAddress } = useUserAddress()
-  const { data: positionData } = usePositionQuery(market.poolPath!, userAddress)
+  const { data: positionData } = usePositionQuery(market.id, userAddress)
   
   const {
     currentCollateral,
@@ -83,7 +83,7 @@ export function RepayWithdrawPanel({
       }
       
       await repayMutation.mutateAsync({
-        marketId: market.pool_path,
+        marketId: market.id,
         userAddress: userAddress!,
         assets: repayAmountInDenom
       });
@@ -111,7 +111,7 @@ export function RepayWithdrawPanel({
       }
       
       await withdrawCollateralMutation.mutateAsync({
-        marketId: market.pool_path,
+        marketId: market.id,
         userAddress: userAddress!,
         amount: withdrawAmountInDenom
       });

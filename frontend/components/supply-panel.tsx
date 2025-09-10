@@ -76,7 +76,7 @@ export function SupplyPanel({
       }
       
       await supplyMutation.mutateAsync({
-        marketId: market.pool_path,
+        marketId: market.id,
         userAddress: userAddress!,
         assets: supplyAmountInDenom
       });
@@ -104,7 +104,7 @@ export function SupplyPanel({
       }
       
       await withdrawMutation.mutateAsync({
-        marketId: market.pool_path,
+        marketId: market.id,
         userAddress: userAddress!,
         assets: withdrawAmountInDenom
       });
