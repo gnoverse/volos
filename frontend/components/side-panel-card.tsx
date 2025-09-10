@@ -18,12 +18,6 @@ interface SidePanelCardProps {
   register: any
   fieldName: string
   
-  // Token info
-  tokenSymbol: string
-  
-  // Current balance display
-  currentBalanceFormatted: string
-  
   // Button states
   buttonMessage: string
   isButtonDisabled: boolean
@@ -43,8 +37,6 @@ export function SidePanelCard({
   title,
   register,
   fieldName,
-  tokenSymbol,
-  currentBalanceFormatted,
   buttonMessage,
   isButtonDisabled,
   isButtonPending,
@@ -71,9 +63,8 @@ export function SidePanelCard({
           placeholder="0.00"
         />
         <div className="flex justify-between items-center">
-          <span className="text-xs text-gray-400">{inputValue || "0"} {tokenSymbol}</span>
+          <span className="text-xs text-gray-400">${inputValue || "0"}</span>
           <div className="flex items-center gap-1">
-            <span className="text-xs text-gray-400">{currentBalanceFormatted} {tokenSymbol}</span>
             <Button
               type="button"
               variant="ghost"

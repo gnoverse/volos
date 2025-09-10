@@ -27,7 +27,7 @@ export default function BorrowPage() {
   const { data: markets, isLoading, error } = useMarketsQuery()
 
   const { data: userLoanHistory = [], isLoading: isUserLoanLoading } = useUserLoanHistoryQuery(userAddress!);
-  
+    
   useEffect(() => {
     if (userLoanHistory && userLoanHistory.length > 0) {
       // Get the last (most recent) value from the history

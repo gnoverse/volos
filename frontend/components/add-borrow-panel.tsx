@@ -145,9 +145,7 @@ export function AddBorrowPanel({
         iconColor="text-purple-400"
         title={`Borrow ${market.loan_token_symbol}`}
         register={register}
-        fieldName="borrowAmount"
-        tokenSymbol={market.loan_token_symbol}
-        currentBalanceFormatted={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
+        fieldName="borrowAmount"  
         buttonMessage={borrowButtonMessage}
         isButtonDisabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
         isButtonPending={isBorrowPending}
@@ -163,8 +161,6 @@ export function AddBorrowPanel({
         title={`Supply Collateral ${market.collateral_token_symbol}`}
         register={register}
         fieldName="supplyAmount"
-        tokenSymbol={market.collateral_token_symbol}
-        currentBalanceFormatted={formatUnits(currentCollateral, market.collateral_token_decimals)}
         buttonMessage={supplyButtonMessage}
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}

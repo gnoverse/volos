@@ -131,8 +131,6 @@ export function RepayWithdrawPanel({
         title={`Repay Loan ${market.loan_token_symbol}`}
         register={register}
         fieldName="repayAmount"
-        tokenSymbol={market.loan_token_symbol}
-        currentBalanceFormatted={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
         buttonMessage={repayButtonMessage}
         isButtonDisabled={isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax || isRepayPending}
         isButtonPending={isRepayPending}
@@ -150,8 +148,6 @@ export function RepayWithdrawPanel({
         title={`Withdraw Collateral ${market.collateral_token_symbol}`}
         register={register}
         fieldName="withdrawAmount"
-        tokenSymbol={market.collateral_token_symbol}
-        currentBalanceFormatted={formatUnits(currentCollateral, market.collateral_token_decimals)}
         buttonMessage={withdrawButtonMessage}
         isButtonDisabled={isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax || isWithdrawPending}
         isButtonPending={isWithdrawPending}
