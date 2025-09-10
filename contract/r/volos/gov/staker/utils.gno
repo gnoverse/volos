@@ -3,7 +3,7 @@ package staker
 import (
 	"std"
 
-	"gno.land/p/demo/avl"
+	"gno.land/p/nt/avl"
 	"gno.land/r/volos/gov/governance"
 )
 

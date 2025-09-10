@@ -3,11 +3,11 @@ package core
 import (
 	"std"
 
-	"gno.land/p/demo/grc/grc20"
+	"gno.land/p/demo/tokens/grc20"
 	u256 "gno.land/p/gnoswap/uint256"
+	"gno.land/p/volos/math"
 
-	"gno.land/r/demo/grc20reg"
-	"gno.land/r/gnoswap/v1/pool"
+	"gno.land/r/demo/defi/grc20reg"
 )
 
 // GetToken returns a GRC20 token instance
@@ -108,22 +108,6 @@ func safeTransferTo(tokenPath string, to std.Address, amount int64) {
 	}
 }
 
-// Helper function to check if two tokens exist together in a Gnoswap pool
-func areTokensPairedInGnoswap(token0, token1 string) bool {
-	poolPaths := pool.PoolGetPoolList()
-	for _, poolPath := range poolPaths {
-		poolToken0 := pool.PoolGetToken0Path(poolPath)
-		poolToken1 := pool.PoolGetToken1Path(poolPath)
-
-		// Check if both tokens are in this pool (in either order)
-		if (poolToken0 == token0 && poolToken1 == token1) ||
-			(poolToken0 == token1 && poolToken1 == token0) {
-			return true
-		}
-	}
-	return false
-}
-
 // Min returns the minimum of two uint256 numbers
 func Min(a, b *u256.Uint) *u256.Uint {
 	if a.Lt(b) {
@@ -148,4 +132,16 @@ func IsIRMEnabled(irm string) {
 	if !exists {
 		panic(ErrIRMNotEnabled)
 	}
+}
+
+// calculateUtilization calculates the utilization rate for a market
+// Returns utilization as a WAD-scaled value (totalBorrow / totalSupply)
+func calculateUtilization(marketId string) *u256.Uint {
+	market, _ := GetMarket(marketId)
+	
+	if market.TotalSupplyAssets.IsZero() {
+		return u256.Zero()
+	}
+	
+	return math.WDivDown(market.TotalBorrowAssets, market.TotalSupplyAssets)
 }

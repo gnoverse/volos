@@ -4,7 +4,7 @@ import (
 	"std"
 	"strconv"
 
-	"gno.land/p/demo/json"
+	"gno.land/p/onbloc/json"
 )
 
 // ApiGetProposal returns a proposal as JSON object

@@ -4,8 +4,8 @@ import (
 	"std"
 	"time"
 
-	"gno.land/p/demo/avl"
-	"gno.land/p/demo/ownable"
+	"gno.land/p/nt/avl"
+	"gno.land/p/nt/ownable"
 
 	u256 "gno.land/p/gnoswap/uint256"
 	"gno.land/p/volos/consts"
@@ -49,7 +49,7 @@ func init() {
 	authorizers = avl.NewTree()
 
 	// Set initial owner
-	Ownable = ownable.NewWithAddress(std.Address("g1e9mkmle8rgx4jy2398dal9320uul7g00tkyh42"))
+	Ownable = ownable.NewWithOrigin()
 }
 
 // RegisterIRM registers a new interest rate model
@@ -119,7 +119,7 @@ func SetFeeRecipient(cur realm, newFeeRecipient std.Address) {
 }
 
 // setFee sets the fee for a specific market
-func setFee(cur realm, marketId string, newFee *u256.Uint) {
+func SetFee(cur realm, marketId string, newFee *u256.Uint) {
 	Ownable.AssertOwnedByPrevious()
 
 	// Get market (will panic if not found)
@@ -154,7 +154,7 @@ func CreateMarket(cur realm, poolPath string, isToken0Loan bool, irm string, llt
 	}
 
 	// Verify pool exists in Gnoswap
-	if !pl.DoesPoolPathExist(poolPath) {
+	if !pl.ExistsPoolPath(poolPath) {
 		panic(ErrTokenPairNotInGnoswap)
 	}
 
@@ -710,9 +710,10 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 	markets.Set(marketId, market)
 
 	// Handle bad debt if all collateral is seized
+	var badDebtShares, badDebtAssets *u256.Uint
 	if borrowerPos.Collateral.IsZero() {
-		badDebtShares := borrowerPos.BorrowShares
-		badDebtAssets := math.ToAssetsUp(
+		badDebtShares = borrowerPos.BorrowShares
+		badDebtAssets = math.ToAssetsUp(
 			badDebtShares,
 			market.TotalBorrowAssets,
 			market.TotalBorrowShares,
@@ -725,6 +726,9 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 		market.TotalSupplyAssets = new(u256.Uint).Sub(market.TotalSupplyAssets, badDebtAssets)
 		market.TotalBorrowShares = new(u256.Uint).Sub(market.TotalBorrowShares, badDebtShares)
 		borrowerPos.BorrowShares = u256.Zero()
+	} else {
+		badDebtShares = u256.Zero()
+		badDebtAssets = u256.Zero()
 	}
 
 	// Transfer seized collateral to liquidator
@@ -734,8 +738,8 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 	// Transfer repaid assets from liquidator to contract
 	safeTransferFrom(params.GetLoanToken(), caller, repaidAssets.Int64())
 
-	// Emit liquidate event
-	emitLiquidate(marketId, caller, borrower, repaidAssets, repaidSharesU256, seizedAssetsU256)
+	// Emit liquidate event with bad debt information
+	emitLiquidate(marketId, caller, borrower, repaidAssets, repaidSharesU256, seizedAssetsU256, badDebtAssets, badDebtShares)
 
 	return seizedAssetsU256.Uint64(), repaidAssets.Uint64()
 }
@@ -857,7 +861,7 @@ func accrueInterest(marketId string) {
 	market.LastUpdate = now
 	markets.Set(marketId, market)
 
-	emitAccrueInterest(marketId, borrowRate, interest)
+	emitAccrueInterest(marketId, borrowRate, interest, market.TotalSupplyAssets, market.TotalBorrowAssets)
 }
 
 /* HEALTH CALCULATIONS */

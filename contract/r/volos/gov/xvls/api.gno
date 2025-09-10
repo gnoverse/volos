@@ -3,7 +3,7 @@ package xvls
 import (
 	"std"
 
-	"gno.land/p/demo/json"
+	"gno.land/p/onbloc/json"
 )
 
 // ApiGetTokenInfo returns xVLS token information as JSON object

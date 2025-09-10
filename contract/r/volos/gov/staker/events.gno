@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"gno.land/p/demo/seqid"
+	"gno.land/p/nt/seqid"
 )
 
 // Events

@@ -1,4 +1,3 @@
-
 # Network configuration
 GNOLAND_RPC_URL=http://localhost:26657
 CHAINID=dev

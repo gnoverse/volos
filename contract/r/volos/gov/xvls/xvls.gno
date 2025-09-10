@@ -12,9 +12,9 @@ package xvls
 import (
 	"std"
 
-	"gno.land/p/demo/grc/grc20"
+	"gno.land/p/demo/tokens/grc20"
 	"gno.land/p/moul/authz"
-	"gno.land/r/demo/grc20reg"
+	"gno.land/r/demo/defi/grc20reg"
 )
 
 var (

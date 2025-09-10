@@ -14,9 +14,9 @@ import (
 	"std"
 	"time"
 
-	"gno.land/p/demo/avl"
-	"gno.land/p/demo/avl/rotree"
-	"gno.land/p/demo/seqid"
+	"gno.land/p/nt/avl"
+	"gno.land/p/nt/avl/rotree"
+	"gno.land/p/nt/seqid"
 	"gno.land/p/moul/authz"
 	"gno.land/r/volos/gov/governance"
 	"gno.land/r/volos/gov/vls"
@@ -159,7 +159,7 @@ func WithdrawUnstaked(cur realm) {
 	}
 
 	if totalToWithdraw == 0 {
-		panic(ErrCooldownNotFinished)
+		panic(ErrNoReadyUnstake)
 	}
 
 	vls.Transfer(cross, caller, totalToWithdraw)

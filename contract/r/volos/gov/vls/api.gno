@@ -3,7 +3,7 @@ package vls
 import (
 	"std"
 
-	"gno.land/p/demo/json"
+	"gno.land/p/onbloc/json"
 )
 
 // ApiGetTokenInfo returns VLS token information as JSON object
