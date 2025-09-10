@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
+export const marketPriceQueryKey = (marketId: string) => ["marketPrice", marketId];
 export const marketHistoryQueryKey = (marketId: string) => ["marketHistory", marketId];
 export const healthFactorQueryKey = (marketId: string, user: string) => ["healthFactor", marketId, user];
 export const positionQueryKey = (marketId: string, user: string) => ["position", marketId, user];
@@ -112,6 +113,9 @@ export function useMarketQuery(marketId: string) {
       };
     },
     enabled: !!marketId,
+    refetchInterval: 2000,
+    refetchIntervalInBackground: true,
+    staleTime: 1000,
   });
 }
 
