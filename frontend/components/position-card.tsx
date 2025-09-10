@@ -1,11 +1,11 @@
-import { MarketInfo } from "@/app/types";
+import { Market } from "@/app/types";
 import { HealthBar } from "@/components/health-bar";
 import { Card, CardContent } from "@/components/ui/card";
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 
 export interface PositionCardProps {
-  market: MarketInfo
+  market: Market
   supplyAmount?: string
   borrowAmount?: string
   repayAmount?: string
@@ -39,7 +39,7 @@ export function PositionCard({
     <Card className={CARD_STYLES}>
       <CardContent className="space-y-3 -mt-2">
         <div>
-          <div className="text-sm text-gray-400">My loan position ({market.loanTokenSymbol})</div>
+          <div className="text-sm text-gray-400">My loan position ({market.loan_token_symbol})</div>
           <div className="text-xl font-semibold text-gray-200">
             {currentBorrowAssets}
             {(borrowDelta > 0 || repayDelta > 0) && (
@@ -52,7 +52,7 @@ export function PositionCard({
           </div>
         </div>
         <div>
-          <div className="text-sm text-gray-400">My collateral position ({market.collateralTokenSymbol})</div>
+          <div className="text-sm text-gray-400">My collateral position ({market.collateral_token_symbol})</div>
           <div className="text-xl font-semibold text-gray-200">
             {currentCollateral}
             {(supplyDelta > 0 || withdrawDelta > 0) && (

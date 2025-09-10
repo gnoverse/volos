@@ -29,7 +29,7 @@ function MarketPageContent() {
     <div className="items-center justify-center space-y-6 -mt-6 py-6 relative">
       <h1 className="text-[36px] font-bold mb-6 text-gray-300">
         {!isMarketLoading && marketInfo
-          ? `${marketInfo.loanTokenSymbol} / ${marketInfo.collateralTokenSymbol.toUpperCase()} Market`
+          ? `${marketInfo.loan_token_symbol} / ${marketInfo.collateral_token_symbol.toUpperCase()} Market`
           : <span className="animate-pulse bg-gray-700 rounded-xl w-96 h-15 inline-block mt-4" />}
       </h1>
       

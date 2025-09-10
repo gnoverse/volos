@@ -2,7 +2,7 @@
 
 import { useApproveTokenMutation, usePositionQuery, useSupplyMutation, useWithdrawMutation } from "@/app/(app)/borrow/queries-mutations"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
-import { MarketInfo } from "@/app/types"
+import { Market } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { useSupplyWithdrawValidation } from "@/hooks/use-supply-withdraw-validation"
@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
 
 interface SupplyPanelProps {
-  market: MarketInfo
+  market: Market
 }
 
 export function SupplyPanel({
@@ -26,7 +26,7 @@ export function SupplyPanel({
   })
 
   const { userAddress } = useUserAddress()
-  const { data: positionData } = usePositionQuery(market.poolPath!, userAddress)
+  const { data: positionData } = usePositionQuery(market.pool_path, userAddress)
   
   const maxWithdrawable = calculateMaxWithdrawable(positionData ?? {
     borrow_shares: "0",
@@ -63,20 +63,20 @@ export function SupplyPanel({
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
     const supplyAmountInTokens = Number(supplyAmount || "0");
-    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.loanTokenDecimals);
+    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.loan_token_decimals);
     
     try {
-      const currentAllowance = BigInt(await getAllowance(market.loanToken!, userAddress!));
+      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
       
       if (currentAllowance < BigInt(supplyAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
-          tokenPath: market.loanToken!,
+          tokenPath: market.loan_token,
           amount: supplyAmountInDenom
         });
       }
       
       await supplyMutation.mutateAsync({
-        marketId: market.poolPath!,
+        marketId: market.pool_path,
         userAddress: userAddress!,
         assets: supplyAmountInDenom
       });
@@ -91,20 +91,20 @@ export function SupplyPanel({
     if (isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax) return;
     
     const withdrawAmountInTokens = Number(withdrawAmount || "0");
-    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.loanTokenDecimals);
+    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.loan_token_decimals);
     
     try {
-      const currentAllowance = BigInt(await getAllowance(market.loanToken!, userAddress!));
+      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
       
       if (currentAllowance < BigInt(withdrawAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
-          tokenPath: market.loanToken!,
+          tokenPath: market.loan_token,
           amount: withdrawAmountInDenom
         });
       }
       
       await withdrawMutation.mutateAsync({
-        marketId: market.poolPath!,
+        marketId: market.pool_path,
         userAddress: userAddress!,
         assets: withdrawAmountInDenom
       });
@@ -121,18 +121,18 @@ export function SupplyPanel({
       <SidePanelCard
         icon={Plus}
         iconColor="text-blue-400"
-        title={`Supply ${market.loanTokenSymbol}`}
+        title={`Supply ${market.loan_token_symbol}`}
         register={register}
         fieldName="supplyAmount"
-        tokenSymbol={market.loanTokenSymbol}
+        tokenSymbol={market.loan_token_symbol}
         currentBalanceFormatted="0.00"
         buttonMessage={supplyButtonMessage}
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
         onMaxClickAction={async () => {
           try {
-            const balance = await getTokenBalance(market.loanToken!, userAddress!);
-            const balanceFormatted = formatUnits(BigInt(balance), market.loanTokenDecimals);
+            const balance = await getTokenBalance(market.loan_token, userAddress!);
+            const balanceFormatted = formatUnits(BigInt(balance), market.loan_token_decimals);
             setValue("supplyAmount", balanceFormatted);
           } catch (error) {
             console.error("Failed to fetch loan balance:", error);
@@ -146,16 +146,16 @@ export function SupplyPanel({
       <SidePanelCard
         icon={ArrowDown}
         iconColor="text-purple-400"
-        title={`Withdraw ${market.loanTokenSymbol}`}
+        title={`Withdraw ${market.loan_token_symbol}`}
         register={register}
         fieldName="withdrawAmount"
-        tokenSymbol={market.loanTokenSymbol}
-        currentBalanceFormatted={formatUnits(maxWithdrawable, market.loanTokenDecimals)}
+        tokenSymbol={market.loan_token_symbol}
+        currentBalanceFormatted={formatUnits(maxWithdrawable, market.loan_token_decimals)}
         buttonMessage={withdrawButtonMessage}
         isButtonDisabled={isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax || isWithdrawPending}
         isButtonPending={isWithdrawPending}
         onMaxClickAction={() => {
-          setValue("withdrawAmount", formatUnits(maxWithdrawable, market.loanTokenDecimals));
+          setValue("withdrawAmount", formatUnits(maxWithdrawable, market.loan_token_decimals));
         }}
         onSubmitAction={handleWithdraw}
         inputValue={withdrawAmount}

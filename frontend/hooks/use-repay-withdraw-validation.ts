@@ -1,4 +1,4 @@
-import { MarketInfo } from "@/app/types"
+import { Market } from "@/app/types"
 import { parseUnits } from "viem"
 
 /**
@@ -7,7 +7,7 @@ import { parseUnits } from "viem"
 export function useRepayWithdrawValidation(
   repayAmount: string,
   withdrawAmount: string,
-  market: MarketInfo,
+  market: Market,
   currentBorrowAssets: bigint,
   currentCollateral: bigint
 ) {
@@ -19,11 +19,11 @@ export function useRepayWithdrawValidation(
     return decimalPart.length > maxDecimals
   }
 
-  const repayAmountBI = parseUnits(repayAmount || "0", market.loanTokenDecimals)
-  const withdrawAmountBI = parseUnits(withdrawAmount || "0", market.collateralTokenDecimals)
+  const repayAmountBI = parseUnits(repayAmount || "0", market.loan_token_decimals)
+  const withdrawAmountBI = parseUnits(withdrawAmount || "0", market.collateral_token_decimals)
 
   const isRepayInputEmpty = !repayAmount || repayAmount === "0"
-  const isRepayTooManyDecimals = hasTooManyDecimals(repayAmount, market.loanTokenDecimals)
+  const isRepayTooManyDecimals = hasTooManyDecimals(repayAmount, market.loan_token_decimals)
   const isRepayOverMax = repayAmountBI > currentBorrowAssets
   const repayButtonMessage = isRepayInputEmpty 
     ? "Enter repay amount" 
@@ -34,7 +34,7 @@ export function useRepayWithdrawValidation(
         : "Repay"
 
   const isWithdrawInputEmpty = !withdrawAmount || withdrawAmount === "0"
-  const isWithdrawTooManyDecimals = hasTooManyDecimals(withdrawAmount, market.collateralTokenDecimals)
+  const isWithdrawTooManyDecimals = hasTooManyDecimals(withdrawAmount, market.collateral_token_decimals)
   const isWithdrawOverMax = withdrawAmountBI > currentCollateral
   const withdrawButtonMessage = isWithdrawInputEmpty 
     ? "Enter withdraw amount" 

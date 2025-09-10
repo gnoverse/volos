@@ -1,6 +1,6 @@
 import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUserMarketPosition, getUtilizationHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_ADDRESS } from "@/app/services/tx.service";
-import { HealthFactor, MarketInfo, Position } from "@/app/types";
+import { HealthFactor, Market, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const marketsQueryKey = ["markets"];
@@ -20,44 +20,9 @@ export const userLoanHistoryQueryKey = (userAddress: string) => ["userLoanHistor
 export function useMarketsQuery() {
   return useQuery({
     queryKey: marketsQueryKey,
-    queryFn: async (): Promise<MarketInfo[]> => {
+    queryFn: async (): Promise<Market[]> => {
       const response = await getMarkets();
-      
-      // Transform API Market to MarketInfo format
-      const markets: MarketInfo[] = response.markets.map(market => ({
-        // Market fields
-        totalSupplyAssets: market.total_supply,
-        totalSupplyShares: market.total_supply_shares,
-        totalBorrowAssets: market.total_borrow,
-        totalBorrowShares: market.total_borrow_shares,
-        fee: market.fee,
-        
-        // Params fields
-        poolPath: market.id, // TODO: Extract pool path from market ID
-        irm: "default", // TODO: Get actual IRM from market data
-        lltv: market.lltv,
-        
-        // Additional fields
-        loanToken: market.loan_token,
-        collateralToken: market.collateral_token,
-        currentPrice: market.current_price,
-        borrowAPR: market.borrow_apr,
-        supplyAPR: market.supply_apr,
-        utilization: market.utilization_rate,
-        
-        // Token information fields
-        loanTokenName: market.loan_token_name,
-        loanTokenSymbol: market.loan_token_symbol,
-        loanTokenDecimals: market.loan_token_decimals,
-        
-        collateralTokenName: market.collateral_token_name,
-        collateralTokenSymbol: market.collateral_token_symbol,
-        collateralTokenDecimals: market.collateral_token_decimals,
-        
-        marketId: market.id,
-      }));
-      
-      return markets;
+      return response.markets;
     },
   });
 }
@@ -74,44 +39,13 @@ export function useUserLoanHistoryQuery(userAddress: string) {
 export function useMarketQuery(marketId: string) {
   return useQuery({
     queryKey: marketQueryKey(marketId),
-    queryFn: async (): Promise<MarketInfo> => {
-      const market = await getMarket(marketId);
-      
-      // Transform API Market to MarketInfo format
-      return {
-        // Market fields
-        totalSupplyAssets: market.total_supply,
-        totalSupplyShares: market.total_supply_shares,
-        totalBorrowAssets: market.total_borrow,
-        totalBorrowShares: market.total_borrow_shares,
-        fee: market.fee,
-        
-        // Params fields
-        poolPath: market.id, // TODO: Extract pool path from market ID
-        irm: "default", // TODO: Get actual IRM from market data
-        lltv: market.lltv,
-        
-        // Additional fields
-        loanToken: market.loan_token,
-        collateralToken: market.collateral_token,
-        currentPrice: market.current_price,
-        borrowAPR: market.borrow_apr,
-        supplyAPR: market.supply_apr,
-        utilization: market.utilization_rate,
-        
-        // Token information fields
-        loanTokenName: market.loan_token_name,
-        loanTokenSymbol: market.loan_token_symbol,
-        loanTokenDecimals: market.loan_token_decimals,
-        
-        collateralTokenName: market.collateral_token_name,
-        collateralTokenSymbol: market.collateral_token_symbol,
-        collateralTokenDecimals: market.collateral_token_decimals,
-        
-        marketId: market.id,
-      };
+    queryFn: async (): Promise<Market> => {
+      return await getMarket(marketId);
     },
     enabled: !!marketId,
+    refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
+    refetchIntervalInBackground: true,
+    staleTime: 1000,
   });
 }
 
