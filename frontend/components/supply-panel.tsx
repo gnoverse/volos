@@ -1,6 +1,7 @@
 "use client"
 
 import { useApproveTokenMutation, usePositionQuery, useSupplyMutation, useWithdrawMutation } from "@/app/(app)/borrow/queries-mutations"
+import { getAllowance, getTokenBalance } from "@/app/services/abci"
 import { MarketInfo } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -62,17 +63,22 @@ export function SupplyPanel({
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
     const supplyAmountInTokens = Number(supplyAmount || "0");
+    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.loanTokenDecimals);
     
     try {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: market.loanToken!,
-        amount: supplyAmountInTokens * Math.pow(10, market.loanTokenDecimals)
-      });
+      const currentAllowance = BigInt(await getAllowance(market.loanToken!, userAddress!));
+      
+      if (currentAllowance < BigInt(supplyAmountInDenom)) {
+        await approveTokenMutation.mutateAsync({
+          tokenPath: market.loanToken!,
+          amount: supplyAmountInDenom
+        });
+      }
       
       await supplyMutation.mutateAsync({
         marketId: market.poolPath!,
         userAddress: userAddress!,
-        assets: supplyAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+        assets: supplyAmountInDenom
       });
       
       reset();
@@ -85,17 +91,22 @@ export function SupplyPanel({
     if (isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax) return;
     
     const withdrawAmountInTokens = Number(withdrawAmount || "0");
+    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.loanTokenDecimals);
     
     try {
-      await approveTokenMutation.mutateAsync({
-        tokenPath: market.loanToken!,
-        amount: withdrawAmountInTokens * Math.pow(10, market.loanTokenDecimals)
-      });
+      const currentAllowance = BigInt(await getAllowance(market.loanToken!, userAddress!));
+      
+      if (currentAllowance < BigInt(withdrawAmountInDenom)) {
+        await approveTokenMutation.mutateAsync({
+          tokenPath: market.loanToken!,
+          amount: withdrawAmountInDenom
+        });
+      }
       
       await withdrawMutation.mutateAsync({
         marketId: market.poolPath!,
         userAddress: userAddress!,
-        assets: withdrawAmountInTokens * Math.pow(10, market.loanTokenDecimals)
+        assets: withdrawAmountInDenom
       });
       
       reset();
@@ -118,9 +129,14 @@ export function SupplyPanel({
         buttonMessage={supplyButtonMessage}
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
-        onMaxClickAction={() => {
-          // TODO: use ABCI
-          setValue("supplyAmount", "0");
+        onMaxClickAction={async () => {
+          try {
+            const balance = await getTokenBalance(market.loanToken!, userAddress!);
+            const balanceFormatted = formatUnits(BigInt(balance), market.loanTokenDecimals);
+            setValue("supplyAmount", balanceFormatted);
+          } catch (error) {
+            console.error("Failed to fetch loan balance:", error);
+          }
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}

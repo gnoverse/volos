@@ -29,11 +29,7 @@ export function parseNumberResult(result: string): number {
  */
 export function parseJsonResult(result: string) {
   try {
-    if (!result.startsWith('("') || !result.endsWith('" string)')) {
-      throw new Error('Invalid string result format')
-    }
-    
-    const jsonString = result.substring(2, result.length - 9).replace(/\\"/g, '"')
+    const jsonString = parseABCIResponse(result).replace(/\\"/g, '"')
     return jsonString
   } catch (error) {
     console.error('Error parsing JSON result:', error, 'Raw result:', result)
@@ -69,4 +65,45 @@ export function parseValidatedJsonResult<T>(result: string, schema: z.ZodType<T>
     }
     throw new Error(`Failed to validate JSON result: ${error}`);
   }
+}
+
+/**
+ * Parses an ABCI response from Gno in various Go primitive type formats
+ * @param result The raw ABCI result string
+ * @param expectedType The expected Go type (e.g., 'string', 'int64', 'int', 'int32', 'bool')
+ * @returns The parsed value as string
+ */
+export function parseABCIResponse(result: string, expectedType: string = 'string'): string {
+  let match: RegExpMatchArray | null = null;
+  
+  switch (expectedType) {
+    case 'string':
+      match = result.match(/\("([^"]*)"\s+string\)/)
+      break;
+    case 'int64':
+    case 'int':
+    case 'int32':
+    case 'int8':
+    case 'int16':
+      match = result.match(/\((-?\d+)\s+(?:int64|int|int32|int8|int16)\)/)
+      break;
+    case 'uint64':
+    case 'uint':
+    case 'uint32':
+    case 'uint8':
+    case 'uint16':
+      match = result.match(/\((\d+)\s+(?:uint64|uint|uint32|uint8|uint16)\)/)
+      break;
+    case 'bool':
+      match = result.match(/\((\w+)\s+bool\)/)
+      break;
+    default:
+      throw new Error(`Unsupported Go type: ${expectedType}`)
+  }
+  
+  if (!match) {
+    throw new Error(`Invalid ABCI response format for type ${expectedType}`)
+  }
+  
+  return match[1]
 }
