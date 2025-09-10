@@ -126,7 +126,7 @@ export default function BorrowPage() {
         <DataTable 
           columns={columns} 
           data={markets || []} 
-          getRowId={(row) => row.poolPath}
+          getRowId={(row) => row.id}
           onRowClick={handleRowClick}
           clickable={true}
         />

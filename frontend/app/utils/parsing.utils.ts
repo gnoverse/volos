@@ -29,7 +29,11 @@ export function parseNumberResult(result: string): number {
  */
 export function parseJsonResult(result: string) {
   try {
-    const jsonString = parseABCIResponse(result).replace(/\\"/g, '"')
+    if (!result.startsWith('("') || !result.endsWith('" string)')) {
+      throw new Error('Invalid string result format')
+    }
+    
+    const jsonString = result.substring(2, result.length - 9).replace(/\\"/g, '"')
     return jsonString
   } catch (error) {
     console.error('Error parsing JSON result:', error, 'Raw result:', result)

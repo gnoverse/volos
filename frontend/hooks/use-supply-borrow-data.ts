@@ -69,7 +69,8 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
     if (useHistory) {
       const dataMap = new Map<string, ChartDataPoint>()
 
-      supplyHistoryData.forEach(item => {
+      if(supplyHistoryData) {
+        supplyHistoryData.forEach(item => {
         const blockHeight = item.block_height
         const index = item.index
         const key = `${blockHeight}:${index}`
@@ -83,8 +84,10 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
         }
         dataMap.get(key)!.supply = Number(item.value)
       })
+      }
 
-      borrowHistoryData.forEach(item => {
+      if(borrowHistoryData) {
+        borrowHistoryData.forEach(item => {
         const blockHeight = item.block_height
         const index = item.index
         const key = `${blockHeight}:${index}`
@@ -97,9 +100,10 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
           })
         }
         dataMap.get(key)!.borrow = Number(item.value)
-      })
+       })
+      }
 
-      if (selectedMetrics.collateral) {
+      if (selectedMetrics.collateral && collateralHistoryData) {
         collateralHistoryData.forEach(item => {
           const blockHeight = item.block_height
           const index = item.index
