@@ -159,7 +159,7 @@ export const MarketSchema = z.object({
   total_collateral_supply: Uint256Schema,
   supply_apr: Uint256Schema,
   borrow_apr: Uint256Schema,
-  utilization: Uint256Schema,
+  utilization_rate: Uint256Schema,
   total_borrow_shares: Uint256Schema,
   total_supply_shares: Uint256Schema,
   created_at: z.string(),

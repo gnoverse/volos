@@ -95,11 +95,11 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
               <div className="w-full bg-gray-800 rounded-full h-2">
                 <div 
                   className="bg-gradient-to-r from-green-500 to-emerald-400 h-2 rounded-full" 
-                  style={{ width: `${formatPercentage(wadToPercentage(market.utilization))}` }}
+                  style={{ width: `${formatPercentage(wadToPercentage(market.utilization_rate))}` }}
                 ></div>
               </div>
               <span className="text-xs font-semibold text-gray-200 whitespace-nowrap">
-                {formatPercentage(wadToPercentage(market.utilization))}
+                {formatPercentage(wadToPercentage(market.utilization_rate))}
               </span>
             </div>
           </div>
