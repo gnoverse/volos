@@ -32,8 +32,6 @@ import (
 	"strconv"
 	"sync"
 
-	"volos-backend/model"
-
 	"cloud.google.com/go/firestore"
 	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
 )
@@ -150,60 +148,10 @@ func (q *TransactionProcessorQueue) Submit(tx map[string]interface{}) {
 
 // ProcessTransaction processes a single transaction JSON object by determining its package path
 // and routing it to the appropriate processor (core or governance).
+// 
+// TODO: optimize?
 func ProcessTransaction(tx map[string]interface{}, firestoreClient *firestore.Client, gnoClient *gnoclient.Client) {
-	pkgPath, ok := getPackagePath(tx)
-	if !ok {
-		if h, _ := tx["hash"].(string); h != "" {
-			slog.Warn("missing package path, skipping transaction", "tx_hash", h)
-		}
-		return
-	}
-
-	switch pkgPath {
-	case model.CorePkgPath:
-		processCoreTransaction(tx, firestoreClient, gnoClient)
-	case model.GovernancePkgPath, model.StakerPkgPath, model.VlsPkgPath, model.XvlsPkgPath:
-		processGovernanceTransaction(tx, firestoreClient)
-	case model.GnoswapPool:
-		processGnoswapPoolTransaction(tx, firestoreClient)
-	}
-}
-
-// getPackagePath extracts the package path from the transaction structure by navigating
-// through the events array to find the pkg_path field in GnoEvent, ignoring StorageDeposit and UnlockDeposit events.
-func getPackagePath(tx map[string]interface{}) (string, bool) {
-	response, ok := tx["response"].(map[string]interface{})
-	if !ok {
-		return "", false
-	}
-
-	events, ok := response["events"].([]interface{})
-	if !ok || len(events) == 0 {
-		return "", false
-	}
-
-	for i := len(events) - 1; i >= 0; i-- {
-		event, ok := events[i].(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		eventType, ok := event["type"].(string)
-		if !ok {
-			continue
-		}
-
-		if eventType == "StorageDeposit" || eventType == "UnlockDeposit" {
-			continue
-		}
-
-		pkgPath, ok := event["pkg_path"].(string)
-		if !ok {
-			continue
-		}
-
-		return pkgPath, true
-	}
-
-	return "", false
+	processCoreTransaction(tx, firestoreClient, gnoClient)
+	processGovernanceTransaction(tx, firestoreClient)
+	processGnoswapPoolTransaction(tx, firestoreClient)
 }

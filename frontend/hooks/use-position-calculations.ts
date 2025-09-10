@@ -1,5 +1,5 @@
 import { MarketInfo, Position } from "@/app/types"
-import { calculateMaxBorrowable, calculatePositionMetrics, toAssetsUp } from "@/app/utils/position.utils"
+import { calculatePositionMetrics, toAssetsUp } from "@/app/utils/position.utils"
 
 /**
  * Custom hook that provides position calculations and formatted display values
@@ -19,14 +19,11 @@ export function usePositionCalculations(positionData: Position, market: MarketIn
     : BigInt(0)
 
   const healthFactor = positionMetrics.healthFactor
-  const maxBorrow = positionMetrics.maxBorrow
 
   return {
     positionMetrics,
     currentCollateral,
     currentBorrowAssets,
-    maxBorrow,
     healthFactor,
-    calculateMaxBorrowable: (position: Position) => calculateMaxBorrowable(position, market)
   }
 }
