@@ -73,6 +73,7 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 	for {
 		historyDoc, err := historyIter.Next()
 		if err != nil {
+			slog.Error("Error getting market history", "error", err)
 			break
 		}
 

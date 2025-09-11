@@ -1,12 +1,11 @@
 import { getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getSupplyHistory, getUserLoanHistory, getUserMarketPosition, getUtilizationHistory } from "@/app/services/api.service";
 import { TxService, VOLOS_ADDRESS } from "@/app/services/tx.service";
-import { HealthFactor, Market, Position } from "@/app/types";
+import {  Market, Position } from "@/app/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const marketsQueryKey = ["markets"];
 export const marketQueryKey = (marketId: string) => ["market", marketId];
 export const marketHistoryQueryKey = (marketId: string) => ["marketHistory", marketId];
-export const healthFactorQueryKey = (marketId: string, user: string) => ["healthFactor", marketId, user];
 export const positionQueryKey = (marketId: string, user: string) => ["position", marketId, user];
 export const netSupplyHistoryQueryKey = (marketId: string) => ["netSupplyHistory", marketId];
 export const netBorrowHistoryQueryKey = (marketId: string) => ["netBorrowHistory", marketId];
@@ -43,8 +42,8 @@ export function useMarketQuery(marketId: string) {
       return await getMarket(marketId);
     },
     enabled: !!marketId,
-    refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
-    refetchIntervalInBackground: true,
+    // refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
+    // refetchIntervalInBackground: true,
     staleTime: 1000,
   });
 }
@@ -58,17 +57,6 @@ export function usePositionQuery(marketId: string, user: string) {
   });
 }
 
-export function useHealthFactorQuery(marketId: string, user: string) {
-  return useQuery({
-    queryKey: healthFactorQueryKey(marketId, user),
-    queryFn: async (): Promise<HealthFactor> => {
-      // TODO: Implement health factor calculation or API call
-      return { healthFactor: "0" };
-    },
-    enabled: !!marketId && !!user,
-  });
-}
-
 // History queries (for 1 week period)
 export function useNetSupplyHistoryQuery(marketId: string, startTime?: string, endTime?: string) {
   return useQuery({
@@ -76,6 +64,8 @@ export function useNetSupplyHistoryQuery(marketId: string, startTime?: string, e
     queryFn: () => getSupplyHistory(marketId, startTime, endTime),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
+    // refetchIntervalInBackground: true,
   });
 }
 
@@ -85,6 +75,8 @@ export function useNetBorrowHistoryQuery(marketId: string, startTime?: string, e
     queryFn: () => getBorrowHistory(marketId, startTime, endTime),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
+    // refetchIntervalInBackground: true,
   });
 }
 
@@ -94,6 +86,8 @@ export function useCollateralSupplyHistoryQuery(marketId: string, startTime?: st
     queryFn: () => getCollateralSupplyHistory(marketId, startTime, endTime),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
+    // refetchIntervalInBackground: true,
   });
 }
 
@@ -103,6 +97,8 @@ export function useUtilizationHistoryQuery(marketId: string, startTime?: string,
     queryFn: () => getUtilizationHistory(marketId, startTime, endTime),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
+    // refetchIntervalInBackground: true,
   });
 }
 
@@ -112,6 +108,8 @@ export function useAPRHistoryQuery(marketId: string, startTime?: string, endTime
     queryFn: () => getAPRHistory(marketId, startTime, endTime),
     enabled: !!marketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
+    // refetchIntervalInBackground: true,
   });
 }
 
@@ -189,7 +187,6 @@ export function useSupplyMutation() {
     onMutate: async (variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
       ]);
     },
@@ -199,7 +196,6 @@ export function useSupplyMutation() {
     onSettled: (data, error, variables) => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
       }, 1500);
     }
@@ -226,7 +222,6 @@ export function useWithdrawMutation() {
     onMutate: async (variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
       ]);
     },
@@ -236,7 +231,6 @@ export function useWithdrawMutation() {
     onSettled: (data, error, variables) => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
       }, 1500);
     }
@@ -263,7 +257,6 @@ export function useBorrowMutation() {
     onMutate: async (variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
       ]);
     },
@@ -273,7 +266,6 @@ export function useBorrowMutation() {
     onSettled: (data, error, variables) => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
       }, 1500);
     }
@@ -300,7 +292,6 @@ export function useRepayMutation() {
     onMutate: async (variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
       ]);
     },
@@ -310,7 +301,6 @@ export function useRepayMutation() {
     onSettled: (data, error, variables) => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
       }, 1500);
     }
@@ -335,7 +325,6 @@ export function useSupplyCollateralMutation() {
     onMutate: async (variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
       ]);
     },
@@ -345,7 +334,6 @@ export function useSupplyCollateralMutation() {
     onSettled: (data, error, variables) => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
       }, 1500);
     }
@@ -370,7 +358,6 @@ export function useWithdrawCollateralMutation() {
     onMutate: async (variables) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress), refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId), refetchType: 'active' }),
       ]);
     },
@@ -380,7 +367,6 @@ export function useWithdrawCollateralMutation() {
     onSettled: (data, error, variables) => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
-        queryClient.invalidateQueries({ queryKey: healthFactorQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
       }, 1500);
     }

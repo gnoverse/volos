@@ -25,7 +25,7 @@ export function MarketTabs({
   caller
 }: MarketTabsProps) {
 
-  const { data: marketActivityResponse } = useMarketActivityQuery(market.pool_path);
+  const { data: marketActivityResponse } = useMarketActivityQuery(market.id);
 
   return (
     <Tabs defaultValue="overview" className="w-full">

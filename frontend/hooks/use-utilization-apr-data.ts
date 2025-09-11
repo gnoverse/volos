@@ -64,7 +64,8 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
     if (useHistory) {
       const dataMap = new Map<string, ChartDataPoint>()
 
-      utilizationHistoryData.forEach(item => {
+        if(utilizationHistoryData) {
+          utilizationHistoryData.forEach(item => {
         const blockHeight = item.block_height
         const index = item.index
         const key = `${blockHeight}:${index}`
@@ -76,10 +77,12 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
             key,
           })
         }
-        dataMap.get(key)!.utilization = item.value
-      })
+          dataMap.get(key)!.utilization = item.value
+        })
+      }
 
-      aprHistoryData.forEach(item => {
+      if(aprHistoryData) {
+        aprHistoryData.forEach(item => {
         const blockHeight = item.block_height
         const index = item.index
         const key = `${blockHeight}:${index}`
@@ -91,9 +94,10 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
             key,
           })
         }
-        dataMap.get(key)!.supplyApr = item.supply_apr
-        dataMap.get(key)!.borrowApr = item.borrow_apr
-      })
+          dataMap.get(key)!.supplyApr = item.supply_apr
+          dataMap.get(key)!.borrowApr = item.borrow_apr
+        })
+      }
 
       return Array.from(dataMap.values())
         .filter(item => {

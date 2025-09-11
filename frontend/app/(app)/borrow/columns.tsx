@@ -36,7 +36,7 @@ export const columns: ColumnDef<Market>[] = [
       
       return (
         <div className="flex items-center text-left px-3">
-          <span className="font-medium">{collateralSymbol}</span>
+          <span className="font-medium">{collateralSymbol.toUpperCase()}</span>
         </div>
       )
     },

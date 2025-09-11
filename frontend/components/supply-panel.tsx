@@ -124,8 +124,6 @@ export function SupplyPanel({
         title={`Supply ${market.loan_token_symbol}`}
         register={register}
         fieldName="supplyAmount"
-        tokenSymbol={market.loan_token_symbol}
-        currentBalanceFormatted="0.00"
         buttonMessage={supplyButtonMessage}
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
@@ -149,8 +147,6 @@ export function SupplyPanel({
         title={`Withdraw ${market.loan_token_symbol}`}
         register={register}
         fieldName="withdrawAmount"
-        tokenSymbol={market.loan_token_symbol}
-        currentBalanceFormatted={formatUnits(maxWithdrawable, market.loan_token_decimals)}
         buttonMessage={withdrawButtonMessage}
         isButtonDisabled={isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax || isWithdrawPending}
         isButtonPending={isWithdrawPending}
