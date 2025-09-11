@@ -5,6 +5,7 @@ import { formatPercentage, parseTokenAmount, wadToPercentage } from "@/app/utils
 import { Button } from "@/components/ui/button"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
+import { formatUnits } from "viem"
 
 export const columns: ColumnDef<Market>[] = [
   {
@@ -51,7 +52,7 @@ export const columns: ColumnDef<Market>[] = [
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="hover:text-logo-400"
           >
-            Total Supply
+            Total Market Size
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -71,14 +72,18 @@ export const columns: ColumnDef<Market>[] = [
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="hover:text-logo-400"
           >
-            Total Borrow
+            Total Liquidity
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         </div>
       )
     },
     cell: ({ row }) => {
-      return <div className="text-left font-medium px-3">{parseTokenAmount(row.original.total_borrow, row.original.loan_token_decimals)} {row.original.loan_token_symbol}</div>
+      const totalSupplyBigInt = BigInt(row.original.total_supply);
+      const totalBorrowBigInt = BigInt(row.original.total_borrow);
+      const availableLiquidity = totalSupplyBigInt - totalBorrowBigInt;
+      
+      return <div className="text-left font-medium px-3">{formatUnits(availableLiquidity, row.original.loan_token_decimals)} {row.original.loan_token_symbol}</div>
     },
   },
   {
