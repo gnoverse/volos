@@ -47,7 +47,7 @@ export function MyPosition({
     BigInt(market?.total_borrow_shares ?? '0')
   )
   const currentCollateralBigInt = BigInt(positionData.collateral_supply)
-  const positionMetrics = calculatePositionMetrics(positionData, market)
+  const positionMetrics = calculatePositionMetrics(positionData, market!)
 
   return (
     <div className="space-y-6">
