@@ -111,7 +111,7 @@ export function GovMemberCards({
           <div className="text-center space-y-4">
             <h3 className="text-xl font-semibold text-logo-500">User Info</h3>
             <p className="text-gray-500 text-sm mb-4">
-              Connect your wallet to view your DAO membership status, voting power, and governance participation details.
+              Connect your wallet to view your governance membership status, voting power, and governance participation details.
             </p>
             <Button 
               variant="ghost" 
@@ -130,10 +130,10 @@ export function GovMemberCards({
   }
   return (
     <div className="grid grid-cols-1 gap-6">
-      {/* DAO Membership Card */}
+      {/* Governance Membership Card */}
       <div className={`${cardStyles} p-6 border-l-4 border-logo-500`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-logo-500">DAO Membership</h3>
+          <h3 className="text-xl font-semibold text-logo-500">Governance Membership</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
@@ -141,7 +141,7 @@ export function GovMemberCards({
               </TooltipTrigger>
               <TooltipContent className="bg-gray-900 text-gray-300 border-none shadow-lg">
                 <p className="max-w-xs">
-                  You are a member of the DAO if you hold xVLS tokens. To obtain xVLS you need to stake VLS tokens.
+                  You are a member of the governance if you hold xVLS tokens. To obtain xVLS you need to stake VLS tokens.
                   xVLS tokens represent your governance power and voting rights.
                 </p>
               </TooltipContent>
@@ -156,7 +156,7 @@ export function GovMemberCards({
           </div>
         ) : error ? (
           <div className="text-red-400 text-sm">
-            Error loading DAO membership data
+            Error loading Governance membership data
           </div>
         ) : (
           <div className="space-y-3">
@@ -291,6 +291,12 @@ export function GovMemberCards({
               </span>
             </div>
             <div className="flex items-center justify-between">
+              <span className="text-gray-400">Proposal Threshold:</span>
+              <span className="text-gray-200 font-mono">
+                {userInfo?.proposalThreshold || 0} <span className="text-xs text-gray-500">(xVLS denom)</span>
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
               <span className="text-gray-400">Can Propose:</span>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                 (userInfo?.xvlsBalance || 0) >= (userInfo?.proposalThreshold || 0)
@@ -298,12 +304,6 @@ export function GovMemberCards({
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
                 {(userInfo?.xvlsBalance || 0) >= (userInfo?.proposalThreshold || 0) ? 'Eligible' : 'Not Eligible'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Proposal Threshold:</span>
-              <span className="text-gray-200 font-mono">
-                {userInfo?.proposalThreshold || 0} <span className="text-xs text-gray-500">(xVLS denom)</span>
               </span>
             </div>
           </div>
