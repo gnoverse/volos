@@ -22,7 +22,7 @@ export function TransactionSuccessDialog({
     if (isOpen) {
       const timer = setTimeout(() => {
         onClose();
-      }, 1500);
+      }, 2000);
       
       return () => clearTimeout(timer);
     }
