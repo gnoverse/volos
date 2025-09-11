@@ -43,7 +43,7 @@ export function MyLoanSidePanel({ className, userLoans }: MyLoanSidePanelProps) 
                         {userLoans.map((loan, index) => (
                             <div key={index} className="flex justify-between items-center">
                                 <div className="text-sm text-gray-300">{loan.loan_token_symbol}</div>
-                                <div className="text-sm font-medium text-gray-200">{loan.value}</div>
+                                <div className="text-sm font-medium text-gray-200">$ {loan.value}</div>
                             </div>
                         ))}
                     </div>
