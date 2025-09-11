@@ -44,7 +44,7 @@ export function useMarketQuery(marketId: string) {
     enabled: !!marketId,
     // refetchInterval: 2000, //TODO: REMOVE POLLING, SWITCH TO WEBSOCKETS 
     // refetchIntervalInBackground: true,
-    staleTime: 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

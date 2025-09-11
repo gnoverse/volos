@@ -40,7 +40,6 @@ export function formatTokenAmount(
   });
 }
 
-
 /**
  * Formats a plain number as a percentage string with exactly 2 decimal places.
  * Accepts number or numeric string. Example: 5.2 => "5.20%"
@@ -148,6 +147,36 @@ export function parseTokenAmount(
   } catch (error) {
     console.error("Error parsing token amount:", error);
     return 0;
+  }
+}
+
+/**
+ * Formats a price value with consistent decimal places based on loan token decimals.
+ * Always shows the same number of decimal places, even for whole numbers.
+ * 
+ * @param priceValue - The price value as BigInt or string
+ * @param priceDecimals - The number of decimals the price value has (e.g., 36 + loanDecimals - collateralDecimals)
+ * @param displayDecimals - The number of decimal places to display (typically loan token decimals)
+ * @returns Formatted price string with consistent decimal places
+ * 
+ * @example
+ * formatPrice("1000000000000000000", 18, 6) // "1.000000"
+ * formatPrice("1000000000000000000", 18, 2) // "1.00"
+ */
+export function formatPrice(
+  priceValue: string | bigint,
+  priceDecimals: number,
+  displayDecimals: number
+): string {
+  try {
+    const price = Number(formatUnits(BigInt(priceValue), priceDecimals));
+    return price.toLocaleString(undefined, {
+      minimumFractionDigits: displayDecimals,
+      maximumFractionDigits: displayDecimals,
+    });
+  } catch (error) {
+    console.error("Error formatting price:", error);
+    return "0." + "0".repeat(displayDecimals);
   }
 }
 

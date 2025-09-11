@@ -26,7 +26,7 @@ export function SupplyPanel({
   })
 
   const { userAddress } = useUserAddress()
-  const { data: positionData } = usePositionQuery(market.pool_path, userAddress)
+  const { data: positionData } = usePositionQuery(market.id, userAddress)
   
   const maxWithdrawable = calculateMaxWithdrawable(positionData ?? {
     borrow_shares: "0",
