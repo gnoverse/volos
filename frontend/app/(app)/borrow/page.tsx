@@ -73,22 +73,32 @@ export default function BorrowPage() {
               </div>
             ) : (
               <>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-logo-600">My Loan</CardTitle>
-                  <div className="text-4xl font-bold text-gray-200">
-                    {isUserLoanLoading
-                      ? <span className="animate-pulse bg-gray-700 rounded w-24 h-10 inline-block" />
-                      : formatCurrency(totalLoanAmount)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="min-h-[100px] rounded-md mt-6">
-                    {isUserLoanLoading ? (
-                      <div className="h-32 flex items-center justify-center">
-                        <span className="animate-pulse text-gray-400">Loading loan history...</span>
+                {isUserLoanLoading ? (
+                  <>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-logo-600">My Loans</CardTitle>
+                      <div className="text-4xl font-bold text-gray-200">
+                        <span className="animate-pulse bg-gray-700 rounded w-24 h-10 inline-block" />
                       </div>
-                    ) : (
-                      userLoanHistory && userLoanHistory.length > 0 && (
+                    </CardHeader>
+                    <CardContent>
+                      <div className="min-h-[100px] rounded-md mt-6">
+                        <div className="h-32 flex items-start justify-center">
+                          <span className="animate-pulse text-gray-400">Loading loan history...</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </>
+                ) : userLoanHistory && userLoanHistory.length > 0 ? (
+                  <>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-logo-600">My Loans</CardTitle>
+                      <div className="text-4xl font-bold text-gray-200">
+                        {formatCurrency(totalLoanAmount)}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="min-h-[100px] rounded-md mt-6">
                         <LoansChart
                           data={userLoanHistory}
                           title="My Loan History"
@@ -98,28 +108,34 @@ export default function BorrowPage() {
                           selectedTimePeriod={selectedTimePeriod}
                           onTimePeriodChangeAction={setSelectedTimePeriod}
                         />
-                      )
-                    )}
+                      </div>
+                    </CardContent>
+                  </>
+                ) : (
+                  <div className="py-8 px-6 text-center">
+                    <div className="text-lg font-medium text-gray-300 mb-2">No Active Loans</div>
+                    <p className="text-sm text-gray-500">
+                      You haven&apos;t borrowed any assets yet. Start by selecting a market below to begin borrowing.
+                    </p>
                   </div>
-                </CardContent>
+                )}
               </>
             )}
           </div>
           {(userAddress && isConnected) && (
             <div className="w-full md:w-1/3 md:border-l md:border-gray-700/50">
               <MyLoanSidePanel 
-                netRate={userLoanHistory && userLoanHistory.length > 0 ? "4.8%" : "0%"}
                 apy="5.2%"
                 rewards="$12.45"
                 className="h-full bg-transparent border-none shadow-none rounded-none md:rounded-r-3xl md:rounded-l-none"
-                userLoans={[]}
+                userLoans={userLoanHistory}
               />
             </div>
           )}
         </div>
       </Card>
       
-      <h1 className="text-2xl font-bold mb-6 text-logo-600">Borrow Assets</h1>
+      <h1 className="text-2xl font-bold mb-6 text-logo-600">Markets</h1>
       {isLoading ? (
         <div className="flex justify-center items-center h-32 text-gray-400 animate-pulse">Loading markets data...</div>
       ) : (

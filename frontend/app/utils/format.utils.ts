@@ -16,6 +16,7 @@ function bigIntDivide(dividend: bigint, divisor: bigint, precision: number = 18)
   return Number(result) / (10 ** precision);
 }
 
+
 /**
  * Formats a number with decimals only when needed (2 decimal places for non-integers)
  * Example: 5 => "5", 5.2 => "5.20"

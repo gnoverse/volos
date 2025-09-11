@@ -15,7 +15,7 @@ import { usePathname } from 'next/navigation';
 import Logo from "./logo";
 
 const menuItems = [
-  { name: "Borrow", href: "/borrow" },
+  { name: "Markets", href: "/borrow" },
   { name: "Governance", href: "/governance" },
   { name: "Docs", href: "/documentation" },
   { name: "About Us", href: "/about-us" },

@@ -2,9 +2,10 @@
 
 import { useApproveVLSMutation, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
 import { STAKER_PKG_PATH } from "@/app/services/tx.service"
-import { useUserAddress } from "@/hooks/use-user-address"
+import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { ChevronDown, ChevronUp, Plus } from "lucide-react"
 import { useState } from "react"
 
@@ -14,6 +15,12 @@ export function DelegateForm() {
   const [delegateAmount, setDelegateAmount] = useState("")
   const [isDelegating, setIsDelegating] = useState(false)
   const [isDelegateExpanded, setIsDelegateExpanded] = useState(false)
+  
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDialogData, setSuccessDialogData] = useState<{
+    title: string
+    txHash?: string
+  }>({ title: "", txHash: "" })
   
   const approveVLSMutation = useApproveVLSMutation()
   const stakeVLSMutation = useStakeVLSMutation()
@@ -48,10 +55,18 @@ export function DelegateForm() {
         amount: amountInDenom
       })
 
-      await stakeVLSMutation.mutateAsync({
+      const response = await stakeVLSMutation.mutateAsync({
         amount: amountInDenom,
         delegatee: newDelegatee
       })
+      
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Delegate VLS Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+      }
       
       setNewDelegatee("")
       setDelegateAmount("")
@@ -133,6 +148,14 @@ export function DelegateForm() {
           </Button>
         </div>
       )}
+
+      {/* Success Dialog */}
+      <TransactionSuccessDialog
+        isOpen={showSuccessDialog}
+        onClose={() => setShowSuccessDialog(false)}
+        title={successDialogData.title}
+        txHash={successDialogData.txHash}
+      />
     </div>
   )
 } 

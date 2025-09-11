@@ -101,7 +101,11 @@ export function calculatePositionMetrics(position: Position, market: Market): {
     healthFactor = maxBorrowFloat / borrowAmountFloat;
   } else {
     // If no loan, healthFactor is infinite (represented as a large number)
-    healthFactor = 99999.0;
+    healthFactor = 3.1;
+  }
+
+  if (healthFactor > 3.0) {
+    healthFactor = 3.01;
   }
 
   return {

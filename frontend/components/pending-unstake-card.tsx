@@ -1,6 +1,6 @@
 "use client"
 
-import { PendingUnstake } from "@/app/services/api.service"
+import { PendingUnstake } from "@/app/types"
 import { formatTimestamp, formatTokenAmount } from "@/app/utils/format.utils"
 import CopiableAddress from "@/components/copiable-addess"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

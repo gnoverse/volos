@@ -29,6 +29,7 @@ interface SidePanelCardProps {
   
   // Input display
   inputValue: string
+  price: number
 }
 
 export function SidePanelCard({
@@ -43,7 +44,25 @@ export function SidePanelCard({
   onMaxClickAction: onMaxClick,
   onSubmitAction: onSubmit,
   inputValue,
+  price,
 }: SidePanelCardProps) {
+  const calculateUsdValue = (): string => {
+    if (!inputValue || inputValue === "0" || !price || price === 0) {
+      return "0.00";
+    }
+
+    try {
+      const inputAmount = parseFloat(inputValue);
+      const usdValue = inputAmount * price;
+      return usdValue.toFixed(2);
+    } catch (error) {
+      console.error("Error calculating USD value:", error);
+      return "0.00";
+    }
+  };
+
+  const usdValue = calculateUsdValue();
+
   return (
     <Card className={CARD_STYLES}>
       <CardHeader className="px-4 -mb-4">
@@ -63,7 +82,7 @@ export function SidePanelCard({
           placeholder="0.00"
         />
         <div className="flex justify-between items-center">
-          <span className="text-xs text-gray-400">${inputValue || "0"}</span>
+          <span className="text-xs text-gray-400">${usdValue}</span>
           <div className="flex items-center gap-1">
             <Button
               type="button"

@@ -5,9 +5,11 @@ import { getAllowance, getTokenBalance } from "@/app/services/abci"
 import { Market } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
+import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { useSupplyWithdrawValidation } from "@/hooks/use-supply-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
 
@@ -27,6 +29,12 @@ export function SupplyPanel({
 
   const { userAddress } = useUserAddress()
   const { data: positionData } = usePositionQuery(market.id, userAddress)
+  
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDialogData, setSuccessDialogData] = useState<{
+    title: string
+    txHash?: string
+  }>({ title: "", txHash: "" })
   
   const maxWithdrawable = calculateMaxWithdrawable(positionData ?? {
     borrow_shares: "0",
@@ -58,8 +66,9 @@ export function SupplyPanel({
 
   const isSupplyPending = supplyMutation.isPending || approveTokenMutation.isPending;
   const isWithdrawPending = withdrawMutation.isPending || approveTokenMutation.isPending;
+
     
-    const handleSupply = async () => {
+  const handleSupply = async () => {
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
     const supplyAmountInTokens = Number(supplyAmount || "0");
@@ -75,13 +84,20 @@ export function SupplyPanel({
         });
       }
       
-      await supplyMutation.mutateAsync({
+      const response = await supplyMutation.mutateAsync({
         marketId: market.id,
         userAddress: userAddress!,
         assets: supplyAmountInDenom
       });
       
-      reset();
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Supply Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+        reset();
+      }
     } catch (error) {
       console.error("Supply transaction failed:", error);
     }
@@ -103,21 +119,29 @@ export function SupplyPanel({
         });
       }
       
-      await withdrawMutation.mutateAsync({
+      const response = await withdrawMutation.mutateAsync({
         marketId: market.id,
         userAddress: userAddress!,
         assets: withdrawAmountInDenom
       });
       
-      reset();
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Withdraw Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+        reset();
+      }
     } catch (error) {
       console.error("Withdraw transaction failed:", error);
     }
   };
     
     return (
+    <>
         <form className="space-y-3">
-          {/* Supply Card */}
+      {/* Supply Card */}
       <SidePanelCard
         icon={Plus}
         iconColor="text-blue-400"
@@ -138,6 +162,7 @@ export function SupplyPanel({
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}
+        price={1}
       />
 
       {/* Withdraw Card */}
@@ -155,7 +180,17 @@ export function SupplyPanel({
         }}
         onSubmitAction={handleWithdraw}
         inputValue={withdrawAmount}
+        price={1}
       />
         </form>
+
+    {/* Success Dialog */}
+    <TransactionSuccessDialog
+      isOpen={showSuccessDialog}
+      onClose={() => setShowSuccessDialog(false)}
+      title={successDialogData.title}
+      txHash={successDialogData.txHash}
+    />
+    </>
     )
 } 

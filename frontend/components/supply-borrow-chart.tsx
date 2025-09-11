@@ -106,7 +106,7 @@ export function SupplyBorrowChart({
                 <Checkbox
                   checked={selectedMetrics.supply}
                   onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, supply: !prev.supply }))}
-                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-800 data-[state=checked]:border-blue-800"
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                 />
                 <span className="text-blue-400">Supply</span>
               </div>
@@ -122,7 +122,7 @@ export function SupplyBorrowChart({
                 <Checkbox
                   checked={selectedMetrics.collateral}
                   onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, collateral: !prev.collateral }))}
-                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-slate-500 data-[state=checked]:border-slate-500"
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600"
                 />
                 <span className="text-slate-400">Collateral</span>
               </div>

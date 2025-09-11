@@ -60,7 +60,7 @@ export function HealthBar({ healthFactor, projectedHealthFactor }: HealthBarProp
                   textAlign: "center",
                 }}
               >
-                {healthFactor.toFixed(2)}
+                {healthFactor >= 3.0 ? '3.00+' : healthFactor.toFixed(2)}
               </div>
             </>
           );

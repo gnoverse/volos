@@ -1,13 +1,14 @@
 "use client"
 
 import { useExecuteProposalMutation, useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
-import { useUserAddress } from "@/hooks/use-user-address"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { getProposalStatusColor } from "@/app/utils/ui.utils"
 import CopiableAddress from "@/components/copiable-addess"
+import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowLeft, Calendar, CheckCircle, Clock, PlayCircle, User, Vote, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
@@ -22,6 +23,12 @@ export default function ProposalDetailPage() {
   const voteMutation = useVoteMutation()
   const [votingReason, setVotingReason] = useState("")
   const [isVoting, setIsVoting] = useState(false)
+  
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDialogData, setSuccessDialogData] = useState<{
+    title: string
+    txHash?: string
+  }>({ title: "", txHash: "" })
     
   const { userAddress, isConnected } = useUserAddress()
   const { data: xvlsBalance = { address: userAddress, balance: 0 } } = useXVLSBalance(userAddress)
@@ -33,11 +40,19 @@ export default function ProposalDetailPage() {
     
     setIsVoting(true)
     try {
-      await voteMutation.mutateAsync({
+      const response = await voteMutation.mutateAsync({
         proposalId: proposal.id,
         choice,
         reason: votingReason
       })
+
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: `Vote ${choice} Successful`,
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+      }
 
       setVotingReason("")
       setTimeout(async () => {
@@ -67,7 +82,15 @@ export default function ProposalDetailPage() {
   const handleExecute = async () => {
     if (!proposal) return
     try {
-      await executeMutation.mutateAsync({ proposalId: proposal.id })
+      const response = await executeMutation.mutateAsync({ proposalId: proposal.id })
+      
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Execute Proposal Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+      }
     } catch (err) {
       console.error('Execute proposal failed:', err)
     }
@@ -359,6 +382,14 @@ export default function ProposalDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Success Dialog */}
+      <TransactionSuccessDialog
+        isOpen={showSuccessDialog}
+        onClose={() => setShowSuccessDialog(false)}
+        title={successDialogData.title}
+        txHash={successDialogData.txHash}
+      />
     </div>
   )
 }

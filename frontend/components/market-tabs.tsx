@@ -60,7 +60,7 @@ export function MarketTabs({
       
       <TabsContent value="position" className="mt-0">
         <MyPosition
-          marketId={market.id}
+          market={market}
           cardStyles={cardStyles}
           caller={caller}
         />

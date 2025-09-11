@@ -2,6 +2,7 @@ import { useApproveVLSMutation, useGovernanceUserInfo, useStakeVLSMutation } fro
 import { getAllowance } from "@/app/services/abci"
 import { STAKER_PKG_PATH, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { formatTokenAmount } from "@/app/utils/format.utils"
+import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -26,6 +27,12 @@ export function GovMemberCards({
   const [isStaking, setIsStaking] = useState(false)
   const [isStakeExpanded, setIsStakeExpanded] = useState(false)
   const [stakeAmount, setStakeAmount] = useState("")
+  
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDialogData, setSuccessDialogData] = useState<{
+    title: string
+    txHash?: string
+  }>({ title: "", txHash: "" })
   
   const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
   const approveVLSMutation = useApproveVLSMutation()
@@ -63,10 +70,18 @@ export function GovMemberCards({
         })
       }
 
-      await stakeVLSMutation.mutateAsync({
+      const response = await stakeVLSMutation.mutateAsync({
         amount: amountInDenom,
         delegatee: userAddress
       })
+      
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Stake VLS Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+      }
       
       await refetchUserInfo()
       
@@ -111,7 +126,7 @@ export function GovMemberCards({
           <div className="text-center space-y-4">
             <h3 className="text-xl font-semibold text-logo-500">User Info</h3>
             <p className="text-gray-500 text-sm mb-4">
-              Connect your wallet to view your DAO membership status, voting power, and governance participation details.
+              Connect your wallet to view your governance membership status, voting power, and governance participation details.
             </p>
             <Button 
               variant="ghost" 
@@ -130,10 +145,10 @@ export function GovMemberCards({
   }
   return (
     <div className="grid grid-cols-1 gap-6">
-      {/* DAO Membership Card */}
+      {/* Governance Membership Card */}
       <div className={`${cardStyles} p-6 border-l-4 border-logo-500`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-logo-500">DAO Membership</h3>
+          <h3 className="text-xl font-semibold text-logo-500">Governance Membership</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
@@ -141,7 +156,7 @@ export function GovMemberCards({
               </TooltipTrigger>
               <TooltipContent className="bg-gray-900 text-gray-300 border-none shadow-lg">
                 <p className="max-w-xs">
-                  You are a member of the DAO if you hold xVLS tokens. To obtain xVLS you need to stake VLS tokens.
+                  You are a member of the governance if you hold xVLS tokens. To obtain xVLS you need to stake VLS tokens.
                   xVLS tokens represent your governance power and voting rights.
                 </p>
               </TooltipContent>
@@ -156,7 +171,7 @@ export function GovMemberCards({
           </div>
         ) : error ? (
           <div className="text-red-400 text-sm">
-            Error loading DAO membership data
+            Error loading Governance membership data
           </div>
         ) : (
           <div className="space-y-3">
@@ -291,6 +306,12 @@ export function GovMemberCards({
               </span>
             </div>
             <div className="flex items-center justify-between">
+              <span className="text-gray-400">Proposal Threshold:</span>
+              <span className="text-gray-200 font-mono">
+                {userInfo?.proposalThreshold || 0} <span className="text-xs text-gray-500">(xVLS denom)</span>
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
               <span className="text-gray-400">Can Propose:</span>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                 (userInfo?.xvlsBalance || 0) >= (userInfo?.proposalThreshold || 0)
@@ -300,15 +321,17 @@ export function GovMemberCards({
                 {(userInfo?.xvlsBalance || 0) >= (userInfo?.proposalThreshold || 0) ? 'Eligible' : 'Not Eligible'}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Proposal Threshold:</span>
-              <span className="text-gray-200 font-mono">
-                {userInfo?.proposalThreshold || 0} <span className="text-xs text-gray-500">(xVLS denom)</span>
-              </span>
-            </div>
           </div>
         )}
       </div>
+
+      {/* Success Dialog */}
+      <TransactionSuccessDialog
+        isOpen={showSuccessDialog}
+        onClose={() => setShowSuccessDialog(false)}
+        title={successDialogData.title}
+        txHash={successDialogData.txHash}
+      />
     </div>
   )
 } 
