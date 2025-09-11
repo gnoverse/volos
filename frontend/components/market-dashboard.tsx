@@ -1,6 +1,7 @@
 import { Market } from "@/app/types";
-import { formatPercentage, formatTokenAmount, wadToPercentage } from "@/app/utils/format.utils";
+import { formatPercentage, formatPrice, formatTokenAmount, wadToPercentage } from "@/app/utils/format.utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatUnits } from "viem";
 interface MarketDashboardProps {
   market: Market;
   cardStyles: string;
@@ -56,7 +57,11 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
             </div>
             <div className="flex items-baseline flex-wrap">
               <span className="text-2xl font-bold text-gray-200 break-all">
-                {formatTokenAmount(market.current_price, 36, 2, 6)}
+                {formatPrice(
+                  market.current_price,
+                  36 + market.loan_token_decimals - market.collateral_token_decimals,
+                  market.loan_token_decimals
+                )}
               </span>
             </div>
           </div>
@@ -76,7 +81,7 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
           <div>
             <div className="text-xs text-gray-400 mb-0.5">Total Supply</div>
             <div className="text-2xl font-bold text-gray-200">
-              {formatTokenAmount(market.total_supply, market.loan_token_decimals)} <span className="text-gray-400 text-base">{market.loan_token_symbol}</span>
+              {formatUnits(BigInt(market.total_supply), market.loan_token_decimals)} <span className="text-gray-400 text-base">{market.loan_token_symbol}</span>
             </div>
           </div>
           
