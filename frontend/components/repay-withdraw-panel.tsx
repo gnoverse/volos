@@ -3,6 +3,7 @@
 import { useApproveTokenMutation, usePositionQuery, useRepayMutation, useWithdrawCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
 import { getAllowance } from "@/app/services/abci"
 import { Market } from "@/app/types"
+import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
@@ -73,6 +74,11 @@ export function RepayWithdrawPanel({
 
   const isRepayPending = repayMutation.isPending || approveTokenMutation.isPending;
   const isWithdrawPending = withdrawCollateralMutation.isPending || approveTokenMutation.isPending;
+
+  // Calculate formatted price for USD value display
+  // Price decimals: 36 + loan_token_decimals - collateral_token_decimals
+  const priceDecimals = 36 + market.loan_token_decimals - market.collateral_token_decimals;
+  const formattedPrice = parseFloat(formatPrice(market.current_price, priceDecimals, market.loan_token_decimals));
 
   const handleRepay = async () => {
     if (isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax) return;
@@ -162,6 +168,7 @@ export function RepayWithdrawPanel({
         }}
         onSubmitAction={handleRepay}
         inputValue={repayAmount}
+        price={1}
       />
 
       {/* Withdraw Card */}
@@ -179,6 +186,7 @@ export function RepayWithdrawPanel({
         }}
         onSubmitAction={handleWithdraw}
         inputValue={withdrawAmount}
+        price={formattedPrice}
       />
 
       {/* Position Card */}

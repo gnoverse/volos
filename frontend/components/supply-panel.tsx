@@ -66,8 +66,9 @@ export function SupplyPanel({
 
   const isSupplyPending = supplyMutation.isPending || approveTokenMutation.isPending;
   const isWithdrawPending = withdrawMutation.isPending || approveTokenMutation.isPending;
+
     
-    const handleSupply = async () => {
+  const handleSupply = async () => {
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
     const supplyAmountInTokens = Number(supplyAmount || "0");
@@ -140,7 +141,7 @@ export function SupplyPanel({
     return (
     <>
         <form className="space-y-3">
-          {/* Supply Card */}
+      {/* Supply Card */}
       <SidePanelCard
         icon={Plus}
         iconColor="text-blue-400"
@@ -161,6 +162,7 @@ export function SupplyPanel({
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}
+        price={1}
       />
 
       {/* Withdraw Card */}
@@ -178,6 +180,7 @@ export function SupplyPanel({
         }}
         onSubmitAction={handleWithdraw}
         inputValue={withdrawAmount}
+        price={1}
       />
         </form>
 

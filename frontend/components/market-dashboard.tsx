@@ -56,11 +56,18 @@ export function MarketDashboard({ market, cardStyles }: MarketDashboardProps) {
               </span>
             </div>
             <div className="flex items-baseline flex-wrap">
-              <span className="text-2xl font-bold text-gray-200 break-all">
+              <span className="text-2xl font-bold text-gray-200 break-all mr-2">
                 {formatPrice(
                   market.current_price,
                   36 + market.loan_token_decimals - market.collateral_token_decimals,
                   market.loan_token_decimals
+                )}
+              </span>
+              <span className="text-sm font-light text-gray-400">
+                $ {formatPrice(
+                  market.current_price,
+                  36 + market.loan_token_decimals - market.collateral_token_decimals,
+                  2
                 )}
               </span>
             </div>

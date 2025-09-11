@@ -3,6 +3,7 @@
 import { useApproveTokenMutation, useBorrowMutation, usePositionQuery, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
 import { Market } from "@/app/types"
+import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
@@ -74,6 +75,11 @@ export function AddBorrowPanel({
 
   const isSupplyPending = supplyCollateralMutation.isPending || approveTokenMutation.isPending
   const isBorrowPending = borrowMutation.isPending || approveTokenMutation.isPending
+
+  // Calculate formatted price for USD value display
+  // Price decimals: 36 + loan_token_decimals - collateral_token_decimals
+  const priceDecimals = 36 + market.loan_token_decimals - market.collateral_token_decimals;
+  const formattedPrice = parseFloat(formatPrice(market.current_price, priceDecimals, market.loan_token_decimals));
 
   const handleMaxBorrow = async () => {
     try {
@@ -174,6 +180,7 @@ export function AddBorrowPanel({
         onMaxClickAction={handleMaxBorrow}
         onSubmitAction={handleBorrow}
         inputValue={borrowAmount}
+        price={1}
       />
       
       {/* Supply Card */}
@@ -197,6 +204,7 @@ export function AddBorrowPanel({
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}
+        price={formattedPrice}
       />
 
       {/* Position Card */}
