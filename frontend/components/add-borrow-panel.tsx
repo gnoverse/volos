@@ -5,10 +5,12 @@ import { getAllowance, getTokenBalance } from "@/app/services/abci"
 import { Market } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
+import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { useFormValidation } from "@/hooks/use-borrow-validation"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
 
@@ -19,7 +21,6 @@ interface AddBorrowPanelProps {
 export function AddBorrowPanel({
   market,
 }: AddBorrowPanelProps) {
-  // Form setup
   const { register, setValue, watch, reset } = useForm({
     defaultValues: {
       supplyAmount: "",
@@ -31,6 +32,12 @@ export function AddBorrowPanel({
 
   const { userAddress } = useUserAddress()
   const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.id, userAddress)
+  
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDialogData, setSuccessDialogData] = useState<{
+    title: string
+    txHash?: string
+  }>({ title: "", txHash: "" })
 
   const {
     positionMetrics,
@@ -97,13 +104,20 @@ export function AddBorrowPanel({
         });
       }
       
-      await supplyCollateralMutation.mutateAsync({
+      const response = await supplyCollateralMutation.mutateAsync({
         marketId: market.id,
         userAddress: userAddress!,
         amount: supplyAmountInDenom
       });
       
-      reset();
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Supply Collateral Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+        reset();
+      }
     } catch (error) {
       console.error("Supply collateral transaction failed:", error);
     }
@@ -125,20 +139,28 @@ export function AddBorrowPanel({
         });
       }
       
-      await borrowMutation.mutateAsync({
+      const response = await borrowMutation.mutateAsync({
         marketId: market.id,
         userAddress: userAddress!,
         assets: borrowAmountInDenom
       });
       
-      reset();
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Borrow Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+        reset();
+      }
     } catch (error) {
       console.error("Borrow transaction failed:", error);
     }
   };
 
   return (
-    <form className="space-y-3">
+    <>
+      <form className="space-y-3">
       {/* Borrow Card */}
       <SidePanelCard
         icon={ArrowDown}
@@ -187,5 +209,14 @@ export function AddBorrowPanel({
         currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
     </form>
+
+    {/* Success Dialog */}
+    <TransactionSuccessDialog
+      isOpen={showSuccessDialog}
+      onClose={() => setShowSuccessDialog(false)}
+      title={successDialogData.title}
+      txHash={successDialogData.txHash}
+    />
+    </>
   )
 } 

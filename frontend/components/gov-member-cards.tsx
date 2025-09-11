@@ -2,6 +2,7 @@ import { useApproveVLSMutation, useGovernanceUserInfo, useStakeVLSMutation } fro
 import { getAllowance } from "@/app/services/abci"
 import { STAKER_PKG_PATH, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { formatTokenAmount } from "@/app/utils/format.utils"
+import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -26,6 +27,12 @@ export function GovMemberCards({
   const [isStaking, setIsStaking] = useState(false)
   const [isStakeExpanded, setIsStakeExpanded] = useState(false)
   const [stakeAmount, setStakeAmount] = useState("")
+  
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDialogData, setSuccessDialogData] = useState<{
+    title: string
+    txHash?: string
+  }>({ title: "", txHash: "" })
   
   const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
   const approveVLSMutation = useApproveVLSMutation()
@@ -63,10 +70,18 @@ export function GovMemberCards({
         })
       }
 
-      await stakeVLSMutation.mutateAsync({
+      const response = await stakeVLSMutation.mutateAsync({
         amount: amountInDenom,
         delegatee: userAddress
       })
+      
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Stake VLS Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+      }
       
       await refetchUserInfo()
       
@@ -309,6 +324,14 @@ export function GovMemberCards({
           </div>
         )}
       </div>
+
+      {/* Success Dialog */}
+      <TransactionSuccessDialog
+        isOpen={showSuccessDialog}
+        onClose={() => setShowSuccessDialog(false)}
+        title={successDialogData.title}
+        txHash={successDialogData.txHash}
+      />
     </div>
   )
 } 

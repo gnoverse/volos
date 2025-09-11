@@ -5,10 +5,12 @@ import { getAllowance } from "@/app/services/abci"
 import { Market } from "@/app/types"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
+import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
 import { useRepayWithdrawValidation } from "@/hooks/use-repay-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowUp, Minus } from "lucide-react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
 
@@ -28,6 +30,12 @@ export function RepayWithdrawPanel({
 
   const { userAddress } = useUserAddress()
   const { data: positionData } = usePositionQuery(market.id, userAddress)
+  
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [successDialogData, setSuccessDialogData] = useState<{
+    title: string
+    txHash?: string
+  }>({ title: "", txHash: "" })
   
   const {
     currentCollateral,
@@ -82,13 +90,20 @@ export function RepayWithdrawPanel({
         });
       }
       
-      await repayMutation.mutateAsync({
+      const response = await repayMutation.mutateAsync({
         marketId: market.id,
         userAddress: userAddress!,
         assets: repayAmountInDenom
       });
       
-      reset();
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Repay Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+        reset();
+      }
     } catch (error) {
       console.error("Repay transaction failed:", error);
     }
@@ -110,19 +125,27 @@ export function RepayWithdrawPanel({
         });
       }
       
-      await withdrawCollateralMutation.mutateAsync({
+      const response = await withdrawCollateralMutation.mutateAsync({
         marketId: market.id,
         userAddress: userAddress!,
         amount: withdrawAmountInDenom
       });
       
-      reset();
+      if (response.status === 'success') {
+        setSuccessDialogData({
+          title: "Withdraw Collateral Successful",
+          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+        });
+        setShowSuccessDialog(true);
+        reset();
+      }
     } catch (error) {
       console.error("Withdraw collateral transaction failed:", error);
     }
   };
 
   return (
+    <>
     <form className="space-y-3">
       {/* Repay Card */}
       <SidePanelCard
@@ -168,5 +191,14 @@ export function RepayWithdrawPanel({
         currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
     </form>
+
+    {/* Success Dialog */}
+    <TransactionSuccessDialog
+      isOpen={showSuccessDialog}
+      onClose={() => setShowSuccessDialog(false)}
+      title={successDialogData.title}
+      txHash={successDialogData.txHash}
+    />
+    </>
   )
 } 
