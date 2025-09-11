@@ -129,7 +129,7 @@ export const columns: ColumnDef<Market>[] = [
   {
     accessorKey: "lltv",
     header: () => {
-      return <div className="text-left">Max LTV</div>
+      return <div className="text-left">Liq. LTV</div>
     },
     cell: ({ row }) => {
       return <div className="text-left font-medium">{formatPercentage(wadToPercentage(row.original.lltv))}</div>

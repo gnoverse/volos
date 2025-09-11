@@ -1,6 +1,6 @@
 "use client"
 
-import { ChartData } from "@/app/services/api.service"
+import { ChartData } from "@/app/types"
 import { cn } from "@/lib/utils"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
