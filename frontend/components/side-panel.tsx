@@ -64,7 +64,7 @@ export function SidePanel({
                   <TooltipTrigger asChild>
                     <TabsTrigger 
                       value="add-borrow" 
-                      className={`flex-1 py-1 transition-all duration-200 ${tab === "add-borrow" ? "shadow-lg text-white font-medium" : ""}`}
+                      className={`flex-1 py-1 duration-200 ${tab === "add-borrow" ? "shadow-lg text-white font-medium bg-customGray-700/50" : ""}`}
                     >
                       Borrow
                     </TabsTrigger>
@@ -78,7 +78,7 @@ export function SidePanel({
                   <TooltipTrigger asChild>
                     <TabsTrigger 
                       value="repay-withdraw" 
-                      className={`flex-1 py-1 transition-all duration-200 ${tab === "repay-withdraw" ? "shadow-lg text-white font-medium" : ""}`}
+                      className={`flex-1 py-1 duration-200 ${tab === "repay-withdraw" ? "shadow-lg text-white font-medium bg-customGray-700/50" : ""}`}
                     >
                       Repay
                     </TabsTrigger>
@@ -92,7 +92,7 @@ export function SidePanel({
                   <TooltipTrigger asChild>
                     <TabsTrigger 
                       value="supply-only" 
-                      className={`flex-1 py-1 transition-all duration-200 ${tab === "supply-only" ? "shadow-lg text-white font-medium" : ""}`}
+                      className={`flex-1 py-1 duration-200 ${tab === "supply-only" ? "shadow-lg text-white font-medium bg-customGray-700/50" : ""}`}
                     >
                       Supply
                     </TabsTrigger>
