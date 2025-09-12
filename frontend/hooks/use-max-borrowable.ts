@@ -1,4 +1,3 @@
-import { getTokenBalance } from "@/app/services/abci"
 import { Market, Position } from "@/app/types"
 import { calculateMaxBorrowable } from "@/app/utils/position.utils"
 import { useCallback, useEffect, useState } from "react"
@@ -8,8 +7,7 @@ import { useCallback, useEffect, useState } from "react"
  * 
  * This hook considers three constraints:
  * 1. Position-based max borrow (maxBorrow - currentBorrow)
- * 2. User's loan token balance
- * 3. Market liquidity (total_supply - total_borrow)
+ * 2. Market liquidity (total_supply - total_borrow)
  * 
  * The final result is the minimum of these three values.
  * 
@@ -37,17 +35,11 @@ export function useMaxBorrowable(
     setError(null)
 
     try {
-      // 1. Calculate position-based max borrow (maxBorrow - currentBorrow)
       const positionBasedMax = calculateMaxBorrowable(position, market)
 
-      // 2. Get user's loan token balance
-      const userBalance = await getTokenBalance(market.loan_token, userAddress)
-      const userBalanceBigInt = BigInt(userBalance)
-
-      // 3. Get market liquidity
       const marketLiquidity = BigInt(market.total_supply) - BigInt(market.total_borrow)
 
-      const actualMaxBorrowable = [positionBasedMax, userBalanceBigInt, marketLiquidity]
+      const actualMaxBorrowable = [positionBasedMax, marketLiquidity]
         .reduce((min, current) => current < min ? current : min)
 
       setMaxBorrowable(actualMaxBorrowable)
