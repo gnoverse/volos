@@ -18,12 +18,9 @@ export function usePositionCalculations(positionData: Position, market: Market) 
       )
     : BigInt(0)
 
-  const healthFactor = positionMetrics.healthFactor
-
   return {
     positionMetrics,
     currentCollateral,
     currentBorrowAssets,
-    healthFactor,
   }
 }

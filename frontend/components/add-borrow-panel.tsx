@@ -8,6 +8,7 @@ import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { useFormValidation } from "@/hooks/use-borrow-validation"
+import { useMaxBorrowable } from "@/hooks/use-max-borrowable"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
@@ -44,12 +45,21 @@ export function AddBorrowPanel({
     positionMetrics,
     currentCollateral,
     currentBorrowAssets,
-    healthFactor
-  } = usePositionCalculations(positionData ?? {
+    } = usePositionCalculations(positionData ?? {
     borrow_shares: "0",
     supply_shares: "0",
     collateral_supply: "0"
   }, market)
+
+  const { maxBorrowable, refetch: refetchMaxBorrowable } = useMaxBorrowable(
+    positionData ?? {
+      borrow_shares: "0",
+      supply_shares: "0",
+      collateral_supply: "0"
+    },
+    market,
+    userAddress
+  )
 
   const {
     isSupplyInputEmpty,
@@ -63,7 +73,7 @@ export function AddBorrowPanel({
     watch("supplyAmount"),
     watch("borrowAmount"),
     market,
-    positionMetrics.maxBorrow
+    maxBorrowable
   )
 
   const approveTokenMutation = useApproveTokenMutation()
@@ -83,14 +93,16 @@ export function AddBorrowPanel({
 
   const handleMaxBorrow = async () => {
     try {
-      const { data: latestPosition } = await refetchPosition()
+      // Refetch both position and max borrowable to get latest data
+      await Promise.all([
+        refetchPosition(),
+        refetchMaxBorrowable()
+      ])
       
-      if (latestPosition) {
-        const maxBorrowableStr = formatUnits(positionMetrics.maxBorrow, market.loan_token_decimals)
-        setValue("borrowAmount", maxBorrowableStr)
-      }
+      const maxBorrowableStr = formatUnits(maxBorrowable, market.loan_token_decimals)
+      setValue("borrowAmount", maxBorrowableStr)
     } catch (error) {
-      console.error("Failed to fetch latest position:", error)
+      console.error("Failed to fetch latest data:", error)
     }
   }
 
@@ -212,7 +224,7 @@ export function AddBorrowPanel({
         market={market}
         supplyAmount={supplyAmount}
         borrowAmount={borrowAmount}
-        healthFactor={healthFactor}
+        healthFactor={positionMetrics.healthFactor}
         currentCollateral={formatUnits(currentCollateral, market.collateral_token_decimals)}
         currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />

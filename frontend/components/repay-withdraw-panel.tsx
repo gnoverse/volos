@@ -39,9 +39,9 @@ export function RepayWithdrawPanel({
   }>({ title: "", txHash: "" })
   
   const {
+    positionMetrics,
     currentCollateral,
     currentBorrowAssets,
-    healthFactor
   } = usePositionCalculations(positionData ?? {
     borrow_shares: "0",
     supply_shares: "0",
@@ -194,7 +194,7 @@ export function RepayWithdrawPanel({
         market={market}
         repayAmount={repayAmount}
         withdrawAmount={withdrawAmount}
-        healthFactor={healthFactor}
+        healthFactor={positionMetrics.healthFactor}
         currentCollateral={formatUnits(currentCollateral, market.collateral_token_decimals)}
         currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
