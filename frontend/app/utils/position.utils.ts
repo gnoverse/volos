@@ -46,7 +46,6 @@ export function calculatePositionMetrics(position: Position, market: Market): {
   ltv: number;
 } {
 
-
   const borrowShares = BigInt(position.borrow_shares);
   const collateralAmount = BigInt(position.collateral_supply);
   
@@ -133,10 +132,10 @@ export function calculateMaxBorrowable(position: Position, market: Market): bigi
   const totalBorrowShares = BigInt(market.total_borrow_shares);
   
   const currentBorrow = borrowShares > BigInt(0) && totalBorrowShares > BigInt(0) 
-    ? toAssetsDown(borrowShares, totalBorrowAssets, totalBorrowShares)
+    ? toAssetsUp(borrowShares, totalBorrowAssets, totalBorrowShares)
     : BigInt(0);
   
-  const maxBorrowable = maxBorrow - currentBorrow - BigInt(1); 
+  const maxBorrowable = maxBorrow - currentBorrow; 
 
   
   return maxBorrowable > BigInt(0) ? maxBorrowable : BigInt(0);

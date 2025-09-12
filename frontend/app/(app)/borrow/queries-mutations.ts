@@ -197,7 +197,7 @@ export function useSupplyMutation() {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      }, 1500);
+      }, 2000);
     }
   });
 }
@@ -232,7 +232,7 @@ export function useWithdrawMutation() {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      }, 1500);
+      }, 2000);
     }
   });
 }
@@ -267,7 +267,7 @@ export function useBorrowMutation() {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      }, 1500);
+      }, 2000);
     }
   });
 }
@@ -302,7 +302,7 @@ export function useRepayMutation() {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      }, 1500);
+      }, 2000);
     }
   });
 }
@@ -335,7 +335,7 @@ export function useSupplyCollateralMutation() {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      }, 1500);
+      }, 2000);
     }
   });
 }
@@ -368,7 +368,7 @@ export function useWithdrawCollateralMutation() {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: positionQueryKey(variables.marketId, variables.userAddress) });
         queryClient.invalidateQueries({ queryKey: marketQueryKey(variables.marketId) });
-      }, 1500);
+      }, 2000);
     }
   });
 }
