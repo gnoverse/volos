@@ -7,6 +7,7 @@ import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
+import { useMaxRepayable } from "@/hooks/use-max-repayable"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
 import { useRepayWithdrawValidation } from "@/hooks/use-repay-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
@@ -47,6 +48,16 @@ export function RepayWithdrawPanel({
     supply_shares: "0",
     collateral_supply: "0"
   }, market)
+
+  const { maxRepayable, refetch: refetchMaxRepayable } = useMaxRepayable(
+    positionData ?? {
+      borrow_shares: "0",
+      supply_shares: "0",
+      collateral_supply: "0"
+    },
+    market,
+    userAddress
+  )
   
   const approveTokenMutation = useApproveTokenMutation()
   const repayMutation = useRepayMutation()
@@ -68,7 +79,7 @@ export function RepayWithdrawPanel({
     repayAmount,
     withdrawAmount,
     market,
-    currentBorrowAssets,
+    maxRepayable,
     currentCollateral
   );
 
@@ -163,8 +174,13 @@ export function RepayWithdrawPanel({
         buttonMessage={repayButtonMessage}
         isButtonDisabled={isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax || isRepayPending}
         isButtonPending={isRepayPending}
-        onMaxClickAction={() => {
-          setValue("repayAmount", formatUnits(currentBorrowAssets, market.loan_token_decimals));
+        onMaxClickAction={async () => {
+          try {
+            await refetchMaxRepayable()
+            setValue("repayAmount", formatUnits(maxRepayable, market.loan_token_decimals));
+          } catch (error) {
+            console.error("Failed to fetch max repayable:", error)
+          }
         }}
         onSubmitAction={handleRepay}
         inputValue={repayAmount}

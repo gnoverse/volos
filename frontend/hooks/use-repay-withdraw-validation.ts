@@ -8,7 +8,7 @@ export function useRepayWithdrawValidation(
   repayAmount: string,
   withdrawAmount: string,
   market: Market,
-  currentBorrowAssets: bigint,
+  maxRepayable: bigint,
   currentCollateral: bigint
 ) {
   const hasTooManyDecimals = (input: string, maxDecimals: number): boolean => {
@@ -24,13 +24,13 @@ export function useRepayWithdrawValidation(
 
   const isRepayInputEmpty = !repayAmount || repayAmount === "0"
   const isRepayTooManyDecimals = hasTooManyDecimals(repayAmount, market.loan_token_decimals)
-  const isRepayOverMax = repayAmountBI > currentBorrowAssets
+  const isRepayOverMax = repayAmountBI > maxRepayable
   const repayButtonMessage = isRepayInputEmpty 
     ? "Enter repay amount" 
     : isRepayTooManyDecimals
       ? "Too many decimals"
       : isRepayOverMax 
-        ? "Exceeds loan amount" 
+        ? "Exceeds max repayable" 
         : "Repay"
 
   const isWithdrawInputEmpty = !withdrawAmount || withdrawAmount === "0"
