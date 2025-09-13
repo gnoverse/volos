@@ -1,5 +1,6 @@
 import { Market, Position } from "@/app/types"
 import { calculateMaxBorrowable } from "@/app/utils/position.utils"
+import { getExpectedBorrowAssets } from "@/app/services/abci"
 import { useCallback, useEffect, useState } from "react"
 
 /**
@@ -35,7 +36,8 @@ export function useMaxBorrowable(
     setError(null)
 
     try {
-      const positionBasedMax = calculateMaxBorrowable(position, market)
+      const currentBorrowAssets = BigInt(await getExpectedBorrowAssets(market.id, userAddress))
+      const positionBasedMax = calculateMaxBorrowable(position, market, currentBorrowAssets)
 
       const marketLiquidity = BigInt(market.total_supply) - BigInt(market.total_borrow)
 

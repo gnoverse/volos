@@ -124,20 +124,10 @@ export function calculatePositionMetrics(position: Position, market: Market): {
  * @param market Market information
  * @returns Maximum borrowable amount as BigInt
  */
-export function calculateMaxBorrowable(position: Position, market: Market): bigint {
+export function calculateMaxBorrowable(position: Position, market: Market, currentBorrowAssets: bigint): bigint {
   const { maxBorrow } = calculatePositionMetrics(position, market);
-  
-  const borrowShares = BigInt(position.borrow_shares);
-  const totalBorrowAssets = BigInt(market.total_borrow);
-  const totalBorrowShares = BigInt(market.total_borrow_shares);
-  
-  const currentBorrow = borrowShares > BigInt(0) && totalBorrowShares > BigInt(0) 
-    ? toAssetsUp(borrowShares, totalBorrowAssets, totalBorrowShares)
-    : BigInt(0);
-  
-  const maxBorrowable = maxBorrow - currentBorrow; 
+  const maxBorrowable = maxBorrow - currentBorrowAssets; 
 
-  
   return maxBorrowable > BigInt(0) ? maxBorrowable : BigInt(0);
 }
 

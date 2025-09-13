@@ -10,6 +10,7 @@ import { VOLOS_ADDRESS } from "./tx.service"
 
 const GOVERNANCE_REALM_PATH = "gno.land/r/volos/gov/governance"
 const XVLS_REALM_PATH = "gno.land/r/volos/gov/xvls"
+const CORE_REALM_PATH = "gno.land/r/volos/core"
 const gnoService = GnoService.getInstance()
 
 export async function apiGetUserInfo(userAddr: string): Promise<GovernanceUserInfo> {
@@ -61,6 +62,19 @@ export async function getAllowance(tokenPath: string, userAddress: string): Prom
     return parseABCIResponse(result, 'int64')
   } catch (error) {
     console.error('Error fetching token balance:', error)
+    throw error
+  }
+}
+
+export async function getExpectedBorrowAssets(marketId: string, userAddress: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      CORE_REALM_PATH,
+      `GetExpectedBorrowAssets("${marketId}", "${userAddress}")`,
+    )
+    return parseABCIResponse(result, 'string')
+  } catch (error) {
+    console.error('Error fetching expected borrow assets:', error)
     throw error
   }
 }
