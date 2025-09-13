@@ -45,7 +45,7 @@ export function DelegateForm() {
       return
     }
 
-    // Convert whole tokens to denom (multiply by 10^6)
+    // Convert whole tokens to denom (multiply by 10^6) VLS has 6 decimals
     const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
 
     setIsDelegating(true)
@@ -100,7 +100,7 @@ export function DelegateForm() {
 
       {/* Collapsible Content */}
       {isDelegateExpanded && (
-        <div className="mt-3 space-y-3 animate-in slide-in-from-top-2 duration-200">
+        <div className="mt-3 space-y-3 duration-200">
           <div>
             <label className="block text-sm text-gray-400 mb-2">
               Delegatee Address
@@ -110,7 +110,8 @@ export function DelegateForm() {
               placeholder="Enter governance member address (g1...)"
               value={newDelegatee}
               onChange={(e) => setNewDelegatee(e.target.value)}
-              className="bg-gray-800/60 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-logo-500"
+              className="bg-gray-800/60 text-gray-200 placeholder-gray-400 border-gray-600"
+              id="delegateeAddress"
             />
           </div>
           
@@ -123,7 +124,8 @@ export function DelegateForm() {
               placeholder="Enter VLS amount"
               value={delegateAmount}
               onChange={(e) => setDelegateAmount(e.target.value)}
-              className="bg-gray-800/60 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-logo-500"
+              className="bg-gray-800/60 text-gray-200 placeholder-gray-400 border-gray-600"
+              id="delegateAmount"
               min="0"
               step="0.000001"
             />

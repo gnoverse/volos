@@ -15,6 +15,7 @@ import { useUserAddress } from "@/hooks/use-user-address"
 import { cn } from "@/lib/utils"
 import { ChevronDown, ChevronUp, Info, Plus, WalletIcon } from "lucide-react"
 import { useState } from "react"
+import { formatUnits } from "viem"
 
 interface GovMemberCardsProps {
   cardStyles: string
@@ -106,7 +107,7 @@ export function GovMemberCards({
 
   const handleMaxAmount = () => {
     if (userInfo?.vlsBalance) {
-      const maxAmount = parseFloat(formatTokenAmount(userInfo.vlsBalance.toString(), 6, 2, 6).replace(/,/g, ''))
+      const maxAmount = formatUnits(BigInt(userInfo.vlsBalance), 6)
       setStakeAmount(maxAmount.toString())
     }
   }
