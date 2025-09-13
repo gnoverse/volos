@@ -5,7 +5,7 @@ import { Market } from "@/app/types"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { activityColumns } from "./activity-columns"
+import { createActivityColumns } from "./activity-columns"
 import { DataTable } from "./ui/data-table"
 
 interface MarketTabsProps {
@@ -68,7 +68,7 @@ export function MarketTabs({
 
       <TabsContent value="activity" className="mt-0">
         <DataTable 
-          columns={activityColumns} 
+          columns={createActivityColumns(market)} 
           data={marketActivityResponse?.activities || []} 
           className="w-full h-full mt-0" 
         />

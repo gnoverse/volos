@@ -1,11 +1,12 @@
-import { MarketHistory } from "@/app/types";
+import { Market, MarketHistory } from "@/app/types";
 import { formatTimestamp } from "@/app/utils/format.utils";
 import { CopiableAddress } from "@/components/copiable-addess";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
+import { formatUnits } from "viem";
 
-export const activityColumns: ColumnDef<MarketHistory>[] = [
+export const createActivityColumns = (market: Market): ColumnDef<MarketHistory>[] => [
   {
     accessorKey: "timestamp",
     header: ({ column }) => {
@@ -48,10 +49,19 @@ export const activityColumns: ColumnDef<MarketHistory>[] = [
     cell: ({ row }) => {
       const delta = row.getValue("delta") as string | null;
       const operation = row.original.operation;
-      const displayValue = delta ? Number(delta) : 0;
+      const eventType = row.original.event_type;
+      
+      if (!delta) return <div className="text-white">0</div>;
+      
+      console.log(eventType)
+      const decimals = (eventType === "SupplyCollateral" || eventType === "WithdrawCollateral") 
+        ? market.collateral_token_decimals 
+        : market.loan_token_decimals;
+      
+      const formattedValue = formatUnits(BigInt(delta), decimals);
       const sign = operation === "+" ? "+" : operation === "-" ? "-" : "";
       
-      return <div className="text-white">{sign}{displayValue}</div>
+      return <div className="text-white">{sign}{formattedValue}</div>
     },
   },
   {
@@ -70,4 +80,4 @@ export const activityColumns: ColumnDef<MarketHistory>[] = [
       return <CopiableAddress value={txHash} />;
     },
   },
-]
+];
