@@ -53,7 +53,6 @@ export const createActivityColumns = (market: Market): ColumnDef<MarketHistory>[
       
       if (!delta) return <div className="text-white">0</div>;
       
-      console.log(eventType)
       const decimals = (eventType === "SupplyCollateral" || eventType === "WithdrawCollateral") 
         ? market.collateral_token_decimals 
         : market.loan_token_decimals;
