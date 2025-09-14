@@ -11,7 +11,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
-
 )
 
 // processCoreTransaction handles transactions from the core package, processing various
@@ -103,12 +102,12 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 				dbupdater.UpdateTotalCollateralSupply(firestoreClient, wcEvent.MarketID, wcEvent.Amount, wcEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
 				dbupdater.UpdateUserMarketCollateralSupply(firestoreClient, wcEvent.OnBehalf, wcEvent.MarketID, wcEvent.Amount, eventType)
 			}
-		
+
 		case "AccrueInterest":
 			// if accrueEvent, ok := extractAccrueInterestFields(event); ok {
 			// 	dbupdater.UpdateUtilizationHistory(firestoreClient, accrueEvent.MarketID, accrueEvent.Timestamp, accrueEvent.Utilization)
 			// }
-		
+
 		case "SetFee":
 			if setFeeEvent, ok := extractSetFeeFields(event); ok {
 				dbupdater.UpdateMarketFee(firestoreClient, setFeeEvent.MarketID, setFeeEvent.Fee)
@@ -165,14 +164,14 @@ func extractSupplyFields(event map[string]interface{}) (*SupplyEvent, bool) {
 	}
 
 	return &SupplyEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
+		MarketID:    fields["market_id"],
+		User:        fields["user"],
+		OnBehalf:    fields["on_behalf"],
+		Amount:      fields["amount"],
+		Shares:      fields["shares"],
+		Timestamp:   fields["currentTimestamp"],
+		SupplyAPR:   fields["supplyAPR"],
+		BorrowAPR:   fields["borrowAPR"],
 		Utilization: fields["utilization"],
 	}, true
 }
@@ -186,15 +185,15 @@ func extractWithdrawFields(event map[string]interface{}) (*WithdrawEvent, bool) 
 	}
 
 	return &WithdrawEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Receiver:  fields["receiver"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
+		MarketID:    fields["market_id"],
+		User:        fields["user"],
+		OnBehalf:    fields["on_behalf"],
+		Receiver:    fields["receiver"],
+		Amount:      fields["amount"],
+		Shares:      fields["shares"],
+		Timestamp:   fields["currentTimestamp"],
+		SupplyAPR:   fields["supplyAPR"],
+		BorrowAPR:   fields["borrowAPR"],
 		Utilization: fields["utilization"],
 	}, true
 }
@@ -208,15 +207,15 @@ func extractBorrowFields(event map[string]interface{}) (*BorrowEvent, bool) {
 	}
 
 	return &BorrowEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Receiver:  fields["receiver"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
+		MarketID:    fields["market_id"],
+		User:        fields["user"],
+		OnBehalf:    fields["on_behalf"],
+		Receiver:    fields["receiver"],
+		Amount:      fields["amount"],
+		Shares:      fields["shares"],
+		Timestamp:   fields["currentTimestamp"],
+		SupplyAPR:   fields["supplyAPR"],
+		BorrowAPR:   fields["borrowAPR"],
 		Utilization: fields["utilization"],
 	}, true
 }
@@ -230,14 +229,14 @@ func extractRepayFields(event map[string]interface{}) (*RepayEvent, bool) {
 	}
 
 	return &RepayEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		OnBehalf:  fields["on_behalf"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
+		MarketID:    fields["market_id"],
+		User:        fields["user"],
+		OnBehalf:    fields["on_behalf"],
+		Amount:      fields["amount"],
+		Shares:      fields["shares"],
+		Timestamp:   fields["currentTimestamp"],
+		SupplyAPR:   fields["supplyAPR"],
+		BorrowAPR:   fields["borrowAPR"],
 		Utilization: fields["utilization"],
 	}, true
 }
@@ -251,15 +250,15 @@ func extractLiquidateFields(event map[string]interface{}) (*LiquidateEvent, bool
 	}
 
 	return &LiquidateEvent{
-		MarketID:  fields["market_id"],
-		User:      fields["user"],
-		Borrower:  fields["borrower"],
-		Amount:    fields["amount"],
-		Shares:    fields["shares"],
-		Seized:    fields["seized"],
-		Timestamp: fields["currentTimestamp"],
-		SupplyAPR: fields["supplyAPR"],
-		BorrowAPR: fields["borrowAPR"],
+		MarketID:    fields["market_id"],
+		User:        fields["user"],
+		Borrower:    fields["borrower"],
+		Amount:      fields["amount"],
+		Shares:      fields["shares"],
+		Seized:      fields["seized"],
+		Timestamp:   fields["currentTimestamp"],
+		SupplyAPR:   fields["supplyAPR"],
+		BorrowAPR:   fields["borrowAPR"],
 		Utilization: fields["utilization"],
 	}, true
 }
@@ -299,7 +298,6 @@ func extractWithdrawCollateralFields(event map[string]interface{}) (*WithdrawCol
 	}, true
 }
 
-
 func extractAccrueInterestFields(event map[string]interface{}) (*AccrueInterestEvent, bool) {
 	requiredFields := []string{"market_id", "currentTimestamp", "utilization"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
@@ -309,8 +307,8 @@ func extractAccrueInterestFields(event map[string]interface{}) (*AccrueInterestE
 	}
 
 	return &AccrueInterestEvent{
-		MarketID:  fields["market_id"],
-		Timestamp: fields["currentTimestamp"],
+		MarketID:    fields["market_id"],
+		Timestamp:   fields["currentTimestamp"],
 		Utilization: fields["utilization"],
 	}, true
 }
