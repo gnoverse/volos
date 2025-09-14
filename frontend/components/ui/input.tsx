@@ -1,8 +1,28 @@
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+interface InputProps extends React.ComponentProps<"input"> {
+  allowNegative?: boolean;
+}
+
+function Input({ className, type, allowNegative = true, onChange, onKeyDown, ...props }: InputProps) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!allowNegative && type === "number" && e.key === "-") {
+      e.preventDefault();
+    }
+    
+    if (onKeyDown) {
+      onKeyDown(e);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onChange) {
+      onChange(e);
+    }
+  };
+
   return (
     <input
       type={type}
@@ -15,9 +35,12 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
         "[-webkit-background-clip:text] [background-clip:text]",
         className
       )}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
       {...props}
     />
   )
 }
 
-export { Input }
+export { Input };
+

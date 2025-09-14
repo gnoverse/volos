@@ -98,6 +98,7 @@ export function DelegateeCard({ delegatee, amount, userAddress }: DelegateeCardP
                 type="number"
                 placeholder="Enter VLS amount"
                 value={unstakeAmount}
+                allowNegative={false}
                 onChange={(e) => setUnstakeAmount(e.target.value)}
                 className="bg-gray-800/60 border-gray-600 text-gray-200 placeholder-gray-400 focus:outline-none focus:border-logo-500 focus:ring-1 focus:ring-logo-500 pr-16 pl-3"
                 min="0"

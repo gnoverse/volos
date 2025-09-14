@@ -236,6 +236,7 @@ export function GovMemberCards({
                         min="0"
                         step="0.000001"
                         max={parseFloat(formatTokenAmount((userInfo?.vlsBalance || 0).toString(), 6, 2, 6).replace(/,/g, ''))}
+                        allowNegative={false}
                       />
                       <Button
                         type="button"

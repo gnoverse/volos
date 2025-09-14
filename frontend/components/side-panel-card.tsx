@@ -80,6 +80,7 @@ export function SidePanelCard({
           {...register(fieldName, { pattern: /^[0-9]*\.?[0-9]*$/ })}
           className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
           placeholder="0.00"
+          allowNegative={false}
         />
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-400">${usdValue}</span>
