@@ -123,6 +123,7 @@ export function DelegateForm() {
               type="number"
               placeholder="Enter VLS amount"
               value={delegateAmount}
+              allowNegative={false}
               onChange={(e) => setDelegateAmount(e.target.value)}
               className="bg-gray-800/60 text-gray-200 placeholder-gray-400 border-gray-600"
               id="delegateAmount"
