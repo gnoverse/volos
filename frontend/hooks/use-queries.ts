@@ -1,4 +1,4 @@
-import { apiGetUserInfo, apiGetXVLSBalance } from '@/app/services/abci';
+import { apiGetUserInfo, apiGetXVLSBalance, getExpectedBorrowAssets } from '@/app/services/abci';
 import { getActiveProposals, getMarkets, getProposal, getProposals, getUserLoanHistory, getUser, getUserMarketPosition, getSupplyHistory, getBorrowHistory, getCollateralSupplyHistory, getUtilizationHistory, getAPRHistory, getMarketActivity, getMarketSnapshots, getUserPendingUnstakes } from '@/app/services/api.service';
 import { Balance, GovernanceUserInfo, Market, PendingUnstake, Position, Proposal, ProposalsResponse, User, UserVote } from '@/app/types';
 import { getMarket, getUserVoteOnProposal } from '@/app/services/api.service';
@@ -23,6 +23,7 @@ export const UTILIZATION_HISTORY_QUERY_KEY = 'utilization-history';
 export const APR_HISTORY_QUERY_KEY = 'apr-history';
 export const MARKET_ACTIVITY_QUERY_KEY = 'market-activity';
 export const MARKET_SNAPSHOTS_QUERY_KEY = 'market-snapshots';
+export const EXPECTED_BORROW_ASSETS_QUERY_KEY = 'expected-borrow-assets';
 
 export function useMarketsQuery() {
     return useQuery({
@@ -62,6 +63,14 @@ export function usePositionQuery(marketId: string, user: string) {
     queryFn: () => getUserMarketPosition(user, marketId),
     enabled: !!marketId && !!user,
     staleTime: 60 * 1000,
+  });
+}
+
+export function useExpectedBorrowAssetsQuery(marketId: string, user: string) {
+  return useQuery<string>({
+    queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, marketId, user],
+    queryFn: () => getExpectedBorrowAssets(marketId, user),
+    enabled: !!marketId && !!user,
   });
 }
 

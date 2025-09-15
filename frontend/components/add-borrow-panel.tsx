@@ -11,7 +11,7 @@ import { useFormValidation } from "@/hooks/use-borrow-validation"
 import { useMaxBorrowable } from "@/hooks/use-max-borrowable"
 import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/hooks/use-mutations"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
-import { usePositionQuery } from "@/hooks/use-queries"
+import { useExpectedBorrowAssetsQuery, usePositionQuery } from "@/hooks/use-queries"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
 import { useState } from "react"
@@ -36,7 +36,8 @@ export function AddBorrowPanel({
 
   const { userAddress } = useUserAddress()
   const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.id, userAddress)
-  
+  const { data: expectedBorrowAssets } = useExpectedBorrowAssetsQuery(market.id, userAddress)
+
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [successDialogData, setSuccessDialogData] = useState<{
     title: string
@@ -51,7 +52,7 @@ export function AddBorrowPanel({
     borrow_shares: "0",
     supply_shares: "0",
     collateral_supply: "0"
-  }, market)
+  }, market, expectedBorrowAssets || "")
 
   const { maxBorrowable, refetch: refetchMaxBorrowable } = useMaxBorrowable(
     positionData ?? {
@@ -60,7 +61,8 @@ export function AddBorrowPanel({
       collateral_supply: "0"
     },
     market,
-    userAddress
+    userAddress,
+    expectedBorrowAssets || "0"
   )
 
   const {

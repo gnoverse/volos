@@ -10,7 +10,7 @@ import { TransactionSuccessDialog } from "@/components/transaction-success-dialo
 import { useMaxRepayable } from "@/hooks/use-max-repayable"
 import { useApproveTokenMutation, useRepayMutation, useWithdrawCollateralMutation } from "@/hooks/use-mutations"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
-import { usePositionQuery } from "@/hooks/use-queries"
+import { useExpectedBorrowAssetsQuery, usePositionQuery } from "@/hooks/use-queries"
 import { useRepayWithdrawValidation } from "@/hooks/use-repay-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowUp, Minus } from "lucide-react"
@@ -34,7 +34,8 @@ export function RepayWithdrawPanel({
 
   const { userAddress } = useUserAddress()
   const { data: positionData } = usePositionQuery(market.id, userAddress)
-  
+  const { data: expectedBorrowAssets } = useExpectedBorrowAssetsQuery(market.id, userAddress)
+
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [successDialogData, setSuccessDialogData] = useState<{
     title: string
@@ -49,14 +50,10 @@ export function RepayWithdrawPanel({
     borrow_shares: "0",
     supply_shares: "0",
     collateral_supply: "0"
-  }, market)
+  }, market, expectedBorrowAssets || "")
 
   const { maxRepayable, refetch: refetchMaxRepayable } = useMaxRepayable(
-    positionData ?? {
-      borrow_shares: "0",
-      supply_shares: "0",
-      collateral_supply: "0"
-    },
+    expectedBorrowAssets || "1",
     market,
     userAddress
   )
