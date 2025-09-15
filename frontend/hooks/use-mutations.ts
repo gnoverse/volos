@@ -1,6 +1,6 @@
 import { TxService } from "@/app/services/tx.service";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { POSITION_QUERY_KEY, MARKET_QUERY_KEY, MARKETS_QUERY_KEY, USER_QUERY_KEY, GOVERNANCE_USER_INFO_QUERY_KEY, USER_PENDING_UNSTAKES_QUERY_KEY, PROPOSAL_QUERY_KEY, PROPOSALS_QUERY_KEY, ACTIVE_PROPOSALS_QUERY_KEY, XVLS_BALANCE_QUERY_KEY, USER_VOTE_QUERY_KEY } from "./use-queries";
+import { ACTIVE_PROPOSALS_QUERY_KEY, EXPECTED_BORROW_ASSETS_QUERY_KEY, GOVERNANCE_USER_INFO_QUERY_KEY, MARKET_QUERY_KEY, MARKETS_QUERY_KEY, POSITION_QUERY_KEY, PROPOSAL_QUERY_KEY, PROPOSALS_QUERY_KEY, USER_PENDING_UNSTAKES_QUERY_KEY, USER_QUERY_KEY, USER_VOTE_QUERY_KEY, XVLS_BALANCE_QUERY_KEY } from "./use-queries";
 
 export function useApproveTokenMutation() {
     const txService = TxService.getInstance();
@@ -46,6 +46,7 @@ export function useSupplyMutation() {
       onMutate: async (variables) => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId], refetchType: 'active' }),
         ]);
       },
@@ -55,6 +56,7 @@ export function useSupplyMutation() {
       onSettled: (data, error, variables) => {
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress] });
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
       }
@@ -81,6 +83,7 @@ export function useWithdrawMutation() {
       onMutate: async (variables) => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId], refetchType: 'active' }),
         ]);
       },
@@ -90,6 +93,7 @@ export function useWithdrawMutation() {
       onSettled: (data, error, variables) => {
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress] });
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
       }
@@ -116,6 +120,7 @@ export function useBorrowMutation() {
       onMutate: async (variables) => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId], refetchType: 'active' }),
         ]);
       },
@@ -125,6 +130,7 @@ export function useBorrowMutation() {
       onSettled: (data, error, variables) => {
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress] });
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
       }
@@ -151,6 +157,7 @@ export function useRepayMutation() {
       onMutate: async (variables) => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId], refetchType: 'active' }),
         ]);
       },
@@ -160,6 +167,7 @@ export function useRepayMutation() {
       onSettled: (data, error, variables) => {
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress] });
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
       }
@@ -184,6 +192,7 @@ export function useSupplyCollateralMutation() {
       onMutate: async (variables) => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress], refetchType: 'active' }),
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId], refetchType: 'active' }),
         ]);
       },
@@ -193,6 +202,7 @@ export function useSupplyCollateralMutation() {
       onSettled: (data, error, variables) => {
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress] });
+          queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
       }
