@@ -30,7 +30,7 @@ export function useMarketsQuery() {
       queryFn: async (): Promise<Market[]> => {
         const response = await getMarkets();
         return response.markets;
-      },
+      }
     });
   }
   

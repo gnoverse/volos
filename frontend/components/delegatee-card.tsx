@@ -30,23 +30,15 @@ export function DelegateeCard({ delegatee, amount, userAddress }: DelegateeCardP
     const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
 
     if (amountInDenom > amount) {
-      console.error(`Insufficient delegation. Requested: ${amountInDenom} denom, Available: ${amount} denom`)
       return
     }
 
-    try {
-      await beginUnstakeMutation.mutateAsync({
-        amount: amountInDenom,
-        delegatee: delegatee
-      })
-      
-      setUnstakeAmount("")
-      console.log("Unstaking initiated successfully")
-      
-      
-    } catch (error) {
-      console.error("Failed to begin unstake:", error)
-    }
+    await beginUnstakeMutation.mutateAsync({
+      amount: amountInDenom,
+      delegatee: delegatee
+    })
+    //todo : add success dialog here?
+    setUnstakeAmount("")
   }
 
   const setMaxUnstakeAmount = () => {

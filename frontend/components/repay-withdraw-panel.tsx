@@ -99,33 +99,29 @@ export function RepayWithdrawPanel({
     const repayAmountInTokens = Number(repayAmount || "0");
     const repayAmountInDenom = repayAmountInTokens * Math.pow(10, market.loan_token_decimals);
     
-    try {
-      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
-      
-      if (currentAllowance < BigInt(repayAmountInDenom)) {
-        await approveTokenMutation.mutateAsync({
-          tokenPath: market.loan_token,
-          amount: repayAmountInDenom,
-          spenderAddress: VOLOS_ADDRESS
-        }); 
-      }
-      
-      const response = await repayMutation.mutateAsync({
-        marketId: market.id,
-        userAddress: userAddress!,
-        assets: repayAmountInDenom
+    const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
+    
+    if (currentAllowance < BigInt(repayAmountInDenom)) {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loan_token,
+        amount: repayAmountInDenom,
+        spenderAddress: VOLOS_ADDRESS
+      }); 
+    }
+    
+    const response = await repayMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: repayAmountInDenom
+    });
+    
+    if (response.status === 'success') {
+      setSuccessDialogData({
+        title: "Repay Successful",
+        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
       });
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Repay Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-        reset();
-      }
-    } catch (error) {
-      console.error("Repay transaction failed:", error);
+      setShowSuccessDialog(true);
+      reset();
     }
   };
 
@@ -135,33 +131,29 @@ export function RepayWithdrawPanel({
     const withdrawAmountInTokens = Number(withdrawAmount || "0");
     const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.collateral_token_decimals);
     
-    try {
-      const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
-      
-      if (currentAllowance < BigInt(withdrawAmountInDenom)) {
-        await approveTokenMutation.mutateAsync({
-          tokenPath: market.collateral_token,
-          amount: withdrawAmountInDenom,
-          spenderAddress: VOLOS_ADDRESS
-        });
-      }
-      
-      const response = await withdrawCollateralMutation.mutateAsync({
-        marketId: market.id,
-        userAddress: userAddress!,
-        amount: withdrawAmountInDenom
+    const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
+    
+    if (currentAllowance < BigInt(withdrawAmountInDenom)) {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.collateral_token,
+        amount: withdrawAmountInDenom,
+        spenderAddress: VOLOS_ADDRESS
       });
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Withdraw Collateral Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-        reset();
-      }
-    } catch (error) {
-      console.error("Withdraw collateral transaction failed:", error);
+    }
+    
+    const response = await withdrawCollateralMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      amount: withdrawAmountInDenom
+    });
+    
+    if (response.status === 'success') {
+      setSuccessDialogData({
+        title: "Withdraw Collateral Successful",
+        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+      });
+      setShowSuccessDialog(true);
+      reset();
     }
   };
 
@@ -179,12 +171,8 @@ export function RepayWithdrawPanel({
         isButtonDisabled={isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax || isRepayPending}
         isButtonPending={isRepayPending}
         onMaxClickAction={async () => {
-          try {
-            await refetchMaxRepayable()
-            setValue("repayAmount", formatUnits(maxRepayable, market.loan_token_decimals));
-          } catch (error) {
-            console.error("Failed to fetch max repayable:", error)
-          }
+          await refetchMaxRepayable()
+          setValue("repayAmount", formatUnits(maxRepayable, market.loan_token_decimals));
         }}
         onSubmitAction={handleRepay}
         inputValue={repayAmount}

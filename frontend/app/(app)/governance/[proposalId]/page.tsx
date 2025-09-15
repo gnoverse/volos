@@ -40,34 +40,28 @@ export default function ProposalDetailPage() {
     if (!proposal) return
     
     setIsVoting(true)
-    try {
-      const response = await voteMutation.mutateAsync({
-        proposalId: proposal.id,
-        choice,
-        reason: votingReason
-      })
+    const response = await voteMutation.mutateAsync({
+      proposalId: proposal.id,
+      choice,
+      reason: votingReason
+    })
 
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: `Vote ${choice} Successful`,
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-      }
-
-      setVotingReason("")
-      setTimeout(async () => {
-        await Promise.all([
-          refetchUserVote(),
-          refetchProposal()
-        ])
-      }, 1000) 
-      
-    } catch (error) {
-      console.error("Voting failed:", error)
-    } finally {
-      setIsVoting(false)
+    if (response.status === 'success') {
+      setSuccessDialogData({
+        title: `Vote ${choice} Successful`,
+        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+      });
+      setShowSuccessDialog(true);
     }
+
+    setVotingReason("")
+    setTimeout(async () => {
+      await Promise.all([
+        refetchUserVote(),
+        refetchProposal()
+      ])
+    }, 1000) 
+    setIsVoting(false)
   }
 
   const isQuorumMet = proposal && proposal.total_votes >= proposal.quorum
@@ -82,19 +76,17 @@ export default function ProposalDetailPage() {
 
   const handleExecute = async () => {
     if (!proposal) return
-    try {
-      const response = await executeMutation.mutateAsync({ proposalId: proposal.id })
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Execute Proposal Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-      }
-    } catch (err) {
-      console.error('Execute proposal failed:', err)
+    
+    const response = await executeMutation.mutateAsync({ proposalId: proposal.id })
+    
+    if (response.status === 'success') {
+      setSuccessDialogData({
+        title: "Execute Proposal Successful",
+        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+      });
+      setShowSuccessDialog(true);
     }
+  
   }
 
   if (isLoading) {

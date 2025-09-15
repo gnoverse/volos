@@ -1,5 +1,3 @@
-import { useApproveVLSMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
-import { useGovernanceUserInfo } from "@/hooks/use-queries"
 import { getAllowance } from "@/app/services/abci"
 import { STAKER_PKG_PATH, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { formatTokenAmount } from "@/app/utils/format.utils"
@@ -12,6 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useApproveTokenMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
+import { useGovernanceUserInfo } from "@/hooks/use-queries"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { cn } from "@/lib/utils"
 import { ChevronDown, ChevronUp, Info, Plus, WalletIcon } from "lucide-react"
@@ -37,15 +37,10 @@ export function GovMemberCards({
   }>({ title: "", txHash: "" })
   
   const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
-  const approveVLSMutation = useApproveVLSMutation()
+  const approveVLSMutation = useApproveTokenMutation()
   const stakeVLSMutation = useStakeVLSMutation()
 
   const handleStakeVLS = async () => {
-    if (!isConnected) {
-      console.error("Wallet not connected")
-      return
-    }
-
     const wholeTokenAmount = parseFloat(stakeAmount)
     if (isNaN(wholeTokenAmount) || wholeTokenAmount <= 0) {
       console.error("Invalid stake amount")
@@ -57,46 +52,39 @@ export function GovMemberCards({
     const currentVlsBalance = userInfo?.vlsBalance || 0
 
     if (amountInDenom > currentVlsBalance) {
-      console.error(`Insufficient VLS balance. Required: ${amountInDenom} denom, Available: ${currentVlsBalance} denom`)
       return
     }
 
     setIsStaking(true)
-    try {
-      const currentAllowance = BigInt(await getAllowance(VLS_PKG_PATH, userAddress!))
-      
-      if (currentAllowance < BigInt(amountInDenom)) {
-        await approveVLSMutation.mutateAsync({
-          spender: STAKER_PKG_PATH,
-          amount: amountInDenom
-        })
-      }
-
-      const response = await stakeVLSMutation.mutateAsync({
-        amount: amountInDenom,
-        delegatee: userAddress
+    const currentAllowance = BigInt(await getAllowance(VLS_PKG_PATH, userAddress!))
+    
+    if (currentAllowance < BigInt(amountInDenom)) {
+      await approveVLSMutation.mutateAsync({
+        tokenPath: VLS_PKG_PATH,
+        spenderAddress: STAKER_PKG_PATH,
+        amount: amountInDenom
       })
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Stake VLS Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-      }
-      
-      await refetchUserInfo()
-      
-      setStakeAmount("")
-      setIsStakeExpanded(false)
-      
-      console.log("User info refreshed after staking")
-      
-    } catch (error) {
-      console.error("Failed to stake VLS:", error)
-    } finally {
-      setIsStaking(false)
     }
+
+    const response = await stakeVLSMutation.mutateAsync({
+      amount: amountInDenom,
+      delegatee: userAddress
+    })
+    
+    if (response.status === 'success') {
+      setSuccessDialogData({
+        title: "Stake VLS Successful",
+        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+      });
+      setShowSuccessDialog(true);
+    }
+    
+    await refetchUserInfo()
+    
+    setStakeAmount("")
+    setIsStakeExpanded(false)
+          
+    setIsStaking(false)
   }
 
   const toggleStakeSection = () => {

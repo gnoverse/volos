@@ -409,28 +409,6 @@ export function useSetFeeRecipientMutation() {
   
 
 // governance mutations ------------------------------------------------------------
-
-export function useApproveVLSMutation() {
-    const txService = TxService.getInstance();
-    
-    return useMutation({
-      mutationFn: async ({ 
-        spender, 
-        amount 
-      }: { 
-        spender: string; 
-        amount: number; 
-      }) => {
-        return txService.approveRealmVLS(spender, amount);
-      },
-      onError: (error) => {
-        console.error(error);
-      },
-      onSuccess: (data) => {
-        console.log("VLS approval successful:", data);
-      }
-    });
-}
   
 export function useStakeVLSMutation() {
     const txService = TxService.getInstance();
@@ -565,7 +543,6 @@ export function useVoteMutation() {
           queryClient.invalidateQueries({ queryKey: [USER_VOTE_QUERY_KEY, variables.proposalId] })
         ]);
         
-       
         setTimeout(async () => {
           await Promise.all([
             queryClient.refetchQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),

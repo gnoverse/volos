@@ -100,7 +100,7 @@ export function calculatePositionMetrics(position: Position, market: Market): {
     healthFactor = maxBorrowFloat / borrowAmountFloat;
   } else {
     // If no loan, healthFactor is infinite (represented as a large number)
-    healthFactor = 3.1;
+    healthFactor = 3.01;
   }
 
   if (healthFactor > 3.0) {
@@ -140,7 +140,6 @@ export function calculateMaxBorrowable(position: Position, market: Market, curre
  * @returns Maximum withdrawable amount as BigInt
  */
 export function calculateMaxWithdrawable(position: Position, market: Market): bigint {
-  
   const supplyShares = BigInt(position.supply_shares);
   const totalSupplyAssets = BigInt(market.total_supply);
   const totalSupplyShares = BigInt(market.total_supply_shares);

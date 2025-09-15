@@ -226,11 +226,7 @@ export function parseAndValidateJson<T>(jsonString: string, schema: z.ZodType<T>
     const parsed = JSON.parse(jsonString);
     return schema.parse(parsed);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      console.error("Validation error:", error.format());
-    } else {
-      console.error("JSON parsing error:", error);
-    }
+    console.error(error);
     throw error;
   }
 }

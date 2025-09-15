@@ -94,18 +94,13 @@ export function AddBorrowPanel({
   const formattedPrice = parseFloat(formatPrice(market.current_price, priceDecimals, market.loan_token_decimals));
 
   const handleMaxBorrow = async () => {
-    try {
-      // Refetch both position and max borrowable to get latest data
-      await Promise.all([
-        refetchPosition(),
-        refetchMaxBorrowable()
-      ])
-      
-      const maxBorrowableStr = formatUnits(maxBorrowable, market.loan_token_decimals)
-      setValue("borrowAmount", maxBorrowableStr)
-    } catch (error) {
-      console.error("Failed to fetch latest data:", error)
-    }
+    await Promise.all([
+      refetchPosition(),
+      refetchMaxBorrowable()
+    ])
+    
+    const maxBorrowableStr = formatUnits(maxBorrowable, market.loan_token_decimals)
+    setValue("borrowAmount", maxBorrowableStr)
   }
 
   const handleSupply = async () => {
@@ -114,33 +109,29 @@ export function AddBorrowPanel({
     const supplyAmountInTokens = Number(supplyAmount || "0");
     const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.collateral_token_decimals);
     
-    try {
-      const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
-      
-      if (currentAllowance < BigInt(supplyAmountInDenom)) {
-        await approveTokenMutation.mutateAsync({
-          tokenPath: market.collateral_token,
-          amount: supplyAmountInDenom,
-          spenderAddress: VOLOS_ADDRESS
-        });
-      }
-      
-      const response = await supplyCollateralMutation.mutateAsync({
-        marketId: market.id,
-        userAddress: userAddress!,
-        amount: supplyAmountInDenom
+    const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
+    
+    if (currentAllowance < BigInt(supplyAmountInDenom)) {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.collateral_token,
+        amount: supplyAmountInDenom,
+        spenderAddress: VOLOS_ADDRESS
       });
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Supply Collateral Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-        reset();
-      }
-    } catch (error) {
-      console.error("Supply collateral transaction failed:", error);
+    }
+    
+    const response = await supplyCollateralMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      amount: supplyAmountInDenom
+    });
+    
+    if (response.status === 'success') {
+      setSuccessDialogData({
+        title: "Supply Collateral Successful",
+        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+      });
+      setShowSuccessDialog(true);
+      reset();
     }
   };
 
@@ -150,33 +141,29 @@ export function AddBorrowPanel({
     const borrowAmountInTokens = Number(borrowAmount || "0");
     const borrowAmountInDenom = borrowAmountInTokens * Math.pow(10, market.loan_token_decimals);
     
-    try {
-      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
-      
-      if (currentAllowance < BigInt(borrowAmountInDenom)) {
-        await approveTokenMutation.mutateAsync({
-          tokenPath: market.loan_token,
-          amount: borrowAmountInDenom,
-          spenderAddress: VOLOS_ADDRESS
-        });
-      }
-      
-      const response = await borrowMutation.mutateAsync({
-        marketId: market.id,
-        userAddress: userAddress!,
-        assets: borrowAmountInDenom
+    const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
+    
+    if (currentAllowance < BigInt(borrowAmountInDenom)) {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loan_token,
+        amount: borrowAmountInDenom,
+        spenderAddress: VOLOS_ADDRESS
       });
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Borrow Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-        reset();
-      }
-    } catch (error) {
-      console.error("Borrow transaction failed:", error);
+    }
+    
+    const response = await borrowMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: borrowAmountInDenom
+    });
+    
+    if (response.status === 'success') {
+      setSuccessDialogData({
+        title: "Borrow Successful",
+        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+      });
+      setShowSuccessDialog(true);
+      reset();
     }
   };
 
@@ -210,13 +197,9 @@ export function AddBorrowPanel({
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
         onMaxClickAction={async () => {
-          try {
-            const balance = await getTokenBalance(market.collateral_token, userAddress!);
-            const balanceFormatted = formatUnits(BigInt(balance), market.collateral_token_decimals);
-            setValue("supplyAmount", balanceFormatted);
-          } catch (error) {
-            console.error("Failed to fetch collateral balance:", error);
-          }
+          const balance = await getTokenBalance(market.collateral_token, userAddress!);
+          const balanceFormatted = formatUnits(BigInt(balance), market.collateral_token_decimals);
+          setValue("supplyAmount", balanceFormatted);
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}

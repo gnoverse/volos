@@ -18,12 +18,8 @@ export default function DelegatesPage() {
   const withdrawMutation = useWithdrawUnstakedVLSMutation()
 
   const handleWithdraw = async () => {
-    try {
-      await withdrawMutation.mutateAsync()
-      // todo add toasts here
-    } catch (error) {
-      console.error("Failed to withdraw unstaked VLS:", error)
-    }
+    await withdrawMutation.mutateAsync()
+    //todo : add success dialog here
   }
 
   const delegations = user?.staked_vls || {}

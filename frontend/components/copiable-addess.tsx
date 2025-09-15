@@ -26,14 +26,14 @@ export function CopiableAddress({ value, short = true, className }: CopiableAddr
 		return `${start}...${end}`
 	})()
 
-	const handleCopy = async () => {
+	const handleCopy = () => {
 		if (!value) return
-		try {
-			await navigator.clipboard.writeText(value)
-			setCopied(true)
-		} catch {
-			// noop
-		}
+		navigator.clipboard
+			.writeText(value)
+			.then(() => setCopied(true))
+			.catch(() => {
+				// noop
+			})
 	}
 
 	return (

@@ -1,7 +1,7 @@
 "use client"
 
-import { useApproveVLSMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
-import { STAKER_PKG_PATH } from "@/app/services/tx.service"
+import { useApproveTokenMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
+import { STAKER_PKG_PATH, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +22,7 @@ export function DelegateForm() {
     txHash?: string
   }>({ title: "", txHash: "" })
   
-  const approveVLSMutation = useApproveVLSMutation()
+  const approveVLSMutation = useApproveTokenMutation()
   const stakeVLSMutation = useStakeVLSMutation()
 
   const toggleDelegateSection = () => {
@@ -49,34 +49,29 @@ export function DelegateForm() {
     const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
 
     setIsDelegating(true)
-    try {
-      await approveVLSMutation.mutateAsync({
-        spender: STAKER_PKG_PATH,
-        amount: amountInDenom
-      })
+    await approveVLSMutation.mutateAsync({
+      tokenPath: VLS_PKG_PATH,
+      spenderAddress: STAKER_PKG_PATH,
+      amount: amountInDenom
+    })
 
-      const response = await stakeVLSMutation.mutateAsync({
-        amount: amountInDenom,
-        delegatee: newDelegatee
-      })
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Delegate VLS Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-      }
-      
-      setNewDelegatee("")
-      setDelegateAmount("")
-      setIsDelegateExpanded(false)
-      
-    } catch (error) {
-      console.error("Failed to delegate VLS:", error)
-    } finally {
-      setIsDelegating(false)
+    const response = await stakeVLSMutation.mutateAsync({
+      amount: amountInDenom,
+      delegatee: newDelegatee
+    })
+    
+    if (response.status === 'success') {
+      setSuccessDialogData({
+        title: "Delegate VLS Successful",
+        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
+      });
+      setShowSuccessDialog(true);
     }
+    
+    setNewDelegatee("")
+    setDelegateAmount("")
+    setIsDelegateExpanded(false)
+    setIsDelegating(false)
   }
 
   return (
