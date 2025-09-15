@@ -3,55 +3,57 @@ package governance
 import (
 	"strconv"
 
-	"gno.land/p/nt/commondao"
+	"gno.land/p/demo/avl"
+	"gno.land/p/demo/avl/pager"
+	"gno.land/p/demo/seqid"
 	"gno.land/p/moul/md"
-	"gno.land/p/moul/mdtable"
-	"gno.land/p/nt/avl/pager"
+	"gno.land/p/nt/commondao"
 )
 
-// TODO: avl tree + pager
-func listActiveProposals() string {
-	out := md.H2("🗳️ Active Proposals")
+func fillProposalTree(activeProposal commondao.ProposalStorage) *avl.Tree {
+	proposalTree := avl.NewTree()
 
-	out += activeProposalsCount()
-
-	p := pager.NewPager(20, true)
 	volosGovernance.ActiveProposals().Iterate(
 		0,
 		volosGovernance.ActiveProposals().Size(),
 		false,
 		func(proposal *commondao.Proposal) bool {
-			choices := ""
-			for _, choice := range proposal.VoteChoices() {
-				choices += string(choice) + ", "
-			}
-			choices = choices[:len(choices)-2]
-
-			table.Append([]string{
-				strconv.Itoa(int(proposal.ID())),
-				proposal.Definition().Title(),
-				strconv.Itoa(int(proposal.VotingRecord().Readonly().Size())),
-				choices,
-				proposal.VotingDeadline().String()[:19],
-			})
+			proposalTree.Set(seqid.ID(proposal.ID()).String(), proposal)
 			return false
 		},
 	)
-	out += table.String()
-	out += "\n"
+	return proposalTree
+}
+
+func listActiveProposals(path string) string {
+	p := pager.NewPager(fillProposalTree(volosGovernance.ActiveProposals()), 10, false)
+	page := p.MustGetPageByPath(path)
+
+	out := md.H2("🗳️ Active Proposals")
+	out += activeProposalsCount()
+	out += page.Picker(path) + "\n\n"
+
+	for _, item := range page.Items {
+		proposal := item.Value.(*commondao.Proposal)
+		out += "- " + proposal.Definition().Title() + "\n"
+	}
+
+	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
+	out += page.Picker(path)
+
 	return out
 }
 
 func activeProposalsCount() string {
 	count := volosGovernance.ActiveProposals().Size()
-	out := md.Paragraph("💰 **Active Proposals:** " + strconv.Itoa(count))
+	out := md.Paragraph("📊 **Total:** " + strconv.Itoa(count))
 	return out
 }
 
-func Render(_ string) string {
+func Render(path string) string {
 	out := md.H1("🏛️ Volos Governance")
 	out += md.Paragraph("On-chain governance for the Volos protocol")
 
-	out += listActiveProposals()
+	out += listActiveProposals(path)
 	return out
 }
