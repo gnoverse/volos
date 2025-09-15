@@ -1,4 +1,5 @@
-import { BroadcastType, TransactionBuilder, makeMsgCallMessage } from "@adena-wallet/sdk";
+import { BroadcastType, TransactionBuilder, WalletResponseStatus, makeMsgCallMessage } from "@adena-wallet/sdk";
+import { Tx } from '@gnolang/tm2-js-client';
 import { AdenaService } from './adena.service';
 
 const GAS_WANTED = 50000000;
@@ -24,6 +25,25 @@ export class TxService {
     return TxService.instance;
   }
 
+  private async broadcast(tx: Tx) {
+    const adenaService = AdenaService.getInstance();
+    try {
+      const transactionRequest = {
+        tx,
+        broadcastType: BroadcastType.COMMIT
+      };
+      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
+
+      if (response.status !== WalletResponseStatus.SUCCESS) {
+        throw new Error(response.message);
+      }
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   public async supply(marketId: string, assets: number, shares: number = 0) {
     const adenaService = AdenaService.getInstance();
     
@@ -31,34 +51,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "1000000ugnot",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "Supply",
-            args: [marketId, assets.toString(), shares.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(100000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "1000000ugnot",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "Supply",
+          args: [marketId, assets.toString(), shares.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(100000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error supplying to market:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async withdraw(marketId: string, assets: number, shares: number = 0) {
@@ -68,34 +77,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "Withdraw",
-            args: [marketId, assets.toString(), shares.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "Withdraw",
+          args: [marketId, assets.toString(), shares.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error withdrawing from market:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async borrow(marketId: string, assets: number, shares: number = 0) {
@@ -105,34 +103,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "Borrow",
-            args: [marketId, assets.toString(), shares.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "Borrow",
+          args: [marketId, assets.toString(), shares.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error borrowing from market:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async repay(marketId: string, assets: number, shares: number = 0) {
@@ -142,34 +129,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "Repay",
-            args: [marketId, assets.toString(), shares.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "Repay",
+          args: [marketId, assets.toString(), shares.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error repaying to market:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async supplyCollateral(marketId: string, amount: number) {
@@ -179,34 +155,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "SupplyCollateral",
-            args: [marketId, amount.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "SupplyCollateral",
+          args: [marketId, amount.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error supplying collateral to market:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async withdrawCollateral(marketId: string, amount: number) {
@@ -216,34 +181,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "WithdrawCollateral",
-            args: [marketId, amount.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "WithdrawCollateral",
+          args: [marketId, amount.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error withdrawing collateral from market:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async liquidate(marketId: string, borrower: string, seizedAssets: number = 0, repaidShares: number = 0) {
@@ -253,34 +207,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "Liquidate",
-            args: [marketId, borrower, seizedAssets.toString(), repaidShares.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "Liquidate",
+          args: [marketId, borrower, seizedAssets.toString(), repaidShares.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error liquidating position:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async accrueInterest(marketId: string) {
@@ -290,34 +233,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "AccrueInterest",
-            args: [marketId],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "AccrueInterest",
+          args: [marketId],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error accruing interest for market:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async createMarket(poolPath: string, isToken0Loan: boolean, irm: string, lltv: number) {
@@ -327,34 +259,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "CreateMarket",
-            args: [poolPath, isToken0Loan.toString(), irm, lltv.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "CreateMarket",
+          args: [poolPath, isToken0Loan.toString(), irm, lltv.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error creating market:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async enableIRM(irm: string) {
@@ -364,34 +285,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "EnableIRM",
-            args: [irm],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "EnableIRM",
+          args: [irm],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error enabling IRM:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async enableLLTV(lltv: string) {
@@ -401,34 +311,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "EnableLLTV",
-            args: [lltv],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "EnableLLTV",
+          args: [lltv],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error enabling LLTV:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async setFeeRecipient(address: string) {
@@ -438,34 +337,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VOLOS_PKG_PATH,
-            func: "SetFeeRecipient",
-            args: [address],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VOLOS_PKG_PATH,
+          func: "SetFeeRecipient",
+          args: [address],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error setting fee recipient:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async approveToken(tokenPath: string, amount: number, spenderAddress: string) {
@@ -475,34 +363,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: tokenPath,
-            func: "Approve",
-            args: [spenderAddress, amount.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: tokenPath,
+          func: "Approve",
+          args: [spenderAddress, amount.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error approving token:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   /**
@@ -517,34 +394,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VLS_PKG_PATH,
-            func: "Approve",
-            args: [spender, amount.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VLS_PKG_PATH,
+          func: "Approve",
+          args: [spender, amount.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error approving VLS:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
    /**
@@ -559,34 +425,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: VLS_PKG_PATH,
-            func: "ApproveRealm",
-            args: [spender, amount.toString()],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: VLS_PKG_PATH,
+          func: "ApproveRealm",
+          args: [spender, amount.toString()],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error approving VLS:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   /**
@@ -601,34 +456,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: STAKER_PKG_PATH,
-            func: "Stake",
-            args: [amount.toString(), delegatee],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: STAKER_PKG_PATH,
+          func: "Stake",
+          args: [amount.toString(), delegatee],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error staking VLS:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   public async beginUnstakeVLS(amount: number, delegatee: string) {
@@ -638,34 +482,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: STAKER_PKG_PATH,
-            func: "BeginUnstake",
-            args: [amount.toString(), delegatee],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: STAKER_PKG_PATH,
+          func: "BeginUnstake",
+          args: [amount.toString(), delegatee],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error beginning unstake VLS:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   /**
@@ -679,34 +512,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: STAKER_PKG_PATH,
-            func: "WithdrawUnstaked",
-            args: [],
-            max_deposit: ""
-          })
-        )
-        .fee(1000000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+       makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: STAKER_PKG_PATH,
+          func: "WithdrawUnstaked",
+          args: [],
+          max_deposit: ""
+        })
+      )
+      .fee(1000000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Error withdrawing unstaked VLS:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   // Voting functions for governance
@@ -717,34 +539,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: GOVERNANCE_PKG_PATH,
-            func: "Vote",
-            args: [proposalId, choice, reason],
-            max_deposit: ""
-          })
-        )
-        .fee(100000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: GOVERNANCE_PKG_PATH,
+          func: "Vote",
+          args: [proposalId, choice, reason],
+          max_deposit: ""
+        })
+      )
+      .fee(100000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Vote transaction failed:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   /**
@@ -758,34 +569,23 @@ export class TxService {
       throw new Error("Wallet not connected");
     }
 
-    try {
-      const tx = TransactionBuilder.create()
-        .messages(
-          makeMsgCallMessage({
-            caller: adenaService.getAddress(),
-            send: "",
-            pkg_path: GOVERNANCE_PKG_PATH,
-            func: "Execute",
-            args: [proposalId],
-            max_deposit: ""
-          })
-        )
-        .fee(100000, 'ugnot')
-        .gasWanted(GAS_WANTED)
-        .memo("")
-        .build();
+    const tx = TransactionBuilder.create()
+      .messages(
+        makeMsgCallMessage({
+          caller: adenaService.getAddress(),
+          send: "",
+          pkg_path: GOVERNANCE_PKG_PATH,
+          func: "Execute",
+          args: [proposalId],
+          max_deposit: ""
+        })
+      )
+      .fee(100000, 'ugnot')
+      .gasWanted(GAS_WANTED)
+      .memo("")
+      .build();
 
-      const transactionRequest = {
-        tx,
-        broadcastType: BroadcastType.COMMIT
-      };
-
-      const response = await adenaService.getSdk().broadcastTransaction(transactionRequest);
-      return response;
-    } catch (error) {
-      console.error("Execute proposal transaction failed:", error);
-      throw error;
-    }
+    return await this.broadcast(tx);
   }
 
   
