@@ -1,6 +1,7 @@
 "use client"
 
-import { useExecuteProposalMutation, useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
+import { useExecuteProposalMutation, useVoteMutation } from "@/hooks/use-mutations"
+import { useProposal, useUserVoteOnProposal, useXVLSBalance } from "@/hooks/use-queries"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { getProposalStatusColor } from "@/app/utils/ui.utils"
 import CopiableAddress from "@/components/copiable-addess"

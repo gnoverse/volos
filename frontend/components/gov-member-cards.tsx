@@ -1,4 +1,5 @@
-import { useApproveVLSMutation, useGovernanceUserInfo, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
+import { useApproveVLSMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
+import { useGovernanceUserInfo } from "@/hooks/use-queries"
 import { getAllowance } from "@/app/services/abci"
 import { STAKER_PKG_PATH, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { formatTokenAmount } from "@/app/utils/format.utils"

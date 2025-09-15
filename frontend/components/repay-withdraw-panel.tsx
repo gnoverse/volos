@@ -1,6 +1,7 @@
 "use client"
 
-import { useApproveTokenMutation, usePositionQuery, useRepayMutation, useWithdrawCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
+import { useApproveTokenMutation, useRepayMutation, useWithdrawCollateralMutation } from "@/hooks/use-mutations"
+import { usePositionQuery } from "@/hooks/use-queries"
 import { getAllowance } from "@/app/services/abci"
 import { Market } from "@/app/types"
 import { formatPrice } from "@/app/utils/format.utils"
@@ -15,6 +16,7 @@ import { ArrowUp, Minus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits } from "viem"
+import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 
 interface RepayWithdrawPanelProps {
   market: Market
@@ -103,8 +105,9 @@ export function RepayWithdrawPanel({
       if (currentAllowance < BigInt(repayAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
           tokenPath: market.loan_token,
-          amount: repayAmountInDenom
-        });
+          amount: repayAmountInDenom,
+          spenderAddress: VOLOS_ADDRESS
+        }); 
       }
       
       const response = await repayMutation.mutateAsync({
@@ -138,7 +141,8 @@ export function RepayWithdrawPanel({
       if (currentAllowance < BigInt(withdrawAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
           tokenPath: market.collateral_token,
-          amount: withdrawAmountInDenom
+          amount: withdrawAmountInDenom,
+          spenderAddress: VOLOS_ADDRESS
         });
       }
       

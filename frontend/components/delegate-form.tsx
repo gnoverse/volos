@@ -1,6 +1,6 @@
 "use client"
 
-import { useApproveVLSMutation, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
+import { useApproveVLSMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
 import { STAKER_PKG_PATH } from "@/app/services/tx.service"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMarketActivityQuery } from "@/app/(app)/borrow/queries-mutations"
+import { useMarketActivityQuery } from "@/hooks/use-queries"
 import { Market } from "@/app/types"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"

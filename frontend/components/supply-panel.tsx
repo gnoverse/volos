@@ -1,7 +1,9 @@
 "use client"
 
-import { useApproveTokenMutation, usePositionQuery, useSupplyMutation, useWithdrawMutation } from "@/app/(app)/borrow/queries-mutations"
+import { useApproveTokenMutation, useSupplyMutation, useWithdrawMutation } from "@/hooks/use-mutations"
+import { usePositionQuery } from "@/hooks/use-queries"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
+import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 import { Market } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
@@ -80,7 +82,8 @@ export function SupplyPanel({
       if (currentAllowance < BigInt(supplyAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
           tokenPath: market.loan_token,
-          amount: supplyAmountInDenom
+          amount: supplyAmountInDenom,
+          spenderAddress: VOLOS_ADDRESS
         });
       }
       
@@ -115,7 +118,8 @@ export function SupplyPanel({
       if (currentAllowance < BigInt(withdrawAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
           tokenPath: market.loan_token,
-          amount: withdrawAmountInDenom
+          amount: withdrawAmountInDenom,
+          spenderAddress: VOLOS_ADDRESS
         });
       }
       

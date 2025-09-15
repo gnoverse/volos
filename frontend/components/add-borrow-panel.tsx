@@ -1,7 +1,9 @@
 "use client"
 
-import { useApproveTokenMutation, useBorrowMutation, usePositionQuery, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
+import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/hooks/use-mutations"
+import { usePositionQuery } from "@/hooks/use-queries"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
+import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 import { Market } from "@/app/types"
 import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
@@ -118,7 +120,8 @@ export function AddBorrowPanel({
       if (currentAllowance < BigInt(supplyAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
           tokenPath: market.collateral_token,
-          amount: supplyAmountInDenom
+          amount: supplyAmountInDenom,
+          spenderAddress: VOLOS_ADDRESS
         });
       }
       
@@ -153,7 +156,8 @@ export function AddBorrowPanel({
       if (currentAllowance < BigInt(borrowAmountInDenom)) {
         await approveTokenMutation.mutateAsync({
           tokenPath: market.loan_token,
-          amount: borrowAmountInDenom
+          amount: borrowAmountInDenom,
+          spenderAddress: VOLOS_ADDRESS
         });
       }
       

@@ -1,6 +1,6 @@
 "use client"
 
-import { useBeginUnstakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
+import { useBeginUnstakeVLSMutation } from "@/hooks/use-mutations"
 import { formatTokenAmount } from "@/app/utils/format.utils"
 import CopiableAddress from "@/components/copiable-addess"
 import { Button } from "@/components/ui/button"

@@ -1,6 +1,6 @@
 "use client"
 
-import { usePositionQuery } from "@/app/(app)/borrow/queries-mutations"
+import { usePositionQuery } from "@/hooks/use-queries"
 import { Market } from "@/app/types"
 import { formatPercentage, formatPrice, wadToPercentage } from "@/app/utils/format.utils"
 import { calculatePositionMetrics, toAssetsUp } from "@/app/utils/position.utils"
