@@ -15,13 +15,7 @@ export function useApproveTokenMutation() {
         amount: number;
         spenderAddress: string;
       }) => {
-        const response = await txService.approveToken(tokenPath, amount, spenderAddress);
-        
-        if (response.status === 'failure') {
-          throw new Error(`Token approval failed: ${response.message || 'Unknown error'}`);
-        }
-        
-        return response;
+        return await txService.approveToken(tokenPath, amount, spenderAddress);
       },
       onError: (error) => {
         console.error("Token approval failed:", error);
@@ -56,7 +50,7 @@ export function useSupplyMutation() {
         ]);
       },
       onError: (error) => {
-        console.error("Supply transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -91,7 +85,7 @@ export function useWithdrawMutation() {
         ]);
       },
       onError: (error) => {
-        console.error("Withdraw transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -126,7 +120,7 @@ export function useBorrowMutation() {
         ]);
       },
       onError: (error) => {
-        console.error("Borrow transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -161,7 +155,7 @@ export function useRepayMutation() {
         ]);
       },
       onError: (error) => {
-        console.error("Repay transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -194,7 +188,7 @@ export function useSupplyCollateralMutation() {
         ]);
       },
       onError: (error) => {
-        console.error("Supply collateral transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -227,7 +221,7 @@ export function useWithdrawCollateralMutation() {
         ]);
       },
       onError: (error) => {
-        console.error("Withdraw collateral transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -265,7 +259,7 @@ export function useLiquidateMutation() {
         if (context?.previousMarketData) {
           queryClient.setQueryData([MARKET_QUERY_KEY, variables.marketId], context.previousMarketData);
         }
-        console.error("Liquidate transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error, variables) => {
         queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
@@ -297,7 +291,7 @@ export function useAccrueInterestMutation() {
         if (context?.previousMarketData) {
           queryClient.setQueryData([MARKET_QUERY_KEY, variables.marketId], context.previousMarketData);
         }
-        console.error("Accrue interest transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error, variables) => {
         queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
@@ -335,7 +329,7 @@ export function useCreateMarketMutation() {
         if (context?.previousMarketsData) {
           queryClient.setQueryData([MARKETS_QUERY_KEY], context.previousMarketsData);
         }
-        console.error("Create market transaction failed:", error);
+        console.error(error);
       },
       onSettled: (data, error) => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
@@ -361,7 +355,7 @@ export function useEnableIRMMutation() {
       onSettled: (data, error) => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
         if (error) {
-          console.error("Enable IRM transaction failed:", error);
+          console.error(error);
         } else {
           console.log("Enable IRM transaction successful:", data);
         }
@@ -383,7 +377,7 @@ export function useEnableLLTVMutation() {
       onSettled: (data, error) => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
         if (error) {
-          console.error("Enable LLTV transaction failed:", error);
+          console.error(error);
         } else {
           console.log("Enable LLTV transaction successful:", data);
         }
@@ -405,7 +399,7 @@ export function useSetFeeRecipientMutation() {
       onSettled: (data, error) => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
         if (error) {
-          console.error("Set fee recipient transaction failed:", error);
+          console.error(error);
         } else {
           console.log("Set fee recipient transaction successful:", data);
         }
@@ -430,7 +424,7 @@ export function useApproveVLSMutation() {
         return txService.approveRealmVLS(spender, amount);
       },
       onError: (error) => {
-        console.error("VLS approval failed:", error);
+        console.error(error);
       },
       onSuccess: (data) => {
         console.log("VLS approval successful:", data);
@@ -453,7 +447,7 @@ export function useStakeVLSMutation() {
         return txService.stakeVLS(amount, delegatee);
       },
       onError: (error) => {
-        console.error("VLS staking failed:", error);
+        console.error(error);
       },
       onSuccess: async (data) => {
         console.log("VLS staking successful:", data);
@@ -489,7 +483,7 @@ export function useBeginUnstakeVLSMutation() {
         return txService.beginUnstakeVLS(amount, delegatee);
       },
       onError: (error) => {
-        console.error("VLS unstaking failed:", error);
+        console.error(error);
       },
       onSuccess: async (data) => {
         console.log("VLS unstaking successful:", data);
@@ -519,7 +513,7 @@ export function useBeginUnstakeVLSMutation() {
         return txService.withdrawUnstakedVLS();
       },
       onError: (error) => {
-        console.error("VLS withdrawal failed:", error);
+        console.error(error);
       },
       onSuccess: async (data) => {
         console.log("VLS withdrawal successful:", data);
@@ -557,7 +551,7 @@ export function useVoteMutation() {
         return txService.voteOnProposal(proposalId, choice, reason);
       },
       onError: (error) => {
-        console.error("Vote failed:", error);
+        console.error(error);
       },
       onSuccess: async (data, variables) => {
         console.log("Vote successful:", data);
@@ -595,7 +589,7 @@ export function useExecuteProposalMutation() {
         return txService.executeProposal(proposalId);
       },
       onError: (error) => {
-        console.error('Execute proposal failed:', error);
+        console.error(error);
       },
       onSuccess: async (_data, variables) => {
         await Promise.all([
