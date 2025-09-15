@@ -1,22 +1,22 @@
 "use client"
 
-import { useApproveTokenMutation, useRepayMutation, useWithdrawCollateralMutation } from "@/hooks/use-mutations"
-import { usePositionQuery } from "@/hooks/use-queries"
 import { getAllowance } from "@/app/services/abci"
+import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 import { Market } from "@/app/types"
 import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { useMaxRepayable } from "@/hooks/use-max-repayable"
+import { useApproveTokenMutation, useRepayMutation, useWithdrawCollateralMutation } from "@/hooks/use-mutations"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
+import { usePositionQuery } from "@/hooks/use-queries"
 import { useRepayWithdrawValidation } from "@/hooks/use-repay-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowUp, Minus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { formatUnits } from "viem"
-import { VOLOS_ADDRESS } from "@/app/services/tx.service"
+import { formatUnits, parseUnits } from "viem"
 
 interface RepayWithdrawPanelProps {
   market: Market
@@ -96,15 +96,14 @@ export function RepayWithdrawPanel({
   const handleRepay = async () => {
     if (isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax) return;
     
-    const repayAmountInTokens = Number(repayAmount || "0");
-    const repayAmountInDenom = repayAmountInTokens * Math.pow(10, market.loan_token_decimals);
+    const repayAmountInDenom = parseUnits(repayAmount || "0", market.loan_token_decimals);
     
     const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
     
-    if (currentAllowance < BigInt(repayAmountInDenom)) {
+    if (currentAllowance < repayAmountInDenom) {
       await approveTokenMutation.mutateAsync({
         tokenPath: market.loan_token,
-        amount: repayAmountInDenom,
+        amount: Number(repayAmountInDenom),
         spenderAddress: VOLOS_ADDRESS
       }); 
     }
@@ -112,7 +111,7 @@ export function RepayWithdrawPanel({
     const response = await repayMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
-      assets: repayAmountInDenom
+      assets: Number(repayAmountInDenom)
     });
     
     if (response.status === 'success') {
@@ -128,15 +127,14 @@ export function RepayWithdrawPanel({
   const handleWithdraw = async () => {
     if (isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax) return;
     
-    const withdrawAmountInTokens = Number(withdrawAmount || "0");
-    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.collateral_token_decimals);
+    const withdrawAmountInDenom = parseUnits(withdrawAmount || "0", market.collateral_token_decimals);
     
     const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
     
-    if (currentAllowance < BigInt(withdrawAmountInDenom)) {
+    if (currentAllowance < withdrawAmountInDenom) {
       await approveTokenMutation.mutateAsync({
         tokenPath: market.collateral_token,
-        amount: withdrawAmountInDenom,
+        amount: Number(withdrawAmountInDenom),
         spenderAddress: VOLOS_ADDRESS
       });
     }
@@ -144,7 +142,7 @@ export function RepayWithdrawPanel({
     const response = await withdrawCollateralMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
-      amount: withdrawAmountInDenom
+      amount: Number(withdrawAmountInDenom)
     });
     
     if (response.status === 'success') {

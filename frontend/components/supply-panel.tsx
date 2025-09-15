@@ -1,19 +1,19 @@
 "use client"
 
-import { useApproveTokenMutation, useSupplyMutation, useWithdrawMutation } from "@/hooks/use-mutations"
-import { usePositionQuery } from "@/hooks/use-queries"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
 import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 import { Market } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
+import { useApproveTokenMutation, useSupplyMutation, useWithdrawMutation } from "@/hooks/use-mutations"
+import { usePositionQuery } from "@/hooks/use-queries"
 import { useSupplyWithdrawValidation } from "@/hooks/use-supply-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { formatUnits } from "viem"
+import { formatUnits, parseUnits } from "viem"
 
 interface SupplyPanelProps {
   market: Market
@@ -73,15 +73,14 @@ export function SupplyPanel({
   const handleSupply = async () => {
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
-    const supplyAmountInTokens = Number(supplyAmount || "0");
-    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.loan_token_decimals);
+    const supplyAmountInDenom = parseUnits(supplyAmount || "0", market.loan_token_decimals);
     
     const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
     
-    if (currentAllowance < BigInt(supplyAmountInDenom)) {
+    if (currentAllowance < supplyAmountInDenom) {
       await approveTokenMutation.mutateAsync({
         tokenPath: market.loan_token,
-        amount: supplyAmountInDenom,
+        amount: Number(supplyAmountInDenom),
         spenderAddress: VOLOS_ADDRESS
       });
     }
@@ -89,7 +88,7 @@ export function SupplyPanel({
     const response = await supplyMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
-      assets: supplyAmountInDenom
+      assets: Number(supplyAmountInDenom)
     });
     
     if (response.status === 'success') {
@@ -105,15 +104,14 @@ export function SupplyPanel({
   const handleWithdraw = async () => {
     if (isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax) return;
     
-    const withdrawAmountInTokens = Number(withdrawAmount || "0");
-    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.loan_token_decimals);
+    const withdrawAmountInDenom = parseUnits(withdrawAmount || "0", market.loan_token_decimals);
     
     const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
     
-    if (currentAllowance < BigInt(withdrawAmountInDenom)) {
+    if (currentAllowance < withdrawAmountInDenom) {
       await approveTokenMutation.mutateAsync({
         tokenPath: market.loan_token,
-        amount: withdrawAmountInDenom,
+        amount: Number(withdrawAmountInDenom),
         spenderAddress: VOLOS_ADDRESS
       });
     }
@@ -121,7 +119,7 @@ export function SupplyPanel({
     const response = await withdrawMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
-      assets: withdrawAmountInDenom
+      assets: Number(withdrawAmountInDenom)
     });
     
     if (response.status === 'success') {

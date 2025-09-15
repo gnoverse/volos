@@ -1,7 +1,5 @@
 "use client"
 
-import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/hooks/use-mutations"
-import { usePositionQuery } from "@/hooks/use-queries"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
 import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 import { Market } from "@/app/types"
@@ -11,12 +9,14 @@ import { SidePanelCard } from "@/components/side-panel-card"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { useFormValidation } from "@/hooks/use-borrow-validation"
 import { useMaxBorrowable } from "@/hooks/use-max-borrowable"
+import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/hooks/use-mutations"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
+import { usePositionQuery } from "@/hooks/use-queries"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { formatUnits } from "viem"
+import { formatUnits, parseUnits } from "viem"
 
 interface AddBorrowPanelProps {
   market: Market
@@ -106,15 +106,14 @@ export function AddBorrowPanel({
   const handleSupply = async () => {
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
-    const supplyAmountInTokens = Number(supplyAmount || "0");
-    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.collateral_token_decimals);
+    const supplyAmountInDenom = parseUnits(supplyAmount || "0", market.collateral_token_decimals);
     
     const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
     
-    if (currentAllowance < BigInt(supplyAmountInDenom)) {
+    if (currentAllowance < supplyAmountInDenom) {
       await approveTokenMutation.mutateAsync({
         tokenPath: market.collateral_token,
-        amount: supplyAmountInDenom,
+        amount: Number(supplyAmountInDenom),
         spenderAddress: VOLOS_ADDRESS
       });
     }
@@ -122,7 +121,7 @@ export function AddBorrowPanel({
     const response = await supplyCollateralMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
-      amount: supplyAmountInDenom
+      amount: Number(supplyAmountInDenom)
     });
     
     if (response.status === 'success') {
@@ -138,15 +137,14 @@ export function AddBorrowPanel({
   const handleBorrow = async () => {
     if (isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax) return;
     
-    const borrowAmountInTokens = Number(borrowAmount || "0");
-    const borrowAmountInDenom = borrowAmountInTokens * Math.pow(10, market.loan_token_decimals);
+    const borrowAmountInDenom = parseUnits(borrowAmount || "0", market.loan_token_decimals);
     
     const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
     
-    if (currentAllowance < BigInt(borrowAmountInDenom)) {
+    if (currentAllowance < borrowAmountInDenom) {
       await approveTokenMutation.mutateAsync({
         tokenPath: market.loan_token,
-        amount: borrowAmountInDenom,
+        amount: Number(borrowAmountInDenom),
         spenderAddress: VOLOS_ADDRESS
       });
     }
@@ -154,7 +152,7 @@ export function AddBorrowPanel({
     const response = await borrowMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
-      assets: borrowAmountInDenom
+      assets: Number(borrowAmountInDenom)
     });
     
     if (response.status === 'success') {
