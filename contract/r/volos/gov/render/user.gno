@@ -2,46 +2,52 @@ package render
 
 import (
 	"std"
-	"strings"
 	"strconv"
+	"strings"
 
+	"gno.land/p/demo/avl"
+	"gno.land/p/demo/avl/pager"
+	"gno.land/p/demo/avl/rotree"
+	"gno.land/p/demo/seqid"
 	"gno.land/p/moul/md"
 	"gno.land/p/moul/mdtable"
-	"gno.land/p/demo/avl/rotree"
+	"gno.land/p/nt/commondao"
 	"gno.land/r/sys/users"
 
-	"gno.land/r/volos/gov/xvls"
 	"gno.land/r/volos/gov/governance"
 	"gno.land/r/volos/gov/staker"
+	"gno.land/r/volos/gov/xvls"
 )
 
-func renderUserPageActiveProposals(userAddress std.Address) string {
-	userActiveProposals := governance.GetUserActiveProposals(userAddress)
+func fillProposalTree(userActiveProposals []*commondao.Proposal) *avl.Tree {
+	proposalTree := avl.NewTree()
 
+	for _, userActiveProposal := range userActiveProposals {
+		proposalTree.Set(seqid.ID(userActiveProposal.ID()).String(), userActiveProposal)
+	}
+	return proposalTree
+}
+
+func renderUserPageActiveProposals(path string, userAddress std.Address) string {
+	userActiveProposals := governance.GetUserActiveProposals(userAddress)
 	if len(userActiveProposals) == 0 {
 		return ""
-	} else {
-		out := md.H2("🗳️ Active proposals voted on")
-		table := mdtable.Table{
-			Headers: []string{"Id", "Title", "Vote", "Reason"},
-		}
-
-		for _, userActiveProposal := range userActiveProposals {
-			v, found := userActiveProposal.VotingRecord().Readonly().GetVote(userAddress)
-			if !found {
-				v.Reason = "Error"
-			}
-			table.Append([]string{
-				strconv.Itoa(int(userActiveProposal.ID())),
-				userActiveProposal.Definition().Title(),
-				string(v.Choice),
-				v.Reason,
-			})
-		}
-		out += table.String()
-		out += "\n"
-		return out
 	}
+
+	p := pager.NewPager(fillProposalTree(userActiveProposals), 10, false)
+	page := p.MustGetPageByPath(path)
+
+	out := md.H2("🗳️ Active proposals voted on")
+
+	out += page.Picker(path) + "\n\n"
+	for _, item := range page.Items {
+		proposal := item.Value.(*commondao.Proposal)
+		out += "- " + proposal.Definition().Title() + "\n"
+	}
+
+	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
+	out += page.Picker(path)
+	return out
 }
 
 func parseUserParam(path string) string {
@@ -79,7 +85,7 @@ func renderUserPageDelegations(userAddress std.Address) string {
 		table.Append([]string{
 			md.Link(
 				displayName,
-				"?user=" + address,
+				"?user="+address,
 			),
 			strconv.FormatInt(amount, 10),
 		})
@@ -94,7 +100,6 @@ func renderUserPage(path string) string {
 
 	var displayName string
 	usAddr := std.Address(userParam)
-	// TODO mettre pseudo au lieu des address
 	userData := users.ResolveAddress(usAddr)
 	if userData != nil && userData.Name() != "" {
 		displayName = userData.Name()
@@ -104,14 +109,14 @@ func renderUserPage(path string) string {
 
 	out := md.H1("👤 " + displayName)
 	balance := xvls.BalanceOf(usAddr)
-	if (balance == 0) {
+	if balance == 0 {
 		out += md.Paragraph("🦌 This user has no vote or delegation in any market.")
 		return out
 	}
 
 	out += md.Paragraph("💰 **Voting Power:** " + strconv.Itoa(int(balance)) + " xVLS")
 
-	out += renderUserPageActiveProposals(usAddr)
 	out += renderUserPageDelegations(usAddr)
+	out += renderUserPageActiveProposals(path, usAddr)
 	return out
 }
