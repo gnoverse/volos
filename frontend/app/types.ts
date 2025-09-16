@@ -222,11 +222,6 @@ export type HealthFactor = z.infer<typeof HealthFactorSchema>;
 export type Balance = z.infer<typeof BalanceSchema>;
 
 export function parseAndValidateJson<T>(jsonString: string, schema: z.ZodType<T>): T {
-  try {
     const parsed = JSON.parse(jsonString);
     return schema.parse(parsed);
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
 }

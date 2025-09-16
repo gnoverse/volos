@@ -23,7 +23,7 @@ const menuItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { userAddress: walletAddress, isConnected, handleWalletConnection } = useUserAddress({ validateConnection: true });
+  const { userAddress: walletAddress, isConnected, handleWalletConnection } = useUserAddress();
 
   return (
     <div className="flex justify-between items-center py-2 pl-40 pr-36">

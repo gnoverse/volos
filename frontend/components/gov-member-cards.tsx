@@ -1,5 +1,5 @@
 import { getAllowance } from "@/app/services/abci"
-import { STAKER_PKG_PATH, VLS_PKG_PATH } from "@/app/services/tx.service"
+import { STAKER_ADDRESS, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { formatTokenAmount } from "@/app/utils/format.utils"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
@@ -61,7 +61,7 @@ export function GovMemberCards({
     if (currentAllowance < BigInt(amountInDenom)) {
       await approveVLSMutation.mutateAsync({
         tokenPath: VLS_PKG_PATH,
-        spenderAddress: STAKER_PKG_PATH,
+        spenderAddress: STAKER_ADDRESS,
         amount: amountInDenom
       })
     }

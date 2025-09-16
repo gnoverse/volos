@@ -1,7 +1,7 @@
 "use client"
 
 import { useApproveTokenMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
-import { STAKER_PKG_PATH, VLS_PKG_PATH } from "@/app/services/tx.service"
+import { STAKER_ADDRESS, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -51,7 +51,7 @@ export function DelegateForm() {
     setIsDelegating(true)
     await approveVLSMutation.mutateAsync({
       tokenPath: VLS_PKG_PATH,
-      spenderAddress: STAKER_PKG_PATH,
+      spenderAddress: STAKER_ADDRESS,
       amount: amountInDenom
     })
 

@@ -33,10 +33,10 @@ export class GnoService {
       
       this.provider = new GnoJSONRPCProvider(this.rpcUrls[providerName])
       this.currentProviderName = providerName
-      console.log(`Changed provider to ${providerName}`)
+      console.log(`Changed provider to ${providerName}`) //make this a toast
       return true
     } catch (error) {
-      console.error(`Error changing to provider '${providerName}':`, error)
+      console.error(`Error changing to provider '${providerName}':`, error) //make this a toast
       return false
     }
   }
@@ -55,56 +55,11 @@ export class GnoService {
     }))
   }
 
-  async getPackageData(packagePath: string, expression: string) {
-    try {
-      const result = await this.provider.evaluateExpression(
-        packagePath,
-        expression
-      )
-      return result
-    } catch (error) {
-      console.error('Error evaluating expression:', error)
-      throw error
-    }
-  }
-
-  async getPackageFunctions(packagePath: string) {
-    try {
-      const signatures = await this.provider.getFunctionSignatures(packagePath)
-      return signatures
-    } catch (error) {
-      console.error('Error getting function signatures:', error)
-      throw error
-    }
-  }
-
-  async getRender(packagePath: string, path: string) {
-    try {
-      const rendered = await this.provider.getRenderOutput(packagePath, path)
-      return rendered
-    } catch (error) {
-      console.error('Error getting render output:', error)
-      throw error
-    }
-  }
-
   async getPackageSource(packagePath: string) {
-    try {
-      const source = await this.provider.getFileContent(packagePath)
-      return source
-    } catch (error) {
-      console.error('Error getting file content:', error)
-      throw error
-    }
+    return await this.provider.getFileContent(packagePath)
   }
 
   async evaluateExpression(packagePath: string, expression: string) {
-    try {
-      const result = await this.provider.evaluateExpression(packagePath, expression)
-      return result
-    } catch (error) {
-      console.error('Error evaluating expression:', error, packagePath, expression)
-      throw error
-    }
+    return await this.provider.evaluateExpression(packagePath, expression)
   }
 }
