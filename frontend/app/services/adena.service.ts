@@ -58,7 +58,7 @@ export class AdenaService {
 
       throw new Error('No address found after connection');
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
+      console.error(error);
       throw error;
     } finally {
       this.setLoading(false);
@@ -71,7 +71,7 @@ export class AdenaService {
       this.sdk.disconnectWallet();
       this.clearStoredAddress();
     } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
+      console.error(error);
       throw error;
     } finally {
       this.setLoading(false);
