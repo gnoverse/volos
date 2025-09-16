@@ -2,6 +2,8 @@ package governance
 
 import (
 	"strconv"
+	"strings"
+	"time"
 
 	"gno.land/p/demo/avl"
 	"gno.land/p/demo/avl/pager"
@@ -36,7 +38,7 @@ func listActiveProposals(path string) string {
 
 	for _, item := range page.Items {
 		proposal := item.Value.(*commondao.Proposal)
-		out += md.BulletItem(md.Link(proposal.Definition().Title(), "/r/volos/gov?proposal="+item.Key))
+		out += md.BulletItem(md.Link(proposal.Definition().Title(), "/r/volos/gov/governance?proposal="+item.Key))
 	}
 
 	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
@@ -52,11 +54,91 @@ func activeProposalsCount() string {
 }
 
 func Render(path string) string {
+	if strings.HasPrefix(path, "?proposal=") {
+		return renderProposalPage(path)
+	}
+
 	out := md.H1("🏛️ Volos Governance")
 	out += md.Paragraph("On-chain governance for the Volos protocol")
 	out += md.H2("🪧 Make a proposal")
 	out += md.Blockquote(md.Link("Propose a specific governance improvement for Volos", txlink.Call("CreateProposal")) + " (e.g., voting rules, treasury management, member roles).")
 
 	out += listActiveProposals(path)
+	return out
+}
+
+func parseProposalParam(path string) uint64 {
+	proposalParam := strings.TrimPrefix(path, "?proposal=")
+	proposalParam = strings.SplitN(proposalParam, "&", 2)[0]
+	if proposalParam == "" {
+		return 0
+	}
+	proposalId, err := strconv.Atoi(proposalParam)
+	if err != nil {
+		return 0
+	}
+	return uint64(proposalId)
+}
+
+func renderChoices(choices []commondao.VoteChoice, eachVoteCount []int, proposal *commondao.Proposal) string {
+	//TODO: link to vote call tx
+	out := "| "
+	for i, choice := range choices {
+		out += md.Link(string(choice), txlink.Call("Vote", "proposalID", strconv.Itoa(int(proposal.ID())), "choice", string(choice))) + ": " + strconv.Itoa(eachVoteCount[i]) + " | "
+	}
+	out += "\n\n"
+	return out
+}
+
+func renderStats(proposal *commondao.Proposal) string {
+
+	totalVoteCount := strconv.Itoa(proposal.VotingRecord().ReadonlyVotingRecord.Size())
+
+	eachVoteCount := make([]int, len(proposal.VoteChoices()))
+	for i, voteChoice := range proposal.VoteChoices() {
+		eachVoteCount[i] = proposal.VotingRecord().ReadonlyVotingRecord.VoteCount(voteChoice)
+	}
+	mostVotedChoice := commondao.FindMostVotedChoice(proposal.VotingRecord().ReadonlyVotingRecord)
+
+	out := "📊 Total vote count: " + totalVoteCount + " | "
+	out += md.Paragraph(string(mostVotedChoice) + " is the most popular 🔥")
+	out += renderChoices(proposal.VoteChoices(), eachVoteCount, proposal)
+	return out
+}
+
+func renderProposal(proposal *commondao.Proposal) string {
+	out := md.H1(proposal.Definition().Title())
+	out += md.BulletItem("Proposed by " + md.Link(proposal.Creator().String(), "/r/volos/gov?user="+proposal.Creator().String()) + " at " + proposal.CreatedAt().Format(time.RFC822))
+
+	passes, err := proposal.Definition().Tally(proposal.VotingRecord().ReadonlyVotingRecord, MemberSet())
+	if err != nil {
+		return err.Error()
+	}
+
+	out += md.Blockquote(md.Bold(string(proposal.Status())) + " | deadline: " + md.Bold(proposal.VotingDeadline().Format(time.RFC822)) + " " + proposal.StatusReason())
+
+	if passes {
+		out += md.Paragraph("| Will be adopted ✅")
+	} else {
+		out += md.Paragraph("| Will be aborted ❌")
+	}
+
+	out += md.HorizontalRule()
+
+	out += md.Paragraph(proposal.Definition().Body())
+	out += renderStats(proposal)
+
+	return out
+
+}
+
+func renderProposalPage(path string) string {
+	proposalId := parseProposalParam(path)
+	if proposalId == 0 {
+		return "Invalid proposal Id"
+	}
+
+	proposal := GetProposal(proposalId)
+	out := renderProposal(proposal)
 	return out
 }
