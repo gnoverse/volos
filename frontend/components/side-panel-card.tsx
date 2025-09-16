@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { LucideIcon } from "lucide-react"
+import { toastError } from "./ui/toast"
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
 
@@ -56,7 +57,7 @@ export function SidePanelCard({
       const usdValue = inputAmount * price;
       return usdValue.toFixed(2);
     } catch (error) {
-      console.error("Error calculating USD value:", error);
+      toastError("Error calculating USD value:", String(error));
       return "0.00";
     }
   };

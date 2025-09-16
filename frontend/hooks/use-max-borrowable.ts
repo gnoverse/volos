@@ -1,5 +1,6 @@
 import { Market, Position } from "@/app/types"
 import { calculateMaxBorrowable } from "@/app/utils/position.utils"
+import { toastError } from "@/components/ui/toast"
 import { useCallback, useEffect, useState } from "react"
 
 /**
@@ -46,7 +47,7 @@ export function useMaxBorrowable(
 
       setMaxBorrowable(actualMaxBorrowable)
     } catch (error) {
-      console.error(error)
+      toastError("Error calculating max borrowable", String(error))
       setMaxBorrowable(BigInt(0))
     } finally {
       setIsLoading(false)

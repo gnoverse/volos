@@ -21,11 +21,6 @@ export function DelegateeCard({ delegatee, amount, userAddress }: DelegateeCardP
 
   const handleUnstake = async () => {
     const wholeTokenAmount = parseFloat(unstakeAmount)
-    if (isNaN(wholeTokenAmount) || wholeTokenAmount <= 0) {
-      console.error("Invalid unstake amount")
-      return
-    }
-
     // Convert whole tokens to denom (multiply by 10^6)
     const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
 
@@ -37,7 +32,6 @@ export function DelegateeCard({ delegatee, amount, userAddress }: DelegateeCardP
       amount: amountInDenom,
       delegatee: delegatee
     })
-    //todo : add success dialog here?
     setUnstakeAmount("")
   }
 

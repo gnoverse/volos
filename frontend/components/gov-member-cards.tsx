@@ -35,11 +35,7 @@ export function GovMemberCards({
 
   const handleStakeVLS = async () => {
     const wholeTokenAmount = parseFloat(stakeAmount)
-    if (isNaN(wholeTokenAmount) || wholeTokenAmount <= 0) {
-      console.error("Invalid stake amount")
-      return
-    }
-
+    
     // Convert whole tokens to denom (multiply by 10^6)
     const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
     const currentVlsBalance = userInfo?.vlsBalance || 0
