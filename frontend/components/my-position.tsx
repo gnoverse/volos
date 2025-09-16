@@ -1,9 +1,9 @@
 "use client"
 
-import { usePositionQuery } from "@/app/(app)/borrow/queries-mutations"
+import { useExpectedBorrowAssetsQuery, usePositionQuery } from "@/hooks/use-queries"
 import { Market } from "@/app/types"
 import { formatPercentage, formatPrice, wadToPercentage } from "@/app/utils/format.utils"
-import { calculatePositionMetrics, toAssetsUp } from "@/app/utils/position.utils"
+import { calculatePositionMetrics } from "@/app/utils/position.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { formatUnits } from "viem"
@@ -23,6 +23,7 @@ export function MyPosition({
 }: MyPositionProps) {
   const { userAddress } = useUserAddress()
   const { data: positionData } = usePositionQuery(market.id, userAddress!)
+  const { data: expectedBorrowAssets } = useExpectedBorrowAssetsQuery(market.id, userAddress!)
 
   const hasPosition = positionData && (
     BigInt(positionData.collateral_supply) > BigInt(0) || 
@@ -40,14 +41,9 @@ export function MyPosition({
     )
   }
 
-  const currentBorrowShares = BigInt(positionData.borrow_shares)
-  const borrowAssets = toAssetsUp(
-    currentBorrowShares,
-    BigInt(market.total_borrow),
-    BigInt(market.total_borrow_shares)
-  )
+  const borrowAssets = BigInt(expectedBorrowAssets || "0")
   const currentCollateralBigInt = BigInt(positionData.collateral_supply)
-  const positionMetrics = calculatePositionMetrics(positionData, market!)
+  const positionMetrics = calculatePositionMetrics(positionData, market, expectedBorrowAssets || "")
 
   // Calculate formatted price for USD value display
   // Price decimals: 36 + loan_token_decimals - collateral_token_decimals

@@ -3,9 +3,10 @@ import { AdenaSDK } from '@adena-wallet/sdk';
 export class AdenaService {
   private static instance: AdenaService;
   private sdk: AdenaSDK;
-  private readonly WALLET_ADDRESS_KEY = 'walletAddress';
   private readonly NETWORK_KEY = 'network';
   private isLoading: boolean = false;
+  private currentAddress: string | null = null;
+  private connected: boolean = false;
 
   private constructor() {
     this.sdk = AdenaSDK.createAdenaWallet();
@@ -33,9 +34,9 @@ export class AdenaService {
       
       this.sdk.onChangeAccount({ callback: (address: string) => {
         if (address) {
-          this.updateStoredAddress(address);
+          this.setConnection(address, true);
         } else {
-          this.clearStoredAddress();
+          this.setConnection(null, false);
         }
       }});
 
@@ -47,7 +48,7 @@ export class AdenaService {
       const account = await this.sdk.getAccount();
       
       if (account && account.data?.address) {
-        this.updateStoredAddress(account.data.address);
+        this.setConnection(account.data.address, true);
         
         if (account.data?.chainId) {
           this.updateStoredNetwork(account.data.chainId);
@@ -58,7 +59,7 @@ export class AdenaService {
 
       throw new Error('No address found after connection');
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
+      console.error(error);
       throw error;
     } finally {
       this.setLoading(false);
@@ -69,33 +70,22 @@ export class AdenaService {
     try {
       this.setLoading(true);
       this.sdk.disconnectWallet();
-      this.clearStoredAddress();
+      this.setConnection(null, false);
     } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
+      console.error(error);
       throw error;
     } finally {
       this.setLoading(false);
     }
   }
 
-  private updateStoredAddress(address: string): void {
-    localStorage.setItem(this.WALLET_ADDRESS_KEY, address);
+  private setConnection(address: string | null, isConnected: boolean): void {
+    this.currentAddress = address ? address.replaceAll('"', '') : null;
+    this.connected = isConnected && !!this.currentAddress;
     const event = new CustomEvent('adenaAddressChanged', {
-      detail: { newAddress: address }
+      detail: { newAddress: this.currentAddress }
     });
     window.dispatchEvent(event);
-  }
-
-  private clearStoredAddress(): void {
-    localStorage.removeItem(this.WALLET_ADDRESS_KEY);
-    const event = new CustomEvent('adenaAddressChanged', {
-      detail: { newAddress: null }
-    });
-    window.dispatchEvent(event);
-  }
-
-  public getStoredAddress(): string | null {
-    return localStorage.getItem(this.WALLET_ADDRESS_KEY);
   }
 
   public getStoredNetwork(): string | null {
@@ -103,11 +93,11 @@ export class AdenaService {
   }
 
   public isConnected(): boolean {
-    return this.getStoredAddress() !== null;
+    return this.connected;
   }
 
   public getAddress(): string {
-    return this.getStoredAddress()?.replaceAll("\"", "") || '';
+    return this.currentAddress || '';
   }
 
   public getSdk(): AdenaSDK {

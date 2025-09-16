@@ -40,22 +40,26 @@ export function toAssetsUp(shares: bigint, totalAssets: bigint, totalShares: big
  * @param market Market information
  * @returns Object containing maxBorrow (as BigInt), healthFactor, and LTV (both as numbers)
  */
-export function calculatePositionMetrics(position: Position, market: Market): {
+export function calculatePositionMetrics(position: Position, market: Market, expectedBorrowAssets: string): {
   maxBorrow: bigint;
   healthFactor: number;
   ltv: number;
 } {
-
   const borrowShares = BigInt(position.borrow_shares);
   const collateralAmount = BigInt(position.collateral_supply);
   
   const totalBorrowAssets = BigInt(market.total_borrow);
   const totalBorrowShares = BigInt(market.total_borrow_shares);
   
-  // Calculate actual borrow amount from shares
-  const borrowAmount = borrowShares > BigInt(0) && totalBorrowShares > BigInt(0) 
-    ? toAssetsDown(borrowShares, totalBorrowAssets, totalBorrowShares)
-    : BigInt(0);
+  let borrowAssets: bigint
+  if (expectedBorrowAssets) {
+    borrowAssets = BigInt(expectedBorrowAssets)
+  } else {
+    // Calculate actual borrow amount from shares
+  borrowAssets = borrowShares > BigInt(0) && totalBorrowShares > BigInt(0) 
+      ? toAssetsDown(borrowShares, totalBorrowAssets, totalBorrowShares)
+      : BigInt(0)
+  }
   
   const currentPrice = BigInt(market.current_price);
 
@@ -86,7 +90,7 @@ export function calculatePositionMetrics(position: Position, market: Market): {
   let ltv = 0;
   if (collateralValue > BigInt(0)) {
     // Convert to numbers for division, then back to percentage
-    const borrowFloat = Number(borrowAmount);
+    const borrowFloat = Number(borrowAssets);
     const collateralFloat = Number(collateralValue);
     ltv = (borrowFloat / collateralFloat) * 100;
   }
@@ -94,13 +98,13 @@ export function calculatePositionMetrics(position: Position, market: Market): {
   // Calculate healthFactor
   // healthFactor = maxBorrow / loanAmount (if loanAmount > 0)
   let healthFactor = 0;
-  if (borrowAmount > BigInt(0)) {
+  if (borrowAssets > BigInt(0)) {
     const maxBorrowFloat = Number(maxBorrow);
-    const borrowAmountFloat = Number(borrowAmount);
+    const borrowAmountFloat = Number(borrowAssets);
     healthFactor = maxBorrowFloat / borrowAmountFloat;
   } else {
     // If no loan, healthFactor is infinite (represented as a large number)
-    healthFactor = 3.1;
+    healthFactor = 3.01;
   }
 
   if (healthFactor > 3.0) {
@@ -124,9 +128,9 @@ export function calculatePositionMetrics(position: Position, market: Market): {
  * @param market Market information
  * @returns Maximum borrowable amount as BigInt
  */
-export function calculateMaxBorrowable(position: Position, market: Market, currentBorrowAssets: bigint): bigint {
-  const { maxBorrow } = calculatePositionMetrics(position, market);
-  const maxBorrowable = maxBorrow - currentBorrowAssets; 
+export function calculateMaxBorrowable(position: Position, market: Market, expectedBorrowAssets: string): bigint {
+  const { maxBorrow } = calculatePositionMetrics(position, market, expectedBorrowAssets);
+  const maxBorrowable = maxBorrow - BigInt(expectedBorrowAssets); 
 
   return maxBorrowable > BigInt(0) ? maxBorrowable : BigInt(0);
 }
@@ -140,7 +144,6 @@ export function calculateMaxBorrowable(position: Position, market: Market, curre
  * @returns Maximum withdrawable amount as BigInt
  */
 export function calculateMaxWithdrawable(position: Position, market: Market): bigint {
-  
   const supplyShares = BigInt(position.supply_shares);
   const totalSupplyAssets = BigInt(market.total_supply);
   const totalSupplyShares = BigInt(market.total_supply_shares);

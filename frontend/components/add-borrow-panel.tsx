@@ -1,20 +1,20 @@
 "use client"
 
-import { useApproveTokenMutation, useBorrowMutation, usePositionQuery, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
+import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 import { Market } from "@/app/types"
 import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
-import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { useFormValidation } from "@/hooks/use-borrow-validation"
 import { useMaxBorrowable } from "@/hooks/use-max-borrowable"
+import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/hooks/use-mutations"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
+import { useExpectedBorrowAssetsQuery, usePositionQuery } from "@/hooks/use-queries"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { formatUnits } from "viem"
+import { formatUnits, parseUnits } from "viem"
 
 interface AddBorrowPanelProps {
   market: Market
@@ -23,7 +23,7 @@ interface AddBorrowPanelProps {
 export function AddBorrowPanel({
   market,
 }: AddBorrowPanelProps) {
-  const { register, setValue, watch, reset } = useForm({
+  const { register, setValue, watch } = useForm({
     defaultValues: {
       supplyAmount: "",
       borrowAmount: "",
@@ -34,12 +34,8 @@ export function AddBorrowPanel({
 
   const { userAddress } = useUserAddress()
   const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.id, userAddress)
-  
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [successDialogData, setSuccessDialogData] = useState<{
-    title: string
-    txHash?: string
-  }>({ title: "", txHash: "" })
+  const { data: expectedBorrowAssets } = useExpectedBorrowAssetsQuery(market.id, userAddress)
+
 
   const {
     positionMetrics,
@@ -49,7 +45,7 @@ export function AddBorrowPanel({
     borrow_shares: "0",
     supply_shares: "0",
     collateral_supply: "0"
-  }, market)
+  }, market, expectedBorrowAssets || "")
 
   const { maxBorrowable, refetch: refetchMaxBorrowable } = useMaxBorrowable(
     positionData ?? {
@@ -58,7 +54,8 @@ export function AddBorrowPanel({
       collateral_supply: "0"
     },
     market,
-    userAddress
+    userAddress,
+    expectedBorrowAssets || "0"
   )
 
   const {
@@ -92,88 +89,59 @@ export function AddBorrowPanel({
   const formattedPrice = parseFloat(formatPrice(market.current_price, priceDecimals, market.loan_token_decimals));
 
   const handleMaxBorrow = async () => {
-    try {
-      // Refetch both position and max borrowable to get latest data
-      await Promise.all([
-        refetchPosition(),
-        refetchMaxBorrowable()
-      ])
-      
-      const maxBorrowableStr = formatUnits(maxBorrowable, market.loan_token_decimals)
-      setValue("borrowAmount", maxBorrowableStr)
-    } catch (error) {
-      console.error("Failed to fetch latest data:", error)
-    }
+    await Promise.all([
+      refetchPosition(),
+      refetchMaxBorrowable()
+    ])
+    
+    const maxBorrowableStr = formatUnits(maxBorrowable, market.loan_token_decimals)
+    setValue("borrowAmount", maxBorrowableStr)
   }
 
   const handleSupply = async () => {
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
-    const supplyAmountInTokens = Number(supplyAmount || "0");
-    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.collateral_token_decimals);
+    const supplyAmountInDenom = parseUnits(supplyAmount || "0", market.collateral_token_decimals);
     
-    try {
-      const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
-      
-      if (currentAllowance < BigInt(supplyAmountInDenom)) {
-        await approveTokenMutation.mutateAsync({
-          tokenPath: market.collateral_token,
-          amount: supplyAmountInDenom
-        });
-      }
-      
-      const response = await supplyCollateralMutation.mutateAsync({
-        marketId: market.id,
-        userAddress: userAddress!,
-        amount: supplyAmountInDenom
+    const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
+    
+    if (currentAllowance < supplyAmountInDenom) {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.collateral_token,
+        amount: Number(supplyAmountInDenom),
+        spenderAddress: VOLOS_ADDRESS
       });
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Supply Collateral Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-        reset();
-      }
-    } catch (error) {
-      console.error("Supply collateral transaction failed:", error);
     }
+    
+    await supplyCollateralMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      amount: Number(supplyAmountInDenom)
+    });
+    setValue("supplyAmount", "")
   };
 
   const handleBorrow = async () => {
     if (isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax) return;
     
-    const borrowAmountInTokens = Number(borrowAmount || "0");
-    const borrowAmountInDenom = borrowAmountInTokens * Math.pow(10, market.loan_token_decimals);
+    const borrowAmountInDenom = parseUnits(borrowAmount || "0", market.loan_token_decimals);
     
-    try {
-      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
-      
-      if (currentAllowance < BigInt(borrowAmountInDenom)) {
-        await approveTokenMutation.mutateAsync({
-          tokenPath: market.loan_token,
-          amount: borrowAmountInDenom
-        });
-      }
-      
-      const response = await borrowMutation.mutateAsync({
-        marketId: market.id,
-        userAddress: userAddress!,
-        assets: borrowAmountInDenom
+    const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
+    
+    if (currentAllowance < borrowAmountInDenom) {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loan_token,
+        amount: Number(borrowAmountInDenom),
+        spenderAddress: VOLOS_ADDRESS
       });
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Borrow Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-        reset();
-      }
-    } catch (error) {
-      console.error("Borrow transaction failed:", error);
     }
+    
+    await borrowMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: Number(borrowAmountInDenom)
+    });
+    setValue("borrowAmount", "")
   };
 
   return (
@@ -206,13 +174,9 @@ export function AddBorrowPanel({
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
         onMaxClickAction={async () => {
-          try {
-            const balance = await getTokenBalance(market.collateral_token, userAddress!);
-            const balanceFormatted = formatUnits(BigInt(balance), market.collateral_token_decimals);
-            setValue("supplyAmount", balanceFormatted);
-          } catch (error) {
-            console.error("Failed to fetch collateral balance:", error);
-          }
+          const balance = await getTokenBalance(market.collateral_token, userAddress!);
+          const balanceFormatted = formatUnits(BigInt(balance), market.collateral_token_decimals);
+          setValue("supplyAmount", balanceFormatted);
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}
@@ -229,14 +193,6 @@ export function AddBorrowPanel({
         currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
     </form>
-
-    {/* Success Dialog */}
-    <TransactionSuccessDialog
-      isOpen={showSuccessDialog}
-      onClose={() => setShowSuccessDialog(false)}
-      title={successDialogData.title}
-      txHash={successDialogData.txHash}
-    />
     </>
   )
 } 

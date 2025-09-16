@@ -1,4 +1,4 @@
-import { useCollateralSupplyHistoryQuery, useMarketSnapshotsQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
+import { useCollateralSupplyHistoryQuery, useMarketSnapshotsQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/hooks/use-queries"
 import { getSnapshotResolution, getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { TimePeriod } from "@/components/chart-dropdown"
 import { useMemo } from "react"

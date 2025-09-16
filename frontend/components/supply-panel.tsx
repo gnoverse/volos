@@ -1,17 +1,17 @@
 "use client"
 
-import { useApproveTokenMutation, usePositionQuery, useSupplyMutation, useWithdrawMutation } from "@/app/(app)/borrow/queries-mutations"
 import { getAllowance, getTokenBalance } from "@/app/services/abci"
+import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 import { Market } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
-import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
+import { useApproveTokenMutation, useSupplyMutation, useWithdrawMutation } from "@/hooks/use-mutations"
+import { usePositionQuery } from "@/hooks/use-queries"
 import { useSupplyWithdrawValidation } from "@/hooks/use-supply-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { formatUnits } from "viem"
+import { formatUnits, parseUnits } from "viem"
 
 interface SupplyPanelProps {
   market: Market
@@ -20,7 +20,7 @@ interface SupplyPanelProps {
 export function SupplyPanel({
   market,
 }: SupplyPanelProps) {
-  const { register, setValue, watch, reset } = useForm({
+  const { register, setValue, watch } = useForm({
         defaultValues: {
             supplyAmount: "",
       withdrawAmount: ""
@@ -29,12 +29,7 @@ export function SupplyPanel({
 
   const { userAddress } = useUserAddress()
   const { data: positionData } = usePositionQuery(market.id, userAddress)
-  
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [successDialogData, setSuccessDialogData] = useState<{
-    title: string
-    txHash?: string
-  }>({ title: "", txHash: "" })
+
   
   const maxWithdrawable = calculateMaxWithdrawable(positionData ?? {
     borrow_shares: "0",
@@ -71,71 +66,51 @@ export function SupplyPanel({
   const handleSupply = async () => {
     if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
-    const supplyAmountInTokens = Number(supplyAmount || "0");
-    const supplyAmountInDenom = supplyAmountInTokens * Math.pow(10, market.loan_token_decimals);
+    const supplyAmountInDenom = parseUnits(supplyAmount || "0", market.loan_token_decimals);
     
-    try {
-      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
-      
-      if (currentAllowance < BigInt(supplyAmountInDenom)) {
-        await approveTokenMutation.mutateAsync({
-          tokenPath: market.loan_token,
-          amount: supplyAmountInDenom
-        });
-      }
-      
-      const response = await supplyMutation.mutateAsync({
-        marketId: market.id,
-        userAddress: userAddress!,
-        assets: supplyAmountInDenom
+    const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
+    
+    if (currentAllowance < supplyAmountInDenom) {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loan_token,
+        amount: Number(supplyAmountInDenom),
+        spenderAddress: VOLOS_ADDRESS
       });
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Supply Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-        reset();
-      }
-    } catch (error) {
-      console.error("Supply transaction failed:", error);
     }
+    
+    await supplyMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: Number(supplyAmountInDenom)
+    });
   };
 
   const handleWithdraw = async () => {
     if (isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax) return;
     
-    const withdrawAmountInTokens = Number(withdrawAmount || "0");
-    const withdrawAmountInDenom = withdrawAmountInTokens * Math.pow(10, market.loan_token_decimals);
+    const withdrawAmountInDenom = parseUnits(withdrawAmount || "0", market.loan_token_decimals);
     
-    try {
-      const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
-      
-      if (currentAllowance < BigInt(withdrawAmountInDenom)) {
-        await approveTokenMutation.mutateAsync({
-          tokenPath: market.loan_token,
-          amount: withdrawAmountInDenom
-        });
-      }
-      
-      const response = await withdrawMutation.mutateAsync({
-        marketId: market.id,
-        userAddress: userAddress!,
-        assets: withdrawAmountInDenom
+    const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
+    
+    if (currentAllowance < withdrawAmountInDenom) {
+      await approveTokenMutation.mutateAsync({
+        tokenPath: market.loan_token,
+        amount: Number(withdrawAmountInDenom),
+        spenderAddress: VOLOS_ADDRESS
       });
-      
-      if (response.status === 'success') {
-        setSuccessDialogData({
-          title: "Withdraw Successful",
-          txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-        });
-        setShowSuccessDialog(true);
-        reset();
-      }
-    } catch (error) {
-      console.error("Withdraw transaction failed:", error);
     }
+    
+    await withdrawMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: Number(withdrawAmountInDenom)
+    });
+    
+    await withdrawMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: Number(withdrawAmountInDenom)
+    });
   };
     
     return (
@@ -152,13 +127,9 @@ export function SupplyPanel({
         isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
         isButtonPending={isSupplyPending}
         onMaxClickAction={async () => {
-          try {
-            const balance = await getTokenBalance(market.loan_token, userAddress!);
-            const balanceFormatted = formatUnits(BigInt(balance), market.loan_token_decimals);
-            setValue("supplyAmount", balanceFormatted);
-          } catch (error) {
-            console.error("Failed to fetch loan balance:", error);
-          }
+          const balance = await getTokenBalance(market.loan_token, userAddress!);
+          const balanceFormatted = formatUnits(BigInt(balance), market.loan_token_decimals);
+          setValue("supplyAmount", balanceFormatted);
         }}
         onSubmitAction={handleSupply}
         inputValue={supplyAmount}
@@ -183,14 +154,6 @@ export function SupplyPanel({
         price={1}
       />
         </form>
-
-    {/* Success Dialog */}
-    <TransactionSuccessDialog
-      isOpen={showSuccessDialog}
-      onClose={() => setShowSuccessDialog(false)}
-      title={successDialogData.title}
-      txHash={successDialogData.txHash}
-    />
     </>
     )
 } 

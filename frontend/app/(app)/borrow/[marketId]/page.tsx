@@ -7,9 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useState } from "react"
 import { SidePanel } from "../../../../components/side-panel"
-import { useMarketQuery } from "../queries-mutations"
+import { useMarketQuery } from "@/hooks/use-queries"
 
-// Disable static generation for this route since it depends on client-side wallet functionality
 export const dynamic = 'force-dynamic'
 
 const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
@@ -20,7 +19,7 @@ function MarketPageContent() {
   const marketId = decodeURIComponent(params.marketId)
 
   const [apyVariations] = useState({ sevenDay: 0, ninetyDay: 0 })
-  const [tab, setTab] = useState("add-borrow") // side panel related
+  const [tab, setTab] = useState("add-borrow")
   const { userAddress } = useUserAddress()
 
   const { data: marketInfo, isLoading: isMarketLoading } = useMarketQuery(marketId)

@@ -21,8 +21,8 @@ export async function apiGetUserInfo(userAddr: string): Promise<GovernanceUserIn
     )
     return parseValidatedJsonResult(result, GovernanceUserInfoSchema)
   } catch (error) {
-    console.error('Error fetching user governance info:', error)
-    throw error
+    console.error(error)
+    return { address: userAddr, vlsBalance: 0, xvlsBalance: 0, proposalThreshold: 0, isMember: false }
   }
 }
 
@@ -35,8 +35,8 @@ export async function apiGetXVLSBalance(userAddr: string): Promise<Balance> {
     const balanceData = parseValidatedJsonResult(result, BalanceSchema)
     return balanceData
   } catch (error) {
-    console.error('Error fetching xVLS balance:', error)
-    throw error
+    console.error(error)
+    return { address: userAddr, balance: 0 }
   }
 }
 
@@ -48,8 +48,8 @@ export async function getTokenBalance(tokenPath: string, userAddress: string): P
     )
     return parseABCIResponse(result, 'int64')
   } catch (error) {
-    console.error('Error fetching token balance:', error)
-    throw error
+    console.error(error)
+    return "0"
   }
 }
 
@@ -61,8 +61,8 @@ export async function getAllowance(tokenPath: string, userAddress: string): Prom
     )
     return parseABCIResponse(result, 'int64')
   } catch (error) {
-    console.error('Error fetching token balance:', error)
-    throw error
+    console.error(error)
+    return "0"
   }
 }
 
@@ -74,7 +74,7 @@ export async function getExpectedBorrowAssets(marketId: string, userAddress: str
     )
     return parseABCIResponse(result, 'string')
   } catch (error) {
-    console.error('Error fetching expected borrow assets:', error)
-    throw error
+    console.error(error)
+    return "0"
   }
 }

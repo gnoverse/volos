@@ -1,6 +1,5 @@
 import { getTokenBalance } from "@/app/services/abci"
-import { Market, Position } from "@/app/types"
-import { usePositionCalculations } from "@/hooks/use-position-calculations"
+import { Market } from "@/app/types"
 import { useCallback, useEffect, useState } from "react"
 
 /**
@@ -18,7 +17,7 @@ import { useCallback, useEffect, useState } from "react"
  * @returns Object containing maxRepayable amount and loading state
  */
 export function useMaxRepayable(
-  position: Position,
+  expectedBorrowAssets: string,
   market: Market,
   userAddress: string | undefined
 ) {
@@ -26,9 +25,6 @@ export function useMaxRepayable(
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
-  const {
-    currentBorrowAssets,
-  } = usePositionCalculations(position, market)
 
   const calculateMaxRepayableAmount = useCallback(async () => {
     if (!userAddress) {
@@ -41,7 +37,7 @@ export function useMaxRepayable(
 
     try {
       // 1. Current borrow assets (what user owes)
-      const borrowAmount = currentBorrowAssets
+      const borrowAmount = BigInt(expectedBorrowAssets) - BigInt(1)
 
       // 2. Get user's loan token balance
       const userBalance = await getTokenBalance(market.loan_token, userAddress)
@@ -58,7 +54,7 @@ export function useMaxRepayable(
     } finally {
       setIsLoading(false)
     }
-  }, [currentBorrowAssets, market.loan_token, userAddress])
+  }, [expectedBorrowAssets, market.loan_token, userAddress])
 
   useEffect(() => {
     calculateMaxRepayableAmount()

@@ -17,7 +17,7 @@ import { WalletIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { columns } from "./columns"
-import { useMarketsQuery, useUserLoanHistoryQuery } from "./queries-mutations"
+import { useMarketsQuery, useUserLoanHistoryQuery } from "@/hooks/use-queries"
 
 export default function BorrowPage() {
   const router = useRouter()

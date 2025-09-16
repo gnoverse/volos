@@ -72,26 +72,6 @@ export function formatApyVariation(
 }
 
 /**
- * Converts a WAD-scaled string (1e18 = 1.00) to a float with 2 decimals.
- * Example: "2500000000000000000" => "2.50"
- */
-export function formatHealthFactor(wadString: string | undefined | null, decimals = 2): string {
-  if (!wadString) return "0.00";
-  
-  try {
-    const wadValue = BigInt(wadString);
-    
-    // Convert to decimal using BigInt division with precision preservation
-    const decimal = bigIntDivide(wadValue, WAD);
-    
-    return decimal.toFixed(decimals);
-  } catch (error) {
-    console.error("Error converting WAD to decimal:", error);
-    return "0.00";
-  }
-}
-
-/**
  * Converts a WAD format string to a percentage number with smart rounding.
  * Uses full precision conversion to maintain accuracy for display purposes.
  * 

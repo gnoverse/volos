@@ -1,4 +1,4 @@
-import { useAPRHistoryQuery, useMarketSnapshotsQuery, useUtilizationHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
+import { useAPRHistoryQuery, useMarketSnapshotsQuery, useUtilizationHistoryQuery } from "@/hooks/use-queries"
 import { getSnapshotResolution, getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { TimePeriod } from "@/components/chart-dropdown"
 import { useMemo } from "react"
