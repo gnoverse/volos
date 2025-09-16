@@ -43,12 +43,7 @@ export function useUserAddress() {
     if (isConnected) {
       adenaService.disconnectWallet()
     } else {
-      try {
-        await adenaService.connectWallet()
-      } catch (error) {
-        console.error("Failed to connect wallet:", error)
-        throw error
-      }
+      await adenaService.connectWallet()
     }
   }, [isConnected])
 

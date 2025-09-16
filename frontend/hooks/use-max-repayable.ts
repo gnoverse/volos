@@ -1,5 +1,6 @@
 import { getTokenBalance } from "@/app/services/abci"
 import { Market } from "@/app/types"
+import { toastError } from "@/components/ui/toast"
 import { useCallback, useEffect, useState } from "react"
 
 /**
@@ -23,8 +24,6 @@ export function useMaxRepayable(
 ) {
   const [maxRepayable, setMaxRepayable] = useState<bigint>(BigInt(0))
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-
 
   const calculateMaxRepayableAmount = useCallback(async () => {
     if (!userAddress) {
@@ -33,8 +32,7 @@ export function useMaxRepayable(
     }
 
     setIsLoading(true)
-    setError(null)
-
+    
     try {
       // 1. Current borrow assets (what user owes)
       const borrowAmount = BigInt(expectedBorrowAssets) - BigInt(1)
@@ -48,8 +46,7 @@ export function useMaxRepayable(
 
       setMaxRepayable(actualMaxRepayable)
     } catch (err) {
-      console.error("Failed to calculate max repayable:", err)
-      setError(err instanceof Error ? err.message : "Unknown error")
+      toastError("Failed to calculate max repayable:", String(err))
       setMaxRepayable(BigInt(0))
     } finally {
       setIsLoading(false)
@@ -63,7 +60,6 @@ export function useMaxRepayable(
   return {
     maxRepayable,
     isLoading,
-    error,
     refetch: calculateMaxRepayableAmount
   }
 }

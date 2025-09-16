@@ -1,6 +1,8 @@
 import { TxService } from "@/app/services/tx.service";
 import { openTxSuccess } from "@/components/transaction-success-controller";
+import { toastError, toastSuccess } from "@/components/ui/toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { ACTIVE_PROPOSALS_QUERY_KEY, EXPECTED_BORROW_ASSETS_QUERY_KEY, GOVERNANCE_USER_INFO_QUERY_KEY, MARKET_QUERY_KEY, MARKETS_QUERY_KEY, POSITION_QUERY_KEY, PROPOSAL_QUERY_KEY, PROPOSALS_QUERY_KEY, USER_PENDING_UNSTAKES_QUERY_KEY, USER_QUERY_KEY, USER_VOTE_QUERY_KEY, XVLS_BALANCE_QUERY_KEY } from "./use-queries";
 
 export function useApproveTokenMutation() {
@@ -19,10 +21,10 @@ export function useApproveTokenMutation() {
         return await txService.approveToken(tokenPath, amount, spenderAddress);
       },
       onError: (error) => {
-        console.error("Token approval failed:", error);
+        toastError("Approval failed", String(error));
       },
       onSuccess: () => {
-        console.log("Token approval successful");
+        toastSuccess("Approval successful")
       }
     });
   }
@@ -52,7 +54,7 @@ export function useSupplyMutation() {
         ]);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Supply failed", String(error));
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -92,7 +94,7 @@ export function useWithdrawMutation() {
         ]);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Withdraw failed", String(error));
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -132,7 +134,7 @@ export function useBorrowMutation() {
         ]);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Borrow failed", String(error));
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -172,7 +174,7 @@ export function useRepayMutation() {
         ]);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Repay failed", String(error));
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -210,7 +212,7 @@ export function useSupplyCollateralMutation() {
         ]);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Supply collateral failed", String(error));
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -247,7 +249,7 @@ export function useWithdrawCollateralMutation() {
         ]);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Withdraw collateral failed", String(error));
       },
       onSettled: (data, error, variables) => {
         setTimeout(() => {
@@ -288,7 +290,7 @@ export function useLiquidateMutation() {
         if (context?.previousMarketData) {
           queryClient.setQueryData([MARKET_QUERY_KEY, variables.marketId], context.previousMarketData);
         }
-        console.error(error);
+        toastError("Liquidation failed", String(error));
       },
       onSettled: (data, error, variables) => {
         queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
@@ -320,7 +322,7 @@ export function useAccrueInterestMutation() {
         if (context?.previousMarketData) {
           queryClient.setQueryData([MARKET_QUERY_KEY, variables.marketId], context.previousMarketData);
         }
-        console.error(error);
+        toastError("Accrue interest failed", String(error));
       },
       onSettled: (data, error, variables) => {
         queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
@@ -358,7 +360,7 @@ export function useCreateMarketMutation() {
         if (context?.previousMarketsData) {
           queryClient.setQueryData([MARKETS_QUERY_KEY], context.previousMarketsData);
         }
-        console.error(error);
+        toastError("Create market failed", String(error));
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
@@ -367,68 +369,7 @@ export function useCreateMarketMutation() {
       }
     });
   }
-  
-export function useEnableIRMMutation() {
-    const queryClient = useQueryClient();
-    const txService = TxService.getInstance();
-    
-    return useMutation({
-      mutationFn: async ({ 
-        irm
-      }: { 
-        irm: string;
-      }) => {
-        return txService.enableIRM(irm);
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
-      },
-      onSuccess: () => {
-        openTxSuccess({ title: "IRM Enabled" })
-      }
-    });
-  }
-export function useEnableLLTVMutation() {
-    const queryClient = useQueryClient();
-    const txService = TxService.getInstance();
-    
-    return useMutation({
-      mutationFn: async ({ 
-        lltv
-      }: { 
-        lltv: string;
-      }) => {
-        return txService.enableLLTV(lltv);
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
-      },
-      onSuccess: () => {
-        openTxSuccess({ title: "LLTV Enabled" })
-      }
-    });
-  }
-export function useSetFeeRecipientMutation() {
-    const queryClient = useQueryClient();
-    const txService = TxService.getInstance();
-    
-    return useMutation({
-      mutationFn: async ({ 
-        address
-      }: { 
-        address: string;
-      }) => {
-        return txService.setFeeRecipient(address);
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
-      },
-      onSuccess: () => {
-        openTxSuccess({ title: "Fee Recipient Set" })
-      }
-    });
-  }
-  
+
 
 // governance mutations ------------------------------------------------------------
   
@@ -447,7 +388,7 @@ export function useStakeVLSMutation() {
         return txService.stakeVLS(amount, delegatee);
       },
       onError: (error) => {
-        console.error(error);
+        toast.error("Stake VLS failed", { description: String(error) });
       },
       onSuccess: async () => {
         openTxSuccess({ title: "Staked VLS" })
@@ -483,7 +424,7 @@ export function useBeginUnstakeVLSMutation() {
         return txService.beginUnstakeVLS(amount, delegatee);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Begin unstake failed", String(error));
       },
       onSuccess: async () => {
         openTxSuccess({ title: "Begun Unstaking" })
@@ -513,7 +454,7 @@ export function useBeginUnstakeVLSMutation() {
         return txService.withdrawUnstakedVLS();
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Withdraw unstaked failed", String(error));
       },
       onSuccess: async () => {
         openTxSuccess({ title: "Withdrawal Successful" })
@@ -551,7 +492,7 @@ export function useVoteMutation() {
         return txService.voteOnProposal(proposalId, choice, reason);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Vote failed", String(error));
       },
       onSuccess: async (_, variables) => {
         openTxSuccess({ title: "Vote Submitted" })
@@ -587,7 +528,7 @@ export function useExecuteProposalMutation() {
         return txService.executeProposal(proposalId);
       },
       onError: (error) => {
-        console.error(error);
+        toastError("Execute proposal failed", String(error));
       },
       onSuccess: async (_, variables) => {
         openTxSuccess({ title: "Proposal Executed" })

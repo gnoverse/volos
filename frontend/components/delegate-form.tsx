@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ChevronDown, ChevronUp, Plus } from "lucide-react"
 import { useState } from "react"
+import { toastError } from "./ui/toast"
 
 export function DelegateForm() {
   const { isConnected } = useUserAddress()
@@ -28,13 +29,13 @@ export function DelegateForm() {
 
   const handleDelegate = async () => {
     if (!isConnected || !newDelegatee || !delegateAmount) {
-      console.error("Missing required fields for delegation")
+      toastError("Missing required fields for delegation")
       return
     }
 
     const wholeTokenAmount = parseFloat(delegateAmount)
     if (isNaN(wholeTokenAmount) || wholeTokenAmount <= 0) {
-      console.error("Invalid delegation amount")
+      toastError("Invalid delegation amount")
       return
     }
 

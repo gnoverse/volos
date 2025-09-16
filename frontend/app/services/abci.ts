@@ -21,7 +21,7 @@ export async function apiGetUserInfo(userAddr: string): Promise<GovernanceUserIn
     )
     return parseValidatedJsonResult(result, GovernanceUserInfoSchema)
   } catch (error) {
-    console.error(error)
+    console.error(error) // leave these for development
     return { address: userAddr, vlsBalance: 0, xvlsBalance: 0, proposalThreshold: 0, isMember: false }
   }
 }
