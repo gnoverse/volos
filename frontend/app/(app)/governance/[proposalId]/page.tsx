@@ -1,14 +1,13 @@
 "use client"
 
-import { useExecuteProposalMutation, useVoteMutation } from "@/hooks/use-mutations"
-import { useProposal, useUserVoteOnProposal, useXVLSBalance } from "@/hooks/use-queries"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { getProposalStatusColor } from "@/app/utils/ui.utils"
 import CopiableAddress from "@/components/copiable-addess"
-import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { useExecuteProposalMutation, useVoteMutation } from "@/hooks/use-mutations"
+import { useProposal, useUserVoteOnProposal, useXVLSBalance } from "@/hooks/use-queries"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowLeft, Calendar, CheckCircle, Clock, PlayCircle, User, Vote, XCircle } from "lucide-react"
 import Link from "next/link"
@@ -20,47 +19,27 @@ const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 export default function ProposalDetailPage() {
   const params = useParams()
   const proposalId = params.proposalId as string
-  const { data: proposal, isLoading, error, refetch: refetchProposal } = useProposal(proposalId)
+  const { data: proposal, isLoading, error } = useProposal(proposalId)
   const voteMutation = useVoteMutation()
   const [votingReason, setVotingReason] = useState("")
   const [isVoting, setIsVoting] = useState(false)
-  
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [successDialogData, setSuccessDialogData] = useState<{
-    title: string
-    txHash?: string
-  }>({ title: "", txHash: "" })
     
   const { userAddress, isConnected } = useUserAddress()
   const { data: xvlsBalance = { address: userAddress, balance: 0 } } = useXVLSBalance(userAddress)
-  const { data: userVote, refetch: refetchUserVote } = useUserVoteOnProposal(proposalId, userAddress)
+  const { data: userVote } = useUserVoteOnProposal(proposalId, userAddress)
   const executeMutation = useExecuteProposalMutation()
 
   const handleVote = async (choice: 'YES' | 'NO' | 'ABSTAIN') => {
     if (!proposal) return
     
     setIsVoting(true)
-    const response = await voteMutation.mutateAsync({
+    await voteMutation.mutateAsync({
       proposalId: proposal.id,
       choice,
       reason: votingReason
     })
 
-    if (response.status === 'success') {
-      setSuccessDialogData({
-        title: `Vote ${choice} Successful`,
-        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-      });
-      setShowSuccessDialog(true);
-    }
-
     setVotingReason("")
-    setTimeout(async () => {
-      await Promise.all([
-        refetchUserVote(),
-        refetchProposal()
-      ])
-    }, 1000) 
     setIsVoting(false)
   }
 
@@ -77,16 +56,7 @@ export default function ProposalDetailPage() {
   const handleExecute = async () => {
     if (!proposal) return
     
-    const response = await executeMutation.mutateAsync({ proposalId: proposal.id })
-    
-    if (response.status === 'success') {
-      setSuccessDialogData({
-        title: "Execute Proposal Successful",
-        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-      });
-      setShowSuccessDialog(true);
-    }
-  
+    await executeMutation.mutateAsync({ proposalId: proposal.id })  
   }
 
   if (isLoading) {
@@ -211,7 +181,7 @@ export default function ProposalDetailPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-200 mb-3">Your Vote</h3>
                 <div className="bg-gray-800/40 rounded-lg p-4 border border-gray-700/50">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         userVote.vote_choice === 'YES' 
@@ -375,14 +345,6 @@ export default function ProposalDetailPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Success Dialog */}
-      <TransactionSuccessDialog
-        isOpen={showSuccessDialog}
-        onClose={() => setShowSuccessDialog(false)}
-        title={successDialogData.title}
-        txHash={successDialogData.txHash}
-      />
     </div>
   )
 }

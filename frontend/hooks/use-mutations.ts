@@ -1,4 +1,5 @@
 import { TxService } from "@/app/services/tx.service";
+import { openTxSuccess } from "@/components/transaction-success-controller";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ACTIVE_PROPOSALS_QUERY_KEY, EXPECTED_BORROW_ASSETS_QUERY_KEY, GOVERNANCE_USER_INFO_QUERY_KEY, MARKET_QUERY_KEY, MARKETS_QUERY_KEY, POSITION_QUERY_KEY, PROPOSAL_QUERY_KEY, PROPOSALS_QUERY_KEY, USER_PENDING_UNSTAKES_QUERY_KEY, USER_QUERY_KEY, USER_VOTE_QUERY_KEY, XVLS_BALANCE_QUERY_KEY } from "./use-queries";
 
@@ -20,8 +21,8 @@ export function useApproveTokenMutation() {
       onError: (error) => {
         console.error("Token approval failed:", error);
       },
-      onSuccess: (data) => {
-        console.log("Token approval successful:", data);
+      onSuccess: () => {
+        console.log("Token approval successful");
       }
     });
   }
@@ -59,6 +60,9 @@ export function useSupplyMutation() {
           queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Supply Successful" })
       }
     });
   }
@@ -96,6 +100,9 @@ export function useWithdrawMutation() {
           queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Borrow Successful" })
       }
     });
   }
@@ -133,6 +140,9 @@ export function useBorrowMutation() {
           queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Repay Successful" })
       }
     });
   }
@@ -170,6 +180,9 @@ export function useRepayMutation() {
           queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Repay Successful" })
       }
     });
   }
@@ -205,6 +218,9 @@ export function useSupplyCollateralMutation() {
           queryClient.invalidateQueries({ queryKey: [EXPECTED_BORROW_ASSETS_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Supply Collateral Successful" })
       }
     });
   }
@@ -238,6 +254,9 @@ export function useWithdrawCollateralMutation() {
           queryClient.invalidateQueries({ queryKey: [POSITION_QUERY_KEY, variables.marketId, variables.userAddress] });
           queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
         }, 2000);
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Withdraw Collateral Successful" })
       }
     });
   }
@@ -273,9 +292,9 @@ export function useLiquidateMutation() {
       },
       onSettled: (data, error, variables) => {
         queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
-        if (!error) {
-          console.log("Liquidate transaction successful:", data);
-        }
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Liquidation Successful" })
       }
     });
   }
@@ -305,9 +324,9 @@ export function useAccrueInterestMutation() {
       },
       onSettled: (data, error, variables) => {
         queryClient.invalidateQueries({ queryKey: [MARKET_QUERY_KEY, variables.marketId] });
-        if (!error) {
-          console.log("Accrue interest transaction successful:", data);
-        }
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Interest Accrued" })
       }
     });
   }
@@ -341,11 +360,10 @@ export function useCreateMarketMutation() {
         }
         console.error(error);
       },
-      onSettled: (data, error) => {
+      onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
-        if (!error) {
-          console.log("Create market transaction successful:", data);
-        }
+      }, onSuccess: () => {
+        openTxSuccess({ title: "Market Created" })
       }
     });
   }
@@ -362,13 +380,11 @@ export function useEnableIRMMutation() {
       }) => {
         return txService.enableIRM(irm);
       },
-      onSettled: (data, error) => {
+      onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
-        if (error) {
-          console.error(error);
-        } else {
-          console.log("Enable IRM transaction successful:", data);
-        }
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "IRM Enabled" })
       }
     });
   }
@@ -384,13 +400,11 @@ export function useEnableLLTVMutation() {
       }) => {
         return txService.enableLLTV(lltv);
       },
-      onSettled: (data, error) => {
+      onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
-        if (error) {
-          console.error(error);
-        } else {
-          console.log("Enable LLTV transaction successful:", data);
-        }
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "LLTV Enabled" })
       }
     });
   }
@@ -406,13 +420,11 @@ export function useSetFeeRecipientMutation() {
       }) => {
         return txService.setFeeRecipient(address);
       },
-      onSettled: (data, error) => {
+      onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [MARKETS_QUERY_KEY] });
-        if (error) {
-          console.error(error);
-        } else {
-          console.log("Set fee recipient transaction successful:", data);
-        }
+      },
+      onSuccess: () => {
+        openTxSuccess({ title: "Fee Recipient Set" })
       }
     });
   }
@@ -437,8 +449,8 @@ export function useStakeVLSMutation() {
       onError: (error) => {
         console.error(error);
       },
-      onSuccess: async (data) => {
-        console.log("VLS staking successful:", data);
+      onSuccess: async () => {
+        openTxSuccess({ title: "Staked VLS" })
   
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [USER_QUERY_KEY] }),
@@ -473,8 +485,8 @@ export function useBeginUnstakeVLSMutation() {
       onError: (error) => {
         console.error(error);
       },
-      onSuccess: async (data) => {
-        console.log("VLS unstaking successful:", data);
+      onSuccess: async () => {
+        openTxSuccess({ title: "Unstake Begun" })
         
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [USER_QUERY_KEY] }),
@@ -503,8 +515,8 @@ export function useBeginUnstakeVLSMutation() {
       onError: (error) => {
         console.error(error);
       },
-      onSuccess: async (data) => {
-        console.log("VLS withdrawal successful:", data);
+      onSuccess: async () => {
+        openTxSuccess({ title: "Withdrawal Successful" })
         
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [USER_QUERY_KEY] }),
@@ -541,9 +553,8 @@ export function useVoteMutation() {
       onError: (error) => {
         console.error(error);
       },
-      onSuccess: async (data, variables) => {
-        console.log("Vote successful:", data);
-        console.log("Invalidating queries for proposal:", variables.proposalId);
+      onSuccess: async (_, variables) => {
+        openTxSuccess({ title: "Vote Submitted" })
         
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),
@@ -578,7 +589,7 @@ export function useExecuteProposalMutation() {
       onError: (error) => {
         console.error(error);
       },
-      onSuccess: async (_data, variables) => {
+      onSuccess: async (_, variables) => {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),
           queryClient.invalidateQueries({ queryKey: [PROPOSALS_QUERY_KEY] }),

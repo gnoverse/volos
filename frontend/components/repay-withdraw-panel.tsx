@@ -6,7 +6,6 @@ import { Market } from "@/app/types"
 import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
 import { SidePanelCard } from "@/components/side-panel-card"
-import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { useMaxRepayable } from "@/hooks/use-max-repayable"
 import { useApproveTokenMutation, useRepayMutation, useWithdrawCollateralMutation } from "@/hooks/use-mutations"
 import { usePositionCalculations } from "@/hooks/use-position-calculations"
@@ -14,7 +13,6 @@ import { useExpectedBorrowAssetsQuery, usePositionQuery } from "@/hooks/use-quer
 import { useRepayWithdrawValidation } from "@/hooks/use-repay-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowUp, Minus } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits, parseUnits } from "viem"
 
@@ -25,7 +23,7 @@ interface RepayWithdrawPanelProps {
 export function RepayWithdrawPanel({
   market,
 }: RepayWithdrawPanelProps) {
-  const { register, setValue, watch, reset } = useForm({
+  const { register, setValue, watch } = useForm({
     defaultValues: {
       repayAmount: "",
       withdrawAmount: ""
@@ -35,12 +33,6 @@ export function RepayWithdrawPanel({
   const { userAddress } = useUserAddress()
   const { data: positionData } = usePositionQuery(market.id, userAddress)
   const { data: expectedBorrowAssets } = useExpectedBorrowAssetsQuery(market.id, userAddress)
-
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [successDialogData, setSuccessDialogData] = useState<{
-    title: string
-    txHash?: string
-  }>({ title: "", txHash: "" })
   
   const {
     positionMetrics,
@@ -105,20 +97,12 @@ export function RepayWithdrawPanel({
       }); 
     }
     
-    const response = await repayMutation.mutateAsync({
+    await repayMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
       assets: Number(repayAmountInDenom)
     });
     
-    if (response.status === 'success') {
-      setSuccessDialogData({
-        title: "Repay Successful",
-        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-      });
-      setShowSuccessDialog(true);
-      reset();
-    }
   };
 
   const handleWithdraw = async () => {
@@ -136,20 +120,11 @@ export function RepayWithdrawPanel({
       });
     }
     
-    const response = await withdrawCollateralMutation.mutateAsync({
+    await withdrawCollateralMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
       amount: Number(withdrawAmountInDenom)
     });
-    
-    if (response.status === 'success') {
-      setSuccessDialogData({
-        title: "Withdraw Collateral Successful",
-        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-      });
-      setShowSuccessDialog(true);
-      reset();
-    }
   };
 
   return (
@@ -202,14 +177,6 @@ export function RepayWithdrawPanel({
         currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
     </form>
-
-    {/* Success Dialog */}
-    <TransactionSuccessDialog
-      isOpen={showSuccessDialog}
-      onClose={() => setShowSuccessDialog(false)}
-      title={successDialogData.title}
-      txHash={successDialogData.txHash}
-    />
     </>
   )
 } 

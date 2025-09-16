@@ -5,13 +5,11 @@ import { VOLOS_ADDRESS } from "@/app/services/tx.service"
 import { Market } from "@/app/types"
 import { calculateMaxWithdrawable } from "@/app/utils/position.utils"
 import { SidePanelCard } from "@/components/side-panel-card"
-import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { useApproveTokenMutation, useSupplyMutation, useWithdrawMutation } from "@/hooks/use-mutations"
 import { usePositionQuery } from "@/hooks/use-queries"
 import { useSupplyWithdrawValidation } from "@/hooks/use-supply-withdraw-validation"
 import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { formatUnits, parseUnits } from "viem"
 
@@ -22,7 +20,7 @@ interface SupplyPanelProps {
 export function SupplyPanel({
   market,
 }: SupplyPanelProps) {
-  const { register, setValue, watch, reset } = useForm({
+  const { register, setValue, watch } = useForm({
         defaultValues: {
             supplyAmount: "",
       withdrawAmount: ""
@@ -31,12 +29,7 @@ export function SupplyPanel({
 
   const { userAddress } = useUserAddress()
   const { data: positionData } = usePositionQuery(market.id, userAddress)
-  
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [successDialogData, setSuccessDialogData] = useState<{
-    title: string
-    txHash?: string
-  }>({ title: "", txHash: "" })
+
   
   const maxWithdrawable = calculateMaxWithdrawable(positionData ?? {
     borrow_shares: "0",
@@ -85,20 +78,11 @@ export function SupplyPanel({
       });
     }
     
-    const response = await supplyMutation.mutateAsync({
+    await supplyMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
       assets: Number(supplyAmountInDenom)
     });
-    
-    if (response.status === 'success') {
-      setSuccessDialogData({
-        title: "Supply Successful",
-        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-      });
-      setShowSuccessDialog(true);
-      reset();
-    }   
   };
 
   const handleWithdraw = async () => {
@@ -116,20 +100,17 @@ export function SupplyPanel({
       });
     }
     
-    const response = await withdrawMutation.mutateAsync({
+    await withdrawMutation.mutateAsync({
       marketId: market.id,
       userAddress: userAddress!,
       assets: Number(withdrawAmountInDenom)
     });
     
-    if (response.status === 'success') {
-      setSuccessDialogData({
-        title: "Withdraw Successful",
-        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-      });
-      setShowSuccessDialog(true);
-      reset();
-    }
+    await withdrawMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: Number(withdrawAmountInDenom)
+    });
   };
     
     return (
@@ -173,14 +154,6 @@ export function SupplyPanel({
         price={1}
       />
         </form>
-
-    {/* Success Dialog */}
-    <TransactionSuccessDialog
-      isOpen={showSuccessDialog}
-      onClose={() => setShowSuccessDialog(false)}
-      title={successDialogData.title}
-      txHash={successDialogData.txHash}
-    />
     </>
     )
 } 

@@ -1,7 +1,6 @@
 import { getAllowance } from "@/app/services/abci"
 import { STAKER_ADDRESS, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { formatTokenAmount } from "@/app/utils/format.utils"
-import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -30,13 +29,7 @@ export function GovMemberCards({
   const [isStakeExpanded, setIsStakeExpanded] = useState(false)
   const [stakeAmount, setStakeAmount] = useState("")
   
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [successDialogData, setSuccessDialogData] = useState<{
-    title: string
-    txHash?: string
-  }>({ title: "", txHash: "" })
-  
-  const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
+  const { data: userInfo, isLoading, error } = useGovernanceUserInfo(userAddress)
   const approveVLSMutation = useApproveTokenMutation()
   const stakeVLSMutation = useStakeVLSMutation()
 
@@ -66,20 +59,10 @@ export function GovMemberCards({
       })
     }
 
-    const response = await stakeVLSMutation.mutateAsync({
+    await stakeVLSMutation.mutateAsync({
       amount: amountInDenom,
       delegatee: userAddress
     })
-    
-    if (response.status === 'success') {
-      setSuccessDialogData({
-        title: "Stake VLS Successful",
-        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-      });
-      setShowSuccessDialog(true);
-    }
-    
-    await refetchUserInfo()
     
     setStakeAmount("")
     setIsStakeExpanded(false)
@@ -315,14 +298,6 @@ export function GovMemberCards({
           </div>
         )}
       </div>
-
-      {/* Success Dialog */}
-      <TransactionSuccessDialog
-        isOpen={showSuccessDialog}
-        onClose={() => setShowSuccessDialog(false)}
-        title={successDialogData.title}
-        txHash={successDialogData.txHash}
-      />
     </div>
   )
 } 

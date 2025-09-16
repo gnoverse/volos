@@ -2,7 +2,6 @@
 
 import { useApproveTokenMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
 import { STAKER_ADDRESS, VLS_PKG_PATH } from "@/app/services/tx.service"
-import { TransactionSuccessDialog } from "@/components/transaction-success-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useUserAddress } from "@/hooks/use-user-address"
@@ -15,12 +14,6 @@ export function DelegateForm() {
   const [delegateAmount, setDelegateAmount] = useState("")
   const [isDelegating, setIsDelegating] = useState(false)
   const [isDelegateExpanded, setIsDelegateExpanded] = useState(false)
-  
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [successDialogData, setSuccessDialogData] = useState<{
-    title: string
-    txHash?: string
-  }>({ title: "", txHash: "" })
   
   const approveVLSMutation = useApproveTokenMutation()
   const stakeVLSMutation = useStakeVLSMutation()
@@ -55,18 +48,10 @@ export function DelegateForm() {
       amount: amountInDenom
     })
 
-    const response = await stakeVLSMutation.mutateAsync({
+    await stakeVLSMutation.mutateAsync({
       amount: amountInDenom,
       delegatee: newDelegatee
-    })
-    
-    if (response.status === 'success') {
-      setSuccessDialogData({
-        title: "Delegate VLS Successful",
-        txHash: (response as { txHash?: string; hash?: string }).txHash || (response as { txHash?: string; hash?: string }).hash
-      });
-      setShowSuccessDialog(true);
-    }
+    })  
     
     setNewDelegatee("")
     setDelegateAmount("")
@@ -146,14 +131,6 @@ export function DelegateForm() {
           </Button>
         </div>
       )}
-
-      {/* Success Dialog */}
-      <TransactionSuccessDialog
-        isOpen={showSuccessDialog}
-        onClose={() => setShowSuccessDialog(false)}
-        title={successDialogData.title}
-        txHash={successDialogData.txHash}
-      />
     </div>
   )
 } 
