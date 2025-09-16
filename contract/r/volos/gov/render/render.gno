@@ -16,8 +16,8 @@ func Render(path string) string {
 	switch {
 	case strings.HasPrefix(path, "?user="):
 		return renderUserPage(path)
-	// case strings.HasPrefix(path, "?market="):
-	// 	return renderMarketPage(path)
+	case strings.HasPrefix(path, "?proposal="):
+		return renderProposalPage(path)
 	default:
 	}
 

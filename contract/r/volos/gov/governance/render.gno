@@ -36,7 +36,7 @@ func listActiveProposals(path string) string {
 
 	for _, item := range page.Items {
 		proposal := item.Value.(*commondao.Proposal)
-		out += "- " + proposal.Definition().Title() + "\n"
+		out += md.BulletItem(md.Link(proposal.Definition().Title(), "/r/volos/gov?proposal="+item.Key))
 	}
 
 	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
@@ -54,8 +54,8 @@ func activeProposalsCount() string {
 func Render(path string) string {
 	out := md.H1("🏛️ Volos Governance")
 	out += md.Paragraph("On-chain governance for the Volos protocol")
-	out += md.H2(md.Link("🪧 Make a proposal", txlink.Call("CreateProposal")))
-	out += md.Blockquote("Propose a specific governance improvement for Volos (e.g., voting rules, treasury management, member roles).")
+	out += md.H2("🪧 Make a proposal")
+	out += md.Blockquote(md.Link("Propose a specific governance improvement for Volos", txlink.Call("CreateProposal")) + " (e.g., voting rules, treasury management, member roles).")
 
 	out += listActiveProposals(path)
 	return out
