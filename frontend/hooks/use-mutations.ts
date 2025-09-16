@@ -102,7 +102,7 @@ export function useWithdrawMutation() {
         }, 2000);
       },
       onSuccess: () => {
-        openTxSuccess({ title: "Borrow Successful" })
+        openTxSuccess({ title: "Withdraw Successful" })
       }
     });
   }
@@ -142,7 +142,7 @@ export function useBorrowMutation() {
         }, 2000);
       },
       onSuccess: () => {
-        openTxSuccess({ title: "Repay Successful" })
+        openTxSuccess({ title: "Borrow Successful" })
       }
     });
   }
@@ -486,7 +486,7 @@ export function useBeginUnstakeVLSMutation() {
         console.error(error);
       },
       onSuccess: async () => {
-        openTxSuccess({ title: "Unstake Begun" })
+        openTxSuccess({ title: "Begun Unstaking" })
         
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [USER_QUERY_KEY] }),
@@ -590,6 +590,7 @@ export function useExecuteProposalMutation() {
         console.error(error);
       },
       onSuccess: async (_, variables) => {
+        openTxSuccess({ title: "Proposal Executed" })
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: [PROPOSAL_QUERY_KEY, variables.proposalId] }),
           queryClient.invalidateQueries({ queryKey: [PROPOSALS_QUERY_KEY] }),

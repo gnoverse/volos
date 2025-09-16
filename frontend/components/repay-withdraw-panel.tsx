@@ -102,7 +102,7 @@ export function RepayWithdrawPanel({
       userAddress: userAddress!,
       assets: Number(repayAmountInDenom)
     });
-    
+    setValue("repayAmount", "")
   };
 
   const handleWithdraw = async () => {
@@ -125,6 +125,7 @@ export function RepayWithdrawPanel({
       userAddress: userAddress!,
       amount: Number(withdrawAmountInDenom)
     });
+    setValue("withdrawAmount", "")
   };
 
   return (

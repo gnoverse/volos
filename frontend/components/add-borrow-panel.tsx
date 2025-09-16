@@ -118,7 +118,7 @@ export function AddBorrowPanel({
       userAddress: userAddress!,
       amount: Number(supplyAmountInDenom)
     });
-    
+    setValue("supplyAmount", "")
   };
 
   const handleBorrow = async () => {
@@ -141,6 +141,7 @@ export function AddBorrowPanel({
       userAddress: userAddress!,
       assets: Number(borrowAmountInDenom)
     });
+    setValue("borrowAmount", "")
   };
 
   return (
