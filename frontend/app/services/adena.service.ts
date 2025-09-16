@@ -1,4 +1,4 @@
-import { toastError } from '@/components/ui/toast';
+import { toastError, toastInfo } from '@/components/ui/toast';
 import { AdenaSDK } from '@adena-wallet/sdk';
 
 export class AdenaService {
@@ -39,10 +39,12 @@ export class AdenaService {
         } else {
           this.setConnection(null, false);
         }
+        toastInfo(`Address changed`, address)
       }});
 
       this.sdk.onChangeNetwork({ callback: (network: string) => {
         this.setCurrentNetwork(network);
+        toastInfo(`Network changed`, network)
       }});
 
       const account = await this.sdk.getAccount();

@@ -8,10 +8,10 @@ export function toastError(title: string, description?: string, duration: number
     <div className="bg-customGray-800 rounded-2xl shadow-lg px-4 py-3 border border-logo-600">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-full flex items-center justify-center">
-          <AlertCircle className="w-6 h-6 text-red-400" />
+          <AlertCircle className="w-6 h-6 text-red-500" />
         </div>
         <div className="min-w-0">
-          <div className="text-logo-600 font-medium">{title}</div>
+          <div className="text-red-500 font-medium">{title}</div>
           {description && <div className="text-gray-400 text-sm">{description}</div>}
         </div>
       </div>
@@ -24,10 +24,10 @@ export function toastSuccess(title: string, description?: string, duration: numb
     <div className="bg-customGray-800 rounded-2xl shadow-lg px-4 py-3 border border-logo-600">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-full flex items-center justify-center">
-          <CheckCircle2 className="w-6 h-6 text-green-400" />
+          <CheckCircle2 className="w-6 h-6 text-green-500" />
         </div>
         <div className="min-w-0">
-          <div className="text-logo-600 font-medium">{title}</div>
+          <div className="text-green-500 font-medium">{title}</div>
           {description && <div className="text-gray-400 text-sm">{description}</div>}
         </div>
       </div>
@@ -40,7 +40,7 @@ export function toastInfo(title: string, description?: string, duration: number 
       <div className="bg-customGray-800 rounded-2xl shadow-lg px-4 py-3 border border-logo-600">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full flex items-center justify-center">
-            <Info className="w-6 h-6 text-green-400" />
+            <Info className="w-6 h-6 text-logo-700" />
           </div>
           <div className="min-w-0">
             <div className="text-logo-600 font-medium">{title}</div>
