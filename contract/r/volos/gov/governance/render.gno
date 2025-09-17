@@ -11,6 +11,7 @@ import (
 	"gno.land/p/moul/md"
 	"gno.land/p/moul/txlink"
 	"gno.land/p/nt/commondao"
+	"gno.land/r/sys/users"
 )
 
 func fillProposalTree(activeProposal commondao.ProposalStorage) *avl.Tree {
@@ -81,7 +82,6 @@ func parseProposalParam(path string) uint64 {
 }
 
 func renderChoices(choices []commondao.VoteChoice, eachVoteCount []int, proposal *commondao.Proposal) string {
-	//TODO: link to vote call tx
 	out := "| "
 	for i, choice := range choices {
 		out += md.Link(string(choice), txlink.Call("Vote", "proposalID", strconv.Itoa(int(proposal.ID())), "choice", string(choice))) + ": " + strconv.Itoa(eachVoteCount[i]) + " | "
@@ -101,12 +101,48 @@ func renderStats(proposal *commondao.Proposal) string {
 	mostVotedChoice := commondao.FindMostVotedChoice(proposal.VotingRecord().ReadonlyVotingRecord)
 
 	out := "📊 Total vote count: " + totalVoteCount + " | "
-	out += md.Paragraph(string(mostVotedChoice) + " is the most popular 🔥")
+	out += md.Paragraph(md.Bold(string(mostVotedChoice)) + " is the most popular 🔥")
 	out += renderChoices(proposal.VoteChoices(), eachVoteCount, proposal)
 	return out
 }
 
-func renderProposal(proposal *commondao.Proposal) string {
+func fillVoteRecordTree(votingRecord commondao.ReadonlyVotingRecord) *avl.Tree {
+	tree := avl.NewTree()
+
+	noReverse := false
+	votingRecord.Iterate(0, votingRecord.Size(), noReverse, func(vote commondao.Vote) bool {
+		tree.Set(vote.Address.String(), vote)
+		return false
+	})
+
+	return tree
+}
+
+func renderVotes(path string, votingRecord commondao.ReadonlyVotingRecord) string {
+	readonlyVotingRecordTree := fillVoteRecordTree(votingRecord)
+
+	p := pager.NewPager(readonlyVotingRecordTree, 10, false)
+	page := p.MustGetPageByPath(path)
+
+	var out string
+	for _, item := range page.Items {
+		vote := item.Value.(commondao.Vote)
+		var displayName string
+		userData := users.ResolveAddress(vote.Address)
+		if userData != nil && userData.Name() != "" {
+			displayName = userData.Name()
+		} else {
+			displayName = vote.Address.String()
+		}
+		out += md.BulletItem(md.Link(displayName, "/r/volos/gov?user="+item.Key) + " voted " + md.Bold(string(vote.Choice)) + " because " + md.Bold(vote.Reason))
+	}
+
+	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
+	out += page.Picker(path)
+	return out
+}
+
+func renderProposal(path string, proposal *commondao.Proposal) string {
 	out := md.H1(proposal.Definition().Title())
 	out += md.BulletItem("Proposed by " + md.Link(proposal.Creator().String(), "/r/volos/gov?user="+proposal.Creator().String()) + " at " + proposal.CreatedAt().Format(time.RFC822))
 
@@ -126,7 +162,9 @@ func renderProposal(proposal *commondao.Proposal) string {
 	out += md.HorizontalRule()
 
 	out += md.Paragraph(proposal.Definition().Body())
+	out += md.HorizontalRule()
 	out += renderStats(proposal)
+	out += renderVotes(path, proposal.VotingRecord().ReadonlyVotingRecord)
 
 	return out
 
@@ -139,6 +177,5 @@ func renderProposalPage(path string) string {
 	}
 
 	proposal := GetProposal(proposalId)
-	out := renderProposal(proposal)
-	return out
+	return renderProposal(path, proposal)
 }
