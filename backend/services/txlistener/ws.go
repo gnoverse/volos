@@ -79,22 +79,29 @@ func StartVolosTransactionListener(ctx context.Context, queue *processor.Transac
 		return fmt.Errorf("failed to send subscribe: %w", err)
 	}
 
+	// Channel to report read loop termination (with error if unexpected)
+	readErrCh := make(chan error, 1)
+
 	go func() {
 		for {
 			var msg map[string]interface{}
 			err := wsjson.Read(ctx, conn, &msg)
 			if err != nil {
+				// Report error to main routine to trigger fallback to polling
 				slog.Error("websocket read error", "error", err)
+				readErrCh <- err
 				return
 			}
 
 			if payload, ok := msg["payload"].(map[string]interface{}); ok {
 				if data, ok := payload["data"].(map[string]interface{}); ok {
 					if tx, ok := data["getTransactions"].(map[string]interface{}); ok {
-						queue.Submit(tx)
+						// Update block height BEFORE submitting to queue to ensure
+						// LastBlockHeight is updated even if WebSocket closes unexpectedly
 						if bh, ok := tx["block_height"].(float64); ok && onBlockHeight != nil {
 							onBlockHeight(int(bh))
 						}
+						queue.Submit(tx)
 						continue
 					}
 				}
@@ -102,8 +109,17 @@ func StartVolosTransactionListener(ctx context.Context, queue *processor.Transac
 		}
 	}()
 
-	<-ctx.Done()
-	return nil
+	// Wait for either context cancellation (graceful shutdown) or an unexpected
+	// websocket read error indicating the connection closed.
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-readErrCh:
+		if err != nil {
+			return fmt.Errorf("websocket listener stopped: %w", err)
+		}
+		return fmt.Errorf("websocket listener stopped")
+	}
 }
 
 // buildWebSocketQuery constructs the GraphQL subscription query for WebSocket

@@ -27,7 +27,7 @@ type TransactionListener struct {
 	RetryInterval   time.Duration
 	wsCtx           context.Context
 	wsCancel        context.CancelFunc
-	queue            *processor.TransactionProcessorQueue
+	queue           *processor.TransactionProcessorQueue
 }
 
 func NewTransactionListener(queue *processor.TransactionProcessorQueue) *TransactionListener {
@@ -38,7 +38,7 @@ func NewTransactionListener(queue *processor.TransactionProcessorQueue) *Transac
 		RetryInterval:   1 * time.Hour,
 		wsCtx:           ctx,
 		wsCancel:        cancel,
-		queue:            queue,
+		queue:           queue,
 	}
 }
 
