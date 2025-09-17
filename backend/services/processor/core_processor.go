@@ -11,7 +11,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
-
+	"volos-backend/model"
 )
 
 // processCoreTransaction handles transactions from the core package, processing various
@@ -28,6 +28,10 @@ func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestor
 	for _, eventInterface := range events {
 		event, eventType := getEventAndType(eventInterface)
 		if event == nil || eventType == "" {
+			continue
+		}
+
+		if event["pkg_path"].(string) != model.CorePkgPath {
 			continue
 		}
 

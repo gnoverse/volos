@@ -12,6 +12,7 @@ import (
 	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
+	"volos-backend/model"
 )
 
 // processGovernanceTransaction handles transactions from the governance package, processing
@@ -25,6 +26,10 @@ func processGovernanceTransaction(tx map[string]interface{}, client *firestore.C
 	for _, eventInterface := range events {
 		event, eventType := getEventAndType(eventInterface)
 		if event == nil || eventType == "" {
+			continue
+		}
+
+		if event["pkg_path"].(string) != model.GovernancePkgPath {
 			continue
 		}
 
