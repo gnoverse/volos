@@ -74,8 +74,3 @@ func VotingPowerQuorum() int64 {
 func VotingPowerQuorumEnabled() bool {
 	return votingPowerQuorum > 0
 }
-
-// Render function for explorer integration.
-func Render(path string) string {
-	return "Volos Governance - On-chain governance for the Volos protocol"
-}
