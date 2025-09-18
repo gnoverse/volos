@@ -1,18 +1,18 @@
-package bar
+package foo
 
 import (
 	"std"
 	"strings"
 
-	"gno.land/p/demo/grc/grc20"
-	"gno.land/p/demo/ownable"
-	"gno.land/p/demo/ufmt"
+	"gno.land/p/demo/tokens/grc20"
+	"gno.land/p/nt/ownable"
+	"gno.land/p/nt/ufmt"
 
-	"gno.land/r/demo/grc20reg"
+	"gno.land/r/demo/defi/grc20reg"
 )
 
 var (
-	token, privateLedger = grc20.NewToken("Bar", "BAR", 6)
+	token, privateLedger = grc20.NewToken("Foo", "FOO", 6)
 	owner                = ownable.NewWithAddress("g1e9mkmle8rgx4jy2398dal9320uul7g00tkyh42") // ADMIN
 )
 

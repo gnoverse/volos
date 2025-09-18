@@ -3,7 +3,7 @@ package vls
 import (
 	"std"
 
-	"gno.land/p/demo/json"
+	"gno.land/p/onbloc/json"
 )
 
 type RpcTokenInfo struct {

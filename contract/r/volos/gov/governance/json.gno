@@ -3,7 +3,7 @@ package governance
 import (
 	"std"
 
-	"gno.land/p/demo/json"
+	"gno.land/p/onbloc/json"
 	"gno.land/p/nt/commondao"
 	"gno.land/r/volos/gov/vls"
 	"gno.land/r/volos/gov/xvls"

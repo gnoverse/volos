@@ -1,7 +1,7 @@
 package core
 
 import (
-	"gno.land/p/demo/avl"
+	"gno.land/p/nt/avl"
 	u256 "gno.land/p/gnoswap/uint256"
 	"gno.land/p/volos/consts"
 	"gno.land/p/volos/math"
@@ -70,26 +70,6 @@ func ExpectedBorrowAssets(marketId string, user string) *u256.Uint {
 	return math.ToAssetsUp(position.BorrowShares, market.TotalBorrowAssets, market.TotalBorrowShares)
 }
 
-// CalculateBorrowRate returns the current borrow rate per second
-// The returned value is WAD-scaled (1e18)
-func CalculateBorrowRate(marketId string) *u256.Uint {
-	// Check if market exists
-	if _, exists := markets.Get(marketId); !exists {
-		panic(ErrMarketNotCreated)
-	}
-
-	market, params := GetMarket(marketId)
-
-	// If no borrows or no IRM, rate is zero
-	if market.TotalBorrowAssets.IsZero() || params.IRM == "" {
-		return u256.Zero()
-	}
-
-	// Get IRM and calculate current borrow rate
-	irm := GetIRM(params.IRM)
-	return irm.BorrowRate(market.TotalSupplyAssets, market.TotalBorrowAssets)
-}
-
 // CalculateSupplyRate returns the current supply rate per second
 // The returned value is WAD-scaled (1e18)
 func CalculateSupplyRate(marketId string) *u256.Uint {
@@ -109,24 +89,19 @@ func CalculateSupplyRate(marketId string) *u256.Uint {
 	irm := GetIRM(params.IRM)
 	borrowRate := irm.BorrowRate(market.TotalSupplyAssets, market.TotalBorrowAssets)
 
-	// Calculate utilization rate: totalBorrow / totalSupply
-	utilizationRate := math.WDivDown(market.TotalBorrowAssets, market.TotalSupplyAssets)
-
 	// Calculate fee-adjusted borrow rate
 	feeFactor := new(u256.Uint).Sub(consts.WAD, market.Fee) // (1 - fee)
 
-	// Supply rate = borrow rate * utilization rate * (1 - fee)
-	// This formula accounts for:
-	// 1. Interest is only earned on the portion of funds being borrowed (utilization)
-	// 2. A portion of interest (the fee) goes to the fee recipient
-	return math.WMulDown(math.WMulDown(borrowRate, utilizationRate), feeFactor)
+	// Supply rate = borrow rate * (1 - fee)
+	// This is the base supply rate before utilization adjustment
+	return math.WMulDown(borrowRate, feeFactor)
 }
 
 // CalculateBorrowAPR returns the current borrow APR (scaled by WAD)
 // This converts the per-second rate to an annual rate
 func CalculateBorrowAPR(marketId string) *u256.Uint {
 	// Get the per-second borrow rate
-	borrowRatePerSecond := CalculateBorrowRate(marketId)
+	borrowRatePerSecond := GetBorrowRate(marketId)
 	if borrowRatePerSecond.IsZero() {
 		return u256.Zero()
 	}
