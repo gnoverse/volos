@@ -27,23 +27,37 @@ func renderTotalStaked() string {
 	return md.Blockquote(strconv.FormatInt(totalStaked, 10) + " VLS")
 }
 
-func renderTopDelegators() string {
+func renderTopDelegators(path string) string {
+	var out string
+
 	table := mdtable.Table{
 		Headers: []string{"Address", "Amount"},
 	}
 
-	//TODO: Implement sorting by amount
-	delegations.IterateByOffset(0, delegations.Size(), func(_ string, value any) bool {
-		delegatee := value.(*avl.Tree)
+	p := pager.NewPager(delegations, 10, false)
+	page := p.MustGetPageByPath(path)
+	out += page.Picker(path) + "\n\n"
+
+	for _, item := range page.Items {
+		delegatee := item.Value.(*avl.Tree)
 		delegatee.IterateByOffset(0, delegatee.Size(), func(address string, vvalue any) bool {
+			var displayName string
+			userData := users.ResolveAddress(std.Address(address))
+			if userData != nil && userData.Name() != "" {
+				displayName = userData.Name()
+			} else {
+				displayName = address
+			}
 			amount := vvalue.(int64)
-			table.Append([]string{address, strconv.FormatInt(amount, 10) + " VLS"})
+			table.Append([]string{md.Link(displayName, "/r/volos/gov?user="+item.Key), strconv.FormatInt(amount, 10) + " VLS"})
 			return false
 		})
-		return false
-	})
+	}
 
-	return table.String() + "\n\n"
+	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
+	out += page.Picker(path)
+
+	return table.String() + out + "\n\n"
 }
 
 func renderTotalPending() string {
@@ -108,7 +122,7 @@ func Render(path string) string {
 	out += md.HorizontalRule()
 
 	out += md.H2("🚀 Top Stakers")
-	out += renderTopDelegators()
+	out += renderTopDelegators(path)
 	out += md.H2("🔄 Pending Unstake")
 	out += renderPendingUnstake(path)
 	return out
