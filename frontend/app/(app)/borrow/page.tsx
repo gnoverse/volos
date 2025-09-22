@@ -16,7 +16,7 @@ import { useUserAddress } from "@/hooks/use-user-address"
 import { WalletIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { columns } from "./columns"
+import { getMarketColumns, MarketSortDir, MarketSortField } from "./columns"
 import { useMarketsQuery, useUserLoanHistoryQuery } from "@/hooks/use-queries"
 
 export default function BorrowPage() {
@@ -24,7 +24,9 @@ export default function BorrowPage() {
   const { userAddress, isConnected, handleWalletConnection } = useUserAddress()
   const [totalLoanAmount, setTotalLoanAmount] = useState("0.00")
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("1 week")
-  const { data: markets, isLoading, error } = useMarketsQuery()
+  const [sortField, setSortField] = useState<MarketSortField>('created_at')
+  const [sortDir, setSortDir] = useState<MarketSortDir>('desc')
+  const { data: markets, isLoading, error } = useMarketsQuery(sortField, sortDir)
 
   const { data: userLoanHistory = [], isLoading: isUserLoanLoading } = useUserLoanHistoryQuery(userAddress!);
     
@@ -140,7 +142,7 @@ export default function BorrowPage() {
         <div className="flex justify-center items-center h-32 text-gray-400 animate-pulse">Loading markets data...</div>
       ) : (
         <DataTable 
-          columns={columns} 
+          columns={getMarketColumns(sortField, sortDir, (f, d) => { setSortField(f); setSortDir(d); })} 
           data={markets || []} 
           getRowId={(row) => row.id}
           onRowClick={handleRowClick}

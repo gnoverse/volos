@@ -25,15 +25,15 @@ export const MARKET_ACTIVITY_QUERY_KEY = 'market-activity';
 export const MARKET_SNAPSHOTS_QUERY_KEY = 'market-snapshots';
 export const EXPECTED_BORROW_ASSETS_QUERY_KEY = 'expected-borrow-assets';
 
-export function useMarketsQuery() {
-    return useQuery({
-      queryKey: [MARKETS_QUERY_KEY],
-      queryFn: async (): Promise<Market[]> => {
-        const response = await getMarkets();
-        return response.markets;
-      }
-    });
-  }
+export function useMarketsQuery(sortField?: 'created_at' | 'total_supply' | 'supply_apr' | 'borrow_apr', sortDir?: 'asc' | 'desc') {
+  return useQuery({
+    queryKey: [MARKETS_QUERY_KEY, sortField || '', sortDir || ''],
+    queryFn: async (): Promise<Market[]> => {
+      const response = await getMarkets(undefined, undefined, sortField, sortDir);
+      return response.markets;
+    }
+  });
+}
   
 export function useUserLoanHistoryQuery(userAddress: string) {
   return useQuery({
