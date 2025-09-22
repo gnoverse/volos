@@ -25,7 +25,7 @@ COPY --from=builder /go/bin/gnokey /app/gnokey
 
 COPY --from=builder /app/src /app/src
 
-COPY ./r/gnoswap/v1/test_token/bar/ /app/src/examples/gno.land/r/gnoswap/v1/test_token/bar/
+COPY ./r/gnoswap/v1/test_token/ /app/src/examples/gno.land/r/gnoswap/v1/test_token/
 COPY ./p/gnoswap/consts/ /app/src/examples/gno.land/p/gnoswap/consts/
 
 # temporary
