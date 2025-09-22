@@ -52,6 +52,25 @@ func init() {
 	Ownable = ownable.NewWithAddress(std.Address("g1e9mkmle8rgx4jy2398dal9320uul7g00tkyh42"))
 }
 
+// TransferOwnership transfers ownership of the Volos contract to a new owner
+func TransferOwnership(cur realm, newOwner std.Address) {
+	Ownable.AssertOwnedByPrevious()
+
+	// Manually transfer ownership since ownable.TransferOwnership() checks OwnedByCurrent()
+	// but we want to check OwnedByPrevious() (the caller, not the current realm)
+	if !newOwner.IsValid() {
+		panic(ErrInvalidAddress)
+	}
+
+	prevOwner := Ownable.Owner()
+
+	// Create a new ownable with the new owner
+	Ownable = ownable.NewWithAddress(newOwner)
+
+	// Emit ownership transfer event
+	emitTransferOwnership(prevOwner, newOwner)
+}
+
 // RegisterIRM registers a new interest rate model
 func RegisterIRM(cur realm, irm IRM) {
 	// Get IRM name
@@ -119,30 +138,35 @@ func SetFeeRecipient(cur realm, newFeeRecipient std.Address) {
 }
 
 // setFee sets the fee for a specific market
-func setFee(cur realm, marketId string, newFee *u256.Uint) {
+func SetFee(cur realm, marketId string, newFee int64) {
+
 	Ownable.AssertOwnedByPrevious()
+
+	// Convert fee percentage to WAD-scaled value (e.g., 5% -> 0.05 * 1e18)
+	feeUint := u256.NewUint(uint64(newFee))
+	feeWad := math.MulDivDown(feeUint, consts.WAD, u256.NewUint(100)) // This will give us (fee * 1e18) / 100
+
+	// Accrue interest using the previous fee before changing it
+	accrueInterest(marketId)
 
 	// Get market (will panic if not found)
 	market, _ := GetMarket(marketId)
 
 	// Check if fee is already set to the same value
-	if market.Fee.Cmp(newFee) == 0 {
+	if market.Fee.Cmp(feeWad) == 0 {
 		panic(ErrAlreadySet)
 	}
 
 	// Check fee doesn't exceed maximum
-	if newFee.Cmp(consts.MAX_FEE) > 0 {
+	if feeWad.Cmp(consts.MAX_FEE) > 0 {
 		panic(ErrMaxFeeExceeded)
 	}
 
-	// Accrue interest using the previous fee before changing it
-	accrueInterest(marketId)
-
 	// Update market fee
-	market.Fee = newFee
+	market.Fee = feeWad
 	markets.Set(marketId, market)
 
-	emitSetFee(marketId, newFee.ToString())
+	emitSetFee(marketId, feeWad.ToString())
 }
 
 /* MARKET CREATION */
@@ -237,11 +261,11 @@ func SupplyOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf 
 
 	caller := std.PreviousRealm().Address()
 
-	// Get market and params
-	market, params := GetMarket(marketId)
-
 	// Accrue interest before any state changes
 	accrueInterest(marketId)
+
+	// Get market and params
+	market, params := GetMarket(marketId)
 
 	// Calculate shares to mint
 	var sharesToMint *u256.Uint
@@ -312,11 +336,11 @@ func WithdrawOnBehalf(cur realm, marketId string, assets, shares uint64, onBehal
 
 	caller := std.PreviousRealm().Address()
 
-	// Get market and params
-	market, params := GetMarket(marketId)
-
 	// Accrue interest before any state changes
 	accrueInterest(marketId)
+
+	// Get market and params
+	market, params := GetMarket(marketId)
 
 	// Calculate shares to burn
 	var sharesToBurn *u256.Uint
@@ -399,11 +423,11 @@ func BorrowOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf 
 
 	caller := std.PreviousRealm().Address()
 
-	// Get market and params
-	market, params := GetMarket(marketId)
-
 	// Accrue interest before any state changes
 	accrueInterest(marketId)
+
+	// Get market and params
+	market, params := GetMarket(marketId)
 
 	// Get onBehalf's current position
 	position := GetPosition(marketId, onBehalf.String())
@@ -485,11 +509,11 @@ func RepayOnBehalf(cur realm, marketId string, assets, shares uint64, onBehalf s
 
 	caller := std.PreviousRealm().Address()
 
-	// Get market and params
-	market, params := GetMarket(marketId)
-
 	// Accrue interest before any state changes
 	accrueInterest(marketId)
+
+	// Get market and params
+	market, params := GetMarket(marketId)
 
 	// Calculate shares to burn
 	var sharesToBurn *u256.Uint
@@ -593,10 +617,10 @@ func WithdrawCollateralOnBehalf(cur realm, marketId string, amount uint64, onBeh
 
 	caller := std.PreviousRealm().Address()
 
-	_, params := GetMarket(marketId)
-
 	// Accrue interest before any state changes
 	accrueInterest(marketId)
+
+	_, params := GetMarket(marketId)
 
 	// Get onBehalf's current position
 	position := GetPosition(marketId, onBehalf.String())
@@ -640,15 +664,15 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 		panic(ErrInconsistentAmount)
 	}
 
+	// Accrue interest before making state changes
+	accrueInterest(marketId)
+
 	// Get market data
 	market, params := GetMarket(marketId)
 
 	// Convert inputs to uint256
 	seizedAssetsU256 := u256.NewUint(seizedAssets)
 	repaidSharesU256 := u256.NewUint(repaidShares)
-
-	// Accrue interest before making state changes
-	accrueInterest(marketId)
 
 	// Get borrower's position
 	borrowerPos := GetPosition(marketId, borrower.String())
@@ -710,9 +734,10 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 	markets.Set(marketId, market)
 
 	// Handle bad debt if all collateral is seized
+	var badDebtShares, badDebtAssets *u256.Uint
 	if borrowerPos.Collateral.IsZero() {
-		badDebtShares := borrowerPos.BorrowShares
-		badDebtAssets := math.ToAssetsUp(
+		badDebtShares = borrowerPos.BorrowShares
+		badDebtAssets = math.ToAssetsUp(
 			badDebtShares,
 			market.TotalBorrowAssets,
 			market.TotalBorrowShares,
@@ -725,6 +750,9 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 		market.TotalSupplyAssets = new(u256.Uint).Sub(market.TotalSupplyAssets, badDebtAssets)
 		market.TotalBorrowShares = new(u256.Uint).Sub(market.TotalBorrowShares, badDebtShares)
 		borrowerPos.BorrowShares = u256.Zero()
+	} else {
+		badDebtShares = u256.Zero()
+		badDebtAssets = u256.Zero()
 	}
 
 	// Transfer seized collateral to liquidator
@@ -734,8 +762,8 @@ func Liquidate(cur realm, marketId string, borrower std.Address, seizedAssets, r
 	// Transfer repaid assets from liquidator to contract
 	safeTransferFrom(params.GetLoanToken(), caller, repaidAssets.Int64())
 
-	// Emit liquidate event
-	emitLiquidate(marketId, caller, borrower, repaidAssets, repaidSharesU256, seizedAssetsU256)
+	// Emit liquidate event with bad debt information
+	emitLiquidate(marketId, caller, borrower, repaidAssets, repaidSharesU256, seizedAssetsU256, badDebtAssets, badDebtShares)
 
 	return seizedAssetsU256.Uint64(), repaidAssets.Uint64()
 }
@@ -857,7 +885,7 @@ func accrueInterest(marketId string) {
 	market.LastUpdate = now
 	markets.Set(marketId, market)
 
-	emitAccrueInterest(marketId, borrowRate, interest)
+	emitAccrueInterest(marketId, borrowRate, interest, market.TotalSupplyAssets, market.TotalBorrowAssets)
 }
 
 /* HEALTH CALCULATIONS */
