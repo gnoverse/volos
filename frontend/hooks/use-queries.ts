@@ -1,7 +1,6 @@
 import { apiGetUserInfo, apiGetXVLSBalance, getExpectedBorrowAssets } from '@/app/services/abci';
-import { getActiveProposals, getMarkets, getProposal, getProposals, getUserLoanHistory, getUser, getUserMarketPosition, getSupplyHistory, getBorrowHistory, getCollateralSupplyHistory, getUtilizationHistory, getAPRHistory, getMarketActivity, getMarketSnapshots, getUserPendingUnstakes } from '@/app/services/api.service';
+import { getActiveProposals, getAPRHistory, getBorrowHistory, getCollateralSupplyHistory, getMarket, getMarketActivity, getMarkets, getMarketSnapshots, getProposal, getProposals, getSupplyHistory, getUser, getUserLoanHistory, getUserMarketPosition, getUserPendingUnstakes, getUserVoteOnProposal, getUtilizationHistory } from '@/app/services/api.service';
 import { Balance, GovernanceUserInfo, Market, PendingUnstake, Position, Proposal, ProposalsResponse, User, UserVote } from '@/app/types';
-import { getMarket, getUserVoteOnProposal } from '@/app/services/api.service';
 import { useQuery } from '@tanstack/react-query';
 
 export const PROPOSALS_QUERY_KEY = 'proposals';

@@ -1,10 +1,10 @@
 "use client"
 
-import { useMarketActivityQuery } from "@/hooks/use-queries"
 import { Market } from "@/app/types"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMarketActivityQuery } from "@/hooks/use-queries"
 import { createActivityColumns } from "./activity-columns"
 import { DataTable } from "./ui/data-table"
 
