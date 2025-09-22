@@ -42,7 +42,8 @@ func renderUserPageActiveProposals(path string, userAddress std.Address) string 
 	out += page.Picker(path) + "\n\n"
 	for _, item := range page.Items {
 		proposal := item.Value.(*commondao.Proposal)
-		out += md.BulletItem(md.Link(proposal.Definition().Title(), "/r/volos/gov/governance?proposal="+item.Key))
+		vote, _ := proposal.VotingRecord().Readonly().GetVote(userAddress)
+		out += md.BulletItem(md.Link(proposal.Definition().Title(), "/r/volos/gov/governance?proposal="+item.Key) + " voted " + md.Bold(string(vote.Choice)) + " because " + vote.Reason)
 	}
 
 	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
