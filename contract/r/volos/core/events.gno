@@ -8,35 +8,6 @@ import (
 	u256 "gno.land/p/gnoswap/uint256"
 )
 
-// Event names
-const (
-	// Market events
-	CreateMarketEvent       = "CreateMarket"
-	SupplyEvent             = "Supply"
-	WithdrawEvent           = "Withdraw"
-	BorrowEvent             = "Borrow"
-	RepayEvent              = "Repay"
-	LiquidateEvent          = "Liquidate"
-	RegisterIRMEvent        = "RegisterIRM"
-	AccrueInterestEvent     = "AccrueInterest"
-	SupplyCollateralEvent   = "SupplyCollateral"
-	WithdrawCollateralEvent = "WithdrawCollateral"
-	FlashLoanEvent          = "FlashLoan"
-	SetFeeEvent             = "SetFee"
-
-	// Event names
-	EventAccrueInterest     = "accrue_interest"
-	EventCreateMarket       = "create_market"
-	EventSupply             = "supply"
-	EventWithdraw           = "withdraw"
-	EventBorrow             = "borrow"
-	EventRepay              = "repay"
-	EventLiquidate          = "liquidate"
-	EventSupplyCollateral   = "supply_collateral"
-	EventWithdrawCollateral = "withdraw_collateral"
-	AuthorizationSetEvent   = "authorization_set"
-)
-
 // Event keys
 const (
 	// Common keys
@@ -79,7 +50,7 @@ const (
 // Event emission helper functions
 func emitCreateMarket(marketId string, loanToken string, collateralToken string) {
 	std.Emit(
-		CreateMarketEvent,
+		"CreateMarket",
 		MarketIDKey, marketId,
 		LoanTokenKey, loanToken,
 		CollateralTokenKey, collateralToken,
@@ -93,7 +64,7 @@ func emitSupply(marketId string, caller std.Address, onBehalf std.Address, asset
 	borrowAPR := CalculateBorrowAPR(marketId)
 
 	std.Emit(
-		SupplyEvent,
+		"Supply",
 		MarketIDKey, marketId,
 		UserKey, caller.String(),
 		OnBehalfKey, onBehalf.String(),
@@ -111,7 +82,7 @@ func emitWithdraw(marketId string, caller std.Address, onBehalf std.Address, rec
 	borrowAPR := CalculateBorrowAPR(marketId)
 
 	std.Emit(
-		WithdrawEvent,
+		"Withdraw",
 		MarketIDKey, marketId,
 		UserKey, caller.String(),
 		OnBehalfKey, onBehalf.String(),
@@ -130,7 +101,7 @@ func emitBorrow(marketId string, caller std.Address, onBehalf std.Address, recei
 	borrowAPR := CalculateBorrowAPR(marketId)
 
 	std.Emit(
-		BorrowEvent,
+		"Borrow",
 		MarketIDKey, marketId,
 		UserKey, caller.String(),
 		OnBehalfKey, onBehalf.String(),
@@ -149,7 +120,7 @@ func emitRepay(marketId string, caller std.Address, onBehalf std.Address, assets
 	borrowAPR := CalculateBorrowAPR(marketId)
 
 	std.Emit(
-		RepayEvent,
+		"Repay",
 		MarketIDKey, marketId,
 		UserKey, caller.String(),
 		OnBehalfKey, onBehalf.String(),
@@ -167,7 +138,7 @@ func emitLiquidate(marketId string, caller std.Address, borrower std.Address, re
 	borrowAPR := CalculateBorrowAPR(marketId)
 
 	std.Emit(
-		EventLiquidate,
+		"Liquidate",
 		MarketIdKey, marketId,
 		UserKey, caller.String(),
 		BorrowerKey, borrower.String(),
@@ -182,7 +153,7 @@ func emitLiquidate(marketId string, caller std.Address, borrower std.Address, re
 
 func emitAccrueInterest(marketId string, borrowRate, interest *u256.Uint) {
 	std.Emit(
-		AccrueInterestEvent,
+		"AccrueInterest",
 		MarketIDKey, marketId,
 		BorrowRateKey, borrowRate.ToString(),
 		InterestKey, interest.ToString(),
@@ -192,7 +163,7 @@ func emitAccrueInterest(marketId string, borrowRate, interest *u256.Uint) {
 
 func emitRegisterIRM(pkgPath, name string) {
 	std.Emit(
-		RegisterIRMEvent,
+		"RegisterIRM",
 		PkgPathKey, pkgPath,
 		NameKey, name,
 		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
@@ -201,7 +172,7 @@ func emitRegisterIRM(pkgPath, name string) {
 
 func emitSupplyCollateral(marketId string, caller std.Address, onBehalf std.Address, amount uint64) {
 	std.Emit(
-		SupplyCollateralEvent,
+		"SupplyCollateral",
 		MarketIDKey, marketId,
 		UserKey, caller.String(),
 		OnBehalfKey, onBehalf.String(),
@@ -212,7 +183,7 @@ func emitSupplyCollateral(marketId string, caller std.Address, onBehalf std.Addr
 
 func emitWithdrawCollateral(marketId string, caller std.Address, onBehalf std.Address, receiver std.Address, amount uint64) {
 	std.Emit(
-		WithdrawCollateralEvent,
+		"WithdrawCollateral",
 		MarketIDKey, marketId,
 		UserKey, caller.String(),
 		OnBehalfKey, onBehalf.String(),
@@ -225,7 +196,7 @@ func emitWithdrawCollateral(marketId string, caller std.Address, onBehalf std.Ad
 // emitAuthorizationSet emits an event when authorization is set or revoked
 func emitAuthorizationSet(authorizer std.Address, authorized std.Address, isAuthorized bool) {
 	std.Emit(
-		AuthorizationSetEvent,
+		"AuthorizationSet",
 		AuthorizerKey, authorizer.String(),
 		AuthorizedKey, authorized.String(),
 		IsAuthorizedKey, strconv.FormatBool(isAuthorized),
@@ -236,7 +207,7 @@ func emitAuthorizationSet(authorizer std.Address, authorized std.Address, isAuth
 // emitFlashLoan emits an event when a flash loan occurs
 func emitFlashLoan(caller std.Address, token string, assets int64) {
 	std.Emit(
-		FlashLoanEvent,
+		"FlashLoan",
 		UserKey, caller.String(),
 		TokenKey, token,
 		AmountKey, u256.NewUint(uint64(assets)).ToString(),
@@ -247,7 +218,7 @@ func emitFlashLoan(caller std.Address, token string, assets int64) {
 // emitSetFee emits an event when a market fee is set (following Morpho pattern)
 func emitSetFee(marketId string, fee string) {
 	std.Emit(
-		SetFeeEvent,
+		"SetFee",
 		MarketIDKey, marketId,
 		FeeKey, fee,
 		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
