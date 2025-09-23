@@ -1,7 +1,5 @@
 "use client"
 
-import { AdenaService } from "@/app/services/adena.service";
-import { useUserAddress } from "@/app/utils/address.utils";
 import CopiableAddress from "@/components/copiable-addess";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,13 +8,14 @@ import {
   NavigationMenuLink,
   NavigationMenuList
 } from "@/components/ui/navigation-menu";
+import { useUserAddress } from "@/hooks/use-user-address";
 import { cn } from "@/lib/utils";
 import { LogOutIcon, WalletIcon } from "lucide-react";
 import { usePathname } from 'next/navigation';
 import Logo from "./logo";
 
 const menuItems = [
-  { name: "Borrow", href: "/borrow" },
+  { name: "Markets", href: "/borrow" },
   { name: "Governance", href: "/governance" },
   { name: "Docs", href: "/documentation" },
   { name: "About Us", href: "/about-us" },
@@ -24,23 +23,7 @@ const menuItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { userAddress: walletAddress, isConnected } = useUserAddress({ validateConnection: true });
-  
-  const handleWalletConnection = async () => {
-    const adenaService = AdenaService.getInstance();
-    
-    if (isConnected) {
-      adenaService.disconnectWallet();
-    } else {
-      try {
-        await adenaService.connectWallet();
-      } catch (error) {
-        console.error("Failed to connect wallet:", error);
-      }
-    }
-  };
-
-  // Copy handled by CopiableAddress component when connected
+  const { userAddress: walletAddress, isConnected, handleWalletConnection } = useUserAddress();
 
   return (
     <div className="flex justify-between items-center py-2 pl-40 pr-36">

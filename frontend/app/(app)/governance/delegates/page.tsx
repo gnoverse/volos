@@ -1,7 +1,8 @@
 "use client"
 
-import { useUser, useUserPendingUnstakes, useWithdrawUnstakedVLSMutation } from "@/app/(app)/governance/queries-mutations"
-import { useUserAddress } from "@/app/utils/address.utils"
+import { useUser, useUserPendingUnstakes } from "@/hooks/use-queries"
+import { useWithdrawUnstakedVLSMutation } from "@/hooks/use-mutations"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { DelegateForm } from "@/components/delegate-form"
 import { DelegateeCard } from "@/components/delegatee-card"
 import { PendingUnstakeCard } from "@/components/pending-unstake-card"
@@ -17,12 +18,8 @@ export default function DelegatesPage() {
   const withdrawMutation = useWithdrawUnstakedVLSMutation()
 
   const handleWithdraw = async () => {
-    try {
-      await withdrawMutation.mutateAsync()
-      // todo add toasts here
-    } catch (error) {
-      console.error("Failed to withdraw unstaked VLS:", error)
-    }
+    await withdrawMutation.mutateAsync()
+    //todo : add success dialog here
   }
 
   const delegations = user?.staked_vls || {}

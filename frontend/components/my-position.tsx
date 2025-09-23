@@ -1,30 +1,33 @@
 "use client"
 
-import { MarketInfo, Position } from "@/app/types"
-import { formatPercentage, formatTokenAmount } from "@/app/utils/format.utils"
+import { useExpectedBorrowAssetsQuery, usePositionQuery } from "@/hooks/use-queries"
+import { Market } from "@/app/types"
+import { formatPercentage, formatPrice, wadToPercentage } from "@/app/utils/format.utils"
+import { calculatePositionMetrics } from "@/app/utils/position.utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { HealthBar } from "./health-bar"
+import { useUserAddress } from "@/hooks/use-user-address"
+import { formatUnits } from "viem"
 import { PositionChartTabs } from "./position-chart-tabs"
 
-interface MarketPositionProps {
-  market: MarketInfo
+
+interface MyPositionProps {
+  market: Market
   cardStyles: string
-  healthFactor: string
-  positionData: Position
   caller: string
 }
 
 export function MyPosition({ 
-  market, 
+  market,
   cardStyles, 
-  healthFactor, 
-  positionData,
   caller
-}: MarketPositionProps) {
+}: MyPositionProps) {
+  const { userAddress } = useUserAddress()
+  const { data: positionData } = usePositionQuery(market.id, userAddress!)
+  const { data: expectedBorrowAssets } = useExpectedBorrowAssetsQuery(market.id, userAddress!)
 
   const hasPosition = positionData && (
     BigInt(positionData.collateral_supply) > BigInt(0) || 
-    BigInt(positionData.loan) > BigInt(0)
+    BigInt(positionData.borrow_shares) > BigInt(0)
   )
 
   if (!hasPosition) {
@@ -38,10 +41,22 @@ export function MyPosition({
     )
   }
 
-  const currentBorrowShares = BigInt(positionData.loan)
+  const borrowAssets = BigInt(expectedBorrowAssets || "0")
   const currentCollateralBigInt = BigInt(positionData.collateral_supply)
-  const currentPriceBigInt = BigInt(market.currentPrice)
-  const ltv = 0 //positionData.ltv
+  const positionMetrics = calculatePositionMetrics(positionData, market, expectedBorrowAssets || "")
+
+  // Calculate formatted price for USD value display
+  // Price decimals: 36 + loan_token_decimals - collateral_token_decimals
+  const priceDecimals = 36 + (market.loan_token_decimals) - (market.collateral_token_decimals);
+  const formattedPrice = parseFloat(formatPrice(market.current_price, priceDecimals, market.loan_token_decimals));
+  
+  // Calculate collateral USD value
+  const collateralAmount = parseFloat(formatUnits(currentCollateralBigInt, market.collateral_token_decimals));
+  const collateralUsdValue = (collateralAmount * formattedPrice).toFixed(2);
+  
+  // Calculate borrowed assets USD value (loan token price is 1:1 with USD since it's the base currency)
+  const borrowedAmount = parseFloat(formatUnits(borrowAssets, market.loan_token_decimals));
+  const borrowedUsdValue = borrowedAmount.toFixed(2);
 
   return (
     <div className="space-y-6">
@@ -53,12 +68,12 @@ export function MyPosition({
             <CardDescription className="text-gray-400">Your borrowed assets</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-gray-200">
-              {formatTokenAmount(positionData.loan, market.loanTokenDecimals)} 
-              <span className="text-gray-400 text-lg ml-2">{market.loanTokenSymbol}</span>
+            <div className="text-2xl font-bold text-gray-200">
+              {formatUnits(borrowAssets, market.loan_token_decimals)} 
+              <span className="text-gray-400 text-lg ml-2">{market.loan_token_symbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${formatTokenAmount((currentBorrowShares * currentPriceBigInt).toString(), market.loanTokenDecimals + 18)} USD
+              ≈ ${borrowedUsdValue} USD
             </div>
           </CardContent>
         </Card>
@@ -69,14 +84,14 @@ export function MyPosition({
             <CardDescription className="text-gray-400">Your supplied collateral</CardDescription>
           </CardHeader>
           <CardContent className="items-center">
-            <div className="text-3xl font-bold text-gray-200 flex flex-wrap items-baseline break-all ">
+            <div className="text-2xl font-bold text-gray-200 flex flex-wrap items-baseline break-all ">
               <span className="break-all mr-2">
-                {formatTokenAmount(positionData.collateral_supply, market.collateralTokenDecimals)}
+                {formatUnits(BigInt(positionData.collateral_supply), market.collateral_token_decimals)}
               </span>
-              <span className="text-gray-400 text-lg">{market.collateralTokenSymbol}</span>
+              <span className="text-gray-400 text-lg">{market.collateral_token_symbol}</span>
             </div>
             <div className="text-sm text-gray-400 mt-2 break-words">
-              ≈ ${formatTokenAmount((currentCollateralBigInt * currentPriceBigInt).toString(), market.collateralTokenDecimals + 18)} USD
+              ≈ ${collateralUsdValue} USD
             </div>
           </CardContent>
         </Card>
@@ -91,18 +106,16 @@ export function MyPosition({
               <div>
                 <div className="text-sm text-gray-400 mb-1">Current LTV</div>
                 <div className="text-xl font-medium text-gray-200">
-                  {formatPercentage(ltv)}<span className="text-gray-400 text-sm">/ {formatPercentage(market.lltv)}</span>
+                  {formatPercentage(positionMetrics.ltv)}<span className="text-gray-400 text-sm">/ {formatPercentage(wadToPercentage(market.lltv))}</span>
                 </div>
               </div>
-              
-                <HealthBar healthFactor={healthFactor} />
-            </div>
+               </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Position History Chart with Tabs */}
-      <PositionChartTabs caller={caller} market={market} marketId={market.poolPath || ''} cardStyles={cardStyles} />
+      <PositionChartTabs caller={caller} market={market} marketId={market?.id} cardStyles={cardStyles} />
     </div>
   )
 } 

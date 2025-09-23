@@ -113,7 +113,7 @@ export function DataTable<TData, TValue>({
                   <TableCell
                     key={cell.id}
                     className={cn(
-                      "text-gray-300 h-12 text-base",
+                      "text-gray-300 h-16 text-base",
                       centered ? "text-center" : "text-left",
                       index === 0 && "rounded-l-xl",
                       index === row.getVisibleCells().length - 1 && "rounded-r-xl"

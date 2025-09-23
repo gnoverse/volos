@@ -1,7 +1,7 @@
 "use client"
 
 
-import { formatPercentage, formatTimestamp, getXAxisFormatter } from "@/app/utils/format.utils"
+import { formatPercentage, formatTimestamp, getXAxisFormatter, wadToPercentage } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -100,15 +100,15 @@ export function UtilizationAPRChart({
                 <Checkbox
                   checked={selectedMetrics.utilization}
                   onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, utilization: !prev.utilization }))}
-                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
                 />
-                <span className="text-blue-400">Utilization</span>
+                <span className="text-indigo-400">Utilization</span>
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={selectedMetrics.supplyApr}
                   onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, supplyApr: !prev.supplyApr }))}
-                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                 />
                 <span className="text-blue-400">Supply APR</span>
               </div>
@@ -136,12 +136,18 @@ export function UtilizationAPRChart({
               margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
             >
               <XAxis 
-                dataKey="timestamp"
+                dataKey="key"
                 fontSize={10}
                 tickLine={false}
-                tickFormatter={getXAxisFormatter(selectedTimePeriod)}
+                tickFormatter={(key) => {
+                  const dataPoint = transformedData.find(d => d.key === key)
+                  if (dataPoint) {
+                    return getXAxisFormatter(selectedTimePeriod)(dataPoint.timestamp)
+                  }
+                  return key
+                }}
                 height={50}
-                interval={7}
+                interval={3}
                 tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}
                 tickMargin={5}
                 stroke="rgba(75, 85, 99, 0.3)"
@@ -153,7 +159,7 @@ export function UtilizationAPRChart({
                 axisLine={false}
                 width={60}
                 tick={{ fill: 'rgb(156 163 175)' }}
-                tickFormatter={(value) => `${value}%`}
+                tickFormatter={(value) => formatPercentage(wadToPercentage(value.toString()))}
                 stroke="rgba(75, 85, 99, 0.3)"
               />
               
@@ -164,6 +170,7 @@ export function UtilizationAPRChart({
                   stroke="rgb(99, 102, 241)"
                   strokeWidth={2}
                   dot={false}
+                  name="Utilization"
                 />
               )}
               
@@ -174,6 +181,7 @@ export function UtilizationAPRChart({
                   stroke="rgb(59, 130, 246)"
                   strokeWidth={2}
                   dot={false}
+                  name="Supply APR"
                 />
               )}
               
@@ -184,6 +192,7 @@ export function UtilizationAPRChart({
                   stroke="rgb(20, 184, 166)"
                   strokeWidth={2}
                   dot={false}
+                  name="Borrow APR"
                 />
               )}
               
@@ -195,11 +204,12 @@ export function UtilizationAPRChart({
                   borderRadius: '0.5rem',
                   color: 'rgb(156 163 175)',
                 }}
-                labelFormatter={(label) => formatTimestamp(label)}
-                formatter={(value) => {
-                  const base = Array.isArray(value) ? value[0] : value
-                  const num = typeof base === 'string' ? parseFloat(base) : (base as number)
-                  return [formatPercentage(num, 2)]
+                labelFormatter={(key) => {
+                  const dataPoint = transformedData.find(d => d.key === key)
+                  return dataPoint ? formatTimestamp(dataPoint.timestamp) : String(key)
+                }}
+                formatter={(value, name) => {
+                  return [formatPercentage(wadToPercentage(String(value))), name]
                 }}
               />
             </LineChart>

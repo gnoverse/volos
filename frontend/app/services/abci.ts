@@ -1,80 +1,17 @@
 import {
-  GovernanceUserInfo,
-  GovernanceUserInfoSchema,
-  HealthFactor,
-  HealthFactorSchema,
-  Market,
-  MarketInfo,
-  MarketInfoSchema,
-  MarketSchema,
-  Position,
-  PositionSchema,
   Balance,
   BalanceSchema,
+  GovernanceUserInfo,
+  GovernanceUserInfoSchema,
 } from "../types"
-import { parseValidatedJsonResult } from "../utils/parsing.utils"
+import { parseABCIResponse, parseValidatedJsonResult } from "../utils/parsing.utils"
 import { GnoService } from "./abci.service"
+import { VOLOS_ADDRESS } from "./tx.service"
 
-const REALM_PATH = "gno.land/r/volos/core"
 const GOVERNANCE_REALM_PATH = "gno.land/r/volos/gov/governance"
 const XVLS_REALM_PATH = "gno.land/r/volos/gov/xvls"
+const CORE_REALM_PATH = "gno.land/r/volos/core"
 const gnoService = GnoService.getInstance()
-
-// GNO LEND API QUERIES
-
-export async function apiGetMarket(marketId: string): Promise<Market> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `ApiGetMarket("${marketId}")`,
-    )
-    return parseValidatedJsonResult(result, MarketSchema)
-  } catch (error) {
-    console.error('Error fetching market API data:', error)
-    throw error
-  }
-}
-
-export async function apiGetPosition(marketId: string, userAddr: string): Promise<Position> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `ApiGetPosition("${marketId}", "${userAddr}")`,
-    )
-    return parseValidatedJsonResult(result, PositionSchema)
-  } catch (error) {
-    console.error('Error fetching position API data:', error)
-    throw error
-  }
-}
-
-export async function apiGetMarketInfo(marketId: string): Promise<MarketInfo> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `ApiGetMarketInfo("${marketId}")`,
-    )
-    return parseValidatedJsonResult(result, MarketInfoSchema)
-  } catch (error) {
-    console.error('Error fetching market info:', error)
-    throw error
-  }
-}
-
-export async function apiGetHealthFactor(marketId: string, userAddr: string): Promise<HealthFactor> {
-  try {
-    const result = await gnoService.evaluateExpression(
-      REALM_PATH,
-      `ApiGetHealthFactor("${marketId}", "${userAddr}")`,
-    )
-    return parseValidatedJsonResult(result, HealthFactorSchema)
-  } catch (error) {
-    console.error('Error fetching health factor:', error)
-    throw error
-  }
-}
-
-// GOVERNANCE API QUERIES
 
 export async function apiGetUserInfo(userAddr: string): Promise<GovernanceUserInfo> {
   try {
@@ -84,8 +21,8 @@ export async function apiGetUserInfo(userAddr: string): Promise<GovernanceUserIn
     )
     return parseValidatedJsonResult(result, GovernanceUserInfoSchema)
   } catch (error) {
-    console.error('Error fetching user governance info:', error)
-    throw error
+    console.error(error) // leave these for development
+    return { address: userAddr, vlsBalance: 0, xvlsBalance: 0, proposalThreshold: 0, isMember: false }
   }
 }
 
@@ -98,7 +35,46 @@ export async function apiGetXVLSBalance(userAddr: string): Promise<Balance> {
     const balanceData = parseValidatedJsonResult(result, BalanceSchema)
     return balanceData
   } catch (error) {
-    console.error('Error fetching xVLS balance:', error)
-    throw error
+    console.error(error)
+    return { address: userAddr, balance: 0 }
+  }
+}
+
+export async function getTokenBalance(tokenPath: string, userAddress: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      tokenPath,
+      `BalanceOf("${userAddress}")`,
+    )
+    return parseABCIResponse(result, 'int64')
+  } catch (error) {
+    console.error(error)
+    return "0"
+  }
+}
+
+export async function getAllowance(tokenPath: string, userAddress: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      tokenPath,
+      `Allowance("${userAddress}", "${VOLOS_ADDRESS}")`,
+    )
+    return parseABCIResponse(result, 'int64')
+  } catch (error) {
+    console.error(error)
+    return "0"
+  }
+}
+
+export async function getExpectedBorrowAssets(marketId: string, userAddress: string): Promise<string> {
+  try {
+    const result = await gnoService.evaluateExpression(
+      CORE_REALM_PATH,
+      `GetExpectedBorrowAssets("${marketId}", "${userAddress}")`,
+    )
+    return parseABCIResponse(result, 'string')
+  } catch (error) {
+    console.error(error)
+    return "0"
   }
 }

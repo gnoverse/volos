@@ -1,281 +1,198 @@
 "use client"
 
-import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
-import { MarketInfo, Position } from "@/app/types"
+import { getAllowance, getTokenBalance } from "@/app/services/abci"
+import { VOLOS_ADDRESS } from "@/app/services/tx.service"
+import { Market } from "@/app/types"
+import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { useQueryClient } from "@tanstack/react-query"
+import { SidePanelCard } from "@/components/side-panel-card"
+import { useFormValidation } from "@/hooks/use-borrow-validation"
+import { useMaxBorrowable } from "@/hooks/use-max-borrowable"
+import { useApproveTokenMutation, useBorrowMutation, useSupplyCollateralMutation } from "@/hooks/use-mutations"
+import { usePositionCalculations } from "@/hooks/use-position-calculations"
+import { useExpectedBorrowAssetsQuery, usePositionQuery } from "@/hooks/use-queries"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowDown, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { 
-  parseUint256, 
-  addUint256, 
-  subtractUint256, 
-  multiplyUint256ByNumber,
-  uint256ToNumber
-} from "@/app/utils/uint256.utils"
-
-const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
+import { formatUnits, parseUnits } from "viem"
 
 interface AddBorrowPanelProps {
-  market: MarketInfo
-  supplyValue: string // Changed from number to string (uint256)
-  borrowValue: string // Changed from number to string (uint256)
-  healthFactor: string
-  currentCollateral?: string // Changed from number to string (uint256)
-  currentLoan?: string // Changed from number to string (uint256)
-  ltv: string
-  collateralTokenDecimals: number
-  loanTokenDecimals: number
-  positionData?: Position
+  market: Market
 }
 
 export function AddBorrowPanel({
   market,
-  supplyValue,
-  borrowValue,
-  healthFactor,
-  currentCollateral = "0",
-  currentLoan = "0",
-  ltv,
-  // collateralTokenDecimals,
-  // loanTokenDecimals,
-  positionData,
 }: AddBorrowPanelProps) {
-    const { register, setValue, watch, reset } = useForm({
-        defaultValues: {
-            supplyAmount: "",
-            borrowAmount: "",
-            repayAmount: "",
-            withdrawAmount: ""
-        }
-    })
-  
-  const queryClient = useQueryClient()
+  const { register, setValue, watch } = useForm({
+    defaultValues: {
+      supplyAmount: "",
+      borrowAmount: "",
+      repayAmount: "",
+      withdrawAmount: ""
+    }
+  })
+
+  const { userAddress } = useUserAddress()
+  const { data: positionData, refetch: refetchPosition } = usePositionQuery(market.id, userAddress)
+  const { data: expectedBorrowAssets } = useExpectedBorrowAssetsQuery(market.id, userAddress)
+
+
+  const {
+    positionMetrics,
+    currentCollateral,
+    currentBorrowAssets,
+    } = usePositionCalculations(positionData ?? {
+    borrow_shares: "0",
+    supply_shares: "0",
+    collateral_supply: "0"
+  }, market, expectedBorrowAssets || "")
+
+  const { maxBorrowable, refetch: refetchMaxBorrowable } = useMaxBorrowable(
+    positionData ?? {
+      borrow_shares: "0",
+      supply_shares: "0",
+      collateral_supply: "0"
+    },
+    market,
+    userAddress,
+    expectedBorrowAssets || "0"
+  )
+
+  const {
+    isSupplyInputEmpty,
+    isSupplyTooManyDecimals,
+    supplyButtonMessage,
+    isBorrowInputEmpty,
+    isBorrowTooManyDecimals,
+    isBorrowOverMax,
+    borrowButtonMessage
+  } = useFormValidation(
+    watch("supplyAmount"),
+    watch("borrowAmount"),
+    market,
+    maxBorrowable
+  )
+
+  const approveTokenMutation = useApproveTokenMutation()
   const supplyCollateralMutation = useSupplyCollateralMutation()
   const borrowMutation = useBorrowMutation()
-  const approveTokenMutation = useApproveTokenMutation()
-  
-  // Get current positions as uint256 strings
-  const positionCollateral = positionData?.collateral || currentCollateral;
-  const positionLoan = positionData?.borrowShares || currentLoan;
 
-  const supplyAmount = watch("supplyAmount");
-  const borrowAmount = watch("borrowAmount");
+  const supplyAmount = watch("supplyAmount")
+  const borrowAmount = watch("borrowAmount")
 
-  // Convert user input to uint256 strings
-  const supplyAmountUint256 = supplyAmount ? parseUint256(supplyAmount, 6) : "0"; // Using 6 decimals for demo
-  const borrowAmountUint256 = borrowAmount ? parseUint256(borrowAmount, 6) : "0"; // Using 6 decimals for demo
-  
-  // Calculate total collateral after supply
-  const totalCollateral = addUint256(positionCollateral, supplyAmountUint256);
-  
-  // Convert LTV to number for calculation (it's already in WAD format)
-  const ltvFloat = uint256ToNumber(ltv, 18);
-  
-  // Calculate max borrowable: (totalCollateral * ltv) - currentLoan
-  const maxBorrowableCollateral = multiplyUint256ByNumber(totalCollateral, ltvFloat);
-  const maxBorrowable = subtractUint256(maxBorrowableCollateral, positionLoan);
-  
-  // Convert to numbers for display and comparison
-  const supplyAmountNum = uint256ToNumber(supplyAmountUint256, 6);
-  const borrowAmountNum = uint256ToNumber(borrowAmountUint256, 6);
-  const maxBorrowableNum = uint256ToNumber(maxBorrowable, 6);
+  const isSupplyPending = supplyCollateralMutation.isPending || approveTokenMutation.isPending
+  const isBorrowPending = borrowMutation.isPending || approveTokenMutation.isPending
 
-  const isSupplyInputEmpty = !supplyAmount || supplyAmount === "0";
-  const supplyButtonMessage = isSupplyInputEmpty ? "Enter supply amount" : "Supply";
-  const isSupplyPending = approveTokenMutation.isPending || supplyCollateralMutation.isPending;
+  // Calculate formatted price for USD value display
+  // Price decimals: 36 + loan_token_decimals - collateral_token_decimals
+  const priceDecimals = 36 + market.loan_token_decimals - market.collateral_token_decimals;
+  const formattedPrice = parseFloat(formatPrice(market.current_price, priceDecimals, market.loan_token_decimals));
 
-  const isBorrowInputEmpty = !borrowAmount || borrowAmount === "0";
-  const isBorrowOverMax = borrowAmountNum > maxBorrowableNum;
-  const borrowButtonMessage = isBorrowInputEmpty
-    ? "Enter borrow amount"
-    : isBorrowOverMax
-      ? "Exceeds max borrow"
-      : "Borrow";
-  const isBorrowPending = approveTokenMutation.isPending || borrowMutation.isPending;
+  const handleMaxBorrow = async () => {
+    await Promise.all([
+      refetchPosition(),
+      refetchMaxBorrowable()
+    ])
+    
+    const maxBorrowableStr = formatUnits(maxBorrowable, market.loan_token_decimals)
+    setValue("borrowAmount", maxBorrowableStr)
+  }
 
   const handleSupply = async () => {
-    if (isSupplyInputEmpty) return;
+    if (isSupplyInputEmpty || isSupplyTooManyDecimals) return;
     
-    try {
-      const collateralTokenPath = market?.collateralToken;
-      
-      // Use uint256 string for approval amount (with 20% buffer)
-      const approvalAmountUint256 = multiplyUint256ByNumber(supplyAmountUint256, 1.2);
-      
+    const supplyAmountInDenom = parseUnits(supplyAmount || "0", market.collateral_token_decimals);
+    
+    const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
+    
+    if (currentAllowance < supplyAmountInDenom) {
       await approveTokenMutation.mutateAsync({
-        tokenPath: collateralTokenPath!,
-        amount: uint256ToNumber(approvalAmountUint256, 6)
+        tokenPath: market.collateral_token,
+        amount: Number(supplyAmountInDenom),
+        spenderAddress: VOLOS_ADDRESS
       });
-
-      console.log("collateralTokenPath", collateralTokenPath)
-      console.log("supplyAmountUint256", supplyAmountUint256)
-      console.log("supplyAmount", supplyAmount)
-      console.log("market.poolPath", market.poolPath)
-            
-      supplyCollateralMutation.mutate({
-        marketId: market.poolPath!,
-        amount: uint256ToNumber(supplyAmountUint256, 6)
-      }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
-          reset();
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to supply collateral: ${error.message}`);
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to approve token: ${(error as Error).message}`);
     }
+    
+    await supplyCollateralMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      amount: Number(supplyAmountInDenom)
+    });
+    setValue("supplyAmount", "")
   };
 
   const handleBorrow = async () => {
-    if (isBorrowInputEmpty || isBorrowOverMax) return;
+    if (isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax) return;
     
-    try {
-      const loanTokenPath = market?.loanToken;
-      
-      // Use uint256 string for approval amount (with 20% buffer)
-      const approvalAmountUint256 = multiplyUint256ByNumber(borrowAmountUint256, 1.2);
-      
+    const borrowAmountInDenom = parseUnits(borrowAmount || "0", market.loan_token_decimals);
+    
+    const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
+    
+    if (currentAllowance < borrowAmountInDenom) {
       await approveTokenMutation.mutateAsync({
-        tokenPath: loanTokenPath!,
-        amount: uint256ToNumber(approvalAmountUint256, 6)
+        tokenPath: market.loan_token,
+        amount: Number(borrowAmountInDenom),
+        spenderAddress: VOLOS_ADDRESS
       });
-            
-      borrowMutation.mutate({
-        marketId: market.poolPath!,
-        assets: uint256ToNumber(borrowAmountUint256, 6)
-      }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
-          reset();
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to borrow: ${error.message}`);
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to approve token: ${(error as Error).message}`);
     }
+    
+    await borrowMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: Number(borrowAmountInDenom)
+    });
+    setValue("borrowAmount", "")
   };
 
   return (
-    <form className="space-y-3">
-      {/* Supply Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader className="px-4 -mb-4">
-          <div className="flex items-center gap-2">
-            <Plus size={16} className="text-blue-400" />
-            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
-              Supply Collateral {market.collateralTokenSymbol}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-1 pt-0 px-4">
-          <Input
-            type="number"
-            {...register("supplyAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${(uint256ToNumber(supplyValue, 6) * supplyAmountNum).toFixed(2)}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">0.00 {market.collateralTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={() => {
-                  setValue("supplyAmount", maxBorrowableNum.toString());
-                }}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isSupplyInputEmpty || isSupplyPending}
-            onClick={handleSupply}
-          >
-            {isSupplyPending ? "Processing..." : supplyButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
-
+    <>
+      <form className="space-y-3">
       {/* Borrow Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader className="px-4 -mb-4">
-          <div className="flex items-center gap-2">
-            <ArrowDown size={16} className="text-purple-400" />
-            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
-              Borrow {market.loanTokenSymbol}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-1 pt-0 px-4">
-          <Input
-            type="number"
-            {...register("borrowAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${(borrowValue * borrowAmountNum).toFixed(2)}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">0.00 {market.loanTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={() => {
-                  setValue("borrowAmount", maxBorrowableNum.toString());
-                }}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isBorrowInputEmpty || isBorrowOverMax || isBorrowPending}
-            onClick={handleBorrow}
-          >
-            {isBorrowPending ? "Processing..." : borrowButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
+      <SidePanelCard
+        icon={ArrowDown}
+        iconColor="text-purple-400"
+        title={`Borrow ${market.loan_token_symbol}`}
+        register={register}
+        fieldName="borrowAmount"  
+        buttonMessage={borrowButtonMessage}
+        isButtonDisabled={isBorrowInputEmpty || isBorrowTooManyDecimals || isBorrowOverMax || isBorrowPending}
+        isButtonPending={isBorrowPending}
+        onMaxClickAction={handleMaxBorrow}
+        onSubmitAction={handleBorrow}
+        inputValue={borrowAmount}
+        price={1}
+      />
       
+      {/* Supply Card */}
+      <SidePanelCard
+        icon={Plus}
+        iconColor="text-blue-400"
+        title={`Supply Collateral ${market.collateral_token_symbol}`}
+        register={register}
+        fieldName="supplyAmount"
+        buttonMessage={supplyButtonMessage}
+        isButtonDisabled={isSupplyInputEmpty || isSupplyTooManyDecimals || isSupplyPending}
+        isButtonPending={isSupplyPending}
+        onMaxClickAction={async () => {
+          const balance = await getTokenBalance(market.collateral_token, userAddress!);
+          const balanceFormatted = formatUnits(BigInt(balance), market.collateral_token_decimals);
+          setValue("supplyAmount", balanceFormatted);
+        }}
+        onSubmitAction={handleSupply}
+        inputValue={supplyAmount}
+        price={formattedPrice}
+      />
+
       {/* Position Card */}
       <PositionCard 
         market={market}
         supplyAmount={supplyAmount}
         borrowAmount={borrowAmount}
-        maxBorrowableAmount={maxBorrowableNum}
-        isBorrowValid={borrowAmountNum <= maxBorrowableNum}
-        healthFactor={healthFactor}
-        currentCollateral={uint256ToNumber(currentCollateral, 6)}
-        currentLoan={uint256ToNumber(currentLoan, 6)}
-        ltv={ltv}
+        healthFactor={positionMetrics.healthFactor}
+        currentCollateral={formatUnits(currentCollateral, market.collateral_token_decimals)}
+        currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
     </form>
+    </>
   )
 } 

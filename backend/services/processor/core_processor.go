@@ -10,18 +10,20 @@ import (
 	"volos-backend/services/dbupdater"
 
 	"cloud.google.com/go/firestore"
+	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
+	"volos-backend/model"
 )
 
 // processCoreTransaction handles transactions from the core package, processing various
 // event types such as CreateMarket, Supply, Withdraw, Borrow, Repay, Liquidate,
 // AccrueInterest, SupplyCollateral, WithdrawCollateral.
-func processCoreTransaction(tx map[string]interface{}, client *firestore.Client) {
+func processCoreTransaction(tx map[string]interface{}, firestoreClient *firestore.Client, gnoClient *gnoclient.Client) {
 	events := extractEventsFromTx(tx)
 	if events == nil {
 		return
 	}
 
-	caller, txHash := extractCallerAndHash(tx)
+	txMetadata := extractTxMetadata(tx)
 
 	for _, eventInterface := range events {
 		event, eventType := getEventAndType(eventInterface)
@@ -29,10 +31,15 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 			continue
 		}
 
+		if event["pkg_path"].(string) != model.CorePkgPath {
+			continue
+		}
+
 		switch eventType {
 		case "CreateMarket":
 			if createEvent, ok := extractCreateMarketFields(event); ok {
-				dbupdater.CreateMarket(client,
+				dbupdater.CreateMarket(firestoreClient,
+					gnoClient,
 					createEvent.MarketID,
 					createEvent.LoanToken,
 					createEvent.CollateralToken,
@@ -49,56 +56,66 @@ func processCoreTransaction(tx map[string]interface{}, client *firestore.Client)
 
 		case "Supply":
 			if supplyEvent, ok := extractSupplyFields(event); ok {
-				dbupdater.UpdateTotalSupply(client, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateAPRHistory(client, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, supplyEvent.MarketID, supplyEvent.Timestamp)
-				dbupdater.UpdateUserMarketSupply(client, supplyEvent.OnBehalf, supplyEvent.MarketID, supplyEvent.Amount, eventType)
+				dbupdater.UpdateTotalSupply(firestoreClient, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Shares, supplyEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateAPRHistory(firestoreClient, supplyEvent.MarketID, supplyEvent.SupplyAPR, supplyEvent.BorrowAPR, supplyEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, supplyEvent.MarketID, supplyEvent.Timestamp, supplyEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUserMarketSupply(firestoreClient, supplyEvent.OnBehalf, supplyEvent.MarketID, supplyEvent.Amount, supplyEvent.Shares, eventType)
 			}
 
 		case "Withdraw":
 			if withdrawEvent, ok := extractWithdrawFields(event); ok {
-				dbupdater.UpdateTotalSupply(client, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateAPRHistory(client, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, withdrawEvent.MarketID, withdrawEvent.Timestamp)
-				dbupdater.UpdateUserMarketSupply(client, withdrawEvent.OnBehalf, withdrawEvent.MarketID, withdrawEvent.Amount, eventType)
+				dbupdater.UpdateTotalSupply(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Shares, withdrawEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateAPRHistory(firestoreClient, withdrawEvent.MarketID, withdrawEvent.SupplyAPR, withdrawEvent.BorrowAPR, withdrawEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, withdrawEvent.MarketID, withdrawEvent.Timestamp, withdrawEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUserMarketSupply(firestoreClient, withdrawEvent.OnBehalf, withdrawEvent.MarketID, withdrawEvent.Amount, withdrawEvent.Shares, eventType)
 			}
 
 		case "Borrow":
 			if borrowEvent, ok := extractBorrowFields(event); ok {
-				dbupdater.UpdateTotalBorrow(client, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateAPRHistory(client, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, borrowEvent.MarketID, borrowEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(client, borrowEvent.OnBehalf, borrowEvent.MarketID, borrowEvent.Amount, eventType)
+				dbupdater.UpdateTotalBorrow(firestoreClient, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Shares, borrowEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateAPRHistory(firestoreClient, borrowEvent.MarketID, borrowEvent.SupplyAPR, borrowEvent.BorrowAPR, borrowEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, borrowEvent.MarketID, borrowEvent.Timestamp, borrowEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, borrowEvent.OnBehalf, borrowEvent.MarketID, borrowEvent.Amount, borrowEvent.Shares, eventType)
 			}
 
 		case "Repay":
 			if repayEvent, ok := extractRepayFields(event); ok {
-				dbupdater.UpdateTotalBorrow(client, repayEvent.MarketID, repayEvent.Amount, repayEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateAPRHistory(client, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, repayEvent.MarketID, repayEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(client, repayEvent.OnBehalf, repayEvent.MarketID, repayEvent.Amount, eventType)
+				dbupdater.UpdateTotalBorrow(firestoreClient, repayEvent.MarketID, repayEvent.Amount, repayEvent.Shares, repayEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateAPRHistory(firestoreClient, repayEvent.MarketID, repayEvent.SupplyAPR, repayEvent.BorrowAPR, repayEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, repayEvent.MarketID, repayEvent.Timestamp, repayEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, repayEvent.OnBehalf, repayEvent.MarketID, repayEvent.Amount, repayEvent.Shares, eventType)
 			}
 
 		case "Liquidate":
 			if liquidateEvent, ok := extractLiquidateFields(event); ok {
-				dbupdater.UpdateTotalBorrow(client, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Timestamp, caller, txHash, eventType)
+				dbupdater.UpdateTotalBorrow(firestoreClient, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Shares, liquidateEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
 				// TODO: If borrower collateral becomes zero, also decrease total_supply and any additional bad-debt borrow reduction.
 				//       Requires extra event data (e.g., bad_debt_assets) or a state read/reconciliation pass.
-				dbupdater.UpdateAPRHistory(client, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp)
-				dbupdater.UpdateUtilizationHistory(client, liquidateEvent.MarketID, liquidateEvent.Timestamp)
-				dbupdater.UpdateUserMarketLoan(client, liquidateEvent.Borrower, liquidateEvent.MarketID, liquidateEvent.Amount, eventType)
+				dbupdater.UpdateAPRHistory(firestoreClient, liquidateEvent.MarketID, liquidateEvent.SupplyAPR, liquidateEvent.BorrowAPR, liquidateEvent.Timestamp, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUtilizationHistory(firestoreClient, liquidateEvent.MarketID, liquidateEvent.Timestamp, liquidateEvent.Utilization, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUserMarketLoan(firestoreClient, liquidateEvent.Borrower, liquidateEvent.MarketID, liquidateEvent.Amount, liquidateEvent.Shares, eventType)
 			}
 
 		case "SupplyCollateral":
 			if scEvent, ok := extractSupplyCollateralFields(event); ok {
-				dbupdater.UpdateTotalCollateralSupply(client, scEvent.MarketID, scEvent.Amount, scEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateUserMarketCollateralSupply(client, scEvent.OnBehalf, scEvent.MarketID, scEvent.Amount, eventType)
+				dbupdater.UpdateTotalCollateralSupply(firestoreClient, scEvent.MarketID, scEvent.Amount, scEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUserMarketCollateralSupply(firestoreClient, scEvent.OnBehalf, scEvent.MarketID, scEvent.Amount, eventType)
 			}
 
 		case "WithdrawCollateral":
 			if wcEvent, ok := extractWithdrawCollateralFields(event); ok {
-				dbupdater.UpdateTotalCollateralSupply(client, wcEvent.MarketID, wcEvent.Amount, wcEvent.Timestamp, caller, txHash, eventType)
-				dbupdater.UpdateUserMarketCollateralSupply(client, wcEvent.OnBehalf, wcEvent.MarketID, wcEvent.Amount, eventType)
+				dbupdater.UpdateTotalCollateralSupply(firestoreClient, wcEvent.MarketID, wcEvent.Amount, wcEvent.Timestamp, txMetadata.Caller, txMetadata.Hash, eventType, txMetadata.Index, txMetadata.BlockHeight)
+				dbupdater.UpdateUserMarketCollateralSupply(firestoreClient, wcEvent.OnBehalf, wcEvent.MarketID, wcEvent.Amount, eventType)
+			}
+		
+		case "AccrueInterest":
+			// if accrueEvent, ok := extractAccrueInterestFields(event); ok {
+			// 	dbupdater.UpdateUtilizationHistory(firestoreClient, accrueEvent.MarketID, accrueEvent.Timestamp, accrueEvent.Utilization)
+			// }
+		
+		case "SetFee":
+			if setFeeEvent, ok := extractSetFeeFields(event); ok {
+				dbupdater.UpdateMarketFee(firestoreClient, setFeeEvent.MarketID, setFeeEvent.Fee)
 			}
 
 		case "StorageDeposit":
@@ -121,6 +138,7 @@ func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent
 		"currentTimestamp",
 		"lltv",
 	}
+
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		slog.Error("failed to extract create market fields", "event", event)
@@ -143,7 +161,7 @@ func extractCreateMarketFields(event map[string]interface{}) (*CreateMarketEvent
 }
 
 func extractSupplyFields(event map[string]interface{}) (*SupplyEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR", "utilization"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		slog.Error("failed to extract supply fields", "event", event)
@@ -159,11 +177,12 @@ func extractSupplyFields(event map[string]interface{}) (*SupplyEvent, bool) {
 		Timestamp: fields["currentTimestamp"],
 		SupplyAPR: fields["supplyAPR"],
 		BorrowAPR: fields["borrowAPR"],
+		Utilization: fields["utilization"],
 	}, true
 }
 
 func extractWithdrawFields(event map[string]interface{}) (*WithdrawEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR", "utilization"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		slog.Error("failed to extract withdraw fields", "event", event)
@@ -180,11 +199,12 @@ func extractWithdrawFields(event map[string]interface{}) (*WithdrawEvent, bool) 
 		Timestamp: fields["currentTimestamp"],
 		SupplyAPR: fields["supplyAPR"],
 		BorrowAPR: fields["borrowAPR"],
+		Utilization: fields["utilization"],
 	}, true
 }
 
 func extractBorrowFields(event map[string]interface{}) (*BorrowEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	requiredFields := []string{"market_id", "user", "on_behalf", "receiver", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR", "utilization"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		slog.Error("failed to extract borrow fields", "event", event)
@@ -201,11 +221,12 @@ func extractBorrowFields(event map[string]interface{}) (*BorrowEvent, bool) {
 		Timestamp: fields["currentTimestamp"],
 		SupplyAPR: fields["supplyAPR"],
 		BorrowAPR: fields["borrowAPR"],
+		Utilization: fields["utilization"],
 	}, true
 }
 
 func extractRepayFields(event map[string]interface{}) (*RepayEvent, bool) {
-	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	requiredFields := []string{"market_id", "user", "on_behalf", "amount", "shares", "currentTimestamp", "supplyAPR", "borrowAPR", "utilization"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		slog.Error("failed to extract repay fields", "event", event)
@@ -221,11 +242,12 @@ func extractRepayFields(event map[string]interface{}) (*RepayEvent, bool) {
 		Timestamp: fields["currentTimestamp"],
 		SupplyAPR: fields["supplyAPR"],
 		BorrowAPR: fields["borrowAPR"],
+		Utilization: fields["utilization"],
 	}, true
 }
 
 func extractLiquidateFields(event map[string]interface{}) (*LiquidateEvent, bool) {
-	requiredFields := []string{"market_id", "user", "borrower", "amount", "shares", "seized", "currentTimestamp", "supplyAPR", "borrowAPR"}
+	requiredFields := []string{"market_id", "user", "borrower", "amount", "shares", "seized", "currentTimestamp", "supplyAPR", "borrowAPR", "utilization"}
 	fields, ok := extractEventFields(event, requiredFields, []string{})
 	if !ok {
 		slog.Error("failed to extract liquidate fields", "event", event)
@@ -242,6 +264,7 @@ func extractLiquidateFields(event map[string]interface{}) (*LiquidateEvent, bool
 		Timestamp: fields["currentTimestamp"],
 		SupplyAPR: fields["supplyAPR"],
 		BorrowAPR: fields["borrowAPR"],
+		Utilization: fields["utilization"],
 	}, true
 }
 
@@ -252,6 +275,7 @@ func extractSupplyCollateralFields(event map[string]interface{}) (*SupplyCollate
 		slog.Error("failed to extract supply collateral fields", "event", event)
 		return nil, false
 	}
+
 	return &SupplyCollateralEvent{
 		MarketID:  fields["market_id"],
 		User:      fields["user"],
@@ -268,12 +292,44 @@ func extractWithdrawCollateralFields(event map[string]interface{}) (*WithdrawCol
 		slog.Error("failed to extract withdraw collateral fields", "event", event)
 		return nil, false
 	}
+
 	return &WithdrawCollateralEvent{
 		MarketID:  fields["market_id"],
 		User:      fields["user"],
 		OnBehalf:  fields["on_behalf"],
 		Receiver:  fields["receiver"],
 		Amount:    fields["amount"],
+		Timestamp: fields["currentTimestamp"],
+	}, true
+}
+
+
+func extractAccrueInterestFields(event map[string]interface{}) (*AccrueInterestEvent, bool) {
+	requiredFields := []string{"market_id", "currentTimestamp", "utilization"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract accrue interest fields", "event", event)
+		return nil, false
+	}
+
+	return &AccrueInterestEvent{
+		MarketID:  fields["market_id"],
+		Timestamp: fields["currentTimestamp"],
+		Utilization: fields["utilization"],
+	}, true
+}
+
+func extractSetFeeFields(event map[string]interface{}) (*SetFeeEvent, bool) {
+	requiredFields := []string{"market_id", "fee", "currentTimestamp"}
+	fields, ok := extractEventFields(event, requiredFields, []string{})
+	if !ok {
+		slog.Error("failed to extract set fee fields", "event", event)
+		return nil, false
+	}
+
+	return &SetFeeEvent{
+		MarketID:  fields["market_id"],
+		Fee:       fields["fee"],
 		Timestamp: fields["currentTimestamp"],
 	}, true
 }

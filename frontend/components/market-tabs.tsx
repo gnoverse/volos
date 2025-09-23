@@ -1,22 +1,20 @@
 "use client"
 
-import { useMarketActivityQuery } from "@/app/(app)/borrow/queries-mutations"
-import { MarketInfo, Position } from "@/app/types"
+import { Market } from "@/app/types"
 import { MarketOverview } from "@/components/market-overview"
 import { MyPosition } from "@/components/my-position"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { activityColumns } from "./activity-columns"
+import { useMarketActivityQuery } from "@/hooks/use-queries"
+import { createActivityColumns } from "./activity-columns"
 import { DataTable } from "./ui/data-table"
 
 interface MarketTabsProps {
-  market: MarketInfo;
+  market: Market;
   apyVariations: {
     sevenDay: number;
     ninetyDay: number;
   };
   cardStyles: string;
-  healthFactor: string;
-  positionData: Position;
   caller: string;
 }
 
@@ -24,12 +22,10 @@ export function MarketTabs({
   market, 
   apyVariations, 
   cardStyles,
-  healthFactor,
-  positionData,
   caller
 }: MarketTabsProps) {
 
-  const { data: marketActivityResponse } = useMarketActivityQuery(market.poolPath!);
+  const { data: marketActivityResponse } = useMarketActivityQuery(market.id);
 
   return (
     <Tabs defaultValue="overview" className="w-full">
@@ -66,15 +62,13 @@ export function MarketTabs({
         <MyPosition
           market={market}
           cardStyles={cardStyles}
-          healthFactor={healthFactor}
-          positionData={positionData}
           caller={caller}
         />
       </TabsContent>
 
       <TabsContent value="activity" className="mt-0">
         <DataTable 
-          columns={activityColumns} 
+          columns={createActivityColumns(market)} 
           data={marketActivityResponse?.activities || []} 
           className="w-full h-full mt-0" 
         />

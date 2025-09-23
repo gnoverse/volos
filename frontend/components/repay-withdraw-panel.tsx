@@ -1,264 +1,183 @@
 "use client"
 
-import { useApproveTokenMutation, useRepayMutation, useWithdrawCollateralMutation } from "@/app/(app)/borrow/queries-mutations"
-import { MarketInfo, Position } from "@/app/types"
+import { getAllowance } from "@/app/services/abci"
+import { VOLOS_ADDRESS } from "@/app/services/tx.service"
+import { Market } from "@/app/types"
+import { formatPrice } from "@/app/utils/format.utils"
 import { PositionCard } from "@/components/position-card"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { useQueryClient } from "@tanstack/react-query"
+import { SidePanelCard } from "@/components/side-panel-card"
+import { useMaxRepayable } from "@/hooks/use-max-repayable"
+import { useApproveTokenMutation, useRepayMutation, useWithdrawCollateralMutation } from "@/hooks/use-mutations"
+import { usePositionCalculations } from "@/hooks/use-position-calculations"
+import { useExpectedBorrowAssetsQuery, usePositionQuery } from "@/hooks/use-queries"
+import { useRepayWithdrawValidation } from "@/hooks/use-repay-withdraw-validation"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowUp, Minus } from "lucide-react"
 import { useForm } from "react-hook-form"
-
-const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl py-4"
+import { formatUnits, parseUnits } from "viem"
 
 interface RepayWithdrawPanelProps {
-  market: MarketInfo
-  supplyValue: number
-  borrowValue: number
-  healthFactor: string
-  currentCollateral?: number
-  currentLoan?: number
-  ltv: string
-  collateralTokenDecimals: number
-  loanTokenDecimals: number
-  positionData?: Position
+  market: Market
 }
 
 export function RepayWithdrawPanel({
   market,
-  supplyValue,
-  borrowValue,
-  healthFactor,
-  currentCollateral = 0,
-  currentLoan = 0,
-  ltv,
-  //collateralTokenDecimals,
-  loanTokenDecimals,
-  positionData,
 }: RepayWithdrawPanelProps) {
-  const ltvFloat = parseFloat(ltv) / 1e18
-  const { register, setValue, watch, reset } = useForm({
+  const { register, setValue, watch } = useForm({
     defaultValues: {
       repayAmount: "",
       withdrawAmount: ""
     }
   })
+
+  const { userAddress } = useUserAddress()
+  const { data: positionData } = usePositionQuery(market.id, userAddress)
+  const { data: expectedBorrowAssets } = useExpectedBorrowAssetsQuery(market.id, userAddress)
   
-  const queryClient = useQueryClient()
+  const {
+    positionMetrics,
+    currentCollateral,
+    currentBorrowAssets,
+  } = usePositionCalculations(positionData ?? {
+    borrow_shares: "0",
+    supply_shares: "0",
+    collateral_supply: "0"
+  }, market, expectedBorrowAssets || "")
+
+  const { maxRepayable, refetch: refetchMaxRepayable } = useMaxRepayable(
+    expectedBorrowAssets || "1",
+    market,
+    userAddress
+  )
+  
+  const approveTokenMutation = useApproveTokenMutation()
   const repayMutation = useRepayMutation()
   const withdrawCollateralMutation = useWithdrawCollateralMutation()
-  const approveTokenMutation = useApproveTokenMutation()
-  
-  const positionCollateral = positionData?.collateral
-    ? parseFloat(positionData.collateral)
-    : currentCollateral;
-
-  const positionLoan = positionData?.borrowShares
-    ? parseFloat(positionData.borrowShares)
-    : currentLoan;
 
   const repayAmount = watch("repayAmount");
   const withdrawAmount = watch("withdrawAmount");
 
-  const repayAmountNum = parseFloat(repayAmount || "0")
-  const withdrawAmountNum = parseFloat(withdrawAmount || "0")
-  
-  const remainingLoan = Math.max(positionLoan - repayAmountNum, 0);
-  const remainingCollateral = Math.max(positionCollateral - withdrawAmountNum, 0);
-  
-  const maxWithdrawable = Math.max(positionCollateral - (remainingLoan / ltvFloat), 0);
-  const isWithdrawOverMax = withdrawAmountNum > maxWithdrawable || withdrawAmountNum > positionCollateral;
-  
-  const isRepayInputEmpty = !repayAmount || repayAmount === "0";
-  const isRepayOverMax = repayAmountNum > positionLoan;
-  const repayButtonMessage = isRepayInputEmpty 
-    ? "Enter repay amount" 
-    : isRepayOverMax 
-      ? "Exceeds loan amount" 
-      : "Repay";
-  const isRepayPending = approveTokenMutation.isPending || repayMutation.isPending;
+  const {
+    isRepayInputEmpty,
+    isRepayTooManyDecimals,
+    isRepayOverMax,
+    repayButtonMessage,
+    isWithdrawInputEmpty,
+    isWithdrawTooManyDecimals,
+    isWithdrawOverMax,
+    withdrawButtonMessage,
+  } = useRepayWithdrawValidation(
+    repayAmount,
+    withdrawAmount,
+    market,
+    maxRepayable,
+    currentCollateral
+  );
 
-  const isWithdrawInputEmpty = !withdrawAmount || withdrawAmount === "0";
-  const withdrawButtonMessage = isWithdrawInputEmpty 
-    ? "Enter withdraw amount" 
-    : isWithdrawOverMax 
-      ? "Exceeds max withdrawable" 
-      : "Withdraw";
-  const isWithdrawPending = approveTokenMutation.isPending || withdrawCollateralMutation.isPending;
+  const isRepayPending = repayMutation.isPending || approveTokenMutation.isPending;
+  const isWithdrawPending = withdrawCollateralMutation.isPending || approveTokenMutation.isPending;
+
+  // Calculate formatted price for USD value display
+  // Price decimals: 36 + loan_token_decimals - collateral_token_decimals
+  const priceDecimals = 36 + market.loan_token_decimals - market.collateral_token_decimals;
+  const formattedPrice = parseFloat(formatPrice(market.current_price, priceDecimals, market.loan_token_decimals));
 
   const handleRepay = async () => {
-    if (isRepayInputEmpty || isRepayOverMax) return;
+    if (isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax) return;
     
-    try {
-      const loanTokenPath = market?.loanToken;
-      const approvalAmount = parseFloat(repayAmount);
-      
+    const repayAmountInDenom = parseUnits(repayAmount || "0", market.loan_token_decimals);
+    
+    const currentAllowance = BigInt(await getAllowance(market.loan_token, userAddress!));
+    
+    if (currentAllowance < repayAmountInDenom) {
       await approveTokenMutation.mutateAsync({
-        tokenPath: loanTokenPath!,
-        amount: approvalAmount * Math.pow(10, loanTokenDecimals) * 1.2
-      });
-            
-      repayMutation.mutate({
-        marketId: market.poolPath!,
-        assets: parseFloat(repayAmount) * Math.pow(10, loanTokenDecimals)
-      }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
-          reset();
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to repay loan: ${error.message}`);
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to approve token: ${(error as Error).message}`);
+        tokenPath: market.loan_token,
+        amount: Number(repayAmountInDenom),
+        spenderAddress: VOLOS_ADDRESS
+      }); 
     }
+    
+    await repayMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      assets: Number(repayAmountInDenom)
+    });
+    setValue("repayAmount", "")
   };
 
   const handleWithdraw = async () => {
-    if (isWithdrawInputEmpty || isWithdrawOverMax) return;
+    if (isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax) return;
     
-    try {
-      const collateralTokenPath = market?.collateralToken;
-      const approvalAmount = parseFloat(withdrawAmount);
-      
+    const withdrawAmountInDenom = parseUnits(withdrawAmount || "0", market.collateral_token_decimals);
+    
+    const currentAllowance = BigInt(await getAllowance(market.collateral_token, userAddress!));
+    
+    if (currentAllowance < withdrawAmountInDenom) {
       await approveTokenMutation.mutateAsync({
-        tokenPath: collateralTokenPath!,
-        amount: approvalAmount * Math.pow(10, 6) * 1.2
+        tokenPath: market.collateral_token,
+        amount: Number(withdrawAmountInDenom),
+        spenderAddress: VOLOS_ADDRESS
       });
-            
-      withdrawCollateralMutation.mutate({
-        marketId: market.poolPath!,
-        amount: parseFloat(withdrawAmount) * Math.pow(10, 6)
-      }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['position', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['loanAmount', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['healthFactor', market.poolPath] });
-          queryClient.invalidateQueries({ queryKey: ['market', market.poolPath] });
-          reset();
-        },
-        onError: (error: Error) => {
-          console.error(`Failed to withdraw collateral: ${error.message}`);
-        }
-      });
-    } catch (error) {
-      console.error(`Failed to withdraw: ${(error as Error).message}`);
     }
+    
+    await withdrawCollateralMutation.mutateAsync({
+      marketId: market.id,
+      userAddress: userAddress!,
+      amount: Number(withdrawAmountInDenom)
+    });
+    setValue("withdrawAmount", "")
   };
 
   return (
+    <>
     <form className="space-y-3">
       {/* Repay Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader className="px-4 -mb-4">
-          <div className="flex items-center gap-2">
-            <ArrowUp size={16} className="text-blue-400" />
-            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
-              Repay Loan {market.loanTokenSymbol}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-1 pt-0 px-4">
-          <Input
-            type="number"
-            {...register("repayAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${(parseFloat(repayAmount || "0") * borrowValue).toFixed(2)}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{positionLoan.toFixed(2)} {market.loanTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={() => {
-                  setValue("repayAmount", positionLoan.toString());
-                }}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isRepayInputEmpty || isRepayOverMax || isRepayPending}
-            onClick={handleRepay}
-          >
-            {isRepayPending ? "Processing..." : repayButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
+      <SidePanelCard
+        icon={ArrowUp}
+        iconColor="text-blue-400"
+        title={`Repay Loan ${market.loan_token_symbol}`}
+        register={register}
+        fieldName="repayAmount"
+        buttonMessage={repayButtonMessage}
+        isButtonDisabled={isRepayInputEmpty || isRepayTooManyDecimals || isRepayOverMax || isRepayPending}
+        isButtonPending={isRepayPending}
+        onMaxClickAction={async () => {
+          await refetchMaxRepayable()
+          setValue("repayAmount", formatUnits(maxRepayable, market.loan_token_decimals));
+        }}
+        onSubmitAction={handleRepay}
+        inputValue={repayAmount}
+        price={1}
+      />
 
       {/* Withdraw Card */}
-      <Card className={CARD_STYLES}>
-        <CardHeader className="px-4 -mb-4">
-          <div className="flex items-center gap-2">
-            <Minus size={16} className="text-purple-400" />
-            <CardTitle className="text-gray-200 text-sm font-medium mb-0">
-              Withdraw Collateral {market.collateralTokenSymbol}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-1 pt-0 px-4">
-          <Input
-            type="number"
-            {...register("withdrawAmount", { pattern: /^[0-9]*\.?[0-9]*$/ })}
-            className="text-3xl font-semibold text-gray-200 bg-transparent w-full border-none focus:outline-none p-0"
-            placeholder="0.00"
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">${(parseFloat(withdrawAmount || "0") * supplyValue).toFixed(2)}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-400">{positionCollateral.toFixed(2)} {market.collateralTokenSymbol}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs text-blue-500 font-medium px-1 py-0 h-6"
-                onClick={() => {
-                  setValue("withdrawAmount", maxWithdrawable.toString());
-                }}
-              >
-                MAX
-              </Button>
-            </div>
-          </div>
-          <Button
-            type="button"
-            className="w-full mt-1 bg-midnightPurple-800 hover:bg-midnightPurple-900/70 h-8 text-sm"
-            disabled={isWithdrawInputEmpty || isWithdrawOverMax || isWithdrawPending}
-            onClick={handleWithdraw}
-          >
-            {isWithdrawPending ? "Processing..." : withdrawButtonMessage}
-          </Button>
-        </CardContent>
-      </Card>
+      <SidePanelCard
+        icon={Minus}
+        iconColor="text-purple-400"
+        title={`Withdraw Collateral ${market.collateral_token_symbol}`}
+        register={register}
+        fieldName="withdrawAmount"
+        buttonMessage={withdrawButtonMessage}
+        isButtonDisabled={isWithdrawInputEmpty || isWithdrawTooManyDecimals || isWithdrawOverMax || isWithdrawPending}
+        isButtonPending={isWithdrawPending}
+        onMaxClickAction={() => {
+          setValue("withdrawAmount", formatUnits(currentCollateral, market.collateral_token_decimals));
+        }}
+        onSubmitAction={handleWithdraw}
+        inputValue={withdrawAmount}
+        price={formattedPrice}
+      />
 
       {/* Position Card */}
       <PositionCard 
         market={market}
-        supplyAmount={""}
-        borrowAmount={""}
         repayAmount={repayAmount}
         withdrawAmount={withdrawAmount}
-        maxBorrowableAmount={remainingCollateral * ltvFloat}
-        isBorrowValid={!isWithdrawOverMax && !isRepayOverMax}
-        healthFactor={healthFactor}
-        currentCollateral={currentCollateral}
-        currentLoan={currentLoan}
-        ltv={ltv}
+        healthFactor={positionMetrics.healthFactor}
+        currentCollateral={formatUnits(currentCollateral, market.collateral_token_decimals)}
+        currentBorrowAssets={formatUnits(currentBorrowAssets, market.loan_token_decimals)}
       />
     </form>
+    </>
   )
 } 

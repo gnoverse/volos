@@ -1,4 +1,4 @@
-import { useCollateralSupplyHistoryQuery, useMarketSnapshotsQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
+import { useCollateralSupplyHistoryQuery, useMarketSnapshotsQuery, useNetBorrowHistoryQuery, useNetSupplyHistoryQuery } from "@/hooks/use-queries"
 import { getSnapshotResolution, getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { TimePeriod } from "@/components/chart-dropdown"
 import { useMemo } from "react"
@@ -14,6 +14,9 @@ interface ChartDataPoint {
   supply?: number
   borrow?: number
   collateral?: number
+  index?: number
+  blockHeight?: number
+  key?: string
 }
 
 /**
@@ -64,31 +67,56 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
 
   const transformedData = useMemo((): ChartDataPoint[] => {
     if (useHistory) {
-      const dataMap = new Map<number, ChartDataPoint>()
+      const dataMap = new Map<string, ChartDataPoint>()
 
-      supplyHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
+      if(supplyHistoryData) {
+        supplyHistoryData.forEach(item => {
+        const blockHeight = item.block_height
+        const index = item.index
+        const key = `${blockHeight}:${index}`
+        if (!dataMap.has(key)) {
+          dataMap.set(key, { 
+            timestamp: new Date(item.timestamp).getTime(),
+            index,
+            blockHeight,
+            key,
+          })
         }
-        dataMap.get(timestamp)!.supply = Number(item.value)
+        dataMap.get(key)!.supply = Number(item.value)
       })
+      }
 
-      borrowHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
+      if(borrowHistoryData) {
+        borrowHistoryData.forEach(item => {
+        const blockHeight = item.block_height
+        const index = item.index
+        const key = `${blockHeight}:${index}`
+        if (!dataMap.has(key)) {
+          dataMap.set(key, { 
+            timestamp: new Date(item.timestamp).getTime(),
+            index,
+            blockHeight,
+            key,
+          })
         }
-        dataMap.get(timestamp)!.borrow = Number(item.value)
-      })
+        dataMap.get(key)!.borrow = Number(item.value)
+       })
+      }
 
-      if (selectedMetrics.collateral) {
+      if (selectedMetrics.collateral && collateralHistoryData) {
         collateralHistoryData.forEach(item => {
-          const timestamp = new Date(item.timestamp).getTime()
-          if (!dataMap.has(timestamp)) {
-            dataMap.set(timestamp, { timestamp })
+          const blockHeight = item.block_height
+          const index = item.index
+          const key = `${blockHeight}:${index}`
+          if (!dataMap.has(key)) {
+            dataMap.set(key, { 
+              timestamp: new Date(item.timestamp).getTime(),
+              index,
+              blockHeight,
+              key,
+            })
           }
-          dataMap.get(timestamp)!.collateral = Number(item.value)
+          dataMap.get(key)!.collateral = Number(item.value)
         })
       }
 
@@ -99,7 +127,12 @@ export function useSupplyBorrowData(marketId: string, selectedTimePeriod: TimePe
           if (selectedMetrics.collateral && item.collateral !== undefined) return true;
           return false;
         })
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .sort((a, b) => {
+          if ((a.blockHeight ?? 0) !== (b.blockHeight ?? 0)) {
+            return (a.blockHeight ?? 0) - (b.blockHeight ?? 0)
+          }
+          return (a.index ?? 0) - (b.index ?? 0)
+        })
     } else {
       return snapshotData && snapshotData
         .map(snapshot => ({

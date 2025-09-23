@@ -1,12 +1,13 @@
 "use client"
 
-import { useApproveVLSMutation, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
-import { STAKER_PKG_PATH } from "@/app/services/tx.service"
-import { useUserAddress } from "@/app/utils/address.utils"
+import { useApproveTokenMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
+import { STAKER_ADDRESS, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { ChevronDown, ChevronUp, Plus } from "lucide-react"
 import { useState } from "react"
+import { toastError } from "./ui/toast"
 
 export function DelegateForm() {
   const { isConnected } = useUserAddress()
@@ -15,7 +16,7 @@ export function DelegateForm() {
   const [isDelegating, setIsDelegating] = useState(false)
   const [isDelegateExpanded, setIsDelegateExpanded] = useState(false)
   
-  const approveVLSMutation = useApproveVLSMutation()
+  const approveVLSMutation = useApproveTokenMutation()
   const stakeVLSMutation = useStakeVLSMutation()
 
   const toggleDelegateSection = () => {
@@ -28,40 +29,35 @@ export function DelegateForm() {
 
   const handleDelegate = async () => {
     if (!isConnected || !newDelegatee || !delegateAmount) {
-      console.error("Missing required fields for delegation")
+      toastError("Missing required fields for delegation")
       return
     }
 
     const wholeTokenAmount = parseFloat(delegateAmount)
     if (isNaN(wholeTokenAmount) || wholeTokenAmount <= 0) {
-      console.error("Invalid delegation amount")
+      toastError("Invalid delegation amount")
       return
     }
 
-    // Convert whole tokens to denom (multiply by 10^6)
+    // Convert whole tokens to denom (multiply by 10^6) VLS has 6 decimals
     const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
 
     setIsDelegating(true)
-    try {
-      await approveVLSMutation.mutateAsync({
-        spender: STAKER_PKG_PATH,
-        amount: amountInDenom
-      })
+    await approveVLSMutation.mutateAsync({
+      tokenPath: VLS_PKG_PATH,
+      spenderAddress: STAKER_ADDRESS,
+      amount: amountInDenom
+    })
 
-      await stakeVLSMutation.mutateAsync({
-        amount: amountInDenom,
-        delegatee: newDelegatee
-      })
-      
-      setNewDelegatee("")
-      setDelegateAmount("")
-      setIsDelegateExpanded(false)
-      
-    } catch (error) {
-      console.error("Failed to delegate VLS:", error)
-    } finally {
-      setIsDelegating(false)
-    }
+    await stakeVLSMutation.mutateAsync({
+      amount: amountInDenom,
+      delegatee: newDelegatee
+    })  
+    
+    setNewDelegatee("")
+    setDelegateAmount("")
+    setIsDelegateExpanded(false)
+    setIsDelegating(false)
   }
 
   return (
@@ -85,7 +81,7 @@ export function DelegateForm() {
 
       {/* Collapsible Content */}
       {isDelegateExpanded && (
-        <div className="mt-3 space-y-3 animate-in slide-in-from-top-2 duration-200">
+        <div className="mt-3 space-y-3 duration-200">
           <div>
             <label className="block text-sm text-gray-400 mb-2">
               Delegatee Address
@@ -95,7 +91,8 @@ export function DelegateForm() {
               placeholder="Enter governance member address (g1...)"
               value={newDelegatee}
               onChange={(e) => setNewDelegatee(e.target.value)}
-              className="bg-gray-800/60 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-logo-500"
+              className="bg-gray-800/60 text-gray-200 placeholder-gray-400 border-gray-600"
+              id="delegateeAddress"
             />
           </div>
           
@@ -107,8 +104,10 @@ export function DelegateForm() {
               type="number"
               placeholder="Enter VLS amount"
               value={delegateAmount}
+              allowNegative={false}
               onChange={(e) => setDelegateAmount(e.target.value)}
-              className="bg-gray-800/60 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-logo-500"
+              className="bg-gray-800/60 text-gray-200 placeholder-gray-400 border-gray-600"
+              id="delegateAmount"
               min="0"
               step="0.000001"
             />

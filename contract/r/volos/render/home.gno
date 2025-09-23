@@ -4,6 +4,7 @@ import (
 	"gno.land/p/demo/avl"
 	"gno.land/p/demo/avl/pager"
 	"gno.land/p/demo/avl/rotree"
+	u256 "gno.land/p/gnoswap/uint256"
 	"gno.land/p/moul/md"
 	"gno.land/p/moul/mdtable"
 	"gno.land/r/demo/grc20reg"
@@ -11,10 +12,10 @@ import (
 )
 
 func renderHome(path string) string {
-	out := md.H1("Volos🦌")
+	out := md.H1("🦌Volos")
 	out += md.Paragraph("Volos is a decentralized lending protocol built on gno.land. It enables users to lend and borrow assets through configurable markets, with real-time risk management and on-chain price oracles powered by Gnoswap pools. The protocol uses a shares-based accounting system, supports variable interest rates, and ensures solvency through continuous health monitoring and liquidation mechanisms—all within the gno.land ecosystem.")
 	out += "\n"
-	out += md.Paragraph("This is a minimalistic gnoweb app. To access all Volos features, please use the " + md.Link("Official Volos Website", "https://officialvolos.com") + ".")
+	out += md.Paragraph("This is a minimalistic gnoweb app. To access all Volos features, please use the " + md.Link("Official Volos Website", "http://volosprotocol.xyz") + ".")
 	out += md.H2("👤 Check Your Position")
 	out += md.Blockquote("To view your lending and borrowing positions on Volos, navigate to `?user=g1xxx` e.g. `?user=g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5`")
 
@@ -30,15 +31,15 @@ func renderHome(path string) string {
 	out += md.Paragraph("Browse all lending markets on Volos. Each market is defined by a Gnoswap pool, interest rate model, and collateralization parameters.")
 
 	table := mdtable.Table{
-		Headers: []string{"Loan Token", "Collateral Token", "IRM", "Total Borrow Assets", "Total Supply Assets", "LLTV", ""},
+		Headers: []string{"Loan Token", "Collateral Token", "Supply APR", "Borrow APR", "Total Borrow Assets", "Total Supply Assets", "LLTV", ""},
 	}
 	for _, item := range page.Items {
 		marketId := item.Key
 		_, params := volos.GetMarket(marketId)
 		loanPath := params.GetLoanToken()
 		collateralPath := params.GetCollateralToken()
-		irm := params.IRM
-		lltv := params.LLTV.ToString()
+
+		lltvString := formatPercentage(params.LLTV) + "%"
 
 		loanToken := grc20reg.Get(loanPath)
 		collateralToken := grc20reg.Get(collateralPath)
@@ -51,11 +52,14 @@ func renderHome(path string) string {
 			collateralSymbol = collateralToken.GetSymbol()
 		}
 
-		totalBorrowAssets := volos.GetMarketTotalBorrowAssets(marketId)
-		totalSupplyAssets := volos.GetMarketTotalSupplyAssets(marketId)
+		loanDecimals := loanToken.GetDecimals()
+		totalBorrowAssets := u256.MustFromDecimal(volos.GetMarketTotalBorrowAssets(marketId))
+		totalSupplyAssets := u256.MustFromDecimal(volos.GetMarketTotalSupplyAssets(marketId))
+		borrowAPR := u256.MustFromDecimal(volos.GetBorrowAPR(marketId))
+		supplyAPR := u256.MustFromDecimal(volos.GetSupplyAPR(marketId))
 
 		viewLink := md.Link("View", "?market="+marketId)
-		table.Append([]string{loanSymbol, collateralSymbol, irm, totalBorrowAssets, totalSupplyAssets, lltv, viewLink})
+		table.Append([]string{loanSymbol, collateralSymbol, formatPercentage(supplyAPR) + "%", formatPercentage(borrowAPR) + "%", formatTokenAmount(totalBorrowAssets, loanDecimals), formatTokenAmount(totalSupplyAssets, loanDecimals), lltvString, viewLink})
 	}
 
 	if len(table.Rows) == 0 {

@@ -18,61 +18,66 @@ type CreateMarketEvent struct {
 }
 
 type SupplyEvent struct {
-	MarketID  string
-	User      string
-	OnBehalf  string
-	Amount    string
-	Shares    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	OnBehalf    string
+	Amount      string
+	Shares      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
+	Utilization string
 }
 
 type WithdrawEvent struct {
-	MarketID  string
-	User      string
-	OnBehalf  string
-	Receiver  string
-	Amount    string
-	Shares    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	OnBehalf    string
+	Receiver    string
+	Amount      string
+	Shares      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
+	Utilization string
 }
 
 type BorrowEvent struct {
-	MarketID  string
-	User      string
-	OnBehalf  string
-	Receiver  string
-	Amount    string
-	Shares    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	OnBehalf    string
+	Receiver    string
+	Amount      string
+	Shares      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
+	Utilization string
 }
 
 type RepayEvent struct {
-	MarketID  string
-	User      string
-	OnBehalf  string
-	Amount    string
-	Shares    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	OnBehalf    string
+	Amount      string
+	Shares      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
+	Utilization string
 }
 
 type LiquidateEvent struct {
-	MarketID  string
-	User      string
-	Borrower  string
-	Amount    string
-	Shares    string
-	Seized    string
-	Timestamp string
-	SupplyAPR string
-	BorrowAPR string
+	MarketID    string
+	User        string
+	Borrower    string
+	Amount      string
+	Shares      string
+	Seized      string
+	Timestamp   string
+	SupplyAPR   string
+	BorrowAPR   string
+	Utilization string
 }
 
 type SupplyCollateralEvent struct {
@@ -89,6 +94,18 @@ type WithdrawCollateralEvent struct {
 	OnBehalf  string
 	Receiver  string
 	Amount    string
+	Timestamp string
+}
+
+type AccrueInterestEvent struct {
+	MarketID    string
+	Timestamp   string
+	Utilization string
+}
+
+type SetFeeEvent struct {
+	MarketID  string
+	Fee       string
 	Timestamp string
 }
 
@@ -142,4 +159,13 @@ type BeginUnstakeEvent struct {
 type GovernanceWithdrawEvent struct {
 	Staker       string
 	WithdrawnIDs []string
+}
+
+// TX metadata
+
+type TxMetadata struct {
+	Caller      string
+	Hash        string
+	BlockHeight float64
+	Index       float64
 }

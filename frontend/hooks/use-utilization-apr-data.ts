@@ -1,4 +1,4 @@
-import { useAPRHistoryQuery, useMarketSnapshotsQuery, useUtilizationHistoryQuery } from "@/app/(app)/borrow/queries-mutations"
+import { useAPRHistoryQuery, useMarketSnapshotsQuery, useUtilizationHistoryQuery } from "@/hooks/use-queries"
 import { getSnapshotResolution, getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { TimePeriod } from "@/components/chart-dropdown"
 import { useMemo } from "react"
@@ -11,9 +11,12 @@ interface ChartMetrics {
 
 interface ChartDataPoint {
   timestamp: number
-  utilization?: number
-  supplyApr?: number
-  borrowApr?: number
+  utilization?: string
+  supplyApr?: string
+  borrowApr?: string
+  index?: number
+  blockHeight?: number
+  key?: string
 }
 
 /**
@@ -59,24 +62,42 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
 
   const transformedData = useMemo((): ChartDataPoint[] => {
     if (useHistory) {
-      const dataMap = new Map<number, ChartDataPoint>()
+      const dataMap = new Map<string, ChartDataPoint>()
 
-      utilizationHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
+        if(utilizationHistoryData) {
+          utilizationHistoryData.forEach(item => {
+        const blockHeight = item.block_height
+        const index = item.index
+        const key = `${blockHeight}:${index}`
+        if (!dataMap.has(key)) {
+          dataMap.set(key, { 
+            timestamp: new Date(item.timestamp).getTime(),
+            index,
+            blockHeight,
+            key,
+          })
         }
-        dataMap.get(timestamp)!.utilization = Number(item.value)
-      })
+          dataMap.get(key)!.utilization = item.value
+        })
+      }
 
-      aprHistoryData.forEach(item => {
-        const timestamp = new Date(item.timestamp).getTime()
-        if (!dataMap.has(timestamp)) {
-          dataMap.set(timestamp, { timestamp })
+      if(aprHistoryData) {
+        aprHistoryData.forEach(item => {
+        const blockHeight = item.block_height
+        const index = item.index
+        const key = `${blockHeight}:${index}`
+        if (!dataMap.has(key)) {
+          dataMap.set(key, { 
+            timestamp: new Date(item.timestamp).getTime(),
+            index,
+            blockHeight,
+            key,
+          })
         }
-        dataMap.get(timestamp)!.supplyApr = Number(item.supply_apr)
-        dataMap.get(timestamp)!.borrowApr = Number(item.borrow_apr)
-      })
+          dataMap.get(key)!.supplyApr = item.supply_apr
+          dataMap.get(key)!.borrowApr = item.borrow_apr
+        })
+      }
 
       return Array.from(dataMap.values())
         .filter(item => {
@@ -85,14 +106,20 @@ export function useUtilizationAPRData(marketId: string, selectedTimePeriod: Time
           if (selectedMetrics.borrowApr && item.borrowApr !== undefined) return true;
           return false;
         })
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+        .sort((a, b) => {
+          if ((a.blockHeight ?? 0) !== (b.blockHeight ?? 0)) {
+            return (a.blockHeight ?? 0) - (b.blockHeight ?? 0)
+          }
+          return (a.index ?? 0) - (b.index ?? 0)
+        })
     } else {
       return snapshotData && snapshotData
-        .map(snapshot => ({
+        .map((snapshot, index) => ({
           timestamp: new Date(snapshot.timestamp).getTime(),
           utilization: selectedMetrics.utilization ? snapshot.utilization_rate : undefined,
           supplyApr: selectedMetrics.supplyApr ? snapshot.supply_apr : undefined,
           borrowApr: selectedMetrics.borrowApr ? snapshot.borrow_apr : undefined,
+          key: `snapshot-${index}`,
         }))
         .filter(item => {
           if (selectedMetrics.utilization && item.utilization !== undefined) return true;

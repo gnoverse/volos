@@ -25,8 +25,10 @@ func GetMarketsHandler(client *firestore.Client) http.HandlerFunc {
 		}
 
 		lastID := r.URL.Query().Get("last_id")
+		sortField := r.URL.Query().Get("sort_field")
+		sortDir := r.URL.Query().Get("sort_dir")
 
-		markets, err := dbfetcher.GetMarkets(client, limit, lastID)
+		markets, err := dbfetcher.GetMarkets(client, limit, lastID, sortField, sortDir)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

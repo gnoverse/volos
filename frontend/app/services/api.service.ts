@@ -88,7 +88,7 @@ export async function getUserVoteOnProposal(proposalId: string, userAddress: str
 }
 
 export async function getUserPendingUnstakes(userAddress: string): Promise<PendingUnstake[]> {
-  const response = await fetch(`${API_BASE}/user-pending-unstakes?address=${userAddress}`);
+  const response = await fetch(`${API_BASE}/user-pending-unstakes?userAddress=${userAddress}`);
   if (!response.ok) throw new Error('Failed to fetch pending unstakes');
   return response.json();
 }
@@ -99,11 +99,13 @@ export async function getUserMarketPosition(user: string, marketId: string) {
   return response.json();
 }
 
-export async function getMarkets(limit?: number, lastId?: string): Promise<MarketsResponse> {
+export async function getMarkets(limit?: number, lastId?: string, sortField?: string, sortDir?: string): Promise<MarketsResponse> {
   const params = new URLSearchParams();
   if (limit) params.append('limit', limit.toString());
-  if (lastId) params.append('lastId', lastId);
-  
+  if (lastId) params.append('last_id', lastId);
+  if (sortField) params.append('sort_field', sortField);
+  if (sortDir) params.append('sort_dir', sortDir);
+
   const response = await fetch(`${API_BASE}/markets?${params}`);
   if (!response.ok) throw new Error('Failed to fetch markets');
   return response.json();

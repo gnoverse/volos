@@ -1,10 +1,11 @@
-import { MarketInfo } from "@/app/types";
+import { Market } from "@/app/types";
+import { formatPercentage, wadToPercentage } from "@/app/utils/format.utils";
 import { InfoCard } from "@/components/info-card";
 import { SupplyBorrowChart } from "./supply-borrow-chart";
 import { UtilizationAPRChart } from "./utilization-apr-chart";
 
 interface MarketOverviewProps {
-  market: MarketInfo;
+  market: Market;
   apyVariations: {
     sevenDay: number;
     ninetyDay: number;
@@ -23,20 +24,20 @@ export function MarketOverview({
       <div className="grid grid-cols-1 gap-6">
         {/* Utilization and APR Chart */}
         <UtilizationAPRChart
-          marketId={market.marketId!}
+          marketId={market.id}
           title="Utilization & APR"
           description="Compare utilization rate and APR trends"
           className={cardStyles}
         />
         {/* Supply and Borrow Chart */}
         <SupplyBorrowChart
-          marketId={market.marketId!}
+          marketId={market.id}
           title="Supply & Borrow"
           description="Compare total supply and borrow amounts over time"
           className={cardStyles}
-          symbol={market.loanTokenSymbol}
-          loanDecimals={market.loanTokenDecimals}
-          collateralDecimals={market.collateralTokenDecimals}
+          symbol={market.loan_token_symbol}
+          loanDecimals={market.loan_token_decimals}
+          collateralDecimals={market.collateral_token_decimals}
         />
       </div>
 
@@ -44,15 +45,15 @@ export function MarketOverview({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <InfoCard
           title="7D APY"
-          value={market.borrowAPR}
+          value={formatPercentage(wadToPercentage(market.borrow_apr))}
         />
         <InfoCard
           title="30D APY"
-          value={market.borrowAPR}
+          value={formatPercentage(wadToPercentage(market.borrow_apr))}
         />
         <InfoCard
           title="90D APY"
-          value={market.borrowAPR}
+          value={formatPercentage(wadToPercentage(market.borrow_apr))}
         />
       </div>
     </>

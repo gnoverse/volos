@@ -8,11 +8,13 @@ import (
 	"volos-backend/services/utils"
 
 	"cloud.google.com/go/firestore"
+	"github.com/gnolang/gno/gno.land/pkg/gnoclient"
 )
 
 // CreateMarket creates a new market in the Firestore database.
 // It uses sanitizedMarketID (replacing "/" with "_") to avoid issues with Firestore document IDs.
 func CreateMarket(client *firestore.Client,
+	gnoClient *gnoclient.Client,
 	marketID, loanToken, collateralToken string,
 	loanTokenName string,
 	loanTokenSymbol string,
@@ -23,18 +25,36 @@ func CreateMarket(client *firestore.Client,
 	timestamp string,
 	lltv string,
 ) {
+
 	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+	poolPath := strings.ReplaceAll(marketID, ":0", "")
+
+	res, _, err := gnoClient.QEval("gno.land/r/gnoswap/v1/pool", "PoolGetSlot0SqrtPriceX96(\""+poolPath+"\")")
+	if err != nil {
+		slog.Error("failed to query pool price from blockchain", "poolPath", poolPath, "error", err)
+		return
+	}
+
+	sqrtPriceX96 := utils.ParseABCIstring(res, "market creation")
+	loanDecimals := utils.ParseInt64(loanTokenDecimals, "market creation loanTokenDecimals")
+	collDecimals := utils.ParseInt64(collateralTokenDecimals, "market creation collateralTokenDecimals")
+
+	var currentPrice string
+	if sqrtPriceX96 != "" {
+		revert := strings.HasSuffix(marketID, ":1")
+		currentPrice = extractPriceFromSqrt(sqrtPriceX96, revert, loanDecimals, collDecimals)
+		if currentPrice == "" {
+			slog.Error("failed to extract price from sqrtPriceX96", "sqrtPriceX96", sqrtPriceX96, "marketID", marketID)
+		}
+	}
 	timestampInt := utils.ParseTimestamp(timestamp, "market creation")
 	if timestampInt == 0 {
 		return
 	}
 
-	loanDecimals := utils.ParseInt64(loanTokenDecimals, "market creation loanTokenDecimals")
-	collDecimals := utils.ParseInt64(collateralTokenDecimals, "market creation collateralTokenDecimals")
-	lltvPercent := utils.WadToPercent(lltv, "market creation lltv")
-
 	marketData := map[string]interface{}{
 		"id":                        marketID,
+		"pool_path":                 poolPath,
 		"loan_token":                loanToken,
 		"collateral_token":          collateralToken,
 		"loan_token_name":           loanTokenName,
@@ -44,14 +64,37 @@ func CreateMarket(client *firestore.Client,
 		"collateral_token_symbol":   collateralTokenSymbol,
 		"collateral_token_decimals": collDecimals,
 		"created_at":                time.Unix(timestampInt, 0),
-		"lltv":                      lltvPercent,
+		"lltv":                      lltv,
+		"fee":                       "0",
 	}
 
-	_, err := client.Collection("markets").Doc(sanitizedMarketID).Set(context.Background(), marketData)
+	if currentPrice != "" {
+		marketData["current_price"] = currentPrice
+	}
+
+	_, err = client.Collection("markets").Doc(sanitizedMarketID).Set(context.Background(), marketData)
 	if err != nil {
 		slog.Error("failed to create market in database", "market_id", marketID, "loan_token", loanToken, "collateral_token", collateralToken, "error", err)
 		return
 	}
 
 	slog.Info("market created", "market_id", marketID)
+}
+
+// UpdateMarketFee updates the fee field for a specific market in the Firestore database.
+func UpdateMarketFee(client *firestore.Client, marketID, fee string) {
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
+
+	_, err := client.Collection("markets").Doc(sanitizedMarketID).Update(context.Background(), []firestore.Update{
+		{
+			Path:  "fee",
+			Value: fee,
+		},
+	})
+	if err != nil {
+		slog.Error("failed to update market fee in database", "market_id", marketID, "fee", fee, "error", err)
+		return
+	}
+
+	slog.Info("market fee updated", "market_id", marketID, "fee", fee)
 }

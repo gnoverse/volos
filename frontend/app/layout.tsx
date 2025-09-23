@@ -1,4 +1,6 @@
 import Navbar from "@/components/Navbar";
+import { TransactionSuccessPortal } from "@/components/transaction-success-controller";
+import { SonnerToaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
@@ -30,6 +32,8 @@ export default function RootLayout({
           <main className="flex-grow">
             {children}
           </main>
+          <TransactionSuccessPortal />
+          <SonnerToaster />
         </div>
       </body>
     </html>

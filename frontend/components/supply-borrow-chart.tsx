@@ -1,6 +1,5 @@
 "use client"
 
-
 import { formatTimestamp, getXAxisFormatter } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -106,7 +105,7 @@ export function SupplyBorrowChart({
                 <Checkbox
                   checked={selectedMetrics.supply}
                   onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, supply: !prev.supply }))}
-                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-800 data-[state=checked]:border-blue-800"
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
                 />
                 <span className="text-blue-400">Supply</span>
               </div>
@@ -122,7 +121,7 @@ export function SupplyBorrowChart({
                 <Checkbox
                   checked={selectedMetrics.collateral}
                   onCheckedChange={() => setSelectedMetrics(prev => ({ ...prev, collateral: !prev.collateral }))}
-                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-slate-500 data-[state=checked]:border-slate-500"
+                  className="bg-customGray-800/55 border-gray-600 data-[state=checked]:bg-slate-600 data-[state=checked]:border-slate-600"
                 />
                 <span className="text-slate-400">Collateral</span>
               </div>
@@ -142,12 +141,18 @@ export function SupplyBorrowChart({
               margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
             >
               <XAxis 
-                dataKey="timestamp"
+                dataKey="key"
                 fontSize={10}
                 tickLine={false}
-                tickFormatter={getXAxisFormatter(selectedTimePeriod)}
+                tickFormatter={(key) => {
+                  const dataPoint = transformedData.find(d => d.key === String(key))
+                  if (dataPoint) {
+                    return getXAxisFormatter(selectedTimePeriod)(dataPoint.timestamp)
+                  }
+                  return String(key)
+                }}
                 height={50}
-                interval={7}
+                interval={3}
                 tick={{ textAnchor: 'start', fill: 'rgb(156 163 175)' }}
                 tickMargin={5}
                 stroke="rgba(75, 85, 99, 0.3)"
@@ -204,8 +209,11 @@ export function SupplyBorrowChart({
                   borderRadius: '0.5rem',
                   color: 'rgb(156 163 175)',
                 }} 
-                labelFormatter={(label) => formatTimestamp(label)}
-                formatter={(value) => `${(Number(value) / 10**loanDecimals).toFixed(1)} ${symbol}`} // todo: use collateral decimals for collateral
+                labelFormatter={(key) => {
+                  const dataPoint = transformedData.find(d => d.key === String(key))
+                  return dataPoint ? formatTimestamp(dataPoint.timestamp) : String(key)
+                }}
+                formatter={(value) => `${(Number(value) / 10**loanDecimals).toFixed(1)} ${symbol}`}
               />
             </LineChart>
           </ResponsiveContainer>

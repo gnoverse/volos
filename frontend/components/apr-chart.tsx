@@ -1,6 +1,6 @@
 "use client"
 
-import { APRData } from "@/app/services/api.service"
+import { APRData } from "@/app/types"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

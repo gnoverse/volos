@@ -1,17 +1,16 @@
 "use client"
 
 import { getUserBorrowHistory, getUserCollateralHistory } from '@/app/services/api.service'
-import { MarketInfo } from '@/app/types'
+import { Market } from '@/app/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { useQuery } from '@tanstack/react-query'
-import { Chart } from './universal-chart'
 
 interface PositionChartTabsProps {
   caller: string
   marketId: string
-  market: MarketInfo
+  market: Market
   cardStyles: string
 }
 
@@ -30,12 +29,12 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
 
   // todo: fix collateral token decimals in the contract (it is 0)
   const mappedCollateral = collateralHistory.map(d => ({
-    value: d.value / Math.pow(10, market.loanTokenDecimals), //this should be collateralTokenDecimals but since it doesn't work we use this
+    value: d.value / Math.pow(10, market.loan_token_decimals), //this should be collateralTokenDecimals but since it doesn't work we use this
     timestamp: d.timestamp
   }));
 
   const mappedBorrow = borrowHistory.map(d => ({
-    value: d.value / Math.pow(10, market.loanTokenDecimals),
+    value: d.value / Math.pow(10, market.loan_token_decimals),
     timestamp: d.timestamp
   }));
 
@@ -98,7 +97,7 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
         </TabsList>
       </CardHeader>
       <CardContent className="items-center">
-        {mappedCollateral.length > 0 && (
+        {/* {mappedCollateral.length > 0 && (
           <TabsContent value="collateral" className="mt-0">
             <Chart
               title=""
@@ -128,7 +127,7 @@ export function PositionChartTabs({ caller, marketId, market, cardStyles }: Posi
             color="rgba(99, 102, 241, 0.95)"
             className="pt-6"
           />
-        </TabsContent>
+        </TabsContent> */}
       </CardContent>
       </Tabs>
     </Card>

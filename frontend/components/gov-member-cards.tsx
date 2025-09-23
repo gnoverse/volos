@@ -1,7 +1,5 @@
-import { useApproveVLSMutation, useGovernanceUserInfo, useStakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
-import { AdenaService } from "@/app/services/adena.service"
-import { STAKER_PKG_PATH } from "@/app/services/tx.service"
-import { useUserAddress } from "@/app/utils/address.utils"
+import { getAllowance } from "@/app/services/abci"
+import { STAKER_ADDRESS, VLS_PKG_PATH } from "@/app/services/tx.service"
 import { formatTokenAmount } from "@/app/utils/format.utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,9 +9,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useApproveTokenMutation, useStakeVLSMutation } from "@/hooks/use-mutations"
+import { useGovernanceUserInfo } from "@/hooks/use-queries"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { cn } from "@/lib/utils"
 import { ChevronDown, ChevronUp, Info, Plus, WalletIcon } from "lucide-react"
 import { useState } from "react"
+import { formatUnits } from "viem"
 
 interface GovMemberCardsProps {
   cardStyles: string
@@ -22,74 +24,46 @@ interface GovMemberCardsProps {
 export function GovMemberCards({ 
   cardStyles 
 }: GovMemberCardsProps) {
-  const { userAddress, isConnected } = useUserAddress()
+  const { userAddress, isConnected, handleWalletConnection } = useUserAddress()
   const [isStaking, setIsStaking] = useState(false)
   const [isStakeExpanded, setIsStakeExpanded] = useState(false)
   const [stakeAmount, setStakeAmount] = useState("")
   
-  const { data: userInfo, isLoading, error, refetch: refetchUserInfo } = useGovernanceUserInfo(userAddress)
-  const approveVLSMutation = useApproveVLSMutation()
+  const { data: userInfo, isLoading, error } = useGovernanceUserInfo(userAddress)
+  const approveVLSMutation = useApproveTokenMutation()
   const stakeVLSMutation = useStakeVLSMutation()
 
-  const handleWalletConnection = async () => {
-    const adenaService = AdenaService.getInstance()
-    
-    if (isConnected) {
-      adenaService.disconnectWallet()
-    } else {
-      try {
-        await adenaService.connectWallet()
-      } catch (error) {
-        console.error("Failed to connect wallet:", error)
-      }
-    }
-  }
-
   const handleStakeVLS = async () => {
-    if (!isConnected) {
-      console.error("Wallet not connected")
-      return
-    }
-
     const wholeTokenAmount = parseFloat(stakeAmount)
-    if (isNaN(wholeTokenAmount) || wholeTokenAmount <= 0) {
-      console.error("Invalid stake amount")
-      return
-    }
-
+    
     // Convert whole tokens to denom (multiply by 10^6)
     const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
     const currentVlsBalance = userInfo?.vlsBalance || 0
 
     if (amountInDenom > currentVlsBalance) {
-      console.error(`Insufficient VLS balance. Required: ${amountInDenom} denom, Available: ${currentVlsBalance} denom`)
       return
     }
 
     setIsStaking(true)
-    try {
+    const currentAllowance = BigInt(await getAllowance(VLS_PKG_PATH, userAddress!))
+    
+    if (currentAllowance < BigInt(amountInDenom)) {
       await approveVLSMutation.mutateAsync({
-        spender: STAKER_PKG_PATH,
+        tokenPath: VLS_PKG_PATH,
+        spenderAddress: STAKER_ADDRESS,
         amount: amountInDenom
       })
-
-      await stakeVLSMutation.mutateAsync({
-        amount: amountInDenom,
-        delegatee: userAddress
-      })
-      
-      await refetchUserInfo()
-      
-      setStakeAmount("")
-      setIsStakeExpanded(false)
-      
-      console.log("User info refreshed after staking")
-      
-    } catch (error) {
-      console.error("Failed to stake VLS:", error)
-    } finally {
-      setIsStaking(false)
     }
+
+    await stakeVLSMutation.mutateAsync({
+      amount: amountInDenom,
+      delegatee: userAddress
+    })
+    
+    setStakeAmount("")
+    setIsStakeExpanded(false)
+          
+    setIsStaking(false)
   }
 
   const toggleStakeSection = () => {
@@ -101,7 +75,7 @@ export function GovMemberCards({
 
   const handleMaxAmount = () => {
     if (userInfo?.vlsBalance) {
-      const maxAmount = parseFloat(formatTokenAmount(userInfo.vlsBalance.toString(), 6, 2, 6).replace(/,/g, ''))
+      const maxAmount = formatUnits(BigInt(userInfo.vlsBalance), 6)
       setStakeAmount(maxAmount.toString())
     }
   }
@@ -121,7 +95,7 @@ export function GovMemberCards({
           <div className="text-center space-y-4">
             <h3 className="text-xl font-semibold text-logo-500">User Info</h3>
             <p className="text-gray-500 text-sm mb-4">
-              Connect your wallet to view your DAO membership status, voting power, and governance participation details.
+              Connect your wallet to view your governance membership status, voting power, and governance participation details.
             </p>
             <Button 
               variant="ghost" 
@@ -140,10 +114,10 @@ export function GovMemberCards({
   }
   return (
     <div className="grid grid-cols-1 gap-6">
-      {/* DAO Membership Card */}
+      {/* Governance Membership Card */}
       <div className={`${cardStyles} p-6 border-l-4 border-logo-500`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-logo-500">DAO Membership</h3>
+          <h3 className="text-xl font-semibold text-logo-500">Governance Membership</h3>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
@@ -151,7 +125,7 @@ export function GovMemberCards({
               </TooltipTrigger>
               <TooltipContent className="bg-gray-900 text-gray-300 border-none shadow-lg">
                 <p className="max-w-xs">
-                  You are a member of the DAO if you hold xVLS tokens. To obtain xVLS you need to stake VLS tokens.
+                  You are a member of the governance if you hold xVLS tokens. To obtain xVLS you need to stake VLS tokens.
                   xVLS tokens represent your governance power and voting rights.
                 </p>
               </TooltipContent>
@@ -166,7 +140,7 @@ export function GovMemberCards({
           </div>
         ) : error ? (
           <div className="text-red-400 text-sm">
-            Error loading DAO membership data
+            Error loading Governance membership data
           </div>
         ) : (
           <div className="space-y-3">
@@ -230,6 +204,7 @@ export function GovMemberCards({
                         min="0"
                         step="0.000001"
                         max={parseFloat(formatTokenAmount((userInfo?.vlsBalance || 0).toString(), 6, 2, 6).replace(/,/g, ''))}
+                        allowNegative={false}
                       />
                       <Button
                         type="button"
@@ -301,6 +276,12 @@ export function GovMemberCards({
               </span>
             </div>
             <div className="flex items-center justify-between">
+              <span className="text-gray-400">Proposal Threshold:</span>
+              <span className="text-gray-200 font-mono">
+                {userInfo?.proposalThreshold || 0} <span className="text-xs text-gray-500">(xVLS denom)</span>
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
               <span className="text-gray-400">Can Propose:</span>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                 (userInfo?.xvlsBalance || 0) >= (userInfo?.proposalThreshold || 0)
@@ -308,12 +289,6 @@ export function GovMemberCards({
                   : 'bg-red-500/20 text-red-400 border border-red-500/30'
               }`}>
                 {(userInfo?.xvlsBalance || 0) >= (userInfo?.proposalThreshold || 0) ? 'Eligible' : 'Not Eligible'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Proposal Threshold:</span>
-              <span className="text-gray-200 font-mono">
-                {userInfo?.proposalThreshold || 0} <span className="text-xs text-gray-500">(xVLS denom)</span>
               </span>
             </div>
           </div>

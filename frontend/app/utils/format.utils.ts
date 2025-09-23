@@ -1,5 +1,22 @@
 import { formatUnits } from "viem";
 
+export const WAD = BigInt(10 ** 18);
+
+/**
+ * Performs BigInt division with precision preservation
+ * @param dividend - The number to divide
+ * @param divisor - The number to divide by
+ * @param precision - Number of decimal places to preserve (default: 18)
+ * @returns The result as a number
+ */
+function bigIntDivide(dividend: bigint, divisor: bigint, precision: number = 18): number {
+  // Multiply by 10^precision to preserve decimal places
+  const precisionMultiplier = BigInt(10 ** precision);
+  const result = (dividend * precisionMultiplier) / divisor;
+  return Number(result) / (10 ** precision);
+}
+
+
 /**
  * Formats a number with decimals only when needed (2 decimal places for non-integers)
  * Example: 5 => "5", 5.2 => "5.20"
@@ -25,58 +42,17 @@ export function formatTokenAmount(
 }
 
 /**
- * Formats a rate (e.g., APY) as a percentage string with 2 decimals.
- */
-export function formatRate(
-  value: string | bigint,
-  decimals: number = 18,
-  multiplyBy100: boolean = false,
-  fractionDigits: number = 2
-): string {
-  let num 
-  if (multiplyBy100)
-     num = Number(formatUnits(BigInt(value), decimals - 2));
-  else
-     num = Number(formatUnits(BigInt(value), decimals));
-  return `${num.toFixed(fractionDigits)}%`;
-}
-
-/**
- * Formats a utilization value as a percentage string with 2 decimals.
- */
-export function formatUtilization(
-  value: string | bigint,
-  decimals: number = 18,
-  fractionDigits: number = 2
-): string {
-  const num = Number(formatUnits(BigInt(value), decimals)) * 100;
-  return `${num.toFixed(fractionDigits)}%`;
-}
-
-/**
- * Formats a Loan-to-Value (LTV) ratio as a percentage string with 0 decimals.
- */
-export function formatLTV(
-  value: string | bigint,
-  decimals: number = 18
-): string {
-  const num = Number(formatUnits(BigInt(value), decimals)) * 100;
-  return `${num.toFixed(0)}%`;
-}
-
-/**
- * Formats a plain number as a percentage string with fixed decimals.
+ * Formats a plain number as a percentage string with exactly 2 decimal places.
  * Accepts number or numeric string. Example: 5.2 => "5.20%"
  */
 export function formatPercentage(
-  value: number | string,
-  maxFractionDigits: number = 2
+  value: number | string
 ): string {
   const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (Number.isNaN(num)) return `0%`;
+  if (Number.isNaN(num)) return `0.00%`;
   const formatted = num.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: maxFractionDigits,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
   return `${formatted}%`;
 }
@@ -96,15 +72,32 @@ export function formatApyVariation(
 }
 
 /**
- * Converts a WAD-scaled string (1e18 = 1.00) to a float with 2 decimals.
- * Example: "2500000000000000000" => "2.50"
+ * Converts a WAD format string to a percentage number with smart rounding.
+ * Uses full precision conversion to maintain accuracy for display purposes.
+ * 
+ * @param wadString - WAD format string (e.g., "500000000000000000" for 50%)
+ * @param decimals - Number of decimal places to round to (default: 2)
+ * @returns percentage as number (e.g., 50.00 for 50%)
+ * 
+ * @example
+ * wadToPercentage("500000000000000000") // returns 50.00
+ * wadToPercentage("500000000000000001") // returns 50.00 (rounded)
+ * wadToPercentage("500000000000000050") // returns 50.01 (rounded)
  */
-export function formatHealthFactor(wadString: string | undefined | null, decimals = 2): string {
-  if (!wadString) return "0.00";
-  const WAD = 1e18;
-  const num = Number(wadString);
-  if (isNaN(num)) return "0.00";
-  return (num / WAD).toFixed(decimals);
+export function wadToPercentage(wadString: string | undefined | null, decimals: number = 2): number {
+  if (!wadString) return 0;
+  
+  try {
+    const wadValue = BigInt(wadString);
+    
+    const percentage = bigIntDivide(wadValue * BigInt(100), WAD);
+    
+    const factor = Math.pow(10, decimals);
+    return Math.round(percentage * factor) / factor;
+  } catch (error) {
+    console.error("Error converting WAD to percentage:", error);
+    return 0;
+  }
 }
 
 /**
@@ -135,6 +128,36 @@ export function parseTokenAmount(
   } catch (error) {
     console.error("Error parsing token amount:", error);
     return 0;
+  }
+}
+
+/**
+ * Formats a price value with consistent decimal places based on loan token decimals.
+ * Always shows the same number of decimal places, even for whole numbers.
+ * 
+ * @param priceValue - The price value as BigInt or string
+ * @param priceDecimals - The number of decimals the price value has (e.g., 36 + loanDecimals - collateralDecimals)
+ * @param displayDecimals - The number of decimal places to display (typically loan token decimals)
+ * @returns Formatted price string with consistent decimal places
+ * 
+ * @example
+ * formatPrice("1000000000000000000", 18, 6) // "1.000000"
+ * formatPrice("1000000000000000000", 18, 2) // "1.00"
+ */
+export function formatPrice(
+  priceValue: string | bigint,
+  priceDecimals: number,
+  displayDecimals: number
+): string {
+  try {
+    const price = Number(formatUnits(BigInt(priceValue), priceDecimals));
+    return price.toLocaleString(undefined, {
+      minimumFractionDigits: displayDecimals,
+      maximumFractionDigits: displayDecimals,
+    });
+  } catch (error) {
+    console.error("Error formatting price:", error);
+    return "0." + "0".repeat(displayDecimals);
   }
 }
 
@@ -227,8 +250,6 @@ export function getXAxisFormatter(period: "1 week" | "1 month" | "3 months" | "6
       return formatShortDate;
   }
 }
-
-
 
 
 

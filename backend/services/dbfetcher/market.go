@@ -27,11 +27,31 @@ type MarketActivityResponse struct {
 	LastID     string                `json:"last_id"`
 }
 
-// GetMarkets retrieves all markets from Firestore with cursor-based pagination
-func GetMarkets(client *firestore.Client, limit int, lastDocID string) (*MarketsResponse, error) {
+// GetMarkets retrieves markets from Firestore with sorting and cursor-based pagination.
+// sortField can be one of: "created_at" (default), "total_supply", "supply_apr", "borrow_apr".
+// sortDir can be "asc" or "desc"; default is "desc".
+func GetMarkets(client *firestore.Client, limit int, lastDocID string, sortField string, sortDir string) (*MarketsResponse, error) {
 	ctx := context.Background()
 
-	query := client.Collection("markets").OrderBy("created_at", firestore.Desc)
+	// Validate sort field and direction
+	allowedFields := map[string]bool{
+		"created_at":   true,
+		"total_supply": true,
+		"supply_apr":   true,
+		"borrow_apr":   true,
+	}
+	if sortField == "" {
+		sortField = "created_at"
+	}
+	if !allowedFields[sortField] {
+		sortField = "created_at"
+	}
+	dir := firestore.Desc
+	if strings.ToLower(sortDir) == "asc" {
+		dir = firestore.Asc
+	}
+
+	query := client.Collection("markets").OrderBy(sortField, dir)
 
 	if lastDocID != "" {
 		lastDoc, err := client.Collection("markets").Doc(lastDocID).Get(ctx)
@@ -39,7 +59,11 @@ func GetMarkets(client *firestore.Client, limit int, lastDocID string) (*Markets
 			slog.Error("Error fetching last document for pagination", "last_doc_id", lastDocID, "error", err)
 			return nil, err
 		}
-		query = query.StartAfter(lastDoc)
+		if val, ok := lastDoc.Data()[sortField]; ok {
+			query = query.StartAfter(val)
+		} else {
+			slog.Warn("lastDoc missing sort field; ignoring cursor", "last_doc_id", lastDocID, "sort_field", sortField)
+		}
 	}
 
 	if limit > 0 {

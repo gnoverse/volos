@@ -73,6 +73,7 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 	for {
 		historyDoc, err := historyIter.Next()
 		if err != nil {
+			slog.Error("Error getting market history", "error", err)
 			break
 		}
 
@@ -142,17 +143,30 @@ func GetUserLoanHistory(client *firestore.Client, userAddress string) ([]model.U
 }
 
 // GetUserMarketPosition fetches a single per-market aggregate for a user from users/{address}/markets/{marketId}
+// Returns default values if the document doesn't exist (new user/market)
 func GetUserMarketPosition(client *firestore.Client, userAddress string, marketID string) (*model.UserMarketPosition, error) {
 	ctx := context.Background()
+	sanitizedMarketID := strings.ReplaceAll(marketID, "/", "_")
 
-	dsnap, err := client.Collection("users").Doc(userAddress).Collection("markets").Doc(strings.ReplaceAll(marketID, "/", "_")).Get(ctx)
+	dsnap, err := client.Collection("users").Doc(userAddress).Collection("markets").Doc(sanitizedMarketID).Get(ctx)
 	if err != nil {
-		return nil, err
+		// Document doesn't exist - return default position
+		return &model.UserMarketPosition{
+			BorrowShares:     "0",
+			SupplyShares:     "0",
+			CollateralSupply: "0",
+		}, nil
 	}
-	
+
 	var pos model.UserMarketPosition
 	if err := dsnap.DataTo(&pos); err != nil {
-		return nil, err
+		// Parsing failed - return default position
+		return &model.UserMarketPosition{
+			BorrowShares:     "0",
+			SupplyShares:     "0",
+			CollateralSupply: "0",
+		}, nil
 	}
+
 	return &pos, nil
 }

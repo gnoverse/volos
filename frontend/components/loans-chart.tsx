@@ -1,6 +1,6 @@
 "use client"
 
-import { UserLoan } from "@/app/services/api.service"
+import { UserLoan } from "@/app/types"
 import { formatShortDate, formatTimestamp } from "@/app/utils/format.utils"
 import { getStableTimePeriodStartDateISO } from "@/app/utils/time.utils"
 import { ChartDropdown, TimePeriod } from "@/components/chart-dropdown"

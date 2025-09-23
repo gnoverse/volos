@@ -1,11 +1,13 @@
+import { toastError, toastInfo } from '@/components/ui/toast';
 import { AdenaSDK } from '@adena-wallet/sdk';
 
 export class AdenaService {
   private static instance: AdenaService;
   private sdk: AdenaSDK;
-  private readonly WALLET_ADDRESS_KEY = 'walletAddress';
-  private readonly NETWORK_KEY = 'network';
+  private currentNetwork: string | null = null;
   private isLoading: boolean = false;
+  private currentAddress: string | null = null;
+  private connected: boolean = false;
 
   private constructor() {
     this.sdk = AdenaSDK.createAdenaWallet();
@@ -33,32 +35,33 @@ export class AdenaService {
       
       this.sdk.onChangeAccount({ callback: (address: string) => {
         if (address) {
-          this.updateStoredAddress(address);
+          this.setConnection(address, true);
         } else {
-          this.clearStoredAddress();
+          this.setConnection(null, false);
         }
+        toastInfo(`Address changed`, address)
       }});
 
       this.sdk.onChangeNetwork({ callback: (network: string) => {
-        console.log('Network changed:', network);
-        this.updateStoredNetwork(network);
+        this.setCurrentNetwork(network);
+        toastInfo(`Network changed`, network)
       }});
 
       const account = await this.sdk.getAccount();
-      
-      if (account && account.data?.address) {
-        this.updateStoredAddress(account.data.address);
-        
-        if (account.data?.chainId) {
-          this.updateStoredNetwork(account.data.chainId);
-        }
-        
-        return account.data.address;
+      const address = account?.data?.address;
+      if (!address) {
+        throw new Error('No address found after connection');
       }
 
-      throw new Error('No address found after connection');
+      this.setConnection(address, true);
+      
+      if (account.data?.chainId) {
+        this.setCurrentNetwork(account.data.chainId);
+      }
+      
+      return address;
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
+      toastError(`Error connecting wallet`, String(error))
       throw error;
     } finally {
       this.setLoading(false);
@@ -69,45 +72,34 @@ export class AdenaService {
     try {
       this.setLoading(true);
       this.sdk.disconnectWallet();
-      this.clearStoredAddress();
+      this.setConnection(null, false);
     } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
+      toastError(`Error disconnecting wallet`, String(error))
       throw error;
     } finally {
       this.setLoading(false);
     }
   }
 
-  private updateStoredAddress(address: string): void {
-    localStorage.setItem(this.WALLET_ADDRESS_KEY, address);
+  private setConnection(address: string | null, isConnected: boolean): void {
+    this.currentAddress = address ? address.replaceAll('"', '') : null;
+    this.connected = isConnected && !!this.currentAddress;
     const event = new CustomEvent('adenaAddressChanged', {
-      detail: { newAddress: address }
+      detail: { newAddress: this.currentAddress }
     });
     window.dispatchEvent(event);
-  }
-
-  private clearStoredAddress(): void {
-    localStorage.removeItem(this.WALLET_ADDRESS_KEY);
-    const event = new CustomEvent('adenaAddressChanged', {
-      detail: { newAddress: null }
-    });
-    window.dispatchEvent(event);
-  }
-
-  public getStoredAddress(): string | null {
-    return localStorage.getItem(this.WALLET_ADDRESS_KEY);
   }
 
   public getStoredNetwork(): string | null {
-    return localStorage.getItem(this.NETWORK_KEY);
+    return this.currentNetwork;
   }
 
   public isConnected(): boolean {
-    return this.getStoredAddress() !== null;
+    return this.connected;
   }
 
   public getAddress(): string {
-    return this.getStoredAddress()?.replaceAll("\"", "") || '';
+    return this.currentAddress || '';
   }
 
   public getSdk(): AdenaSDK {
@@ -115,8 +107,10 @@ export class AdenaService {
   }
 
   public async getNetwork(): Promise<string> {
+    if (this.currentNetwork) return this.currentNetwork;
     const account = await this.sdk.getAccount();
-    return account.data?.chainId || '';
+    this.currentNetwork = account.data?.chainId || '';
+    return this.currentNetwork;
   }
 
   public async openAdenaWebWallet(): Promise<void> {
@@ -125,8 +119,8 @@ export class AdenaService {
     }
   }
 
-  private updateStoredNetwork(network: string): void {
-    localStorage.setItem(this.NETWORK_KEY, network);
+  private setCurrentNetwork(network: string): void {
+    this.currentNetwork = network;
     const event = new CustomEvent('adenaNetworkChanged', {
       detail: { newNetwork: network }
     });

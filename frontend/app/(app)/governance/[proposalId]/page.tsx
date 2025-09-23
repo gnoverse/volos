@@ -1,13 +1,14 @@
 "use client"
 
-import { useExecuteProposalMutation, useProposal, useUserVoteOnProposal, useVoteMutation, useXVLSBalance } from "@/app/(app)/governance/queries-mutations"
-import { useUserAddress } from "@/app/utils/address.utils"
 import { formatTimestamp } from "@/app/utils/format.utils"
 import { getProposalStatusColor } from "@/app/utils/ui.utils"
 import CopiableAddress from "@/components/copiable-addess"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { useExecuteProposalMutation, useVoteMutation } from "@/hooks/use-mutations"
+import { useProposal, useUserVoteOnProposal, useXVLSBalance } from "@/hooks/use-queries"
+import { useUserAddress } from "@/hooks/use-user-address"
 import { ArrowLeft, Calendar, CheckCircle, Clock, PlayCircle, User, Vote, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
@@ -18,40 +19,28 @@ const CARD_STYLES = "bg-gray-700/60 border-none rounded-3xl"
 export default function ProposalDetailPage() {
   const params = useParams()
   const proposalId = params.proposalId as string
-  const { data: proposal, isLoading, error, refetch: refetchProposal } = useProposal(proposalId)
+  const { data: proposal, isLoading, error } = useProposal(proposalId)
   const voteMutation = useVoteMutation()
   const [votingReason, setVotingReason] = useState("")
   const [isVoting, setIsVoting] = useState(false)
     
   const { userAddress, isConnected } = useUserAddress()
   const { data: xvlsBalance = { address: userAddress, balance: 0 } } = useXVLSBalance(userAddress)
-  const { data: userVote, refetch: refetchUserVote } = useUserVoteOnProposal(proposalId, userAddress)
+  const { data: userVote } = useUserVoteOnProposal(proposalId, userAddress)
   const executeMutation = useExecuteProposalMutation()
 
   const handleVote = async (choice: 'YES' | 'NO' | 'ABSTAIN') => {
     if (!proposal) return
     
     setIsVoting(true)
-    try {
-      await voteMutation.mutateAsync({
-        proposalId: proposal.id,
-        choice,
-        reason: votingReason
-      })
+    await voteMutation.mutateAsync({
+      proposalId: proposal.id,
+      choice,
+      reason: votingReason
+    })
 
-      setVotingReason("")
-      setTimeout(async () => {
-        await Promise.all([
-          refetchUserVote(),
-          refetchProposal()
-        ])
-      }, 1000) 
-      
-    } catch (error) {
-      console.error("Voting failed:", error)
-    } finally {
-      setIsVoting(false)
-    }
+    setVotingReason("")
+    setIsVoting(false)
   }
 
   const isQuorumMet = proposal && proposal.total_votes >= proposal.quorum
@@ -66,11 +55,8 @@ export default function ProposalDetailPage() {
 
   const handleExecute = async () => {
     if (!proposal) return
-    try {
-      await executeMutation.mutateAsync({ proposalId: proposal.id })
-    } catch (err) {
-      console.error('Execute proposal failed:', err)
-    }
+    
+    await executeMutation.mutateAsync({ proposalId: proposal.id })  
   }
 
   if (isLoading) {
@@ -195,7 +181,7 @@ export default function ProposalDetailPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-200 mb-3">Your Vote</h3>
                 <div className="bg-gray-800/40 rounded-lg p-4 border border-gray-700/50">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         userVote.vote_choice === 'YES' 

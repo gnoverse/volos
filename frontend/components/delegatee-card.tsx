@@ -1,6 +1,6 @@
 "use client"
 
-import { useBeginUnstakeVLSMutation } from "@/app/(app)/governance/queries-mutations"
+import { useBeginUnstakeVLSMutation } from "@/hooks/use-mutations"
 import { formatTokenAmount } from "@/app/utils/format.utils"
 import CopiableAddress from "@/components/copiable-addess"
 import { Button } from "@/components/ui/button"
@@ -21,32 +21,18 @@ export function DelegateeCard({ delegatee, amount, userAddress }: DelegateeCardP
 
   const handleUnstake = async () => {
     const wholeTokenAmount = parseFloat(unstakeAmount)
-    if (isNaN(wholeTokenAmount) || wholeTokenAmount <= 0) {
-      console.error("Invalid unstake amount")
-      return
-    }
-
     // Convert whole tokens to denom (multiply by 10^6)
     const amountInDenom = Math.floor(wholeTokenAmount * 1000000)
 
     if (amountInDenom > amount) {
-      console.error(`Insufficient delegation. Requested: ${amountInDenom} denom, Available: ${amount} denom`)
       return
     }
 
-    try {
-      await beginUnstakeMutation.mutateAsync({
-        amount: amountInDenom,
-        delegatee: delegatee
-      })
-      
-      setUnstakeAmount("")
-      console.log("Unstaking initiated successfully")
-      
-      
-    } catch (error) {
-      console.error("Failed to begin unstake:", error)
-    }
+    await beginUnstakeMutation.mutateAsync({
+      amount: amountInDenom,
+      delegatee: delegatee
+    })
+    setUnstakeAmount("")
   }
 
   const setMaxUnstakeAmount = () => {
@@ -98,6 +84,7 @@ export function DelegateeCard({ delegatee, amount, userAddress }: DelegateeCardP
                 type="number"
                 placeholder="Enter VLS amount"
                 value={unstakeAmount}
+                allowNegative={false}
                 onChange={(e) => setUnstakeAmount(e.target.value)}
                 className="bg-gray-800/60 border-gray-600 text-gray-200 placeholder-gray-400 focus:outline-none focus:border-logo-500 focus:ring-1 focus:ring-logo-500 pr-16 pl-3"
                 min="0"
