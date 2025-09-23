@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	ErrNonTransferable = errors.New("xVLS is non-transferable")
+	ErrNonTransferable = errors.New("[VOLOS-GOV_XVLS-001] xVLS is non-transferable")
 )

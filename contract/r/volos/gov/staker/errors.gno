@@ -5,10 +5,10 @@ import (
 )
 
 var (
-	ErrInvalidAmount          = errors.New("amount must be positive")
-	ErrInvalidDelegatee       = errors.New("invalid delegatee address")
-	ErrInsufficientAllowance  = errors.New("insufficient allowance")
-	ErrInsufficientBalance    = errors.New("insufficient balance")
-	ErrNoReadyUnstake         = errors.New("no ready unstake")
-	ErrInsufficientDelegation = errors.New("insufficient delegation")
+	ErrInvalidAmount          = errors.New("[VOLOS-GOV_STAKER-001] amount must be positive")
+	ErrInvalidDelegatee       = errors.New("[VOLOS-GOV_STAKER-002] invalid delegatee address")
+	ErrInsufficientAllowance  = errors.New("[VOLOS-GOV_STAKER-003] insufficient allowance")
+	ErrInsufficientBalance    = errors.New("[VOLOS-GOV_STAKER-004] insufficient balance")
+	ErrNoReadyUnstake         = errors.New("[VOLOS-GOV_STAKER-005] no ready unstake")
+	ErrInsufficientDelegation = errors.New("[VOLOS-GOV_STAKER-006] insufficient delegation")
 )
