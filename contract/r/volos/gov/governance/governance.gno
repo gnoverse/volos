@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	volosGovernance   *commondao.CommonDAO
-	proposalThreshold int64 = 1000 //min xVLS required to create a proposal
-	votingPowerQuorum int64 = 1000 //minimum xVLS voting power required for a proposal to pass (0 = disabled)
+	volosGovernance         *commondao.CommonDAO
+	proposalThreshold       int64         = 1000                //min xVLS required to create a proposal
+	votingPowerQuorum       int64         = 1000                //minimum xVLS voting power required for a proposal to pass (0 = disabled)
 	maximumProposalDuration time.Duration = 14 * 24 * time.Hour //maximum duration of a proposal
 
 	authorizer = authz.NewWithAuthority(authz.NewMemberAuthority(
@@ -88,9 +88,4 @@ func VotingPowerQuorumEnabled() bool {
 // MaximumProposalDuration returns the current maximum allowed proposal duration.
 func MaximumProposalDuration() time.Duration {
 	return maximumProposalDuration
-}
-
-// Render function for explorer integration.
-func Render(path string) string {
-	return "Volos Governance - On-chain governance for the Volos protocol"
 }

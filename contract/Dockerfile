@@ -29,7 +29,7 @@ COPY ./r/gnoswap/v1/test_token/ /app/src/examples/gno.land/r/gnoswap/v1/test_tok
 COPY ./p/gnoswap/consts/ /app/src/examples/gno.land/p/gnoswap/consts/
 
 # temporary
-COPY ./r/volos/core/volos.gno /app/src/examples/gno.land/r/volos/core/volos.gno
+COPY ./r/volos/ /app/src/examples/gno.land/r/volos/
 
 COPY ./keys.db /root/.config/gno/data/keys.db
 

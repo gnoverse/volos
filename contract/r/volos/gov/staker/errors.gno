@@ -11,4 +11,5 @@ var (
 	ErrInsufficientBalance    = errors.New("insufficient balance")
 	ErrNoReadyUnstake         = errors.New("no ready unstake")
 	ErrInsufficientDelegation = errors.New("insufficient delegation")
+	ErrCooldownNotFinished    = errors.New("cooldown period not finished")
 )

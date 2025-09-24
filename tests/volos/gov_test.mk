@@ -1,11 +1,13 @@
+include _info.mk
+include ../gnoswap/test.mk
+include key_setup.mk
+
+# Basic governance setup and test
+gov-test-flow: set-keys faucet-vls approve-vls-for-staking stake-vls faucet-all-voters approve-all-voters stake-all-voters create-test-proposal vote-all-on-all-proposals reset-keys
 VLS_PATH := gno.land/r/volos/gov/vls
 
 # Basic governance setup and test
-gov-test-flow: faucet-vls approve-vls-for-staking stake-vls transfer-vls approve-all-voters stake-all-voters create-test-proposal vote-all-on-all-proposals
-	@echo "************ GOVERNANCE ENVIRONMENT SETUP COMPLETE ************"
-
-# Basic governance setup and test
-gov-test-flow-no-voting: faucet-vls approve-vls-for-staking stake-vls faucet-all-voters approve-all-voters stake-all-voters create-test-proposal
+gov-test-flow-no-voting: set-keys faucet-vls approve-vls-for-staking stake-vls faucet-all-voters approve-all-voters stake-all-voters create-test-proposal reset-keys
 	@echo "************ GOVERNANCE ENVIRONMENT SETUP COMPLETE ************"
 
 # Faucet VLS tokens
@@ -25,6 +27,13 @@ stake-vls:
 	$(info ************ Stake VLS to mint xVLS ************)
 	@echo "" | gnokey maketx call -pkgpath gno.land/r/volos/gov/staker -func Stake -args 5000 -args $(ADMIN) -insecure-password-stdin=true -remote $(GNOLAND_RPC_URL) -broadcast=true -chainid $(CHAINID) -gas-fee 100000000ugnot -gas-wanted 1000000000 -memo "" gnoswap_admin
 	@echo
+
+# Faucet VLS to all voters
+faucet-all-voters:
+	$(info ************ Faucet VLS tokens to all voters ************)
+	@echo "" | gnokey maketx call -pkgpath gno.land/r/volos/gov/vls -func Faucet -args 1000000 -insecure-password-stdin=true -remote $(GNOLAND_RPC_URL) -broadcast=true -chainid $(CHAINID) -gas-fee 100000000ugnot -gas-wanted 1000000000 -memo "" $(ADDR_USER_1)
+	@echo "" | gnokey maketx call -pkgpath gno.land/r/volos/gov/vls -func Faucet -args 1000000 -insecure-password-stdin=true -remote $(GNOLAND_RPC_URL) -broadcast=true -chainid $(CHAINID) -gas-fee 100000000ugnot -gas-wanted 1000000000 -memo "" $(ADDR_USER_2)
+	@echo "" | gnokey maketx call -pkgpath gno.land/r/volos/gov/vls -func Faucet -args 1000000 -insecure-password-stdin=true -remote $(GNOLAND_RPC_URL) -broadcast=true -chainid $(CHAINID) -gas-fee 100000000ugnot -gas-wanted 1000000000 -memo "" $(ADDR_USER_3)
 
 # Transfer VLS to all voters
 transfer-vls:
@@ -204,4 +213,4 @@ gov-verify: check-vls-balance check-xvls-balance check-governance-membership get
 
 # Comprehensive governance test with multiple proposals and all voters
 gov-comprehensive-test: faucet-vls approve-vls-for-staking stake-vls faucet-all-voters approve-all-voters stake-all-voters create-multiple-proposals vote-all-on-all-proposals
-	@echo "************ COMPREHENSIVE GOVERNANCE TEST COMPLETE ************" 
+	@echo "************ COMPREHENSIVE GOVERNANCE TEST COMPLETE ************"
