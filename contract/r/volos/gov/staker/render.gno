@@ -16,11 +16,10 @@ func Render(path string) string {
 	out += md.HorizontalRule()
 
 	out += md.H2("🚦 Status")
-	unstackLockPeriodInHours := int(UnstakeLockPeriod()) / 60 / 60
 	out += md.Columns([]string{
 		md.H3("Total staked 💰") + renderTotalStaked(),
 		md.H3("Unstake pending 💸") + renderTotalPending(),
-		md.H3("Unstake cooldown ⏳") + md.Blockquote(strconv.Itoa(unstackLockPeriodInHours)+" hours"),
+		md.H3("Unstake cooldown ⏳") + renderUnstakeLockPeriod(),
 	}, false)
 
 	out += md.HorizontalRule()
@@ -30,6 +29,11 @@ func Render(path string) string {
 	out += md.H2("🔄 Pending Unstake")
 	out += renderPendingUnstake(path)
 	return out
+}
+
+func renderUnstakeLockPeriod() string {
+	unstakeLockPeriod := UnstakeLockPeriod() / 60 / 60
+	return md.Blockquote(strconv.Itoa(int(unstakeLockPeriod)) + " days")
 }
 
 func renderTotalStaked() string {
