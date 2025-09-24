@@ -138,7 +138,7 @@ func renderVotes(path string, votingRecord commondao.ReadonlyVotingRecord) strin
 
 func renderProposal(path string, proposal *commondao.Proposal) string {
 	out := md.H1(proposal.Definition().Title())
-	out += md.BulletItem("Proposed by " + md.Link(proposal.Creator().String(), "/r/volos/gov?user="+proposal.Creator().String()) + " at " + proposal.CreatedAt().Format(time.RFC822))
+	out += md.Paragraph("Proposed by " + md.Link(proposal.Creator().String(), "/r/volos/gov?user="+proposal.Creator().String()) + " at " + proposal.CreatedAt().Format(time.RFC822))
 
 	passes, err := proposal.Definition().Tally(proposal.VotingRecord().ReadonlyVotingRecord, MemberSet())
 	if err != nil {
