@@ -8,6 +8,35 @@ import (
 	u256 "gno.land/p/gnoswap/uint256"
 )
 
+// Event names
+const (
+	// Market events
+	CreateMarketEvent       = "CreateMarket"
+	SupplyEvent             = "Supply"
+	WithdrawEvent           = "Withdraw"
+	BorrowEvent             = "Borrow"
+	RepayEvent              = "Repay"
+	LiquidateEvent          = "Liquidate"
+	RegisterIRMEvent        = "RegisterIRM"
+	AccrueInterestEvent     = "AccrueInterest"
+	SupplyCollateralEvent   = "SupplyCollateral"
+	WithdrawCollateralEvent = "WithdrawCollateral"
+	FlashLoanEvent          = "FlashLoan"
+	SetFeeEvent             = "SetFee"
+
+	// Event names
+	EventAccrueInterest     = "accrue_interest"
+	EventCreateMarket       = "create_market"
+	EventSupply             = "supply"
+	EventWithdraw           = "withdraw"
+	EventBorrow             = "borrow"
+	EventRepay              = "repay"
+	EventLiquidate          = "liquidate"
+	EventSupplyCollateral   = "supply_collateral"
+	EventWithdrawCollateral = "withdraw_collateral"
+	AuthorizationSetEvent   = "authorization_set"
+)
+
 // Event keys
 const (
 	// Common keys
