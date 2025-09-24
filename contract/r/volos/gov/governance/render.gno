@@ -11,7 +11,7 @@ import (
 	"gno.land/p/moul/md"
 	"gno.land/p/moul/txlink"
 	"gno.land/p/nt/commondao"
-	"gno.land/r/sys/users"
+	"gno.land/r/volos/render"
 )
 
 func fillProposalTree(activeProposal commondao.ProposalStorage) *avl.Tree {
@@ -127,13 +127,7 @@ func renderVotes(path string, votingRecord commondao.ReadonlyVotingRecord) strin
 	var out string
 	for _, item := range page.Items {
 		vote := item.Value.(commondao.Vote)
-		var displayName string
-		userData := users.ResolveAddress(vote.Address)
-		if userData != nil && userData.Name() != "" {
-			displayName = userData.Name()
-		} else {
-			displayName = vote.Address.String()
-		}
+		displayName := render.ResolveDisplayName(item.Key)
 		out += md.BulletItem(md.Link(displayName, "/r/volos/gov?user="+item.Key) + " voted " + md.Bold(string(vote.Choice)) + " because " + md.Bold(vote.Reason))
 	}
 

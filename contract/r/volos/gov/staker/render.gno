@@ -1,14 +1,13 @@
 package staker
 
 import (
-	"std"
 	"strconv"
 
 	"gno.land/p/demo/avl"
 	"gno.land/p/demo/avl/pager"
 	"gno.land/p/moul/md"
 	"gno.land/p/moul/mdtable"
-	"gno.land/r/sys/users"
+	"gno.land/r/volos/render"
 )
 
 func renderTotalStaked() string {
@@ -41,13 +40,7 @@ func renderTopDelegators(path string) string {
 	for _, item := range page.Items {
 		delegatee := item.Value.(*avl.Tree)
 		delegatee.IterateByOffset(0, delegatee.Size(), func(address string, vvalue any) bool {
-			var displayName string
-			userData := users.ResolveAddress(std.Address(address))
-			if userData != nil && userData.Name() != "" {
-				displayName = userData.Name()
-			} else {
-				displayName = address
-			}
+			displayName := render.ResolveDisplayName(address)
 			amount := vvalue.(int64)
 			table.Append([]string{md.Link(displayName, "/r/volos/gov?user="+item.Key), strconv.FormatInt(amount, 10) + " VLS"})
 			return false
@@ -87,14 +80,7 @@ func renderPendingUnstake(path string) string {
 	for _, item := range page.Items {
 		pending := item.Value.([]UnstakeInfo)
 
-		var displayName string
-		userData := users.ResolveAddress(std.Address(item.Key))
-		if userData != nil && userData.Name() != "" {
-			displayName = userData.Name()
-		} else {
-			displayName = item.Key
-		}
-
+		displayName := render.ResolveDisplayName(item.Key)
 		for _, info := range pending {
 			out += md.BulletItem(md.Link(displayName, "/r/volos/gov/?user="+item.Key))
 			out += info.Delegatee.String()

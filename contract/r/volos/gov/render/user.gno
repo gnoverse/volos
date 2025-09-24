@@ -12,11 +12,11 @@ import (
 	"gno.land/p/moul/md"
 	"gno.land/p/moul/mdtable"
 	"gno.land/p/nt/commondao"
-	"gno.land/r/sys/users"
 
 	"gno.land/r/volos/gov/governance"
 	"gno.land/r/volos/gov/staker"
 	"gno.land/r/volos/gov/xvls"
+	"gno.land/r/volos/render"
 )
 
 func fillProposalTree(userActiveProposals []*commondao.Proposal) *avl.Tree {
@@ -76,13 +76,7 @@ func renderUserPageDelegations(userAddress std.Address) string {
 
 	userDelegations.IterateByOffset(0, userDelegations.Size(), func(address string, value any) bool {
 		amount := value.(int64)
-		var displayName string
-		userData := users.ResolveAddress(std.Address(address))
-		if userData != nil && userData.Name() != "" {
-			displayName = userData.Name()
-		} else {
-			displayName = address
-		}
+		displayName := render.ResolveDisplayName(address)
 		table.Append([]string{
 			md.Link(
 				displayName,
@@ -99,14 +93,8 @@ func renderUserPageDelegations(userAddress std.Address) string {
 func renderUserPage(path string) string {
 	userParam := parseUserParam(path)
 
-	var displayName string
 	usAddr := std.Address(userParam)
-	userData := users.ResolveAddress(usAddr)
-	if userData != nil && userData.Name() != "" {
-		displayName = userData.Name()
-	} else {
-		displayName = usAddr.String()
-	}
+	displayName := render.ResolveDisplayName(userParam)
 
 	out := md.H1("👤 " + displayName)
 	balance := xvls.BalanceOf(usAddr)
