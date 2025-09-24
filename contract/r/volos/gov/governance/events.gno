@@ -20,115 +20,115 @@ const (
 
 // Attribute key names
 const (
-	EventProposalIDKey   = "proposal_id"
-	EventTitleKey        = "title"
-	EventBodyKey         = "body"
-	EventDeadlineKey     = "deadline"
-	EventExecutedKey     = "executed"
-	EventVoterKey        = "voter"
-	EventVoteKey         = "vote"
-	EventReasonKey       = "reason"
-	EventMemberKey       = "member"
-	EventOldPkgPathKey   = "old_pkg_path"
-	EventNewPkgPathKey   = "new_pkg_path"
-	EventCallerKey       = "caller"
-	EventTimestampKey    = "timestamp"
-	EventTotalMembersKey = "total_members"
-	EventVoteCountKey    = "vote_count"
-	EventYesVotesKey     = "yes_votes"
-	EventNoVotesKey      = "no_votes"
-	EventAbstainVotesKey = "abstain_votes"
-	EventOldQuorumKey    = "old_quorum"
-	EventNewQuorumKey    = "new_quorum"
-	EventOldThresholdKey = "old_threshold"
-	EventNewThresholdKey = "new_threshold"
-	EventQuorumKey       = "quorum"
-	EventXvlsAmountKey   = "xvls_amount"
-	EventStatusKey       = "status"
+	ProposalIDKey   = "proposal_id"
+	TitleKey        = "title"
+	BodyKey         = "body"
+	DeadlineKey     = "deadline"
+	ExecutedKey     = "executed"
+	VoterKey        = "voter"
+	VoteKey         = "vote"
+	ReasonKey       = "reason"
+	MemberKey       = "member"
+	OldPkgPathKey   = "old_pkg_path"
+	NewPkgPathKey   = "new_pkg_path"
+	CallerKey       = "caller"
+	TimestampKey    = "timestamp"
+	TotalMembersKey = "total_members"
+	VoteCountKey    = "vote_count"
+	YesVotesKey     = "yes_votes"
+	NoVotesKey      = "no_votes"
+	AbstainVotesKey = "abstain_votes"
+	OldQuorumKey    = "old_quorum"
+	NewQuorumKey    = "new_quorum"
+	OldThresholdKey = "old_threshold"
+	NewThresholdKey = "new_threshold"
+	QuorumKey       = "quorum"
+	XvlsAmountKey   = "xvls_amount"
+	StatusKey       = "status"
 )
 
 func emitProposalCreated(caller std.Address, proposalID uint64, title, body string, deadline, quorum int64) {
 	std.Emit(
-		EventProposalCreated,
-		EventCallerKey, caller.String(),
-		EventProposalIDKey, strconv.FormatUint(proposalID, 10),
-		EventTitleKey, title,
-		EventBodyKey, body,
-		EventDeadlineKey, strconv.FormatInt(deadline, 10),
-		EventQuorumKey, strconv.FormatInt(quorum, 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"ProposalCreated",
+		CallerKey, caller.String(),
+		ProposalIDKey, strconv.FormatUint(proposalID, 10),
+		TitleKey, title,
+		BodyKey, body,
+		DeadlineKey, strconv.FormatInt(deadline, 10),
+		QuorumKey, strconv.FormatInt(quorum, 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitProposalExecuted(caller std.Address, proposalID uint64, status string) {
 	std.Emit(
-		EventProposalExecuted,
-		EventCallerKey, caller.String(),
-		EventProposalIDKey, strconv.FormatUint(proposalID, 10),
-		EventStatusKey, status,
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"ProposalExecuted",
+		CallerKey, caller.String(),
+		ProposalIDKey, strconv.FormatUint(proposalID, 10),
+		StatusKey, status,
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitVoteCast(caller, voter std.Address, proposalID uint64, xvlsAmount int64, vote, reason string) {
 	std.Emit(
-		EventVoteCast,
-		EventCallerKey, caller.String(),
-		EventVoterKey, voter.String(),
-		EventProposalIDKey, strconv.FormatUint(proposalID, 10),
-		EventVoteKey, vote,
-		EventReasonKey, reason,
-		EventXvlsAmountKey, strconv.FormatInt(xvlsAmount, 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"VoteCast",
+		CallerKey, caller.String(),
+		VoterKey, voter.String(),
+		ProposalIDKey, strconv.FormatUint(proposalID, 10),
+		VoteKey, vote,
+		ReasonKey, reason,
+		XvlsAmountKey, strconv.FormatInt(xvlsAmount, 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitMemberAdded(caller, member std.Address) {
 	std.Emit(
-		EventMemberAdded,
-		EventCallerKey, caller.String(),
-		EventMemberKey, member.String(),
-		EventTotalMembersKey, strconv.FormatInt(int64(volosGovernance.Members().Size()), 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"MemberAdded",
+		CallerKey, caller.String(),
+		MemberKey, member.String(),
+		TotalMembersKey, strconv.FormatInt(int64(volosGovernance.Members().Size()), 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitMemberRemoved(caller, member std.Address) {
 	std.Emit(
-		EventMemberRemoved,
-		EventCallerKey, caller.String(),
-		EventMemberKey, member.String(),
-		EventTotalMembersKey, strconv.FormatInt(int64(volosGovernance.Members().Size()), 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"MemberRemoved",
+		CallerKey, caller.String(),
+		MemberKey, member.String(),
+		TotalMembersKey, strconv.FormatInt(int64(volosGovernance.Members().Size()), 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitGovernanceUpdated(caller std.Address, oldPkgPath, newPkgPath string) {
 	std.Emit(
-		EventGovernanceUpdated,
-		EventCallerKey, caller.String(),
-		EventOldPkgPathKey, oldPkgPath,
-		EventNewPkgPathKey, newPkgPath,
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"GovernanceUpdated",
+		CallerKey, caller.String(),
+		OldPkgPathKey, oldPkgPath,
+		NewPkgPathKey, newPkgPath,
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitVotingPowerQuorumUpdated(caller std.Address, oldQuorum, newQuorum int64) {
 	std.Emit(
-		EventVotingPowerQuorumUpdated,
-		EventCallerKey, caller.String(),
-		EventOldQuorumKey, strconv.FormatInt(oldQuorum, 10),
-		EventNewQuorumKey, strconv.FormatInt(newQuorum, 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"VotingPowerQuorumUpdated",
+		CallerKey, caller.String(),
+		OldQuorumKey, strconv.FormatInt(oldQuorum, 10),
+		NewQuorumKey, strconv.FormatInt(newQuorum, 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitProposalThresholdUpdated(caller std.Address, oldThreshold, newThreshold int64) {
 	std.Emit(
-		EventProposalThresholdUpdated,
-		EventCallerKey, caller.String(),
-		EventOldThresholdKey, strconv.FormatInt(oldThreshold, 10),
-		EventNewThresholdKey, strconv.FormatInt(newThreshold, 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"ProposalThresholdUpdated",
+		CallerKey, caller.String(),
+		OldThresholdKey, strconv.FormatInt(oldThreshold, 10),
+		NewThresholdKey, strconv.FormatInt(newThreshold, 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
