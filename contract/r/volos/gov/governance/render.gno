@@ -21,8 +21,6 @@ func Render(path string) string {
 
 	out := md.H1("🏛️ Volos Governance")
 	out += md.Paragraph("On-chain governance for the Volos protocol")
-	out += md.H2("🪧 Make a proposal")
-	out += md.Blockquote(md.Link("Propose a specific governance improvement for Volos", txlink.Call("CreateProposal")) + " (e.g., voting rules, treasury management, member roles).")
 
 	out += listActiveProposals(path)
 	return out
@@ -145,7 +143,7 @@ func renderProposal(path string, proposal *commondao.Proposal) string {
 		return err.Error()
 	}
 
-if passes {
+	if passes {
 		out += md.Paragraph(md.Bold(string(proposal.Status())) + " | deadline: " + md.Bold(proposal.VotingDeadline().Format(time.RFC822)) + " " + proposal.StatusReason() + " | Passing ✅")
 	} else {
 		out += md.Paragraph(md.Bold(string(proposal.Status())) + " | deadline: " + md.Bold(proposal.VotingDeadline().Format(time.RFC822)) + " " + proposal.StatusReason() + " | Failing ❌")
