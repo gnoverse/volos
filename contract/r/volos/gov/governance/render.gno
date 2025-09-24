@@ -145,13 +145,13 @@ func renderProposal(path string, proposal *commondao.Proposal) string {
 		return err.Error()
 	}
 
-	out += md.Blockquote(md.Bold(string(proposal.Status())) + " | deadline: " + md.Bold(proposal.VotingDeadline().Format(time.RFC822)) + " " + proposal.StatusReason())
-
-	if passes {
-		out += md.Paragraph("| Will be adopted ✅")
+if passes {
+		out += md.Paragraph(md.Bold(string(proposal.Status())) + " | deadline: " + md.Bold(proposal.VotingDeadline().Format(time.RFC822)) + " " + proposal.StatusReason() + " | Passing ✅")
 	} else {
-		out += md.Paragraph("| Will be aborted ❌")
+		out += md.Paragraph(md.Bold(string(proposal.Status())) + " | deadline: " + md.Bold(proposal.VotingDeadline().Format(time.RFC822)) + " " + proposal.StatusReason() + " | Failing ❌")
 	}
+
+	out += "\n\n"
 
 	out += md.HorizontalRule()
 
