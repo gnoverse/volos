@@ -8,9 +8,11 @@ import (
 	"gno.land/p/demo/avl"
 	"gno.land/p/demo/avl/pager"
 	"gno.land/p/demo/seqid"
+	"gno.land/p/leon/svgbtn"
 	"gno.land/p/moul/md"
 	"gno.land/p/moul/txlink"
 	"gno.land/p/nt/commondao"
+
 	"gno.land/r/volos/render"
 )
 
@@ -80,9 +82,9 @@ func parseProposalParam(path string) uint64 {
 }
 
 func renderChoices(choices []commondao.VoteChoice, eachVoteCount []int, proposal *commondao.Proposal) string {
-	out := "| "
-	for i, choice := range choices {
-		out += md.Link(string(choice), txlink.Call("Vote", "proposalID", strconv.Itoa(int(proposal.ID())), "choice", string(choice))) + ": " + strconv.Itoa(eachVoteCount[i]) + " | "
+	var out string
+	for _, choice := range choices {
+		out += svgbtn.Button(100, 30, "#226C57", "#FFFFFF", string(choice), txlink.Call("Vote", "proposalID", strconv.Itoa(int(proposal.ID()))))
 	}
 	out += "\n\n"
 	return out
