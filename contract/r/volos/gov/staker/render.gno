@@ -49,30 +49,48 @@ func renderTotalStaked() string {
 }
 
 func renderTopDelegators(path string) string {
-	var out string
+	type stakerInfo struct {
+		address string
+		amount  int64
+	}
+
+	var stakers []stakerInfo
+
+	delegations.IterateByOffset(0, delegations.Size(), func(DelegatorAddress string, value any) bool {
+		delegatee := value.(*avl.Tree)
+		delegatee.IterateByOffset(0, delegatee.Size(), func(DelegateeAddress string, value any) bool {
+			amount := value.(int64)
+			stakers = append(stakers, stakerInfo{
+				address: DelegateeAddress,
+				amount:  amount,
+			})
+			return false
+		})
+		return false
+	})
+
+	for i := 0; i < len(stakers)-1; i++ {
+		for j := i + 1; j < len(stakers); j++ {
+			if stakers[j].amount > stakers[i].amount {
+				stakers[i], stakers[j] = stakers[j], stakers[i]
+			}
+		}
+	}
+
+	if len(stakers) > 10 {
+		stakers = stakers[:10]
+	}
 
 	table := mdtable.Table{
 		Headers: []string{"Address", "Amount"},
 	}
 
-	p := pager.NewPager(delegations, 10, false)
-	page := p.MustGetPageByPath(path)
-	out += page.Picker(path) + "\n\n"
-
-	for _, item := range page.Items {
-		delegatee := item.Value.(*avl.Tree)
-		delegatee.IterateByOffset(0, delegatee.Size(), func(address string, vvalue any) bool {
-			displayName := render.ResolveDisplayName(address)
-			amount := vvalue.(int64)
-			table.Append([]string{md.Link(displayName, "/r/volos/gov?user="+item.Key), strconv.FormatInt(amount, 10) + " VLS"})
-			return false
-		})
+	for _, staker := range stakers {
+		displayName := render.ResolveDisplayName(staker.address)
+		table.Append([]string{md.Link(displayName, "/r/volos/gov?user="+staker.address), strconv.FormatInt(staker.amount, 10) + " VLS"})
 	}
 
-	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
-	out += page.Picker(path)
-
-	return table.String() + out + "\n\n"
+	return table.String() + "\n\n"
 }
 
 func renderTotalPending() string {
