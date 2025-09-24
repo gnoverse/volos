@@ -15,51 +15,51 @@ const (
 
 // Attribute key names
 const (
-	EventToKey           = "to"
-	EventFromKey         = "from"
-	EventAmountKey       = "amount"
-	EventTotalSupplyKey  = "total_supply"
-	EventVotingSupplyKey = "voting_supply"
-	EventExcludedKey     = "excluded_balance"
-	EventCallerKey       = "caller"
-	EventTimestampKey    = "timestamp"
-	EventBalanceKey      = "balance"
-	EventLaunchpadKey    = "launchpad_address"
+	ToKey           = "to"
+	FromKey         = "from"
+	AmountKey       = "amount"
+	TotalSupplyKey  = "total_supply"
+	VotingSupplyKey = "voting_supply"
+	ExcludedKey     = "excluded_balance"
+	CallerKey       = "caller"
+	TimestampKey    = "timestamp"
+	BalanceKey      = "balance"
+	LaunchpadKey    = "launchpad_address"
 )
 
 func emitMint(caller, to std.Address, amount int64) {
 	std.Emit(
-		EventMint,
-		EventCallerKey, caller.String(),
-		EventToKey, to.String(),
-		EventAmountKey, strconv.FormatInt(amount, 10),
-		EventTotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
-		EventVotingSupplyKey, strconv.FormatInt(VotingSupply(), 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"Mint",
+		CallerKey, caller.String(),
+		ToKey, to.String(),
+		AmountKey, strconv.FormatInt(amount, 10),
+		TotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
+		VotingSupplyKey, strconv.FormatInt(VotingSupply(), 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitBurn(caller, from std.Address, amount int64) {
 	std.Emit(
-		EventBurn,
-		EventCallerKey, caller.String(),
-		EventFromKey, from.String(),
-		EventAmountKey, strconv.FormatInt(amount, 10),
-		EventTotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
-		EventVotingSupplyKey, strconv.FormatInt(VotingSupply(), 10),
-		EventBalanceKey, strconv.FormatInt(BalanceOf(from), 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"Burn",
+		CallerKey, caller.String(),
+		FromKey, from.String(),
+		AmountKey, strconv.FormatInt(amount, 10),
+		TotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
+		VotingSupplyKey, strconv.FormatInt(VotingSupply(), 10),
+		BalanceKey, strconv.FormatInt(BalanceOf(from), 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitVotingSupply(caller std.Address, totalSupply, votingSupply int64, excludedBalance int64) {
 	std.Emit(
-		EventVotingSupply,
-		EventCallerKey, caller.String(),
-		EventTotalSupplyKey, strconv.FormatInt(totalSupply, 10),
-		EventVotingSupplyKey, strconv.FormatInt(votingSupply, 10),
-		EventExcludedKey, strconv.FormatInt(excludedBalance, 10),
-		EventLaunchpadKey, Launchpad.String(),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"VotingSupply",
+		CallerKey, caller.String(),
+		TotalSupplyKey, strconv.FormatInt(totalSupply, 10),
+		VotingSupplyKey, strconv.FormatInt(votingSupply, 10),
+		ExcludedKey, strconv.FormatInt(excludedBalance, 10),
+		LaunchpadKey, Launchpad.String(),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }

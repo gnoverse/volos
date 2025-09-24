@@ -17,71 +17,71 @@ const (
 
 // Attribute key names
 const (
-	EventFromKey        = "from"
-	EventToKey          = "to"
-	EventAmountKey      = "amount"
-	EventOwnerKey       = "owner"
-	EventSpenderKey     = "spender"
-	EventValueKey       = "value"
-	EventOldPkgPathKey  = "old_pkg_path"
-	EventNewPkgPathKey  = "new_pkg_path"
-	EventCallerKey      = "caller"
-	EventTimestampKey   = "timestamp"
-	EventTotalSupplyKey = "total_supply"
-	EventBalanceKey     = "balance"
+	FromKey        = "from"
+	ToKey          = "to"
+	AmountKey      = "amount"
+	OwnerKey       = "owner"
+	SpenderKey     = "spender"
+	ValueKey       = "value"
+	OldPkgPathKey  = "old_pkg_path"
+	NewPkgPathKey  = "new_pkg_path"
+	CallerKey      = "caller"
+	TimestampKey   = "timestamp"
+	TotalSupplyKey = "total_supply"
+	BalanceKey     = "balance"
 )
 
 func emitMint(caller, to std.Address, amount int64) {
 	std.Emit(
-		EventMint,
-		EventCallerKey, caller.String(),
-		EventToKey, to.String(),
-		EventAmountKey, strconv.FormatInt(amount, 10),
-		EventTotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"Mint",
+		CallerKey, caller.String(),
+		ToKey, to.String(),
+		AmountKey, strconv.FormatInt(amount, 10),
+		TotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitBurn(caller, from std.Address, amount int64) {
 	std.Emit(
-		EventBurn,
-		EventCallerKey, caller.String(),
-		EventFromKey, from.String(),
-		EventAmountKey, strconv.FormatInt(amount, 10),
-		EventTotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"Burn",
+		CallerKey, caller.String(),
+		FromKey, from.String(),
+		AmountKey, strconv.FormatInt(amount, 10),
+		TotalSupplyKey, strconv.FormatInt(TotalSupply(), 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitTransfer(caller, from, to std.Address, amount int64) {
 	std.Emit(
-		EventTransfer,
-		EventCallerKey, caller.String(),
-		EventFromKey, from.String(),
-		EventToKey, to.String(),
-		EventAmountKey, strconv.FormatInt(amount, 10),
-		EventBalanceKey, strconv.FormatInt(BalanceOf(from), 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"Transfer",
+		CallerKey, caller.String(),
+		FromKey, from.String(),
+		ToKey, to.String(),
+		AmountKey, strconv.FormatInt(amount, 10),
+		BalanceKey, strconv.FormatInt(BalanceOf(from), 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitApproval(owner, spender std.Address, value int64) {
 	std.Emit(
-		EventApproval,
-		EventOwnerKey, owner.String(),
-		EventSpenderKey, spender.String(),
-		EventValueKey, strconv.FormatInt(value, 10),
-		EventBalanceKey, strconv.FormatInt(BalanceOf(owner), 10),
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"Approval",
+		OwnerKey, owner.String(),
+		SpenderKey, spender.String(),
+		ValueKey, strconv.FormatInt(value, 10),
+		BalanceKey, strconv.FormatInt(BalanceOf(owner), 10),
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
 
 func emitGovernanceUpdated(caller std.Address, oldPkgPath, newPkgPath string) {
 	std.Emit(
-		EventGovernanceUpdated,
-		EventCallerKey, caller.String(),
-		EventOldPkgPathKey, oldPkgPath,
-		EventNewPkgPathKey, newPkgPath,
-		EventTimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
+		"GovernanceUpdated",
+		CallerKey, caller.String(),
+		OldPkgPathKey, oldPkgPath,
+		NewPkgPathKey, newPkgPath,
+		TimestampKey, strconv.FormatInt(time.Now().Unix(), 10),
 	)
 }
