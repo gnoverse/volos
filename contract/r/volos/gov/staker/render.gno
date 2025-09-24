@@ -10,6 +10,28 @@ import (
 	"gno.land/r/volos/render"
 )
 
+func Render(path string) string {
+	out := md.H1("⚡ Volos Staker")
+	out += md.Paragraph("A staking mechanism for VLS tokens that allows users to delegate their tokens and participate in governance. Stakers can earn rewards while contributing to network security.")
+	out += md.HorizontalRule()
+
+	out += md.H2("🚦 Status")
+	unstackLockPeriodInHours := int(UnstakeLockPeriod()) / 60 / 60
+	out += md.Columns([]string{
+		md.H3("Total staked 💰") + renderTotalStaked(),
+		md.H3("Unstake pending 💸") + renderTotalPending(),
+		md.H3("Unstake cooldown ⏳") + md.Blockquote(strconv.Itoa(unstackLockPeriodInHours)+" hours"),
+	}, false)
+
+	out += md.HorizontalRule()
+
+	out += md.H2("🚀 Top Stakers")
+	out += renderTopDelegators(path)
+	out += md.H2("🔄 Pending Unstake")
+	out += renderPendingUnstake(path)
+	return out
+}
+
 func renderTotalStaked() string {
 	totalStaked := int64(0)
 
@@ -89,27 +111,5 @@ func renderPendingUnstake(path string) string {
 
 	out += "\nPage " + strconv.Itoa(page.PageNumber) + " of " + strconv.Itoa(page.TotalPages) + "\n\n"
 	out += page.Picker(path)
-	return out
-}
-
-func Render(path string) string {
-	out := md.H1("⚡ Volos Staker")
-	out += md.Paragraph("A staking mechanism for VLS tokens that allows users to delegate their tokens and participate in governance. Stakers can earn rewards while contributing to network security.")
-	out += md.HorizontalRule()
-
-	out += md.H2("🚦 Status")
-	unstackLockPeriodInHours := int(UnstakeLockPeriod()) / 60 / 60
-	out += md.Columns([]string{
-		md.H3("Total staked 💰") + renderTotalStaked(),
-		md.H3("Unstake pending 💸") + renderTotalPending(),
-		md.H3("Unstake cooldown ⏳") + md.Blockquote(strconv.Itoa(unstackLockPeriodInHours)+" hours"),
-	}, false)
-
-	out += md.HorizontalRule()
-
-	out += md.H2("🚀 Top Stakers")
-	out += renderTopDelegators(path)
-	out += md.H2("🔄 Pending Unstake")
-	out += renderPendingUnstake(path)
 	return out
 }

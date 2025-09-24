@@ -14,6 +14,20 @@ import (
 	"gno.land/r/volos/render"
 )
 
+func Render(path string) string {
+	if strings.HasPrefix(path, "?proposal=") {
+		return renderProposalPage(path)
+	}
+
+	out := md.H1("🏛️ Volos Governance")
+	out += md.Paragraph("On-chain governance for the Volos protocol")
+	out += md.H2("🪧 Make a proposal")
+	out += md.Blockquote(md.Link("Propose a specific governance improvement for Volos", txlink.Call("CreateProposal")) + " (e.g., voting rules, treasury management, member roles).")
+
+	out += listActiveProposals(path)
+	return out
+}
+
 func fillProposalTree(activeProposal commondao.ProposalStorage) *avl.Tree {
 	proposalTree := avl.NewTree()
 
@@ -51,20 +65,6 @@ func listActiveProposals(path string) string {
 func activeProposalsCount() string {
 	count := volosGovernance.ActiveProposals().Size()
 	out := md.Paragraph("📊 **Total:** " + strconv.Itoa(count))
-	return out
-}
-
-func Render(path string) string {
-	if strings.HasPrefix(path, "?proposal=") {
-		return renderProposalPage(path)
-	}
-
-	out := md.H1("🏛️ Volos Governance")
-	out += md.Paragraph("On-chain governance for the Volos protocol")
-	out += md.H2("🪧 Make a proposal")
-	out += md.Blockquote(md.Link("Propose a specific governance improvement for Volos", txlink.Call("CreateProposal")) + " (e.g., voting rules, treasury management, member roles).")
-
-	out += listActiveProposals(path)
 	return out
 }
 
